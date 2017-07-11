@@ -11,6 +11,7 @@
 #include <vector>
 #include <queue>
 #include <stack>
+#include <memory>
 #include "pegtl.hpp"
 #include "pegtl/analyze.hpp"
 #include "slice.h"
@@ -192,12 +193,28 @@ namespace helloworld // with operator precedence climbing
 
 namespace moon
 {
+	int moonType = 0;
+
+	template <class T>
+	int MoonType()
+	{
+		static int type = moonType++;
+		return type;
+	}
+
+	struct Node
+	{
+		virtual ~Node() {}
+		slice::Slice token;
+	};
+
 	struct State
 	{
 		State()
 		{
 			indents.push(0);
 			stringOpen = -1;
+			astStack.emplace_back();
 		}
 		size_t stringOpen;
 		std::stack<int> indents;
@@ -210,13 +227,15 @@ namespace moon
 			"class", "in", "unless", "when", "elseif",
 			"switch", "break", "if", "with", "import"
 		};
+		std::stack<size_t> indexStack;
+		std::vector<std::vector<std::shared_ptr<Node>>> astStack;
 	};
 
 	struct White : star<one<' ', '\t', '\r', '\n'>> {};
 	struct plain_space : star<one<' ', '\t'>> {};
 	struct Break : seq<opt<one<'\r'>>, one<'\n'>> {};
 	struct Stop : sor<Break, eof> {};
-	struct Comment : seq<string<'-', '-'>, star<not_one<'\r', '\n'>>, Stop> {};
+	struct Comment : seq<string<'-', '-'>, star<not_at<one<'\r', '\n'>>, any>, at<Stop>> {};
 	struct Indent : star<one<' ', '\t'>> {};
 	struct Space : seq<plain_space, opt<Comment>> {};
 	struct SomeSpace : seq<plus<blank>, opt<Comment>> {};
@@ -268,7 +287,8 @@ namespace moon
 	struct ensure : sor<seq<patt, finally>, seq<finally, Cut>> {};
 
 	template<char... Cs> struct key : seq<Space, string<Cs...>, not_at<AlphaNum>> {};
-	template<char... Cs> struct op : seq<Space, string<Cs...>, not_at<AlphaNum>> {};
+	template<char... Cs> struct opWord : seq<Space, string<Cs...>, not_at<AlphaNum>> {};
+	template<char... Cs> struct op : seq<Space, string<Cs...>> {};
 
 	struct Name
 	{
@@ -278,16 +298,19 @@ namespace moon
 			template<typename...> class Action,
 			template<typename...> class Control,
 			typename Input>
-		static bool match(Input& in, const State& st)
+		static bool match(Input& in, State& st)
 		{
 			const char* current = in.current();
-			if (SpaceName::match<A, M, Action, Control>(in, st))
+			memory_input<> memIn(current, in.end() - current, current);
+			if (SpaceName::match<A, M, Action, Control>(memIn, st))
 			{
-				auto name = slice::Slice(current, in.current() - current + 1);
-				name.trimSpace();
-				auto it = st.keywords.find(name);
+				auto name = slice::Slice(current, memIn.current() - current);
+				auto trimed = name;
+				trimed.trimSpace();
+				auto it = st.keywords.find(trimed);
 				if (it == st.keywords.end())
 				{
+					in.bump(name.size());
 					return true;
 				}
 			}
@@ -301,10 +324,10 @@ namespace moon
 	struct self_class_name : seq<string<'@', '@'>, _Name> {};
 
 	struct SelfName : seq<Space, sor<self_class_name, self_class, self_name, self>> {};
-	struct KeyName : sor<SelfName, SpaceName> {};
+	struct KeyName : sor<SelfName, seq<Space, _Name>> {};
 	struct VarArg : seq<Space, string<'.', '.', '.'>> {};
 
-	struct CheckIndent
+	struct CheckIndentBump
 	{
 		using analyze_t = analysis::generic<analysis::rule_type::ANY>;
 
@@ -312,7 +335,7 @@ namespace moon
 			template<typename...> class Action,
 			template<typename...> class Control,
 			typename Input>
-		static bool match(Input& in, const State& st)
+		static bool match(Input& in, State& st)
 		{
 			const char* current = in.current();
 			if (Indent::match<A, M, Action, Control>(in, st))
@@ -331,8 +354,9 @@ namespace moon
 			return false;
 		}
 	};
+	struct CheckIndent : at<CheckIndentBump> {};
 
-	struct Advance
+	struct AdvanceBump
 	{
 		using analyze_t = analysis::generic<analysis::rule_type::ANY>;
 
@@ -343,7 +367,7 @@ namespace moon
 		static bool match(Input& in, State& st)
 		{
 			const char* current = in.current();
-			if (Indent::match<A, M, Action, Control>(in))
+			if (Indent::match<A, M, Action, Control>(in, st))
 			{
 				int indent = 0;
 				for (const char* ch = current; ch < in.current(); ch++)
@@ -358,14 +382,16 @@ namespace moon
 				if (top != -1 && indent > top)
 				{
 					st.indents.push(indent);
+					return true;
 				}
-				return true;
+				return false;
 			}
 			return false;
 		}
 	};
+	struct Advance : at<AdvanceBump> {};
 
-	struct PushIndent
+	struct PushIndentBump
 	{
 		using analyze_t = analysis::generic<analysis::rule_type::ANY>;
 
@@ -376,7 +402,7 @@ namespace moon
 		static bool match(Input& in, State& st)
 		{
 			const char* current = in.current();
-			if (Indent::match<A, M, Action, Control>(in))
+			if (Indent::match<A, M, Action, Control>(in, st))
 			{
 				int indent = 0;
 				for (const char* ch = current; ch < in.current(); ch++)
@@ -393,8 +419,9 @@ namespace moon
 			return false;
 		}
 	};
+	struct PushIndent : at<PushIndentBump> {};
 
-	struct PreventIndent
+	struct PreventIndentBump
 	{
 		using analyze_t = analysis::generic<analysis::rule_type::ANY>;
 
@@ -408,8 +435,9 @@ namespace moon
 			return true;
 		}
 	};
+	struct PreventIndent : at<PreventIndentBump> {};
 
-	struct PopIndent
+	struct PopIndentBump
 	{
 		using analyze_t = analysis::generic<analysis::rule_type::ANY>;
 
@@ -419,10 +447,11 @@ namespace moon
 			typename Input>
 		static bool match(Input& in, State& st)
 		{
-			if (st.indents.size() > 1) st.indents.pop();
+			st.indents.pop();
 			return true;
 		}
 	};
+	struct PopIndent : at<PopIndentBump> {};
 
 	struct Block;
 
@@ -430,15 +459,24 @@ namespace moon
 
 	struct NameList;
 
-	struct Local : seq<key<'l', 'o', 'c', 'a', 'l'>, sor<sor<op<'*'>, op<'^'>>>, NameList> {};
+	struct Local : seq<
+		key<'l', 'o', 'c', 'a', 'l'>,
+		sor<
+			sor<op<'*'>, op<'^'>>,
+			NameList
+		>
+	> {};
 
-	struct colon_import_name : seq<one<'\\'>, Name> {};
+	struct colon_import_name : seq<sym<'\\'>, Name> {};
 	struct ImportName : sor<colon_import_name, Name> {};
 	struct ImportNameList : seq<
 		star<SpaceBreak>,
 		ImportName,
 		star<
-			sor<plus<SpaceBreak>, seq<sym<','>, star<SpaceBreak>>>,
+			sor<
+				plus<SpaceBreak>,
+				seq<sym<','>, star<SpaceBreak>>
+			>,
 			ImportName
 		>
 	> {};
@@ -481,8 +519,9 @@ namespace moon
 
 	struct IfElse : seq<
 		opt<Break, star<EmptyLine>, CheckIndent>,
-		string<'e', 'l', 's', 'e'>, Body
+		key<'e', 'l', 's', 'e'>, Body
 	> {};
+
 	struct IfElseIf : seq<
 		opt<Break, star<EmptyLine>, CheckIndent>,
 		key<'e', 'l', 's', 'e', 'i', 'f'>, IfCond,
@@ -515,7 +554,9 @@ namespace moon
 				seq<sym<'*'>, Exp>, ExpList
 			>,
 			PopDo
-		>
+		>,
+		opt<key<'d', 'o'>>,
+		Body
 	> {};
 
 	struct Do
@@ -528,7 +569,7 @@ namespace moon
 			typename Input>
 		static bool match(Input& in, State& st)
 		{
-			if (seq<key<'d', 'o'>, Body>::match<A, M, Action, Control>(in, st))
+			if (at<seq<key<'d', 'o'>, Body>>::match<A, M, Action, Control>(in, st))
 			{
 				if (st.doStack.empty() || st.doStack.top())
 				{
@@ -611,8 +652,8 @@ namespace moon
 
 	struct CharOperators : seq<Space, one<'+', '-', '*' ,'/', '%', '^', '>', '<', '|', '&'>> {};
 	struct WordOperators : sor<
-		op<'o', 'r'>,
-		op<'a', 'n', 'd'>,
+		opWord<'o', 'r'>,
+		opWord<'a', 'n', 'd'>,
 		op<'<', '='>,
 		op<'>', '='>,
 		op<'~', '='>,
@@ -622,11 +663,11 @@ namespace moon
 		op<'<', '<'>,
 		op<'>', '>'>,
 		op<'/', '/'>> {};
-	struct BinaryOperator : seq<sor<CharOperators, WordOperators>, star<SpaceBreak>> {};
+	struct BinaryOperator : seq<sor<WordOperators, CharOperators>, star<SpaceBreak>> {};
 
 	struct Chain;
 
-	struct Assignable : sor<Chain, Name, SelfName> {};
+	struct Assignable : sor<at<Chain>, Name, SelfName> {};
 
 	struct Value;
 
@@ -641,15 +682,15 @@ namespace moon
 	struct String;
 	struct SimpleValue;
 
-	struct Value : sor<String, SimpleValue, KeyValueList, ChainValue> {};
+	struct Value : sor<SimpleValue, KeyValueList, ChainValue, String> {};
 	struct SliceValue : Exp {};
 
 	struct LuaString;
 
-	struct single_string_inner : sor<string<'\\','\''>, string<'\\', '\\'>, not_one<'\''>> {};
+	struct single_string_inner : sor<string<'\\', '\''>, string<'\\', '\\'>, not_one<'\''>> {};
 	struct SingleString : seq<symx<'\''>, star<single_string_inner>, sym<'\''>> {};
 	struct interp : seq<symx<'#', '{'>, Exp, sym<'}'>> {};
-	struct double_string_plain : sor<string<'\\','\"'>, string<'\\', '\\'>, not_one<'\"'>> {};
+	struct double_string_plain : sor<string<'\\', '\"'>, string<'\\', '\\'>, not_one<'\"'>> {};
 	struct double_string_inner : plus<seq<not_at<interp>, double_string_plain>> {};
 	struct DoubleString : seq<symx<'\"'>, star<sor<double_string_inner, interp>>, sym<'\"'>> {};
 	struct String : sor<seq<Space, DoubleString>, seq<Space, SingleString>, LuaString> {};
@@ -717,7 +758,14 @@ namespace moon
 	struct Parens : seq<sym<'('>, star<SpaceBreak>, Exp, star<SpaceBreak>, sym<')'>> {};
 	struct Callable : sor<Name, SelfName, VarArg, Parens> {};
 
-	struct FnArgsExpList : seq<Exp, star<sor<Break, one<','>>, White, Exp>> {};
+	struct FnArgsExpList : seq<
+		Exp,
+		star<
+			sor<Break, sym<','>>,
+			White, Exp
+		>
+	> {};
+
 	struct FnArgs : sor<
 		seq<symx<'('>, star<SpaceBreak>, opt<FnArgsExpList>, star<SpaceBreak>, sym<')'>>,
 		seq<sym<'!'>, not_at<one<'='>>>
@@ -728,7 +776,10 @@ namespace moon
 	struct ColonChain;
 
 	struct Chain : sor<
-		seq<sor<Callable, String, not_one<'.', '\\'>>, ChainItems>,
+		seq<
+			sor<Callable, String, not_at<one<'.', '\\'>>>,
+			ChainItems
+		>,
 		seq<Space,
 			sor<
 				seq<DotChainItem, opt<ChainItems>>,
@@ -866,34 +917,41 @@ namespace moon
 	> {};
 
 	struct outer_value_shadow : seq<string<'u', 's', 'i', 'n', 'g'>, sor<NameList, seq<Space, string<'n', 'i', 'l'>>>> {};
-	struct outer_value_no_shadowing : success {};
+	struct outer_value_no_shadow : success {};
 	struct without_args_def : success {};
 
 	struct FnArgsDef : sor<
 		seq<sym<'('>, White, opt<FnArgDefList>,
 			sor<
 				outer_value_shadow,
-				outer_value_no_shadowing
+				outer_value_no_shadow
 			>,
 			White, sym<')'>
 		>,
 		without_args_def
 	> {};
 
-	struct FunLit : seq<FnArgsDef, sor<sym<'-', '>'>, sym<'=', '>'>>, sor<Body, success>> {};
+	struct FunLit : seq<
+		FnArgsDef,
+		sor<
+			sym<'-', '>'>,
+			sym<'=', '>'>
+		>,
+		sor<Body, success>
+	> {};
 
 	struct NameList : seq<Name, star<sym<','>, Name>> {};
 	struct NameOrDestructure : sor<Name, TableLit> {};
 	struct AssignableNameList : seq<NameOrDestructure, star<sym<','>, NameOrDestructure>> {};
 
 	struct ExpList : seq<Exp, star<sym<','>, Exp>> {};
-	struct ExpListLow : seq<Exp, star<sor<sym<','>, sym<';'>, Exp>>> {};
+	struct ExpListLow : seq<Exp, star<sor<sym<','>, sym<';'>>, Exp>> {};
 
 	struct ArgLine : seq<CheckIndent, ExpList> {};
 	struct ArgBlock : seq<ArgLine, star<sym<','>, SpaceBreak, ArgLine>, PopIndent> {};
 
 	struct InvokeArgs : seq<
-		at<not_one<'-'>>,
+		not_at<one<'-'>>,
 		sor<
 			seq<
 				ExpList,
@@ -932,14 +990,12 @@ namespace moon
 		sor<Update, Assign>
 	> {};
 
-	struct Sentence : sor<
-		Import, While, With, For, ForEach,
-		Switch, Return, Local, Export, BreakLoop,
-		Assignment, ExpList
-	> {};
-
 	struct Statement : seq<
-		Sentence,
+		sor<
+			Import, While, With, For, ForEach,
+			Switch, Return, Local, Export, BreakLoop,
+			Assignment, ExpList
+		>,
 		Space,
 		opt<
 			sor<
@@ -969,28 +1025,113 @@ namespace moon
 
 	struct Block : seq<Line, star<plus<Break>, Line>> {};
 
-	struct BlockWithEnd : seq<Block, eolf> {};
+	struct BlockWithEnd : seq<Block, eof> {};
+
+	template <class T>
+	struct NodeBase : Node
+	{
+		static int id;
+	};
+
+	template <class T>
+	int NodeBase<T>::id = MoonType<T>();
+
+	struct ImportNameNode : Node
+	{
+	};
+
+	struct ImportNameListNode : NodeBase<ImportNameListNode>
+	{
+		std::vector<std::shared_ptr<Node>> names;
+	};
+
+	struct ImportNode : NodeBase<ImportNode>
+	{
+		std::shared_ptr<Node> nameList;
+		std::shared_ptr<Node> exp;
+	};
 
 	template<typename Rule>
 	struct action : nothing<Rule> {};
 
 	template<>
-	struct action<Assignment>
+	struct action<ImportName>
 	{
 		template<typename Input>
-		static void apply(const Input& in, State&)
+		static void apply(const Input& in, State& st)
 		{
-			std::cout << "Assignment: " << in.string() << '\n';
+			auto node = std::make_shared<ImportNameNode>();
+			node->token = slice::Slice(in.begin(), in.end() - in.begin());
+			node->token.trimSpace();
+			st.astStack.pop_back();
+			st.astStack.back().push_back(node);
 		}
 	};
 
 	template<>
-	struct action<Return>
+	struct action<Exp>
 	{
 		template<typename Input>
-		static void apply(const Input& in, State&)
+		static void apply(const Input& in, State& st)
 		{
-			std::cout << "Return: " << in.string() << "\n\n";
+			auto node = std::make_shared<Node>();
+			node->token = slice::Slice(in.begin(), in.end() - in.begin());
+			node->token.trimSpace();
+			st.astStack.pop_back();
+			st.astStack.back().push_back(node);
+		}
+	};
+
+	template<>
+	struct action<Import>
+	{
+		template<typename Input>
+		static void apply(const Input& in, State& st)
+		{
+			auto node = std::make_shared<ImportNode>();
+			node->exp = st.astStack.back().back();
+			st.astStack.back().pop_back();
+			node->nameList = st.astStack.back().back();
+			st.astStack.back().pop_back();
+			st.astStack.pop_back();
+			st.astStack.back().push_back(node);
+		}
+	};
+
+	template<>
+	struct action<ImportNameListNode>
+	{
+		template<typename Input>
+		static void apply(const Input& in, State& st)
+		{
+			auto node = std::make_shared<ImportNameListNode>();
+			node->names = std::move(st.astStack.back());
+			st.astStack.pop_back();
+			st.astStack.back().push_back(node);
+		}
+	};
+
+	template<typename Rule>
+	struct control : normal<Rule> {};
+
+	template<>
+	struct control<ImportNameListNode> : normal<ImportNameListNode>
+	{
+		template<typename Input>
+		static void start(Input& in, State& st)
+		{
+			st.astStack.emplace_back();
+		}
+
+		template<typename Input>
+		static void failure(Input& /*unused*/, State& st)
+		{
+			st.astStack.pop_back();
+		}
+
+		template<typename Input>
+		static void success(Input& /*unused*/, State& st)
+		{
 		}
 	};
 }
@@ -999,371 +1140,528 @@ int main()
 {
 	analyze<moon::BlockWithEnd>();
 	moon::State state;
-	string_input<> inName(R"xoxo(
-debug_grammar = false
-lpeg = require "lpeg"
-
-lpeg.setmaxstack 10000 -- whoa
-
-err_msg = "Failed to parse:%s\n [%d] >>    %s"
-
-import Stack from require "moonscript.data"
-import trim, pos_to_line, get_line from require "moonscript.util"
-import unpack from require "moonscript.util"
-import wrap_env from require "moonscript.parse.env"
-
-{
-  :R, :S, :V, :P, :C, :Ct, :Cmt, :Cg, :Cb, :Cc
-} = lpeg
-
-{
-  :White, :Break, :Stop, :Comment, :Space, :SomeSpace, :SpaceBreak, :EmptyLine,
-  :AlphaNum, :Num, :Shebang, :L
-  Name: _Name
-} = require "moonscript.parse.literals"
-
-SpaceName = Space * _Name
-Num = Space * (Num / (v) -> {"number", v})
-
-{
-  :Indent, :Cut, :ensure, :extract_line, :mark, :pos, :flatten_or_mark,
-  :is_assignable, :check_assignable, :format_assign, :format_single_assign,
-  :sym, :symx, :simple_string, :wrap_func_arg, :join_chain,
-  :wrap_decorator, :check_lua_string, :self_assign, :got
-
-} = require "moonscript.parse.util"
-
-
-build_grammar = wrap_env debug_grammar, (root) ->
-  _indent = Stack 0
-  _do_stack = Stack 0
-
-  state = {
-    -- last pos we saw, used to report error location
-    last_pos: 0
-  }
-
-  check_indent = (str, pos, indent) ->
-    state.last_pos = pos
-    _indent\top! == indent
-
-  advance_indent = (str, pos, indent) ->
-    top = _indent\top!
-    if top != -1 and indent > top
-      _indent\push indent
-      true
-
-  push_indent = (str, pos, indent) ->
-    _indent\push indent
-    true
-
-  pop_indent = ->
-    assert _indent\pop!, "unexpected outdent"
-    true
-
-  check_do = (str, pos, do_node) ->
-    top = _do_stack\top!
-    if top == nil or top
-      return true, do_node
-    false
-
-  disable_do = ->
-    _do_stack\push false
-    true
-
-  pop_do = ->
-    assert _do_stack\pop! != nil, "unexpected do pop"
-    true
-
-  DisableDo = Cmt "", disable_do
-  PopDo = Cmt "", pop_do
-
-  keywords = {}
-  key = (chars) ->
-    keywords[chars] = true
-    Space * chars * -AlphaNum
-
-  op = (chars) ->
-    patt = Space * C chars
-    -- it's a word, treat like keyword
-    if chars\match "^%w*$"
-      keywords[chars] = true
-      patt *= -AlphaNum
-
-    patt
-
-  Name = Cmt(SpaceName, (str, pos, name) ->
-    return false if keywords[name]
-    true
-  ) / trim
-
-  SelfName = Space * "@" * (
-    "@" * (_Name / mark"self_class" + Cc"self.__class") +
-    _Name / mark"self" +
-    Cc"self" -- @ by itself
-  )
-
-  KeyName = SelfName + Space * _Name / mark"key_literal"
-  VarArg = Space * P"..." / trim
-
-  g = P {
-    root or File
-    File: Shebang^-1 * (Block + Ct"")
-    Block: Ct(Line * (Break^1 * Line)^0)
-    CheckIndent: Cmt(Indent, check_indent), -- validates line is in correct indent
-    Line: (CheckIndent * Statement + Space * L(Stop))
-
-    Statement: pos(
-        Import + While + With + For + ForEach + Switch + Return +
-        Local + Export + BreakLoop +
-        Ct(ExpList) * (Update + Assign)^-1 / format_assign
-      ) * Space * ((
-        -- statement decorators
-        key"if" * Exp * (key"else" * Exp)^-1 * Space / mark"if" +
-        key"unless" * Exp / mark"unless" +
-        CompInner / mark"comprehension"
-      ) * Space)^-1 / wrap_decorator
-
-    Body: Space^-1 * Break * EmptyLine^0 * InBlock + Ct(Statement) -- either a statement, or an indented block
-
-    Advance: L Cmt(Indent, advance_indent) -- Advances the indent, gives back whitespace for CheckIndent
-    PushIndent: Cmt(Indent, push_indent)
-    PreventIndent: Cmt(Cc(-1), push_indent)
-    PopIndent: Cmt("", pop_indent)
-    InBlock: Advance * Block * PopIndent
-
-    Local: key"local" * ((op"*" + op"^") / mark"declare_glob" + Ct(NameList) / mark"declare_with_shadows")
-
-    Import: key"import" * Ct(ImportNameList) * SpaceBreak^0 * key"from" * Exp / mark"import"
-    ImportName: (sym"\\" * Ct(Cc"colon" * Name) + Name)
-    ImportNameList: SpaceBreak^0 * ImportName * ((SpaceBreak^1 + sym"," * SpaceBreak^0) * ImportName)^0
-
-    BreakLoop: Ct(key"break"/trim) + Ct(key"continue"/trim)
-
-    Return: key"return" * (ExpListLow/mark"explist" + C"") / mark"return"
-
-    WithExp: Ct(ExpList) * Assign^-1 / format_assign
-    With: key"with" * DisableDo * ensure(WithExp, PopDo) * key"do"^-1 * Body / mark"with"
-
-    Switch: key"switch" * DisableDo * ensure(Exp, PopDo) * key"do"^-1 * Space^-1 * Break * SwitchBlock / mark"switch"
-
-    SwitchBlock: EmptyLine^0 * Advance * Ct(SwitchCase * (Break^1 * SwitchCase)^0 * (Break^1 * SwitchElse)^-1) * PopIndent
-    SwitchCase: key"when" * Ct(ExpList) * key"then"^-1 * Body / mark"case"
-    SwitchElse: key"else" * Body / mark"else"
-
-    IfCond: Exp * Assign^-1 / format_single_assign
-
-    IfElse: (Break * EmptyLine^0 * CheckIndent)^-1  * key"else" * Body / mark"else"
-    IfElseIf: (Break * EmptyLine^0 * CheckIndent)^-1 * key"elseif" * pos(IfCond) * key"then"^-1 * Body / mark"elseif"
-
-    If: key"if" * IfCond * key"then"^-1 * Body * IfElseIf^0 * IfElse^-1 / mark"if"
-    Unless: key"unless" * IfCond * key"then"^-1 * Body * IfElseIf^0 * IfElse^-1 / mark"unless"
-
-    While: key"while" * DisableDo * ensure(Exp, PopDo) * key"do"^-1 * Body / mark"while"
-
-    For: key"for" * DisableDo * ensure(Name * sym"=" * Ct(Exp * sym"," * Exp * (sym"," * Exp)^-1), PopDo) *
-      key"do"^-1 * Body / mark"for"
-
-    ForEach: key"for" * Ct(AssignableNameList) * key"in" * DisableDo * ensure(Ct(sym"*" * Exp / mark"unpack" + ExpList), PopDo) * key"do"^-1 * Body / mark"foreach"
-
-    Do: key"do" * Body / mark"do"
-
-    Comprehension: sym"[" * Exp * CompInner * sym"]" / mark"comprehension"
-
-    TblComprehension: sym"{" * Ct(Exp * (sym"," * Exp)^-1) * CompInner * sym"}" / mark"tblcomprehension"
-
-    CompInner: Ct((CompForEach + CompFor) * CompClause^0)
-    CompForEach: key"for" * Ct(AssignableNameList) * key"in" * (sym"*" * Exp / mark"unpack" + Exp) / mark"foreach"
-    CompFor: key "for" * Name * sym"=" * Ct(Exp * sym"," * Exp * (sym"," * Exp)^-1) / mark"for"
-    CompClause: CompFor + CompForEach + key"when" * Exp / mark"when"
-
-    Assign: sym"=" * (Ct(With + If + Switch) + Ct(TableBlock + ExpListLow)) / mark"assign"
-    Update: ((sym"..=" + sym"+=" + sym"-=" + sym"*=" + sym"/=" + sym"%=" + sym"or=" + sym"and=" + sym"&=" + sym"|=" + sym">>=" + sym"<<=") / trim) * Exp / mark"update"
-
-    CharOperators: Space * C(S"+-*/%^><|&")
-    WordOperators: op"or" + op"and" + op"<=" + op">=" + op"~=" + op"!=" + op"==" + op".." + op"<<" + op">>" + op"//"
-    BinaryOperator: (WordOperators + CharOperators) * SpaceBreak^0
-
-    Assignable: Cmt(Chain, check_assignable) + Name + SelfName
-    Exp: Ct(Value * (BinaryOperator * Value)^0) / flatten_or_mark"exp"
-
-    SimpleValue:
-      If + Unless +
-      Switch +
-      With +
-      ClassDecl +
-      ForEach + For + While +
-      Cmt(Do, check_do) +
-      sym"-" * -SomeSpace * Exp / mark"minus" +
-      sym"#" * Exp / mark"length" +
-      sym"~" * Exp / mark"bitnot" +
-      key"not" * Exp / mark"not" +
-      TblComprehension +
-      TableLit +
-      Comprehension +
-      FunLit +
-      Num
-
-    -- a function call or an object access
-    ChainValue: (Chain + Callable) * Ct(InvokeArgs^-1) / join_chain
-
-    Value: pos(
-      SimpleValue +
-      Ct(KeyValueList) / mark"table" +
-      ChainValue +
-      String)
-
-    SliceValue: Exp
-
-    String: Space * DoubleString + Space * SingleString + LuaString
-    SingleString: simple_string("'")
-    DoubleString: simple_string('"', true)
-
-    LuaString: Cg(LuaStringOpen, "string_open") * Cb"string_open" * Break^-1 *
-      C((1 - Cmt(C(LuaStringClose) * Cb"string_open", check_lua_string))^0) *
-      LuaStringClose / mark"string"
-
-    LuaStringOpen: sym"[" * P"="^0 * "[" / trim
-    LuaStringClose: "]" * P"="^0 * "]"
-
-    Callable: pos(Name / mark"ref") + SelfName + VarArg + Parens / mark"parens"
-    Parens: sym"(" * SpaceBreak^0 * Exp * SpaceBreak^0 * sym")"
-
-    FnArgs: symx"(" * SpaceBreak^0 * Ct(FnArgsExpList^-1) * SpaceBreak^0 * sym")" + sym"!" * -P"=" * Ct""
-    FnArgsExpList: Exp * ((Break + sym",") * White * Exp)^0
-
-    Chain: (Callable + String + -S".\\") * ChainItems / mark"chain" +
-      Space * (DotChainItem * ChainItems^-1 + ColonChain) / mark"chain"
-
-    ChainItems: ChainItem^1 * ColonChain^-1 + ColonChain
-
-    ChainItem:
-      Invoke +
-      DotChainItem +
-      Slice +
-      symx"[" * Exp/mark"index" * sym"]"
-
-    DotChainItem: symx"." * _Name/mark"dot"
-    ColonChainItem: symx"\\" * _Name / mark"colon"
-    ColonChain: ColonChainItem * (Invoke * ChainItems^-1)^-1
-
-    Slice: symx"[" * (SliceValue + Cc(1)) * sym"," * (SliceValue + Cc"")  *
-      (sym"," * SliceValue)^-1 *sym"]" / mark"slice"
-
-    Invoke: FnArgs / mark"call" +
-      SingleString / wrap_func_arg +
-      DoubleString / wrap_func_arg +
-      L(P"[") * LuaString / wrap_func_arg
-
-    TableValue: KeyValue + Ct(Exp)
-
-    TableLit: sym"{" * Ct(
-        TableValueList^-1 * sym","^-1 *
-        (SpaceBreak * TableLitLine * (sym","^-1 * SpaceBreak * TableLitLine)^0 * sym","^-1)^-1
-      ) * White * sym"}" / mark"table"
-
-    TableValueList: TableValue * (sym"," * TableValue)^0
-    TableLitLine: PushIndent * ((TableValueList * PopIndent) + (PopIndent * Cut)) + Space
-
-    -- the unbounded table
-    TableBlockInner: Ct(KeyValueLine * (SpaceBreak^1 * KeyValueLine)^0)
-    TableBlock: SpaceBreak^1 * Advance * ensure(TableBlockInner, PopIndent) / mark"table"
-
-    ClassDecl: key"class" * -P":" * (Assignable + Cc(nil)) * (key"extends" * PreventIndent * ensure(Exp, PopIndent) + C"")^-1 * (ClassBlock + Ct("")) / mark"class"
-
-    ClassBlock: SpaceBreak^1 * Advance *
-      Ct(ClassLine * (SpaceBreak^1 * ClassLine)^0) * PopIndent
-    ClassLine: CheckIndent * ((
-        KeyValueList / mark"props" +
-        Statement / mark"stm" +
-        Exp / mark"stm"
-      ) * sym","^-1)
-
-    Export: key"export" * (
-      Cc"class" * ClassDecl +
-      op"*" + op"^" +
-      Ct(NameList) * (sym"=" * Ct(ExpListLow))^-1) / mark"export"
-
-    KeyValue: (sym":" * -SomeSpace *  Name * lpeg.Cp!) / self_assign +
-      Ct(
-        (KeyName + sym"[" * Exp * sym"]" +Space * DoubleString + Space * SingleString) *
-        symx":" *
-        (Exp + TableBlock + SpaceBreak^1 * Exp)
-      )
-
-    KeyValueList: KeyValue * (sym"," * KeyValue)^0
-    KeyValueLine: CheckIndent * KeyValueList * sym","^-1
-
-    FnArgsDef: sym"(" * White * Ct(FnArgDefList^-1) *
-      (key"using" * Ct(NameList + Space * "nil") + Ct"") *
-      White * sym")" + Ct"" * Ct""
-
-    FnArgDefList: FnArgDef * ((sym"," + Break) * White * FnArgDef)^0 * ((sym"," + Break) * White * Ct(VarArg))^0 + Ct(VarArg)
-    FnArgDef: Ct((Name + SelfName) * (sym"=" * Exp)^-1)
-
-    FunLit: FnArgsDef *
-      (sym"->" * Cc"slim" + sym"=>" * Cc"fat") *
-      (Body + Ct"") / mark"fndef"
-
-    NameList: Name * (sym"," * Name)^0
-    NameOrDestructure: Name + TableLit
-    AssignableNameList: NameOrDestructure * (sym"," * NameOrDestructure)^0
-
-    ExpList: Exp * (sym"," * Exp)^0
-    ExpListLow: Exp * ((sym"," + sym";") * Exp)^0
-
-    -- open args
-    InvokeArgs: -P"-" * (ExpList * (sym"," * (TableBlock + SpaceBreak * Advance * ArgBlock * TableBlock^-1) + TableBlock)^-1 + TableBlock)
-    ArgBlock: ArgLine * (sym"," * SpaceBreak * ArgLine)^0 * PopIndent
-    ArgLine: CheckIndent * ExpList
-  }
-
-  g, state
-
-file_parser = ->
-  g, state = build_grammar!
-  file_grammar = White * g * White * -1
-
-  {
-    match: (str) =>
-      local tree
-      _, err = xpcall (->
-        tree = file_grammar\match str
-      ), (err) ->
-        debug.traceback err, 2
-
-      -- regular error, let it bubble up
-      if type(err) == "string"
-        return nil, err
-
-      unless tree
-        local msg
-        err_pos = state.last_pos
-
-        if err
-          node, msg = unpack err
-          msg = " " .. msg if msg
-          err_pos = node[-1]
-
-        line_no = pos_to_line str, err_pos
-        line_str = get_line(str, line_no) or ""
-        return nil, err_msg\format msg or "", line_no, trim line_str
-
-      tree
-  }
-
-{
-  :extract_line
-  :build_grammar
-
-  -- parse a string as a file
-  -- returns tree, or nil and error message
-  string: (str) -> file_parser!\match str
-}
-)xoxo", "abc");
+	string_input<> inName(R"xoxox(
+
+Dorothy!
+EditMenuView = require "View.Control.Operation.EditMenu"
+MessageBox = require "Control.Basic.MessageBox"
+
+-- [no signals]
+-- [no params]
+Class EditMenuView,
+	__init:=>
+		{:width} = CCDirector.winSize
+		isHide = false
+
+		@itemArea\setupMenuScroll @itemMenu
+		@itemArea.viewSize = @itemMenu\alignItems!
+
+		for child in *@itemMenu.children
+			child.positionX = -35
+			child.visible = false
+			child.displayed = false
+		@showItemButtons {"graphic","physics","logic","data"},true,true
+
+		buttonNames = {
+			"sprite","model","body"
+			"effect","layer","world"
+		}
+
+		clearSelection = ->
+			for name in *buttonNames
+				with @[name.."Btn"]
+					if .selected
+						.selected = false
+						.color = ccColor3 0x00ffff
+						.scaleX = 0
+						.scaleY = 0
+						\perform oScale 0.3,1,1,oEase.OutBack
+						emit .event,nil
+
+		for name in *buttonNames
+			with @[name.."Btn"]
+				.selected = false
+				upperName = name\sub(1,1)\upper!..name\sub(2,-1)
+				.event = "Scene."..upperName.."Selected"
+				@gslot .event,(item)->
+					if item
+						.selected = true
+						.color = ccColor3 0xff0088
+						.scaleX = 0
+						.scaleY = 0
+						\perform oScale 0.3,1,1,oEase.OutBack
+				\slot "Tapped",->
+					if not .selected
+						emit "Scene.View"..upperName
+						clearSelection!
+					else
+						.selected = false
+						.color = ccColor3 0x00ffff
+						emit .event,nil
+
+		@triggerBtn\slot "Tapped",->
+			clearSelection!
+			if @pickPanel.visible
+				MessageBox text:"Pick An Item First",okOnly:true
+			else
+				emit "Scene.Trigger.Open"
+
+		@actionBtn\slot "Tapped",->
+			clearSelection!
+			if @pickPanel.visible
+				MessageBox text:"Pick An Item First",okOnly:true
+			else
+				emit "Scene.Action.Open"
+
+		@aiBtn\slot "Tapped",->
+			clearSelection!
+			if @pickPanel.visible
+				MessageBox text:"Pick An Item First",okOnly:true
+			else
+				emit "Scene.AITree.Open"
+
+		@unitBtn\slot "Tapped",->
+			clearSelection!
+			if @pickPanel.visible
+				MessageBox text:"Pick An Item First",okOnly:true
+			else
+				emit "Scene.Unit.Open"
+
+		@delBtn\slot "Tapped",->
+			clearSelection!
+			emit "Scene.EditMenu.Delete"
+
+		mode = 0
+		@zoomBtn\slot "Tapped",->
+			scale = switch mode
+				when 0 then 2
+				when 1 then 0.5
+				when 2 then 1
+			mode += 1
+			mode %= 3
+			@zoomBtn.text = string.format("%d%%",scale*100)
+			emit "Scene.ViewArea.ScaleTo",scale
+
+		@originBtn\slot "Tapped",-> editor\moveTo oVec2.zero
+
+		@progressUp.visible = false
+		@progressDown.visible = false
+
+		with @upBtn
+			.visible = false
+			.enabled = false
+			\slot "TapBegan",->
+				clearSelection!
+				\schedule once ->
+					sleep 0.4
+					@progressUp.visible = true
+					@progressUp\play!
+			\slot "Tapped",->
+				if @progressUp.visible
+					if @progressUp.done
+						emit "Scene.EditMenu.Top"
+				else
+					emit "Scene.EditMenu.Up"
+			\slot "TapEnded",->
+				\unschedule!
+				if @progressUp.visible
+					@progressUp.visible = false
+
+		with @downBtn
+			.visible = false
+			.enabled = false
+			\slot "TapBegan",->
+				clearSelection!
+				\schedule once ->
+					sleep 0.4
+					@progressDown.visible = true
+					@progressDown\play!
+			\slot "Tapped",->
+				if @progressDown.visible
+					if @progressDown.done
+						emit "Scene.EditMenu.Bottom"
+				else
+					emit "Scene.EditMenu.Down"
+			\slot "TapEnded",->
+				\unschedule!
+				if @progressDown.visible
+					@progressDown.visible = false
+
+		with @foldBtn
+			.visible = false
+			.enabled = false
+			\slot "Tapped",->
+				clearSelection!
+				emit "Scene.ViewPanel.Fold",editor.currentData
+
+		with @editBtn
+			.visible = false
+			.enabled = false
+			\slot "Tapped",->
+				emit "Scene.SettingPanel.Edit",nil
+				editor\editCurrentItemInPlace!
+
+		with @menuBtn
+			.dirty = false
+			\slot "Tapped",->
+				clearSelection!
+				if .dirty
+					editor\save!
+					emit "Scene.Dirty",false
+				else
+					ScenePanel = require "Control.Item.ScenePanel"
+					ScenePanel!
+				emit "Scene.SettingPanel.Edit",nil
+
+		with @undoBtn
+			.visible = false
+			\slot "Tapped",->
+				clearSelection!
+				editor.currentSceneFile = editor.currentSceneFile
+				emit "Scene.Dirty",false
+
+		with @xFixBtn
+			.visible = false
+			\slot "Tapped",(button)->
+				editor.xFix = not editor.xFix
+				if editor.yFix
+					editor.yFix = false
+					@yFixBtn.color = ccColor3 0x00ffff
+				button.color = ccColor3 editor.xFix and 0xff0088 or 0x00ffff
+				emit "Scene.FixChange"
+
+		with @yFixBtn
+			.visible = false
+			\slot "Tapped",(button)->
+				editor.yFix = not editor.yFix
+				if editor.xFix
+					editor.xFix = false
+					@xFixBtn.color = ccColor3 0x00ffff
+				button.color = ccColor3 editor.yFix and 0xff0088 or 0x00ffff
+				emit "Scene.FixChange"
+
+		@iconCam.visible = false
+
+		currentSubCam = nil
+		with @camBtn
+			.visible = false
+			.editing = false
+			\gslot "Scene.Camera.Select",(subCam)->
+				currentSubCam = subCam
+			\slot "Tapped",->
+				.editing = not .editing
+				if .editing
+					emit "Scene.Camera.Activate",currentSubCam
+				else
+					emit "Scene.Camera.Activate",nil
+
+		with @zoomEditBtn
+			.visible = false
+			.editing = false
+			\slot "Tapped",->
+				.editing = not .editing
+				if .editing and currentSubCam
+					emit "Scene.Edit.ShowRuler", {currentSubCam.zoom,0.5,10,1,(value)->
+						emit "Scene.ViewArea.Scale",value
+					}
+				else
+					emit "Scene.Edit.ShowRuler",nil
+
+		@playBtn\slot "Tapped",->
+			settings = editor\getSettings!
+			sceneFile = if settings.StartupScene
+				editor.sceneFullPath..settings.StartupScene..".scene"
+			else
+				nil
+			if not sceneFile or not oContent\exist sceneFile
+				MessageBox text:"Startup Scene\nIs Required!",okOnly:true
+				return
+			@menuBtn\emit "Tapped" if @menuBtn.dirty
+			-- test codes below
+			Game = require "Lib.Game.Game"
+			game = Game editor.game,false
+			editorData = editor\getEditorData!
+			editorData.lastScene = editor.lastScene
+			emit "Scene.EditorData",editorData
+			editor\emit "Quit",game\loadScene!
+
+		setupItemButton = (button,groupLine,subItems)->
+			groupLine.data = button
+			with button
+				.showItem = false
+				\slot "Tapped",->
+					return if .scheduled
+					.showItem = not .showItem
+					if .showItem
+						groupLine.visible = true
+						groupLine.opacity = 0
+						groupLine\perform oOpacity 0.3,1
+						groupLine.position = button.position-oVec2 25,25
+					else
+						\schedule once ->
+							groupLine\perform oOpacity 0.3,0
+							sleep 0.3
+							groupLine.visible = false
+					@showItemButtons subItems,.showItem
+		setupItemButton @graphicBtn,@graphicLine,{"sprite","model","effect","layer"}
+		setupItemButton @physicsBtn,@physicsLine,{"body","world"}
+		setupItemButton @logicBtn,@logicLine,{"trigger","action","ai"}
+		setupItemButton @dataBtn,@dataLine,{"unit"}
+
+		@gslot "Scene.ShowFix",(value)->
+			editor.xFix = false
+			editor.yFix = false
+			emit "Scene.FixChange"
+			if value
+				with @xFixBtn
+					.visible = true
+					.color = ccColor3 0x00ffff
+					.scaleX = 0
+					.scaleY = 0
+					\perform oScale 0.5,1,1,oEase.OutBack
+				with @yFixBtn
+					.visible = true
+					.color = ccColor3 0x00ffff
+					.scaleX = 0
+					.scaleY = 0
+					\perform oScale 0.5,1,1,oEase.OutBack
+			else
+				@xFixBtn.visible = false
+				@yFixBtn.visible = false
+
+		@gslot "Scene.Dirty",(dirty)->
+			with @menuBtn
+				if .dirty ~= dirty
+					.dirty = dirty
+					if dirty
+						.text = "Save"
+						with @undoBtn
+							if not .visible
+								.enabled = true
+								.visible = true
+								.scaleX = 0
+								.scaleY = 0
+								\perform oScale 0.3,1,1,oEase.OutBack
+					else
+						.color = ccColor3 0x00ffff
+						.text = "Menu"
+						with @undoBtn
+							if .visible
+								.enabled = false
+								\perform CCSequence {
+									oScale 0.3,0,0,oEase.InBack
+									CCHide!
+								}
+
+		itemChoosed = (itemData)->
+			return if isHide
+			if @camBtn.visible or @iconCam.visible
+				@iconCam.visible = false
+				@camBtn.visible = false
+				emit "Scene.Camera.Activate",nil
+				emit "Scene.Camera.Select",nil
+			emit "Scene.ViewPanel.FoldState",{
+				itemData:itemData
+				handler:(state)->
+					if state ~= nil
+						@setButtonVisible @foldBtn,true
+						switch itemData.typeName
+							when "Body","Model","Effect"
+								@setButtonVisible @editBtn,true
+							else
+								@setButtonVisible @editBtn,false
+						text = @foldBtn.text
+						targetText = state and "Un\nFold" or "Fold"
+						if text ~= targetText
+							@foldBtn.text = targetText
+							if @foldBtn.scale.done
+								@setButtonVisible @foldBtn,true
+					else
+						@setButtonVisible @foldBtn,false
+						@setButtonVisible @upBtn,false
+						@setButtonVisible @downBtn,false
+						@setButtonVisible @editBtn,false
+			}
+			return unless itemData
+			switch itemData.typeName
+				when "Camera","PlatformWorld","UILayer"
+					@setButtonVisible @upBtn,false
+					@setButtonVisible @downBtn,false
+					{:x,:y} = @upBtn.position
+					@foldBtn\runAction oPos 0.3,x,y,oEase.OutQuad
+					if itemData.typeName == "Camera"
+						clearSelection!
+						with @iconCam
+							.visible = true
+							.scaleX = 0
+							.scaleY = 0
+							\perform oScale 0.3,0.5,0.5,oEase.OutBack
+				else
+					item = editor\getItem itemData
+					hasChildren = false
+					if itemData.typeName == "World"
+						hasChildren = #item.parent.parent.children > 1
+					else
+						hasChildren = #item.parent.children > 1
+					if item.parent.children and hasChildren
+						@setButtonVisible @upBtn,true
+						@setButtonVisible @downBtn,true
+						{:x,:y} = @downBtn.position
+						@foldBtn\runAction oPos 0.3,x,y-60,oEase.OutQuad
+						@editBtn\runAction oPos 0.3,x,y-120,oEase.OutQuad
+					else
+						@setButtonVisible @upBtn,false
+						@setButtonVisible @downBtn,false
+						{:x,:y} = @upBtn.position
+						@foldBtn\runAction oPos 0.3,x,y,oEase.OutQuad
+						@editBtn\runAction oPos 0.3,x,y-60,oEase.OutQuad
+		@gslot "Scene.ViewPanel.Pick",itemChoosed
+		@gslot "Scene.ViewPanel.Select",itemChoosed
+
+		@gslot "Scene.ViewArea.Scale",(scale)->
+			mode = 2 if scale ~= 1
+			@zoomBtn.text = string.format("%d%%",scale*100)
+		@gslot "Scene.ViewArea.ScaleReset",->
+			mode = 0
+			@zoomBtn.text = "100%"
+			emit "Scene.ViewArea.ScaleTo",1
+
+		@gslot "Scene.Camera.Select",(subCam)->
+			if subCam and not @camBtn.visible
+				@iconCam.opacity = 0
+				with @camBtn
+					.visible = true
+					.scaleX = 0
+					.scaleY = 0
+					\perform oScale 0.3,1,1,oEase.OutBack
+			else
+				@camBtn.visible = false
+				with @iconCam
+					.opacity = 1
+					.scaleX = 0
+					.scaleY = 0
+					\perform oScale 0.3,0.5,0.5,oEase.OutBack
+
+		changeDisplay = (child)->
+			if child.positionX < width/2
+				child\perform oPos 0.5,-child.positionX,child.positionY,oEase.OutQuad
+			else
+				child\perform oPos 0.5,width*2-child.positionX,child.positionY,oEase.OutQuad
+
+		@gslot "Scene.HideEditor",(args)->
+			{hide,all} = args
+			return if isHide == hide
+			isHide = hide
+			@enabled = @camBtn.editing or not hide
+			for i = 1,#@children
+				child = @children[i]
+				switch child
+					when @camBtn
+						posX = @camBtn.editing and width-35 or width-345
+						child\perform oPos 0.5,posX,child.positionY,oEase.OutQuad
+					when @menuBtn,@undoBtn,@zoomEditBtn,@iconCam
+						if all
+							changeDisplay child
+						else
+							continue
+					else
+						changeDisplay child
+
+		@gslot "Scene.Camera.Activate",(subCam)->
+			editor.isFixed = not @camBtn.editing
+			if subCam
+				with @zoomEditBtn
+					.scaleX = 0
+					.scaleY = 0
+					.visible = true
+					\perform CCSequence {
+						CCDelay 0.5
+						oScale 0.3,1,1,oEase.OutBack
+					}
+			else
+				@zoomEditBtn.visible = false
+				@zoomEditBtn.editing = false
+				emit "Scene.Edit.ShowRuler",nil
+
+		@gslot "Scene.EditMenu.ClearSelection",clearSelection
+
+	setButtonVisible:(button,visible)=>
+		return if visible == button.enabled
+		button.enabled = visible
+		if visible
+			if not button.visible
+				button.visible = true
+				button.scaleX = 0
+				button.scaleY = 0
+			button\perform oScale 0.3,1,1,oEase.OutBack
+		else
+			button\perform CCSequence {
+				oScale 0.3,0,0,oEase.InBack
+				CCHide!
+			}
+
+	showItemButtons:(names,visible,instant=false)=>
+		buttonSet = {@["#{name}Btn"],true for name in *names}
+		posX = 35
+		posY = @itemMenu.height-25
+		if visible
+			offset = @itemArea.offset
+			firstItem = nil
+			for child in *@itemMenu.children
+				isTarget = buttonSet[child]
+				firstItem = child if isTarget and not firstItem
+				if child.displayed or isTarget
+					offsetX = switch child
+						when @graphicBtn,@physicsBtn,@logicBtn,@dataBtn then 0
+						else 20
+					child.position = offset+oVec2(posX+offsetX,posY)
+					if isTarget
+						child.displayed = true
+						child.visible = true
+						if not instant
+							child.face.scaleY = 0
+							child.face\perform oScale 0.3,1,1,oEase.OutBack
+					posY -= 60
+				elseif child.data -- data is parentButton
+					child.position = child.data.position-oVec2(25,25)
+			@itemArea.viewSize = CCSize 70,@itemArea.height-posY-35
+			@itemArea\scrollToPosY firstItem.positionY
+		else
+			@itemMenu\schedule once ->
+				if not instant
+					for child in *@itemMenu.children
+						if buttonSet[child]
+							child.face\perform oScale 0.3,1,0,oEase.OutQuad
+					sleep 0.3
+				offset = @itemArea.offset
+				lastPosY = nil
+				for child in *@itemMenu.children
+					if buttonSet[child]
+						child.positionX = -35
+						child.displayed = false
+						child.visible = false
+						lastPosY = child.positionY
+					elseif child.displayed
+						if lastPosY and child.positionY < lastPosY
+							child.face.scaleY = 0
+							child.face\perform oScale 0.3,1,1,oEase.OutBack
+						offsetX = switch child
+							when @graphicBtn,@physicsBtn,@logicBtn,@dataBtn then 0
+							else 20
+						child.position = offset+oVec2(posX+offsetX,posY)
+						posY -= 60
+					elseif lastPosY and child.data and child.positionY < lastPosY
+						child.opacity = 0
+						child\perform oOpacity 0.3,1
+						child.position = child.data.position-oVec2(25,25)
+				@itemArea.viewSize = CCSize 70,@itemArea.height-posY-35
+
+)xoxox", "abc");
+
+	string_input<> in(R"PIG(import Path, Struct from require "utils")PIG", "bcd");
 	try
 	{
-		if (parse<must<moon::BlockWithEnd>, moon::action>(inName, state))
+		if (parse<must<moon::Import, eof>, moon::action, moon::control>(in, state))
 		{
 			std::cout << "matched.\n";
 		}
@@ -1374,6 +1672,7 @@ file_parser = ->
 	}
 	catch (parse_error e)
 	{
+		std::cout << "not matched.\n";
 		std::cout << e.what() << '\n';
 	}
 /*

@@ -526,6 +526,7 @@
 					"$(OTHER_CFLAGS)",
 					"-ftemplate-depth=512",
 				);
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -537,6 +538,7 @@
 					"$(OTHER_CFLAGS)",
 					"-ftemplate-depth=512",
 				);
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
