@@ -51,7 +51,6 @@ void ast_member::_init() {
 /** parses the given input.
     @param i input.
     @param g root rule of grammar.
-    @param ws whitespace rule.
     @param el list of errors.
     @param ud user data, passed to the parse procedures.
     @return pointer to ast node created, or null if there was an error.

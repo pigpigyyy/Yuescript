@@ -140,6 +140,7 @@ public:
 
     ///empty constructor.
     input_range() {}
+	virtual ~input_range() {}
 
     /** constructor.
         @param b begin position.

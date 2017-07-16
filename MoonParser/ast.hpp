@@ -53,12 +53,17 @@ public:
         @param st stack.
      */
     virtual void construct(ast_stack &st) {}
-    
+
+    /** interface for visiting AST tree use.
+        @param user_data vector for storing user data.
+     */
+	virtual void visit(void* user_data) {}
 private:
     //parent
     ast_node *m_parent;    
     
     template <class T, bool OPT> friend class ast_ptr;
+    template <class ...Args> friend class ast_choice;
     template <class T> friend class ast_list;
     template <class T> friend class ast;
 };
@@ -240,7 +245,10 @@ public:
      */
     virtual void construct(ast_stack &st) {
         //check the stack node
-        if (st.empty()) throw std::logic_error("invalid AST stack");
+        if (st.empty()) {
+			if (OPT) return;
+			else throw std::logic_error("invalid AST stack");
+		}
     
         //get the node
         ast_node *node = st.back();
@@ -277,6 +285,77 @@ private:
     }
 };
 
+template <class ...Args> class ast_choice : public ast_member {
+public:
+    ast_choice(ast_node *obj = 0) : m_ptr(obj) {
+        _set_parent();
+    }
+
+    ast_choice(const ast_choice<Args...> &src) :
+        m_ptr(src.m_ptr ? new ast_node(*src.m_ptr) : 0)
+    {
+        _set_parent();
+    }
+
+    ~ast_choice() {
+        delete m_ptr;
+    }
+
+    ast_choice<Args...> &operator = (const ast_node *obj) {
+        delete m_ptr;
+        m_ptr = obj ? new ast_node(*obj) : 0;
+        _set_parent();
+        return *this;
+    }
+
+    ast_choice<Args...> &operator = (const ast_choice<Args...> &src) {
+        delete m_ptr;
+        m_ptr = src.m_ptr ? new ast_node(*src.m_ptr) : 0;
+        _set_parent();
+        return *this;
+    }
+
+    ast_node *get() const {
+        return m_ptr;
+    }
+
+    operator ast_node *() const {
+        return m_ptr;
+    }
+
+    ast_node *operator ->() const {
+        assert(m_ptr);
+        return m_ptr;
+    }
+
+    virtual void construct(ast_stack &st) {
+        if (st.empty()) {
+			throw std::logic_error("invalid AST stack");
+		}
+
+        ast_node *node = st.back();
+		ast_node *obj = nullptr;
+
+		using swallow = bool[];
+		(void)swallow{obj || (obj = dynamic_cast<Args*>(node))...};
+
+        if (!obj) throw std::logic_error("invalid AST node");
+
+        st.pop_back();
+
+        delete m_ptr;
+        m_ptr = obj;
+        _set_parent();
+    }
+
+private:
+    //ptr
+    ast_node *m_ptr;
+
+    void _set_parent() {
+        if (m_ptr) m_ptr->m_parent = container();
+    }
+};
 
 /** A list of objects.
     It pops objects of the given type from the ast stack, until no more objects can be popped.
