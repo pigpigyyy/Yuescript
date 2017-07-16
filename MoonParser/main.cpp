@@ -50,7 +50,7 @@ struct Data
 rule Any = any();
 rule plain_space = *set(" \t");
 rule Break = nl(-expr('\r') >> '\n');
-rule White = *(set(" \t\r") | Break);
+rule White = *(set(" \t") | Break);
 rule Stop = Break | eof();
 rule Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);
 rule Indent = *set(" \t");
@@ -556,12 +556,14 @@ rule BlockEnd = Block >> eof();
 #define AST_LEAF(type) \
 class type##_t : public ast_node \
 { \
-public:
+public: \
+	virtual int get_type() override { return ast_type<type##_t>(); }
 
 #define AST_NODE(type) \
 class type##_t : public ast_container \
 { \
-public:
+public: \
+	virtual int get_type() override { return ast_type<type##_t>(); }
 
 #define AST_END(type) \
 }; \
@@ -577,7 +579,6 @@ AST_LEAF(Num)
 			stream << static_cast<char>(*it);
 		}
 		stream >> value;
-		cout << value << '\n';
 	}
 AST_END(Num)
 

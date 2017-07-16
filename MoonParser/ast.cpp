@@ -8,6 +8,8 @@ namespace parserlib {
 //current AST container.
 static ast_container *_current = 0;
 
+int ast_type_id = 0;
+
 
 /** sets the container under construction to be this.
  */

@@ -5,6 +5,7 @@
 #include <cassert>
 #include <list>
 #include <stdexcept>
+#include <type_traits>
 #include "parser.hpp"
 
 
@@ -21,6 +22,14 @@ template <class T> class ast;
  */
 typedef std::vector<ast_node *> ast_stack;
 
+extern int ast_type_id;
+
+template<class T>
+int ast_type()
+{
+	static int type = ast_type_id++;
+	return type;
+}
 
 /** Base class for AST nodes.
  */
@@ -58,6 +67,8 @@ public:
         @param user_data vector for storing user data.
      */
 	virtual void visit(void* user_data) {}
+
+	virtual int get_type() { return ast_type<ast_node>(); }
 private:
     //parent
     ast_node *m_parent;    
@@ -68,6 +79,11 @@ private:
     template <class T> friend class ast;
 };
 
+template<class T>
+T* ast_cast(ast_node *node)
+{
+	return ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
+}
 
 class ast_member;
 
@@ -254,7 +270,7 @@ public:
         ast_node *node = st.back();
         
         //get the object
-        T *obj = dynamic_cast<T *>(node);
+        T *obj = std::is_same<T, ast_node>() ? static_cast<T*>(node) : ast_cast<T>(node);
         
         //if the object is optional, simply return
         if (OPT) {
@@ -337,7 +353,7 @@ public:
 		ast_node *obj = nullptr;
 
 		using swallow = bool[];
-		(void)swallow{obj || (obj = dynamic_cast<Args*>(node))...};
+		(void)swallow{obj || (obj = std::is_same<Args, ast_node>() ? node : ast_cast<Args>(node))...};
 
         if (!obj) throw std::logic_error("invalid AST node");
 
@@ -414,7 +430,7 @@ public:
             ast_node *node = st.back();
             
             //get the object
-            T *obj = dynamic_cast<T *>(node);
+            T *obj = std::is_same<T, ast_node>() ? static_cast<T*>(node) : ast_cast<T>(node);
             
             //if the object was not not of the appropriate type,
             //end the list parsing
@@ -503,7 +519,7 @@ ast_node *parse(input &i, rule &g, error_list &el, void* ud);
  */
 template <class T> bool parse(input &i, rule &g, error_list &el, T *&ast, void* ud = nullptr) {
     ast_node *node = parse(i, g, el, ud);
-    ast = dynamic_cast<T *>(node);
+    ast = ast_cast<T>(node);
     if (ast) return true;
     delete node;
     return false;
