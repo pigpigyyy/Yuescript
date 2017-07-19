@@ -69,6 +69,8 @@ public:
 	virtual void visit(void* user_data) {}
 
 	virtual int get_type() { return ast_type<ast_node>(); }
+
+	virtual ast_node* get_flattened() { return this; }
 private:
     //parent
     ast_node *m_parent;    
@@ -82,7 +84,7 @@ private:
 template<class T>
 T* ast_cast(ast_node *node)
 {
-	return ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
+	return node && ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
 }
 
 class ast_member;

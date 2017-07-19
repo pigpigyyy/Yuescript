@@ -25,7 +25,7 @@ class rule;
 
 
 ///type of the parser's input.
-typedef std::vector<int> input;
+typedef std::u32string input;
 typedef input::iterator input_it;
 struct item_t
 {

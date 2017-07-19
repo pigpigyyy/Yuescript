@@ -273,11 +273,11 @@ public:
 
 private:
     //string
-    std::vector<int> m_string;
+    std::vector<char32_t> m_string;
 
     //parse the string
     bool _parse(_context &con) const {
-        for(std::vector<int>::const_iterator it = m_string.begin(),
+        for(std::vector<char32_t>::const_iterator it = m_string.begin(),
             end = m_string.end();;)
         {
             if (it == end) return true;

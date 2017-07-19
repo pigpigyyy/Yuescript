@@ -839,7 +839,10 @@ AST_NODE(colon_import_name)
 	ast_ptr<Name_t> name;
 AST_END(colon_import_name)
 
-class Exp_t;
+AST_NODE(Exp)
+	ast_ptr<Value_t> value;
+	ast_list<exp_op_value_t> opValues;
+AST_END(Exp)
 
 AST_NODE(ImportName)
 	ast_ptr<ast_node> name; // colon_import_name_t | Name_t
@@ -1020,6 +1023,15 @@ AST_NODE(With)
 	*/
 	virtual void visit(void* ud) override
 	{
+		Data* data = static_cast<Data*>(ud);
+		for (Exp_t* expr : valueList->exprs.objects())
+		{
+		}
+			((ast_node*)expr)->visit(ud);
+			if (expr != exprs.objects().back())
+			{
+				data->buffer << ", ";
+			}
 	}
 AST_END(With)
 
@@ -1163,11 +1175,6 @@ AST_NODE(exp_op_value)
 	ast_ptr<Value_t> value;
 AST_END(exp_op_value)
 
-AST_NODE(Exp)
-	ast_ptr<Value_t> value;
-	ast_list<exp_op_value_t> opValues;
-AST_END(Exp)
-
 AST_NODE(Callable)
 	ast_ptr<ast_node> item; // Name_t | SelfName_t | VarArg_t | Parens_t
 AST_END(Callable)
@@ -1208,7 +1215,7 @@ AST_END(Chain)
 
 AST_NODE(Value)
 	ast_ptr<ast_node> item; // SimpleValue_t | simple_table_t | ChainValue_t | String_t
-	virtual ast_node* get_flattened() override
+	ast_node* getFlattenedNode()
 	{
 		if (SimpleValue_t* simpleValue = ast_cast<SimpleValue_t>(item))
 		{
@@ -1574,7 +1581,7 @@ AST_NODE(Block)
 					}
 					if (!names.empty())
 					{
-						data->beginLine(line->m_begin.m_line);
+						data->beginLine();
 						data->buffer << "local ";
 						auto nameIt = names.begin();
 						auto name = *(*nameIt);
@@ -1588,20 +1595,20 @@ AST_NODE(Block)
 							data->buffer << ", ";
 							data->buffer << name;
 						}
-						data->endLine();
+						data->endLine(line->m_begin.m_line);
 					}
 				}
 				else
 				{
 					NameList_t* nameList = static_cast<NameList_t*>(local->name.get());
-					data->beginLine(line->m_begin.m_line);
+					data->beginLine();
 					data->buffer << "local ";
 					nameList->visit(ud);
 					for (Name_t* name : nameList->names.objects())
 					{
 						data->putLocal(name->name->getValue());
 					}
-					data->endLine();
+					data->endLine(line->m_begin.m_line);
 				}
 			}
 			else
