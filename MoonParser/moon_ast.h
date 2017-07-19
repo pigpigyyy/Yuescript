@@ -39,48 +39,38 @@ public: \
 };
 
 AST_LEAF(Num)
-	virtual void visit(void* ud) override;
 AST_END(Num)
 
 AST_LEAF(_Name)
-	virtual void visit(void* ud) override;
 AST_END(_Name)
 
 AST_NODE(Name)
 	ast_ptr<_Name_t> name;
-	virtual void visit(void* ud) override;
 AST_END(Name)
 
 AST_LEAF(self)
-	virtual void visit(void* ud) override;
 AST_END(self)
 
 AST_NODE(self_name)
 	ast_ptr<_Name_t> name;
-	virtual void visit(void* ud) override;
 AST_END(self_name)
 
 AST_LEAF(self_class)
-	virtual void visit(void* ud) override;
 AST_END(self_class)
 
 AST_NODE(self_class_name)
 	ast_ptr<_Name_t> name;
-	virtual void visit(void* ud) override;
 AST_END(self_class_name)
 
 AST_NODE(SelfName)
 	ast_ptr<ast_node> name; // self_class_name_t | self_class_t | self_name_t | self_t
-	virtual void visit(void* ud) override;
 AST_END(SelfName)
 
 AST_NODE(KeyName)
 	ast_ptr<ast_node> name; // SelfName_t | _Name_t
-	virtual void visit(void* ud) override;
 AST_END(KeyName)
 
 AST_LEAF(VarArg)
-	virtual void visit(void* ud) override;
 AST_END(VarArg)
 
 AST_LEAF(local_flag)
@@ -92,8 +82,6 @@ AST_END(Seperator)
 AST_NODE(NameList)
 	ast_ptr<Seperator_t> sep;
 	ast_list<Name_t> names;
-
-	virtual void visit(void* ud) override;
 AST_END(NameList)
 
 AST_NODE(Local)
@@ -114,24 +102,20 @@ AST_NODE(Import)
 	ast_ptr<Seperator_t> sep;
 	ast_list<ImportName_t> names;
 	ast_ptr<Exp_t> exp;
-	virtual void visit(void* ud) override;
 AST_END(Import)
 
 AST_NODE(ExpListLow)
 	ast_ptr<Seperator_t> sep;
 	ast_list<Exp_t> exprs;
-	virtual void visit(void* ud) override;
 AST_END(ExpListLow)
 
 AST_NODE(ExpList)
 	ast_ptr<Seperator_t> sep;
 	ast_list<Exp_t> exprs;
-	virtual void visit(void* ud) override;
 AST_END(ExpList)
 
 AST_NODE(Return)
 	ast_ptr<ExpListLow_t, true> valueList;
-	virtual void visit(void* ud) override;
 AST_END(Return)
 
 class Assign_t;
@@ -141,7 +125,6 @@ AST_NODE(With)
 	ast_ptr<ExpList_t> valueList;
 	ast_ptr<Assign_t, true> assigns;
 	ast_ptr<Body_t> body;
-	virtual void visit(void* ud) override;
 AST_END(With)
 
 AST_NODE(SwitchCase)
@@ -324,7 +307,6 @@ AST_END(Chain)
 
 AST_NODE(Value)
 	ast_ptr<ast_node> item; // SimpleValue_t | simple_table_t | ChainValue_t | String_t
-	ast_node* getFlattened();
 AST_END(Value)
 
 AST_LEAF(LuaString)

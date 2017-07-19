@@ -80,9 +80,18 @@ private:
 };
 
 template<class T>
-T* ast_cast(ast_node *node)
-{
+T* ast_cast(ast_node *node) {
 	return node && ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
+}
+
+template <class ...Args>
+bool ast_is(ast_node* node) {
+	if (!node) return false;
+	bool result = false;
+	int type = node->get_type();
+	using swallow = bool[];
+	(void)swallow{result || (result = ast_type<Args>() == type)...};
+	return result;
 }
 
 class ast_member;
