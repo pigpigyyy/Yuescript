@@ -3,6 +3,8 @@
 #include <cassert>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
+
 #include "parser.hpp"
 
 
@@ -136,7 +138,7 @@ public:
     }
 
     //get the current symbol
-    int symbol() const {
+    input::value_type symbol() const {
         assert(!end());
         return *m_pos.m_it;
     }
@@ -212,7 +214,7 @@ public:
 class _char : public _expr {
 public:
     //constructor.
-    _char(int c) :
+    _char(char c) :
         m_char(c)
     {
     }
@@ -229,12 +231,12 @@ public:
 
 private:
     //character
-    int m_char;
+    input::value_type m_char;
 
     //internal parse
     bool _parse(_context &con) const {
         if (!con.end()) {
-            int ch = con.symbol();
+            input::value_type ch = con.symbol();
             if (ch == m_char) {
                 con.next_col();
                 return true;
@@ -251,13 +253,7 @@ class _string : public _expr {
 public:
     //constructor from ansi string.
     _string(const char *s) :
-        m_string(s, s + strlen(s))
-    {
-    }
-
-    //constructor from wide string.
-    _string(const wchar_t *s) :
-        m_string(s, s + wcslen(s))
+        m_string(Converter{}.from_bytes(s))
     {
     }
 
@@ -273,11 +269,11 @@ public:
 
 private:
     //string
-    std::vector<char32_t> m_string;
+    input m_string;
 
     //parse the string
     bool _parse(_context &con) const {
-        for(std::vector<char32_t>::const_iterator it = m_string.begin(),
+        for(input::const_iterator it = m_string.begin(),
             end = m_string.end();;)
         {
             if (it == end) return true;
@@ -297,25 +293,19 @@ class _set : public _expr {
 public:
     //constructor from ansi string.
     _set(const char *s) {
-        for(; *s; ++s) {
-            _add(*s);
-        }
-    }
-
-    //constructor from wide string.
-    _set(const wchar_t *s) {
-        for(; *s; ++s) {
-            _add(*s);
-        }
+    	auto str = Converter{}.from_bytes(s);
+    	for (auto ch : str) {
+    		 _add(ch);
+    	}
     }
 
     //constructor from range.
     _set(int min, int max) {
         assert(min >= 0);
         assert(min <= max);
-        m_set.resize((size_t)max + 1U);
+        m_quick_set.resize((size_t)max + 1U);
         for(; min <= max; ++min) {
-            m_set[(size_t)min] = true;
+            m_quick_set[(size_t)min] = true;
         }
     }
 
@@ -331,25 +321,35 @@ public:
 
 private:
     //set is kept as an array of flags, for quick access
-    std::vector<bool> m_set;
+    std::vector<bool> m_quick_set;
+    std::unordered_set<size_t> m_large_set;
 
     //add character
     void _add(size_t i) {
-        if (i >= m_set.size()) {
-            m_set.resize(i + 1);
-        }
-        m_set[i] = true;
+    	if (i <= m_quick_set.size() || i <= 255) {
+			if (i >= m_quick_set.size()) {
+				m_quick_set.resize(i + 1);
+			}
+			m_quick_set[i] = true;
+		} else {
+			m_large_set.insert(i);
+		}
     }
 
     //internal parse
     bool _parse(_context &con) const {
         if (!con.end()) {
             size_t ch = con.symbol();
-            if (ch < m_set.size() && m_set[ch]) {
+            if (ch < m_quick_set.size()) {
+            	if (m_quick_set[ch]) {
+					con.next_col();
+					return true;
+				}
+			} else if (m_large_set.find(ch) != m_large_set.end()) {
                 con.next_col();
                 return true;
             }
-        }
+		}
         con.set_error_pos();
         return false;
     }
@@ -1074,7 +1074,7 @@ pos::pos(input &i) :
 /** character terminal constructor.
     @param c character.
  */
-expr::expr(int c) :
+expr::expr(char c) :
     m_expr(new _char(c))
 {
 }
@@ -1084,15 +1084,6 @@ expr::expr(int c) :
     @param s null-terminated string.
  */
 expr::expr(const char *s) :
-    m_expr(new _string(s))
-{
-}
-
-
-/** null-terminated wide string terminal constructor.
-    @param s null-terminated string.
- */
-expr::expr(const wchar_t *s) :
     m_expr(new _string(s))
 {
 }
@@ -1182,7 +1173,7 @@ bool error::operator < (const error &e) const {
 /** character terminal constructor.
     @param c character.
  */
-rule::rule(int c) :
+rule::rule(char c) :
     m_expr(new _char(c))
 {
     m_parse_proc = _get_parse_proc(this);
@@ -1193,16 +1184,6 @@ rule::rule(int c) :
     @param s null-terminated string.
  */
 rule::rule(const char *s) :
-    m_expr(new _string(s))
-{
-    m_parse_proc = _get_parse_proc(this);
-}
-
-
-/** null-terminated wide string terminal constructor.
-    @param s null-terminated string.
- */
-rule::rule(const wchar_t *s) :
     m_expr(new _string(s))
 {
     m_parse_proc = _get_parse_proc(this);
@@ -1334,15 +1315,6 @@ expr term(const expr &e) {
     @return an expression which parses a single character out of a set.
  */
 expr set(const char *s) {
-    return _private::construct_expr(new _set(s));
-}
-
-
-/** creates a set expression from a null-terminated wide string.
-    @param s null-terminated string with characters of the set.
-    @return an expression which parses a single character out of a set.
- */
-expr set(const wchar_t *s) {
     return _private::construct_expr(new _set(s));
 }
 

@@ -11,6 +11,13 @@ static ast_container *_current = 0;
 int ast_type_id = 0;
 
 
+bool ast_node::visit(const std::function<bool (ast_node*)>& begin,
+		const std::function<bool (ast_node*)>& end)
+{
+	return begin(this) || end(this);
+}
+
+
 /** sets the container under construction to be this.
  */
 ast_container::ast_container() {
@@ -39,6 +46,28 @@ void ast_container::construct(ast_stack &st) {
         ast_member *member = *it;
         member->construct(st);
     }
+}
+
+bool ast_container::visit(const std::function<bool (ast_node*)>& begin,
+		const std::function<bool (ast_node*)>& end)
+{
+	bool result = begin(this);
+	if (result) return true;
+	const auto& members = this->members();
+	for (auto member : members) {
+		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
+			if (ptr->get() && ptr->get()->visit(begin, end)) {
+				return true;
+			}
+		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
+			for (auto obj : list->objects()) {
+				if (obj->visit(begin, end)) {
+					return true;
+				}
+			}
+		}
+	}
+	return end(this);
 }
 
 

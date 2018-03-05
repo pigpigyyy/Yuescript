@@ -1,5 +1,4 @@
 #include <string>
-#include <codecvt>
 #include <unordered_set>
 #include <stack>
 #include <algorithm>
@@ -7,28 +6,24 @@
 #include <vector>
 #include "moon_ast.h"
 
-std::string& trim(std::string& s)
+input& trim(input& s)
 {
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch)
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](input::value_type ch)
 	{
 		return !std::isspace(ch);
 	}));
-	s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch)
+	s.erase(std::find_if(s.rbegin(), s.rend(), [](input::value_type ch)
 	{
 		return !std::isspace(ch);
 	}).base(), s.end());
 	return s;
 }
 
-const std::string& AstLeaf::getValue()
+const input& AstLeaf::getValue()
 {
 	if (_value.empty())
 	{
-		for (auto it = m_begin.m_it; it != m_end.m_it; ++it)
-		{
-			char ch = static_cast<char>(*it);
-			_value.append(&ch, 1);
-		}
+		_value.assign(m_begin.m_it, m_end.m_it);
 		return trim(_value);
 	}
 	return _value;
@@ -151,9 +146,11 @@ AST_IMPL(BlockEnd)
 
 int main()
 {
-	std::wstring_convert<deletable_facet<std::codecvt<char32_t, char, std::mbstate_t>>, char32_t> conv;
-	std::string s = R"TestCodesHere()TestCodesHere";
-	input i = conv.from_bytes(s);
+	std::string s = R"TestCodesHere(
+thing = { var: 10, hello: "world", func: => @var }
+import hello, \func from thing
+)TestCodesHere";
+	input i = Converter{}.from_bytes(s);
 
 	error_list el;
 	BlockEnd_t* root = nullptr;
@@ -161,6 +158,21 @@ int main()
 	if (parse(i, BlockEnd, el, root, &st))
 	{
 		std::cout << "matched!\n";
+		root->visit([](ast_node* node)
+		{
+			if (std::string("Seperator") != node->getName())
+			{
+				std::cout << "{" << node->getName();
+			}
+			return false;
+		}, [](ast_node* node)
+		{
+			if (std::string("Seperator") != node->getName())
+			{
+				std::cout << "}" ;
+			}
+			return false;
+		});
 	}
 	else
 	{

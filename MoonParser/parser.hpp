@@ -13,7 +13,22 @@
 #include <string>
 #include <list>
 #include <functional>
+#include <codecvt>
+#include <locale>
 
+
+///type of the parser's input.
+typedef std::basic_string<char32_t> input;
+typedef input::iterator input_it;
+
+template<class Facet>
+struct deletable_facet : Facet
+{
+    template<class ...Args>
+    deletable_facet(Args&& ...args): Facet(std::forward<Args>(args)...) {}
+    ~deletable_facet() {}
+};
+typedef std::wstring_convert<deletable_facet<std::codecvt<input::value_type, char, std::mbstate_t>>, input::value_type> Converter;
 
 namespace parserlib {
 
@@ -24,9 +39,6 @@ class _context;
 class rule;
 
 
-///type of the parser's input.
-typedef std::u32string input;
-typedef input::iterator input_it;
 struct item_t
 {
 	input_it begin;
@@ -65,17 +77,12 @@ public:
     /** character terminal constructor.
         @param c character.
      */
-    expr(int c);
+    expr(char c);
 
     /** null-terminated string terminal constructor.
         @param s null-terminated string.
      */
     expr(const char *s);
-
-    /** null-terminated wide string terminal constructor.
-        @param s null-terminated string.
-     */
-    expr(const wchar_t *s);
 
     /** rule reference constructor.
         @param r rule.
@@ -195,17 +202,12 @@ public:
     /** character terminal constructor.
         @param c character.
      */
-    rule(int c);
+    rule(char c);
 
     /** null-terminated string terminal constructor.
         @param s null-terminated string.
      */
     rule(const char *s);
-
-    /** null-terminated wide string terminal constructor.
-        @param s null-terminated string.
-     */
-    rule(const wchar_t *s);
 
     /** constructor from expression.
         @param e expression.
@@ -328,13 +330,6 @@ expr term(const expr &e);
     @return an expression which parses a single character out of a set.
  */
 expr set(const char *s);
-
-
-/** creates a set expression from a null-terminated wide string.
-    @param s null-terminated string with characters of the set.
-    @return an expression which parses a single character out of a set.
- */
-expr set(const wchar_t *s);
 
 
 /** creates a range expression.

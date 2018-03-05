@@ -1,8 +1,8 @@
 #include "moon_parser.h"
 
-rule Any = any();
 rule plain_space = *set(" \t");
 rule Break = nl(-expr('\r') >> '\n');
+rule Any = Break | any();
 rule White = *(set(" \t") | Break);
 rule Stop = Break | eof();
 rule Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);

@@ -36,12 +36,12 @@ int ast_type()
 class ast_node : public input_range {
 public:
     ///constructor.
-    ast_node() : m_parent(0) {}
+    ast_node() : m_parent(nullptr) {}
     
     /** copy constructor.
         @param n source object.
      */
-    ast_node(const ast_node &n) : m_parent(0) {}
+    ast_node(const ast_node &n) : m_parent(nullptr) {}
 
     ///destructor.
     virtual ~ast_node() {}
@@ -64,9 +64,11 @@ public:
     virtual void construct(ast_stack &st) {}
 
     /** interface for visiting AST tree use.
-        @param user_data vector for storing user data.
      */
-	virtual void visit(void* user_data) {}
+	virtual bool visit(const std::function<bool (ast_node*)>& begin,
+		const std::function<bool (ast_node*)>& end);
+
+	virtual const char* getName() const { return "ast_node"; }
 
 	virtual int get_type() { return ast_type<ast_node>(); }
 private:
@@ -95,7 +97,6 @@ bool ast_is(ast_node* node) {
 }
 
 class ast_member;
-
 
 /** type of ast member vector.
  */
@@ -137,8 +138,12 @@ public:
         from a node stack.
         @param st stack.
      */
-    virtual void construct(ast_stack &st);
+    virtual void construct(ast_stack &st) override;
 
+	virtual bool visit(const std::function<bool (ast_node*)>& begin,
+		const std::function<bool (ast_node*)>& end) override;
+
+	virtual const char* getName() const override { return "ast_container"; }
 private:
     ast_member_vector m_members;
 
@@ -177,6 +182,7 @@ public:
      */
     virtual void construct(ast_stack &st) = 0;
 
+	virtual int get_type() { return ast_type<ast_member>(); }
 private:
     //the container this belongs to.
     ast_container *m_container;
@@ -185,6 +191,25 @@ private:
     void _init();
 };
 
+template<class T>
+T* ast_cast(ast_member *member) {
+	return member && ast_type<T>() == member->get_type() ? static_cast<T*>(member) : nullptr;
+}
+
+class _ast_ptr : public ast_member {
+public:
+	_ast_ptr(ast_node *node): m_ptr(node) {}
+
+	ast_node* get() const {
+		return m_ptr;
+	}
+
+	virtual int get_type() override {
+		return ast_type<_ast_ptr>();
+	}
+protected:
+	ast_node *m_ptr;
+};
 
 /** pointer to an AST object.
     It assumes ownership of the object.
@@ -192,12 +217,12 @@ private:
     @tparam T type of object to control.
     @tparam OPT if true, the object becomes optional.
  */
-template <class T, bool OPT = false> class ast_ptr : public ast_member {
+template <class T, bool OPT = false> class ast_ptr : public _ast_ptr {
 public:
     /** the default constructor.
         @param obj object.
      */
-    ast_ptr(T *obj = 0) : m_ptr(obj) {
+    ast_ptr(T *obj = nullptr) : _ast_ptr(obj) {
         _set_parent();
     }
 
@@ -206,7 +231,7 @@ public:
         @param src source object.
      */
     ast_ptr(const ast_ptr<T, OPT> &src) :
-        m_ptr(src.m_ptr ? new T(*src.m_ptr) : 0)
+        _ast_ptr(src.m_ptr ? new T(*src.m_ptr) : nullptr)
     {
         _set_parent();
     }
@@ -224,7 +249,7 @@ public:
      */
     ast_ptr<T, OPT> &operator = (const T *obj) {
         delete m_ptr;
-        m_ptr = obj ? new T(*obj) : 0;
+        m_ptr = obj ? new T(*obj) : nullptr;
         _set_parent();
         return *this;
     }
@@ -236,7 +261,7 @@ public:
      */
     ast_ptr<T, OPT> &operator = (const ast_ptr<T, OPT> &src) {
         delete m_ptr;
-        m_ptr = src.m_ptr ? new T(*src.m_ptr) : 0;
+        m_ptr = src.m_ptr ? new T(*src.m_ptr) : nullptr;
         _set_parent();
         return *this;
     }
@@ -245,14 +270,14 @@ public:
         @return the underlying ptr value.
      */
     T *get() const {
-        return m_ptr;
+        return static_cast<T*>(m_ptr);
     }
 
     /** auto conversion to the underlying object ptr.
         @return the underlying ptr value.
      */
     operator T *() const {
-        return m_ptr;
+        return static_cast<T*>(m_ptr);
     }
 
     /** member access.
@@ -299,25 +324,21 @@ public:
         m_ptr = obj;
         _set_parent();
     }
-
 private:
-    //ptr
-    T *m_ptr;
-    
     //set parent of object
     void _set_parent() {
         if (m_ptr) m_ptr->m_parent = container();
     }
 };
 
-template <class ...Args> class ast_choice : public ast_member {
+template <class ...Args> class ast_choice : public _ast_ptr {
 public:
-    ast_choice(ast_node *obj = 0) : m_ptr(obj) {
+    ast_choice(ast_node *obj = nullptr) : _ast_ptr(obj) {
         _set_parent();
     }
 
     ast_choice(const ast_choice<Args...> &src) :
-        m_ptr(src.m_ptr ? new ast_node(*src.m_ptr) : 0)
+        _ast_ptr(src.m_ptr ? new ast_node(*src.m_ptr) : nullptr)
     {
         _set_parent();
     }
@@ -328,20 +349,16 @@ public:
 
     ast_choice<Args...> &operator = (const ast_node *obj) {
         delete m_ptr;
-        m_ptr = obj ? new ast_node(*obj) : 0;
+        m_ptr = obj ? new ast_node(*obj) : nullptr;
         _set_parent();
         return *this;
     }
 
     ast_choice<Args...> &operator = (const ast_choice<Args...> &src) {
         delete m_ptr;
-        m_ptr = src.m_ptr ? new ast_node(*src.m_ptr) : 0;
+        m_ptr = src.m_ptr ? new ast_node(*src.m_ptr) : nullptr;
         _set_parent();
         return *this;
-    }
-
-    ast_node *get() const {
-        return m_ptr;
     }
 
     operator ast_node *() const {
@@ -372,14 +389,24 @@ public:
         m_ptr = obj;
         _set_parent();
     }
-
 private:
-    //ptr
-    ast_node *m_ptr;
-
     void _set_parent() {
         if (m_ptr) m_ptr->m_parent = container();
     }
+};
+
+class _ast_list : public ast_member {
+public:
+    ///list type.
+    typedef std::list<ast_node *> container;
+
+	virtual int get_type() override { return ast_type<_ast_list>(); }
+
+	 const container &objects() const {
+        return m_objects;
+    }
+protected:
+	container m_objects;
 };
 
 /** A list of objects.
@@ -387,11 +414,8 @@ private:
     It assumes ownership of objects.
     @tparam T type of object to control.
  */
-template <class T> class ast_list : public ast_member {
+template <class T> class ast_list : public _ast_list {
 public:
-    ///list type.
-    typedef std::list<T *> container;
-
     ///the default constructor.
     ast_list() {}
 
@@ -430,7 +454,7 @@ public:
     /** Pops objects of type T from the stack until no more objects can be popped.
         @param st stack.
      */
-    virtual void construct(ast_stack &st) {
+    virtual void construct(ast_stack &st) override {
         for(;;) {
             //if the stack is empty
             if (st.empty()) break;
@@ -455,11 +479,7 @@ public:
             obj->m_parent = ast_member::container();
         }
     }
-
 private:
-    //objects
-    container m_objects;
-
     //deletes the objects of this list.
     void _clear() {
         while (!m_objects.empty()) {

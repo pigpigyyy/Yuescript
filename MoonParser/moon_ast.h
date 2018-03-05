@@ -2,23 +2,14 @@
 
 #include "moon_parser.h"
 
-template<class Facet>
-struct deletable_facet : Facet
-{
-    template<class ...Args>
-    deletable_facet(Args&& ...args): Facet(std::forward<Args>(args)...) {}
-    ~deletable_facet() {}
-};
-typedef std::wstring_convert<deletable_facet<std::codecvt<char32_t, char, std::mbstate_t>>, char32_t> Converter;
-
-std::string& trim(std::string& s);
+input& trim(input& s);
 
 class AstLeaf : public ast_node
 {
 public:
-	const std::string& getValue();
+	const input& getValue();
 private:
-	std::string _value;
+	input _value;
 };
 
 #define AST_LEAF(type) \
@@ -26,14 +17,16 @@ extern rule type; \
 class type##_t : public AstLeaf \
 { \
 public: \
-	virtual int get_type() override { return ast_type<type##_t>(); }
+	virtual int get_type() override { return ast_type<type##_t>(); } \
+	virtual const char* getName() const override { return #type; }
 
 #define AST_NODE(type) \
 extern rule type; \
 class type##_t : public ast_container \
 { \
 public: \
-	virtual int get_type() override { return ast_type<type##_t>(); }
+	virtual int get_type() override { return ast_type<type##_t>(); } \
+	virtual const char* getName() const override { return #type; }
 
 #define AST_END(type) \
 };
