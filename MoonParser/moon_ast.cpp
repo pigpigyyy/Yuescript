@@ -158,18 +158,23 @@ import hello, \func from thing
 	if (parse(i, BlockEnd, el, root, &st))
 	{
 		std::cout << "matched!\n";
-		root->visit([](ast_node* node)
+		int indent = 0;
+		root->visit([&](ast_node* node)
 		{
 			if (std::string("Seperator") != node->getName())
 			{
-				std::cout << "{" << node->getName();
+				indent++;
+				for (int i = 0; i < indent; i++) std::cout << " ";
+				std::cout << "{" << node->getName() << "\n";
 			}
 			return false;
-		}, [](ast_node* node)
+		}, [&](ast_node* node)
 		{
 			if (std::string("Seperator") != node->getName())
 			{
-				std::cout << "}" ;
+				for (int i = 0; i < indent; i++) std::cout << " ";
+				std::cout << "}\n" ;
+				indent--;
 			}
 			return false;
 		});
