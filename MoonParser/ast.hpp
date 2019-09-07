@@ -31,6 +31,12 @@ int ast_type()
 	return type;
 }
 
+enum class traversal {
+	Continue,
+	Return,
+	Stop
+};
+
 /** Base class for AST nodes.
  */
 class ast_node : public input_range {
@@ -65,8 +71,19 @@ public:
 
     /** interface for visiting AST tree use.
      */
-	virtual bool visit(const std::function<bool (ast_node*)>& begin,
-		const std::function<bool (ast_node*)>& end);
+	virtual traversal traverse(const std::function<traversal (ast_node*)>& func);
+
+	virtual ast_node* getByPath(std::initializer_list<std::size_t> paths);
+
+	virtual void eachChild(const std::function<void (ast_node*)>& func);
+
+	virtual bool visitChild(const std::function<bool (ast_node*)>& func);
+
+	virtual ast_node* getChild(int) const { return nullptr; }
+
+	virtual int getChildCount() const { return 0; }
+
+	virtual size_t getId() const { return "ast_node"_id; }
 
 	virtual const char* getName() const { return "ast_node"; }
 
@@ -140,8 +157,19 @@ public:
      */
     virtual void construct(ast_stack &st) override;
 
-	virtual bool visit(const std::function<bool (ast_node*)>& begin,
-		const std::function<bool (ast_node*)>& end) override;
+	virtual ast_node* getByPath(std::initializer_list<std::size_t> paths) override;
+
+	virtual traversal traverse(const std::function<traversal (ast_node*)>& func) override;
+
+	virtual void eachChild(const std::function<void (ast_node*)>& func) override;
+
+	virtual bool visitChild(const std::function<bool (ast_node*)>& func) override;
+
+	virtual ast_node* getChild(int index) const override;
+
+	virtual int getChildCount() const override;
+
+	virtual size_t getId() const override { return "ast_container"_id; }
 
 	virtual const char* getName() const override { return "ast_container"; }
 private:

@@ -26,6 +26,6 @@ struct State
 		"local", "not", "then", "return", "from",
 		"extends", "for", "do", "or", "export",
 		"class", "in", "unless", "when", "elseif",
-		"switch", "break", "if", "with", "import"
+		"switch", "break", "if", "with", "import", "true", "false", "nil"
 	};
 };

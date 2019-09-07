@@ -16,6 +16,19 @@
 #include <codecvt>
 #include <locale>
 
+// const str hash helper functions
+inline constexpr std::size_t hash(char const* input)
+{
+	return *input ? *input + 33ull * hash(input + 1) : 5381;
+}
+inline std::size_t hash(const char* input, int size, int index)
+{
+	return index < size ? input[index] + 33ull * hash(input, size, index + 1) : 5381;
+}
+inline std::size_t constexpr operator"" _id(const char* s, size_t)
+{
+	return hash(s);
+}
 
 ///type of the parser's input.
 typedef std::basic_string<char32_t> input;
