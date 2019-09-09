@@ -160,7 +160,7 @@ public:
 				switch (node->getId()) {
 					case "Block"_id:
 						pushScope();
-						transformBlock(node, out);
+						transformBody(node, out);
 						popScope();
 						break;
 					default: break;
@@ -301,26 +301,6 @@ private:
 		// out.push_back(trim(str) + nll(node));
 	}
 
-	void transformBlock(ast_node* block, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
-		block->eachChild([&](ast_node* node) {
-			switch (node->getId()) {
-				case "Line"_id: transformLine(node, temp); break;
-				default: break;
-			}
-		});
-		out.push_back(join(temp));
-	}
-
-	void transformLine(ast_node* line, std::vector<std::string>& out) {
-		line->eachChild([&](ast_node* node) {
-			switch (node->getId()) {
-				case "Statement"_id: transformStatement(node, out); break;
-				default: break;
-			}
-		});
-	}
-
 	void transformStatement(ast_node* statement, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
 		auto transformContent = [&](ast_node* node, std::vector<std::string>& out) {
@@ -419,11 +399,50 @@ private:
 					break;
 				}
 				case "Update"_id: transformUpdate(node, temp); break;
-				case "Assign"_id: transformAssign(node, temp); break;
+				case "Assign"_id: {
+					auto child = node->getChild(0);
+					switch (child->getId()) {
+						case "With"_id: transformWith(child, temp); break;
+						case "If"_id:
+							transformIfClosure(child, temp);
+							break;
+						case "Switch"_id: transformSwitch(child, temp); break;
+						case "TableBlock"_id: transformTableBlock(child, temp); break;
+						case "ExpListLow"_id:
+							transformExpListLow(child, temp);
+							break;
+						default: break;
+					}
+					break;
+				}
 				default: break;
 			}
 		});
 		out.push_back(preDefined + indent() + temp[0] + s(" = "sv) + temp[1] + nll(assignment));
+	}
+	void transformIfClosure(ast_node* ifNode, std::vector<std::string>& out) {
+		std::vector<std::string> temp;
+		temp.push_back(s("(function()"sv) + nll(ifNode));
+		pushScope();
+		ifNode->traverse([&](ast_node* node) {
+			switch (node->getId()) {
+				case "IfCond"_id: {
+					std::vector<std::string> tmp;
+					auto exp = node->getChild(0);
+					transformExp(exp, tmp);
+					_buf << indent() << "if "sv << tmp.front() << " then"sv << nll(exp);
+					temp.push_back(clearBuf());
+					return traversal::Return;
+				}
+				case "Body"_id:
+					transformBody(node, temp);
+					return traversal::Return;
+				default: return traversal::Continue;
+			}
+		});
+		popScope();
+		temp.push_back(indent() + s("end)()"sv));
+		out.push_back(join(temp));
 	}
 
 	void transformExpList(ast_node* expList, std::vector<std::string>& out) {
@@ -446,19 +465,6 @@ private:
 			}
 		});
 		out.push_back(join(temp, ", "sv));
-	}
-
-	void transformAssign(ast_node* assign, std::vector<std::string>& out) {
-		assign->eachChild([&](ast_node* node) {
-			switch (node->getId()) {
-				case "With"_id: transformWith(node, out); break;
-				case "If"_id: transformIf(node, out); break;
-				case "Switch"_id: transformSwitch(node, out); break;
-				case "TableBlock"_id: transformTableBlock(node, out); break;
-				case "ExpListLow"_id: transformExpListLow(node, out); break;
-				default: break;
-			}
-		});
 	}
 
 	void transformExp(ast_node* exp, std::vector<std::string>& out) {
@@ -603,13 +609,16 @@ private:
 	}
 
 	void transformBody(ast_node* body, std::vector<std::string>& out) {
-		body->eachChild([&](ast_node* node) {
+		std::vector<std::string> temp;
+		body->traverse([&](ast_node* node) {
 			switch (node->getId()) {
-				case "Block"_id: transformBlock(node, out); break;
-				case "Statement"_id: transformStatement(node, out); break;
-				default: break;
+				case "Statement"_id:
+					transformStatement(node, temp);
+					return traversal::Return;
+				default: return traversal::Continue;
 			}
 		});
+		out.push_back(join(temp));
 	}
 
 	void transformFnArgsDef(ast_node* argsDef, std::vector<std::string>& out) {
@@ -798,8 +807,8 @@ private:
 				default: break;
 			}
 		});
-		std::string args = join(temp, ", ");
-		out.push_back(args.empty() ? "()" : s("(") + args + ")");
+		std::string args = join(temp, ", "sv);
+		out.push_back(args.empty() ? s("()"sv) : s("("sv) + args + s(")"sv));
 	}
 
 	void transformColonChain(ast_node* colonChain, std::vector<std::string>& out) {
@@ -833,8 +842,8 @@ private:
 	void transformImport(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformWhile(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformWith(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
-	void transformIf(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformFor(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
+	void transformIf(ast_node* node, std::vector<std::string>& out) { noopnl(node, out); }
 	void transformForEach(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformSwitch(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformReturn(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
