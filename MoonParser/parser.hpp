@@ -31,17 +31,9 @@ inline std::size_t constexpr operator"" _id(const char* s, size_t)
 }
 
 ///type of the parser's input.
-typedef std::basic_string<char32_t> input;
+typedef std::basic_string<wchar_t> input;
 typedef input::iterator input_it;
-
-template<class Facet>
-struct deletable_facet : Facet
-{
-    template<class ...Args>
-    deletable_facet(Args&& ...args): Facet(std::forward<Args>(args)...) {}
-    ~deletable_facet() {}
-};
-typedef std::wstring_convert<deletable_facet<std::codecvt<input::value_type, char, std::mbstate_t>>, input::value_type> Converter;
+typedef std::wstring_convert<std::codecvt_utf8<input::value_type>> Converter;
 
 namespace parserlib {
 
@@ -152,6 +144,8 @@ typedef void (*parse_proc)(const pos &b, const pos &e, void *d);
 ///input range.
 class input_range {
 public:
+	virtual ~input_range() {}
+
     ///begin position.
     pos m_begin;
 
@@ -160,7 +154,6 @@ public:
 
     ///empty constructor.
     input_range() {}
-	virtual ~input_range() {}
 
     /** constructor.
         @param b begin position.

@@ -13,14 +13,14 @@ namespace parserlib {
 
 
 class ast_node;
-template <class T, bool OPT> class ast_ptr;
+template <class T, bool OPT, bool MEM> class ast_ptr;
 template <class T> class ast_list;
 template <class T> class ast;
 
 
 /** type of AST node stack.
  */
-typedef std::vector<ast_node *> ast_stack;
+typedef std::vector<ast_node*> ast_stack;
 
 extern int ast_type_id;
 
@@ -41,33 +41,24 @@ enum class traversal {
  */
 class ast_node : public input_range {
 public:
-    ///constructor.
-    ast_node() : m_parent(nullptr) {}
-    
-    /** copy constructor.
-        @param n source object.
-     */
-    ast_node(const ast_node &n) : m_parent(nullptr) {}
+	ast_node() : _ref(0) {}
 
-    ///destructor.
-    virtual ~ast_node() {}
-    
-    /** assignment operator.
-        @param n source object.
-        @return reference to this.
-     */
-    ast_node &operator = (const ast_node &n) { return *this; }
-    
-    /** get the parent node.
-        @return the parent node, if there is one.
-     */
-    ast_node *parent() const { return m_parent; }
-    
+	void retain() {
+		++_ref;
+	}
+
+	void release() {
+		--_ref;
+		if (_ref == 0) {
+			delete this;
+		}
+	}
+
     /** interface for filling the contents of the node
         from a node stack.
         @param st stack.
      */
-    virtual void construct(ast_stack &st) {}
+    virtual void construct(ast_stack& st) {}
 
     /** interface for visiting AST tree use.
      */
@@ -81,7 +72,11 @@ public:
 
 	virtual ast_node* getChild(int) const { return nullptr; }
 
-	virtual int getChildCount() const { return 0; }
+	virtual size_t getChildCount() const { return 0; }
+
+	virtual ast_node* getFirstChild() const { return nullptr; }
+
+	virtual ast_node* getLastChild() const { return nullptr; }
 
 	virtual size_t getId() const { return "ast_node"_id; }
 
@@ -89,10 +84,8 @@ public:
 
 	virtual int get_type() { return ast_type<ast_node>(); }
 private:
-    //parent
-    ast_node *m_parent;    
-    
-    template <class T, bool OPT> friend class ast_ptr;
+	int _ref;
+    template <class T, bool OPT, bool MEM> friend class ast_ptr;
     template <class ...Args> friend class ast_choice;
     template <class T> friend class ast_list;
     template <class T> friend class ast;
@@ -117,7 +110,7 @@ class ast_member;
 
 /** type of ast member vector.
  */
-typedef std::vector<ast_member *> ast_member_vector;
+typedef std::vector<ast_member*> ast_member_vector;
 
 
 /** base class for AST nodes with children.
@@ -128,25 +121,10 @@ public:
      */
     ast_container();
 
-    /** sets the container under construction to be this.
-        Members are not copied.
-        @param src source object.
-     */
-    ast_container(const ast_container &src);
-
-    /** the assignment operator.
-        The members are not copied.
-        @param src source object.
-        @return reference to this.
-     */
-    ast_container &operator = (const ast_container &src) {
-        return *this;
-    }
-
     /** returns the vector of AST members.
         @return the vector of AST members.
      */
-    const ast_member_vector &members() const {
+    const ast_member_vector& members() const {
         return m_members;
     }
 
@@ -155,7 +133,7 @@ public:
         from a node stack.
         @param st stack.
      */
-    virtual void construct(ast_stack &st) override;
+    virtual void construct(ast_stack& st) override;
 
 	virtual ast_node* getByPath(std::initializer_list<std::size_t> paths) override;
 
@@ -167,7 +145,11 @@ public:
 
 	virtual ast_node* getChild(int index) const override;
 
-	virtual int getChildCount() const override;
+	virtual size_t getChildCount() const override;
+
+	virtual ast_node* getFirstChild() const override;
+
+	virtual ast_node* getLastChild() const override;
 
 	virtual size_t getId() const override { return "ast_container"_id; }
 
@@ -185,58 +167,76 @@ class ast_member {
 public:
     /** automatically registers itself to the container under construction.
      */
-    ast_member() { _init(); }
+    ast_member(bool is_member) {
+    	if (is_member) add_to_owner();
+	}
 
-    /** automatically registers itself to the container under construction.
-        @param src source object.
-     */
-    ast_member(const ast_member &src) { _init(); }
-
-    /** the assignment operator.
-        @param src source object.
-        @return reference to this.
-     */
-    ast_member &operator = (const ast_member &src) {
-        return *this;
-    }
-    
-    /** returns the container this belongs to.
-        @return the container this belongs to.
-     */
-    ast_container *container() const { return m_container; }
+    virtual ~ast_member() {}
 
     /** interface for filling the the member from a node stack.
         @param st stack.
      */
-    virtual void construct(ast_stack &st) = 0;
+    virtual void construct(ast_stack& st) = 0;
+
+    virtual bool accept(ast_node* node) = 0;
 
 	virtual int get_type() { return ast_type<ast_member>(); }
 private:
-    //the container this belongs to.
-    ast_container *m_container;
-
     //register the AST member to the current container.
-    void _init();
+    void add_to_owner();
 };
 
 template<class T>
-T* ast_cast(ast_member *member) {
+T* ast_cast(ast_member* member) {
 	return member && ast_type<T>() == member->get_type() ? static_cast<T*>(member) : nullptr;
 }
 
 class _ast_ptr : public ast_member {
 public:
-	_ast_ptr(ast_node *node): m_ptr(node) {}
+	_ast_ptr(ast_node* node, bool is_member) : ast_member(is_member), m_ptr(node) {
+		if (node) node->retain();
+	}
+
+    virtual ~_ast_ptr() {
+        if (m_ptr) {
+        	m_ptr->release();
+        	m_ptr = nullptr;
+        }
+    }
 
 	ast_node* get() const {
 		return m_ptr;
+	}
+
+	template <class T>
+	T* as() const {
+		return ast_cast<T>(m_ptr);
+	}
+
+	template <class T>
+	T* to() const {
+		assert(m_ptr->getId() == ast_type<T>());
+		return static_cast<T*>(m_ptr);
+	}
+
+	void set(ast_node* node) {
+		if (node == m_ptr) return;
+		else if (!node) {
+			if (m_ptr) m_ptr->release();
+			m_ptr = nullptr;
+		}
+		else if (accept(node)) {
+			if (m_ptr) m_ptr->release();
+			m_ptr = node;
+			node->retain();
+		}
 	}
 
 	virtual int get_type() override {
 		return ast_type<_ast_ptr>();
 	}
 protected:
-	ast_node *m_ptr;
+	ast_node* m_ptr;
 };
 
 /** pointer to an AST object.
@@ -245,75 +245,37 @@ protected:
     @tparam T type of object to control.
     @tparam OPT if true, the object becomes optional.
  */
-template <class T, bool OPT = false> class ast_ptr : public _ast_ptr {
+template <class T, bool OPT = false, bool MEM = true> class ast_ptr : public _ast_ptr {
 public:
-    /** the default constructor.
-        @param obj object.
-     */
-    ast_ptr(T *obj = nullptr) : _ast_ptr(obj) {
-        _set_parent();
-    }
+    ast_ptr(T* node = nullptr) : _ast_ptr(node, MEM) {}
 
-    /** the copy constructor.
-        It duplicates the underlying object.
-        @param src source object.
-     */
-    ast_ptr(const ast_ptr<T, OPT> &src) :
-        _ast_ptr(src.m_ptr ? new T(*src.m_ptr) : nullptr)
-    {
-        _set_parent();
-    }
+    ast_ptr(const ast_ptr<T, OPT, MEM>& other) : _ast_ptr(other.get(), MEM) {}
 
-    /** deletes the underlying object.
-     */
-    ~ast_ptr() {
-        delete m_ptr;
-    }
-
-    /** copies the given object.
-        The old object is deleted.
-        @param obj new object.
-        @return reference to this.
-     */
-    ast_ptr<T, OPT> &operator = (const T *obj) {
-        delete m_ptr;
-        m_ptr = obj ? new T(*obj) : nullptr;
-        _set_parent();
-        return *this;
-    }
-
-    /** copies the underlying object.
-        The old object is deleted.
-        @param src source object.
-        @return reference to this.
-     */
-    ast_ptr<T, OPT> &operator = (const ast_ptr<T, OPT> &src) {
-        delete m_ptr;
-        m_ptr = src.m_ptr ? new T(*src.m_ptr) : nullptr;
-        _set_parent();
-        return *this;
-    }
+    ast_ptr<T, OPT, MEM>& operator=(const ast_ptr<T, OPT, MEM>& other) {
+    	set(other.get());
+    	return *this;
+	}
 
     /** gets the underlying ptr value.
         @return the underlying ptr value.
      */
-    T *get() const {
+    T* get() const {
         return static_cast<T*>(m_ptr);
     }
 
     /** auto conversion to the underlying object ptr.
         @return the underlying ptr value.
      */
-    operator T *() const {
+    operator T*() const {
         return static_cast<T*>(m_ptr);
     }
 
     /** member access.
         @return the underlying ptr value.
      */
-    T *operator ->() const {
+    T* operator->() const {
         assert(m_ptr);
-        return m_ptr;
+        return static_cast<T*>(m_ptr);
     }
 
     /** Pops a node from the stack.
@@ -321,118 +283,120 @@ public:
         @exception std::logic_error thrown if the node is not of the appropriate type;
             thrown only if OPT == false or if the stack is empty.
      */
-    virtual void construct(ast_stack &st) {
+    virtual void construct(ast_stack& st) override {
         //check the stack node
         if (st.empty()) {
 			if (OPT) return;
 			else throw std::logic_error("invalid AST stack");
 		}
-    
-        //get the node
-        ast_node *node = st.back();
-        
-        //get the object
-        T *obj = std::is_same<T, ast_node>() ? static_cast<T*>(node) : ast_cast<T>(node);
-        
-        //if the object is optional, simply return
-        if (OPT) {
-            if (!obj) return;
-        }
-        
-        //else if the object is mandatory, throw an exception
-        else {
-            if (!obj) throw std::logic_error("invalid AST node");
-        }
-        
-        //pop the node from the stack
+
+        ast_node* node = st.back();
+
+		if (!ast_ptr::accept(node)) {
+			//if the object is optional, simply return
+			if (OPT) {
+				return;
+			} else { //else if the object is mandatory, throw an exception
+				throw std::logic_error("invalid AST node");
+			}
+		}
+
         st.pop_back();
-        
-        //set the new object
-        delete m_ptr;
-        m_ptr = obj;
-        _set_parent();
+
+        m_ptr = node;
+        node->retain();
     }
 private:
-    //set parent of object
-    void _set_parent() {
-        if (m_ptr) m_ptr->m_parent = container();
-    }
+    virtual bool accept(ast_node* node) override {
+		return node && (std::is_same<ast_node,T>() || ast_type<T>() == node->get_type());
+	}
 };
+
+template<class T>
+inline ast_ptr<T, false, false> new_ptr() {
+	return ast_ptr<T, false, false>(new T);
+}
 
 template <class ...Args> class ast_choice : public _ast_ptr {
 public:
-    ast_choice(ast_node *obj = nullptr) : _ast_ptr(obj) {
-        _set_parent();
-    }
+    ast_choice() : _ast_ptr(nullptr, true) {}
 
-    ast_choice(const ast_choice<Args...> &src) :
-        _ast_ptr(src.m_ptr ? new ast_node(*src.m_ptr) : nullptr)
-    {
-        _set_parent();
-    }
+    ast_choice(const ast_choice<Args...>& other) : _ast_ptr(other.get(), true) {}
 
-    ~ast_choice() {
-        delete m_ptr;
-    }
+    ast_choice<Args...>& operator=(const ast_choice<Args...>& other) {
+    	set(other.get());
+    	return *this;
+	}
 
-    ast_choice<Args...> &operator = (const ast_node *obj) {
-        delete m_ptr;
-        m_ptr = obj ? new ast_node(*obj) : nullptr;
-        _set_parent();
-        return *this;
-    }
-
-    ast_choice<Args...> &operator = (const ast_choice<Args...> &src) {
-        delete m_ptr;
-        m_ptr = src.m_ptr ? new ast_node(*src.m_ptr) : nullptr;
-        _set_parent();
-        return *this;
-    }
-
-    operator ast_node *() const {
+    operator ast_node*() const {
         return m_ptr;
     }
 
-    ast_node *operator ->() const {
+    ast_node* operator->() const {
         assert(m_ptr);
         return m_ptr;
     }
 
-    virtual void construct(ast_stack &st) {
+    virtual void construct(ast_stack& st) override {
         if (st.empty()) {
 			throw std::logic_error("invalid AST stack");
 		}
 
-        ast_node *node = st.back();
-		ast_node *obj = nullptr;
+        ast_node* node = st.back();
 
-		using swallow = bool[];
-		(void)swallow{obj || (obj = std::is_same<Args, ast_node>() ? node : ast_cast<Args>(node))...};
-
-        if (!obj) throw std::logic_error("invalid AST node");
+        if (!ast_choice::accept(node)) throw std::logic_error("invalid AST node");
 
         st.pop_back();
 
-        delete m_ptr;
-        m_ptr = obj;
-        _set_parent();
+        m_ptr = node;
+        node->retain();
     }
 private:
-    void _set_parent() {
-        if (m_ptr) m_ptr->m_parent = container();
-    }
+    virtual bool accept(ast_node* node) override {
+    	if (!node) return false;
+		using swallow = bool[];
+		bool* result = nullptr;
+		(void)swallow{result || (result = ast_type<Args>() == node->get_type())...};
+		return result;
+	}
 };
 
 class _ast_list : public ast_member {
 public:
-    ///list type.
-    typedef std::list<ast_node *> container;
+    typedef std::list<ast_node*> container;
 
-	virtual int get_type() override { return ast_type<_ast_list>(); }
+    _ast_list() : ast_member(true) {}
 
-	 const container &objects() const {
+   ~_ast_list() {
+        clear();
+    }
+
+    void add(ast_node* node) {
+		if (accept(node)) {
+			m_objects.push_back(node);
+			node->retain();
+		}
+	}
+
+	 const container& objects() const {
         return m_objects;
     }
+
+    void clear() {
+        for(ast_node* obj : m_objects) {
+            if (obj) obj->release();
+        }
+        m_objects.clear();
+    }
+
+    void dup(const _ast_list& src) {
+        for(ast_node* obj : src.m_objects) {
+            m_objects.push_back(obj);
+            obj->retain();
+        }
+    }
+
+	virtual int get_type() override { return ast_type<_ast_list>(); }
 protected:
 	container m_objects;
 };
@@ -447,86 +411,39 @@ public:
     ///the default constructor.
     ast_list() {}
 
-    /** duplicates the objects of the given list.
-        @param src source object.
-     */
-    ast_list(const ast_list<T> &src) {
-        _dup(src);
-    }
+    ast_list(const ast_list<T>& other) {
+    	clear();
+    	dup(other);
+	}
 
-    /** deletes the objects.
-     */
-    ~ast_list() {
-        _clear();
-    }
-
-    /** deletes the objects of this list and duplicates the given one.
-        @param src source object.
-        @return reference to this.
-     */
-    ast_list<T> &operator = (const ast_list<T> &src) {
-        if (&src != this) {
-            _clear();
-            _dup(src);
-        }
-        return *this;
-    }
-
-    /** returns the container of objects.
-        @return the container of objects.
-     */
-    const container &objects() const {
-        return m_objects;
-    }
+    ast_list<T>& operator=(const ast_list<T>& other) {
+    	clear();
+    	dup(other);
+    	return *this;
+	}
 
     /** Pops objects of type T from the stack until no more objects can be popped.
         @param st stack.
      */
     virtual void construct(ast_stack &st) override {
-        for(;;) {
-            //if the stack is empty
-            if (st.empty()) break;
-            
-            //get the node
-            ast_node *node = st.back();
-            
-            //get the object
-            T *obj = std::is_same<T, ast_node>() ? static_cast<T*>(node) : ast_cast<T>(node);
-            
+        while (!st.empty()) {
+            ast_node* node = st.back();
+
             //if the object was not not of the appropriate type,
             //end the list parsing
-            if (!obj) return;
-            
-            //remove the node from the stack
+            if (!ast_list::accept(node)) return;
+
             st.pop_back();
             
             //insert the object in the list, in reverse order
-            m_objects.push_front(obj);
-            
-            //set the object's parent
-            obj->m_parent = ast_member::container();
+            m_objects.push_front(node);
+            node->retain();
         }
     }
 private:
-    //deletes the objects of this list.
-    void _clear() {
-        while (!m_objects.empty()) {
-            delete m_objects.back();
-            m_objects.pop_back();
-        }
-    }
-
-    //duplicate the given list.
-    void _dup(const ast_list<T> &src) {
-        for(typename container::const_iterator it = src.m_objects.begin();
-            it != src.m_objects.end();
-            ++it)
-        {
-            T *obj = new T(*it);
-            m_objects.push_back(obj);
-            obj->m_parent = ast_member::container();
-        }
-    }
+    virtual bool accept(ast_node* node) override {
+		return node && (std::is_same<ast_node,T>() || ast_type<T>() == node->get_type());
+	}
 };
 
 
@@ -538,15 +455,15 @@ public:
     /** constructor.
         @param r rule to attach the AST function to.
      */
-    ast(rule &r) {
+    ast(rule& r) {
         r.set_parse_proc(&_parse_proc);
     }
 
 private:
     //parse proc
-    static void _parse_proc(const pos &b, const pos &e, void *d) {
-        ast_stack *st = reinterpret_cast<ast_stack *>(d);
-        T *obj = new T;
+    static void _parse_proc(const pos& b, const pos& e, void* d) {
+        ast_stack* st = reinterpret_cast<ast_stack*>(d);
+        T* obj = new T;
         obj->m_begin = b;
         obj->m_end = e;
         obj->construct(*st);
@@ -563,23 +480,27 @@ private:
     @return pointer to ast node created, or null if there was an error.
         The return object must be deleted by the caller.
  */
-ast_node *parse(input &i, rule &g, error_list &el, void* ud);
+ast_node* _parse(input &i, rule &g, error_list &el, void* ud);
 
 
 /** parses the given input.
     @param i input.
     @param g root rule of grammar.
     @param el list of errors.
-    @param ast result pointer to created ast.
     @param ud user data, passed to the parse procedures.
-    @return true on success, false on error.
+    @return ast nodes.
  */
-template <class T> bool parse(input &i, rule &g, error_list &el, T *&ast, void* ud = nullptr) {
-    ast_node *node = parse(i, g, el, ud);
-    ast = ast_cast<T>(node);
-    if (ast) return true;
-    delete node;
-    return false;
+template <class T> ast_ptr<T, false, false> parse(input &i, rule &g, error_list &el, void* ud = nullptr) {
+    ast_node* node = _parse(i, g, el, ud);
+    T* ast = ast_cast<T>(node);
+    ast_ptr<T, false, false> ptr;
+    if (ast) {
+    	ast_stack st{node};
+    	ptr.construct(st);
+    } else if (node) {
+    	delete node;
+    }
+	return ptr;
 }
 
 

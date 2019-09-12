@@ -1,5 +1,13 @@
 #include "moon_parser.h"
 
+std::unordered_set<std::string> State::keywords = {
+	"and", "while", "else", "using", "continue",
+	"local", "not", "then", "return", "from",
+	"extends", "for", "do", "or", "export",
+	"class", "in", "unless", "when", "elseif",
+	"switch", "break", "if", "with", "import", "true", "false", "nil"
+};
+
 rule plain_space = *set(" \t");
 rule Break = nl(-expr('\r') >> '\n');
 rule Any = Break | any();
@@ -185,7 +193,9 @@ rule For = key("for") >> DisableDo >>
 
 extern rule AssignableNameList;
 
-rule for_in = sym('*') >> Exp | ExpList;
+extern rule star_exp;
+
+rule for_in = star_exp | ExpList;
 
 rule ForEach = key("for") >> AssignableNameList >> key("in") >>
 	DisableDo >> ensure(for_in, PopDo) >>

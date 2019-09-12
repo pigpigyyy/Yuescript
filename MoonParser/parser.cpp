@@ -1143,10 +1143,8 @@ expr expr::operator !() const {
     @param e end position.
  */
 input_range::input_range(const pos &b, const pos &e) :
-    m_begin(b),
-    m_end(e)
-{
-}
+m_begin(b),
+m_end(e) {}
 
 
 /** constructor.
@@ -1155,10 +1153,8 @@ input_range::input_range(const pos &b, const pos &e) :
     @param t error type.
  */
 error::error(const pos &b, const pos &e, int t) :
-    input_range(b, e),
-    m_type(t)
-{
-}
+input_range(b, e),
+m_type(t) {}
 
 
 /** compare on begin position.
