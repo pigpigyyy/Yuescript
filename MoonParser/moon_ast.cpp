@@ -156,22 +156,10 @@ public:
 		if (root) {
 			std::cout << "compiled!\n\n";
 			std::vector<std::string> out;
-			root->eachChild([&](ast_node* node) {
-				switch (node->getId()) {
-					case "Block"_id:
-						pushScope();
-						transformBody(static_cast<Body_t*>(node), out, true);
-						popScope();
-						break;
-					default: break;
-				}
-			});
-			std::string result;
-			if (out.size() == 1) {
-				result = std::move(out.front());
-			} else if (out.size() > 1) {
-				result = join(out, "\n"sv);
-			}
+			pushScope();
+			transformBlock(root->block, out);
+			popScope();
+			std::string result = std::move(out.back());
 			std::cout << result << '\n';
 		} else {
 			std::cout << "compile failed!\n";
@@ -807,9 +795,9 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformBody(Body_t* body, std::vector<std::string>& out, bool implicitReturn = false) {
+	void transformCodes(ast_node* nodes, std::vector<std::string>& out, bool implicitReturn) {
 		if (implicitReturn) {
-			auto last = lastStatementFrom(body);
+			auto last = lastStatementFrom(nodes);
 			if (ast_is<ExpList_t>(last->content)) {
 				auto expList = static_cast<ExpList_t*>(last->content.get());
 				auto expListLow = new_ptr<ExpListLow_t>();
@@ -821,7 +809,7 @@ private:
 			}
 		}
 		std::vector<std::string> temp;
-		body->traverse([&](ast_node* node) {
+		nodes->traverse([&](ast_node* node) {
 			switch (node->getId()) {
 				case "Statement"_id:
 					transformStatement(static_cast<Statement_t*>(node), temp);
@@ -830,6 +818,14 @@ private:
 			}
 		});
 		out.push_back(join(temp));
+	}
+
+	void transformBody(Body_t* body, std::vector<std::string>& out, bool implicitReturn = false) {
+		transformCodes(body, out, implicitReturn);
+	}
+
+	void transformBlock(Block_t* block, std::vector<std::string>& out, bool implicitReturn = true) {
+		transformCodes(block, out, implicitReturn);
 	}
 
 	void transformReturn(Return_t* returnNode, std::vector<std::string>& out) {

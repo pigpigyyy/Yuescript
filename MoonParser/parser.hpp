@@ -17,15 +17,15 @@
 #include <locale>
 
 // const str hash helper functions
-inline constexpr std::size_t hash(char const* input)
+inline constexpr size_t hash(char const* input)
 {
 	return *input ? *input + 33ull * hash(input + 1) : 5381;
 }
-inline std::size_t hash(const char* input, int size, int index)
+inline size_t hash(const char* input, int size, int index)
 {
 	return index < size ? input[index] + 33ull * hash(input, size, index + 1) : 5381;
 }
-inline std::size_t constexpr operator"" _id(const char* s, size_t)
+inline size_t constexpr operator"" _id(const char* s, size_t)
 {
 	return hash(s);
 }

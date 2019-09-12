@@ -14,11 +14,9 @@ traversal ast_node::traverse(const std::function<traversal (ast_node*)>& func) {
 	return func(this);
 }
 
-ast_node* ast_node::getByPath(std::initializer_list<std::size_t>) {
+ast_node* ast_node::getByPath(std::initializer_list<size_t>) {
 	return nullptr;
 }
-
-void ast_node::eachChild(const std::function<void (ast_node*)>&) { }
 
 bool ast_node::visitChild(const std::function<bool (ast_node*)>&) {
 	return false;
@@ -70,13 +68,14 @@ traversal ast_container::traverse(const std::function<traversal (ast_node*)>& fu
 	return traversal::Continue;
 }
 
-ast_node* ast_container::getByPath(std::initializer_list<std::size_t> paths) {
+ast_node* ast_container::getByPath(std::initializer_list<size_t> paths) {
 	ast_node* current = this;
 	auto it = paths.begin();
 	while (it != paths.end()) {
 		ast_node* findNode = nullptr;
+		size_t id = *it;
 		current->visitChild([&](ast_node* node) {
-			if (node->getId() == *it) {
+			if (node->getId() == id) {
 				findNode = node;
 				return true;
 			}
@@ -91,23 +90,6 @@ ast_node* ast_container::getByPath(std::initializer_list<std::size_t> paths) {
 		++it;
 	}
 	return current;
-}
-
-void ast_container::eachChild(const std::function<void (ast_node*)>& func) {
-	const auto& members = this->members();
-	for (auto member : members) {
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			if (ptr->get()) {
-				func(ptr->get());
-			}
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			for (auto obj : list->objects()) {
-				if (obj) {
-					func(obj);
-				}
-			}
-		}
-	}
 }
 
 bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {

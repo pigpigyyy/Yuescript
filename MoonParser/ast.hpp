@@ -64,9 +64,7 @@ public:
      */
 	virtual traversal traverse(const std::function<traversal (ast_node*)>& func);
 
-	virtual ast_node* getByPath(std::initializer_list<std::size_t> paths);
-
-	virtual void eachChild(const std::function<void (ast_node*)>& func);
+	virtual ast_node* getByPath(std::initializer_list<size_t> paths);
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func);
 
@@ -135,11 +133,9 @@ public:
      */
     virtual void construct(ast_stack& st) override;
 
-	virtual ast_node* getByPath(std::initializer_list<std::size_t> paths) override;
+	virtual ast_node* getByPath(std::initializer_list<size_t> paths) override;
 
 	virtual traversal traverse(const std::function<traversal (ast_node*)>& func) override;
-
-	virtual void eachChild(const std::function<void (ast_node*)>& func) override;
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func) override;
 
