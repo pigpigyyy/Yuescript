@@ -11,10 +11,8 @@
 using namespace std::string_view_literals;
 #include "moon_ast.h"
 
-const input& AstLeaf::getValue()
-{
-	if (_value.empty())
-	{
+const input& AstLeaf::getValue() {
+	if (_value.empty()) {
 		_value.assign(m_begin.m_it, m_end.m_it);
 		return trim(_value);
 	}
@@ -289,13 +287,11 @@ private:
 	}
 
 	std::string toString(ast_node* node) {
-		auto str = _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
-		return trim(str);
+		return _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
 	}
 
 	std::string toString(input::iterator begin, input::iterator end) {
-		auto str = _converter.to_bytes(std::wstring(begin, end));
-		return trim(str);
+		return _converter.to_bytes(std::wstring(begin, end));
 	}
 
 	void noop(ast_node* node, std::vector<std::string>& out) {
@@ -396,25 +392,25 @@ private:
 				default: break;
 			}
 		}
-		auto node = statement->content.get();
-		if (!node) {
+		auto content = statement->content.get();
+		if (!content) {
 			out.push_back(Empty);
 			return;
 		}
-		switch (node->getId()) {
-			case "Import"_id: transformImport(node, out); break;
-			case "While"_id: transformWhile(node, out); break;
-			case "With"_id: transformWith(node, out); break;
-			case "For"_id: transformFor(static_cast<For_t*>(node), out); break;
-			case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(node), out); break;
-			case "Switch"_id: transformSwitch(node, out); break;
-			case "Return"_id: transformReturn(static_cast<Return_t*>(node), out); break;
-			case "Local"_id: transformLocal(node, out); break;
-			case "Export"_id: transformExport(node, out); break;
-			case "BreakLoop"_id: transformBreakLoop(node, out); break;
+		switch (content->getId()) {
+			case "Import"_id: transformImport(content, out); break;
+			case "While"_id: transformWhile(content, out); break;
+			case "With"_id: transformWith(content, out); break;
+			case "For"_id: transformFor(static_cast<For_t*>(content), out); break;
+			case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(content), out); break;
+			case "Switch"_id: transformSwitch(content, out); break;
+			case "Return"_id: transformReturn(static_cast<Return_t*>(content), out); break;
+			case "Local"_id: transformLocal(content, out); break;
+			case "Export"_id: transformExport(content, out); break;
+			case "BreakLoop"_id: transformBreakLoop(content, out); break;
 			case "Assignment"_id: transformStatementAssign(statement, out); break;
 			case "ExpList"_id: {
-				auto expList = static_cast<ExpList_t*>(node);
+				auto expList = static_cast<ExpList_t*>(content);
 				if (expList->exprs.objects().empty()) {
 					out.push_back(Empty);
 					break;
@@ -740,23 +736,23 @@ private:
 	}
 
 	void transformSimpleValue(SimpleValue_t* simpleValue, std::vector<std::string>& out) {
-		auto node = simpleValue->value.get();
-		switch (node->getId()) {
-			case "const_value"_id: transform_const_value(node, out); break;
-			case "If"_id: transformIfClosure(static_cast<If_t*>(node), out); break;
-			case "Switch"_id: transformSwitch(node, out); break;
-			case "With"_id: transformWith(node, out); break;
-			case "ClassDecl"_id: transformClassDecl(node, out); break;
-			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(node), out); break;
-			case "For"_id: transformForClosure(static_cast<For_t*>(node), out); break;
-			case "While"_id: transformWhile(node, out); break;
-			case "Do"_id: transformDo(node, out); break;
-			case "unary_exp"_id: transform_unary_exp(static_cast<unary_exp_t*>(node), out); break;
-			case "TblComprehension"_id: transformTblComprehension(node, out); break;
-			case "TableLit"_id: transformTableLit(static_cast<TableLit_t*>(node), out); break;
-			case "Comprehension"_id: transformComprehension(static_cast<Comprehension_t*>(node), out); break;
-			case "FunLit"_id: transformFunLit(static_cast<FunLit_t*>(node), out); break;
-			case "Num"_id: transformNum(static_cast<Num_t*>(node), out); break;
+		auto value = simpleValue->value.get();
+		switch (value->getId()) {
+			case "const_value"_id: transform_const_value(value, out); break;
+			case "If"_id: transformIfClosure(static_cast<If_t*>(value), out); break;
+			case "Switch"_id: transformSwitch(value, out); break;
+			case "With"_id: transformWith(value, out); break;
+			case "ClassDecl"_id: transformClassDecl(static_cast<ClassDecl_t*>(value), out); break;
+			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
+			case "For"_id: transformForClosure(static_cast<For_t*>(value), out); break;
+			case "While"_id: transformWhile(value, out); break;
+			case "Do"_id: transformDo(value, out); break;
+			case "unary_exp"_id: transform_unary_exp(static_cast<unary_exp_t*>(value), out); break;
+			case "TblComprehension"_id: transformTblComprehension(value, out); break;
+			case "TableLit"_id: transformTableLit(static_cast<TableLit_t*>(value), out); break;
+			case "Comprehension"_id: transformComprehension(static_cast<Comprehension_t*>(value), out); break;
+			case "FunLit"_id: transformFunLit(static_cast<FunLit_t*>(value), out); break;
+			case "Num"_id: transformNum(static_cast<Num_t*>(value), out); break;
 			default: break;
 		}
 	}
@@ -1020,6 +1016,7 @@ private:
 			case "LuaString"_id: transformLuaString(static_cast<LuaString_t*>(argument), out); break;
 			default: break;
 		}
+		out.back() = s("("sv) + out.back() + s(")"sv);
 	}
 
 	void transformFnArgs(FnArgs_t* fnArgs, std::vector<std::string>& out) {
@@ -1028,7 +1025,7 @@ private:
 			transformExp(static_cast<Exp_t*>(node), temp);
 		}
 		std::string args = join(temp, ", "sv);
-		out.push_back(args.empty() ? s("()"sv) : s("("sv) + args + s(")"sv));
+		out.push_back(args);
 	}
 
 	void transformColonChain(ColonChain_t* colonChain, std::vector<std::string>& out) {
@@ -1211,13 +1208,14 @@ private:
 
 	void transformAssignableNameList(AssignableNameList_t* nameList, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		for (auto node : nameList->items.objects()) {
-			switch (node->getId()) {
+		for (auto _item : nameList->items.objects()) {
+			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
+			switch (item->getId()) {
 				case "Name"_id:
-					transformName(static_cast<Name_t*>(node), temp);
+					transformName(static_cast<Name_t*>(item), temp);
 					break;
 				case "TableLit"_id:
-					transformTableLit(static_cast<TableLit_t*>(node), temp);
+					transformTableLit(static_cast<TableLit_t*>(item), temp);
 					break;
 				default: break;
 			}
@@ -1506,6 +1504,48 @@ private:
 		}
 	}
 
+	void transformClassDecl(ClassDecl_t* classDecl, std::vector<std::string>& out) {
+		std::vector<std::string> temp;
+		if (classDecl->name) {
+			transformAssignable(classDecl->name, temp);
+		}
+		if (classDecl->extend) {
+			transformExp(classDecl->extend, temp);
+		}
+		if (classDecl->body) {
+			transformClassBlock(classDecl->body, temp);
+		}
+		out.push_back(join(temp, "\n"sv));
+	}
+
+	void transformClassBlock(ClassBlock_t* classBlock, std::vector<std::string>& out) {
+		std::vector<std::string> temp;
+		for (auto _line : classBlock->lines.objects()) {
+			auto line = static_cast<ClassLine_t*>(_line);
+			transformClassLine(line, temp);
+		}
+		out.push_back(join(temp,"\n"sv));
+	}
+
+	void transformClassLine(ClassLine_t* classLine, std::vector<std::string>& out) {
+		auto content = classLine->content.get();
+		switch (content->getId()) {
+			case "class_member_list"_id:
+				transform_class_member_list(static_cast<class_member_list_t*>(content), out);
+				break;
+			case "Statement"_id:
+				transformStatement(static_cast<Statement_t*>(content), out);
+				break;
+			case "Exp"_id:
+				transformExp(static_cast<Exp_t*>(content), out);
+				break;
+		}
+	}
+
+	void transform_class_member_list(class_member_list_t* class_member_list, std::vector<std::string>& out) {noop(class_member_list, out);}
+
+	void transformAssignable(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
+
 	void transformUpdate(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transformImport(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
 	void transformWhile(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
@@ -1518,7 +1558,6 @@ private:
 	void transform_unless_line(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transform_simple_table(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transform_const_value(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
-	void transformClassDecl(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transformDo(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transformTblComprehension(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transform_chain_dot_chain(ast_node* node, std::vector<std::string>& out) {noop(node, out);}

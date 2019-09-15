@@ -43,10 +43,8 @@ rule Seperator = true_();
 #define symx(str) expr(str)
 #define ensure(patt, finally) (((patt) >> (finally)) | ((finally) >> (Cut)))
 #define key(str) (Space >> str >> not_(AlphaNum))
-#define opWord(str) (Space >> str >> not_(AlphaNum))
-#define op(str) (Space >> str)
 
-rule Name = user(SpaceName, [](const item_t& item)
+rule Name = user(_Name, [](const item_t& item)
 {
 	State* st = reinterpret_cast<State*>(item.user_data);
 	for (auto it = item.begin; it != item.end; ++it) st->buffer << static_cast<char>(*it);
@@ -142,11 +140,11 @@ rule InBlock = Advance >> Block >> PopIndent;
 
 extern rule NameList;
 
-rule local_flag = op('*') | op('^');
-rule Local = key("local") >> (local_flag | NameList);
+rule local_flag = expr('*') | expr('^');
+rule Local = key("local") >> ((Space >> local_flag) | NameList);
 
-rule colon_import_name = sym('\\') >> Name;
-rule ImportName = colon_import_name | Name;
+rule colon_import_name = sym('\\') >> Space >> Name;
+rule ImportName = colon_import_name | Space >> Name;
 rule ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
 
 extern rule Exp;
@@ -185,7 +183,7 @@ rule Unless = key("unless") >> IfCond >> -key("then") >> Body >> Seperator >> *I
 rule While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
 
 rule for_step_value = sym(',') >> Exp;
-rule for_args = Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+rule for_args = Space >> Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
 rule For = key("for") >> DisableDo >>
 	ensure(for_args, PopDo) >>
@@ -232,7 +230,7 @@ extern rule CompForEach, CompFor, CompClause;
 rule CompInner = (CompForEach | CompFor) >> Seperator >> *CompClause;
 rule star_exp = sym('*') >> Exp;
 rule CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
-rule CompFor = key("for") >> Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+rule CompFor = key("for") >> Space >> Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 rule CompClause = CompFor | CompForEach | key("when") >> Exp;
 
 extern rule TableBlock;
@@ -240,44 +238,42 @@ extern rule TableBlock;
 rule Assign = sym('=') >> (With | If | Switch | TableBlock | ExpListLow);
 
 rule update_op =
-	sym("..=") |
-	sym("+=") |
-	sym("-=") |
-	sym("*=") |
-	sym("/=") |
-	sym("%=") |
-	sym("or=") |
-	sym("and=") |
-	sym("&=") |
-	sym("|=") |
-	sym(">>=") |
-	sym("<<=");
+	expr("..=") |
+	expr("+=") |
+	expr("-=") |
+	expr("*=") |
+	expr("/=") |
+	expr("%=") |
+	expr("or=") |
+	expr("and=") |
+	expr("&=") |
+	expr("|=") |
+	expr(">>=") |
+	expr("<<=");
 
-rule Update = update_op >> Exp;
+rule Update = Space >> update_op >> Exp;
 
-rule CharOperators = Space >> set("+-*/%^><|&");
-rule WordOperators =
-	opWord("or") |
-	opWord("and") |
-	op("<=") |
-	op(">=") |
-	op("~=") |
-	op("!=") |
-	op("==") |
-	op("..") |
-	op("<<") |
-	op(">>") |
-	op("//");
-
-rule BinaryOperator = (WordOperators | CharOperators) >> *SpaceBreak;
+rule BinaryOperator =
+	(expr("or") >> not_(AlphaNum)) |
+	(expr("and") >> not_(AlphaNum)) |
+	expr("<=") |
+	expr(">=") |
+	expr("~=") |
+	expr("!=") |
+	expr("==") |
+	expr("..") |
+	expr("<<") |
+	expr(">>") |
+	expr("//") |
+	set("+-*/%^><|&");
 
 extern rule Chain;
 
-rule Assignable = Chain | Name | SelfName;
+rule Assignable = Chain | Space >> Name | SelfName;
 
 extern rule Value;
 
-rule exp_op_value = BinaryOperator >> Value;
+rule exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> Value;
 rule Exp = Value >> *exp_op_value;
 
 extern rule Callable, InvokeArgs;
@@ -328,7 +324,7 @@ rule LuaString = user(LuaStringOpen >> -Break >> LuaStringContent >> LuaStringCl
 });
 
 rule Parens = sym('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
-rule Callable = Name | SelfName | VarArg | Parens;
+rule Callable = Space >> Name | SelfName | VarArg | Parens;
 rule FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
 
 rule FnArgs = Seperator >>
@@ -420,10 +416,10 @@ rule ClassDecl =
 	-ClassBlock;
 
 rule export_values = NameList >> -(sym('=') >> ExpListLow);
-rule export_op = op('*') | op('^');
-rule Export = key("export") >> (ClassDecl | export_op | export_values);
+rule export_op = expr('*') | expr('^');
+rule Export = key("export") >> (ClassDecl | (Space >> export_op) | export_values);
 
-rule variable_pair = sym(':') >> not_(SomeSpace) >> Name;
+rule variable_pair = sym(':') >> not_(SomeSpace) >> Space >> Name;
 
 rule normal_pair =
 (
@@ -440,7 +436,7 @@ rule KeyValue = variable_pair | normal_pair;
 rule KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 rule KeyValueLine = CheckIndent >> KeyValueList >> -sym(',');
 
-rule FnArgDef = (Name | SelfName) >> -(sym('=') >> Exp);
+rule FnArgDef = (Space >> Name | SelfName) >> -(sym('=') >> Exp);
 
 rule FnArgDefList = Seperator >>
 (
@@ -456,11 +452,11 @@ rule FnArgDefList = Seperator >>
 rule outer_var_shadow = key("using") >> (NameList | Space >> expr("nil"));
 
 rule FnArgsDef = sym('(') >> White >> -FnArgDefList >> -outer_var_shadow >> White >> sym(')');
-rule fn_arrow = sym("->") | sym("=>");
-rule FunLit = -FnArgsDef >> fn_arrow >> -Body;
+rule fn_arrow = expr("->") | expr("=>");
+rule FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
-rule NameList = Seperator >> Name >> *(sym(',') >> Name);
-rule NameOrDestructure = Name | TableLit;
+rule NameList = Seperator >> Space >> Name >> *(sym(',') >> Space >> Name);
+rule NameOrDestructure = Space >> Name | TableLit;
 rule AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
 
 rule ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
