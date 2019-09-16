@@ -20,9 +20,8 @@ rule SomeSpace = +set(" \t") >> -Comment;
 rule SpaceBreak = Space >> Break;
 rule EmptyLine = SpaceBreak;
 rule AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
-rule _Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-rule SpaceName = Space >> _Name;
-rule _Num =
+rule Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
+rule Num =
 	(
 		"0x" >>
 		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
@@ -35,7 +34,6 @@ rule _Num =
 			('.' >> +range('0', '9'))
 		) >> -(set("eE") >> -expr('-') >> +range('0', '9'))
 	);
-rule Num = Space >> _Num;
 rule Cut = false_();
 rule Seperator = true_();
 
@@ -44,8 +42,7 @@ rule Seperator = true_();
 #define ensure(patt, finally) (((patt) >> (finally)) | ((finally) >> (Cut)))
 #define key(str) (Space >> str >> not_(AlphaNum))
 
-rule Name = user(_Name, [](const item_t& item)
-{
+rule Variable = user(Name, [](const item_t& item) {
 	State* st = reinterpret_cast<State*>(item.user_data);
 	for (auto it = item.begin; it != item.end; ++it) st->buffer << static_cast<char>(*it);
 	std::string name;
@@ -57,21 +54,18 @@ rule Name = user(_Name, [](const item_t& item)
 });
 
 rule self = expr('@');
-rule self_name = '@' >> _Name;
+rule self_name = '@' >> Name;
 rule self_class = expr("@@");
-rule self_class_name = "@@" >> _Name;
+rule self_class_name = "@@" >> Name;
 
 rule SelfName = Space >> (self_class_name | self_class | self_name | self);
-rule KeyName = SelfName | Space >> _Name;
+rule KeyName = SelfName | Space >> Name;
 rule VarArg = Space >> "...";
 
-rule check_indent = user(Indent, [](const item_t& item)
-{
+rule check_indent = user(Indent, [](const item_t& item) {
 	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i)
-	{
-		switch (*i)
-		{
+	for (input_it i = item.begin; i != item.end; ++i) {
+		switch (*i) {
 			case ' ': indent++; break;
 			case '\t': indent += 4; break;
 		}
@@ -81,21 +75,17 @@ rule check_indent = user(Indent, [](const item_t& item)
 });
 rule CheckIndent = and_(check_indent);
 
-rule advance = user(Indent, [](const item_t& item)
-{
+rule advance = user(Indent, [](const item_t& item) {
 	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i)
-	{
-		switch (*i)
-		{
+	for (input_it i = item.begin; i != item.end; ++i) {
+		switch (*i) {
 			case ' ': indent++; break;
 			case '\t': indent += 4; break;
 		}
 	}
 	State* st = reinterpret_cast<State*>(item.user_data);
 	int top = st->indents.top();
-	if (top != -1 && indent > top)
-	{
+	if (top != -1 && indent > top) {
 		st->indents.push(indent);
 		return true;
 	}
@@ -103,13 +93,10 @@ rule advance = user(Indent, [](const item_t& item)
 });
 rule Advance = and_(advance);
 
-rule push_indent = user(Indent, [](const item_t& item)
-{
+rule push_indent = user(Indent, [](const item_t& item) {
 	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i)
-	{
-		switch (*i)
-		{
+	for (input_it i = item.begin; i != item.end; ++i) {
+		switch (*i) {
 			case ' ': indent++; break;
 			case '\t': indent += 4; break;
 		}
@@ -120,15 +107,13 @@ rule push_indent = user(Indent, [](const item_t& item)
 });
 rule PushIndent = and_(push_indent);
 
-rule PreventIndent = user(true_(), [](const item_t& item)
-{
+rule PreventIndent = user(true_(), [](const item_t& item) {
 	State* st = reinterpret_cast<State*>(item.user_data);
 	st->indents.push(-1);
 	return true;
 });
 
-rule PopIndent = user(true_(), [](const item_t& item)
-{
+rule PopIndent = user(true_(), [](const item_t& item) {
 	State* st = reinterpret_cast<State*>(item.user_data);
 	st->indents.pop();
 	return true;
@@ -143,8 +128,8 @@ extern rule NameList;
 rule local_flag = expr('*') | expr('^');
 rule Local = key("local") >> ((Space >> local_flag) | NameList);
 
-rule colon_import_name = sym('\\') >> Space >> Name;
-rule ImportName = colon_import_name | Space >> Name;
+rule colon_import_name = sym('\\') >> Space >> Variable;
+rule ImportName = colon_import_name | Space >> Variable;
 rule ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
 
 extern rule Exp;
@@ -183,7 +168,7 @@ rule Unless = key("unless") >> IfCond >> -key("then") >> Body >> Seperator >> *I
 rule While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
 
 rule for_step_value = sym(',') >> Exp;
-rule for_args = Space >> Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+rule for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
 rule For = key("for") >> DisableDo >>
 	ensure(for_args, PopDo) >>
@@ -230,7 +215,7 @@ extern rule CompForEach, CompFor, CompClause;
 rule CompInner = (CompForEach | CompFor) >> Seperator >> *CompClause;
 rule star_exp = sym('*') >> Exp;
 rule CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
-rule CompFor = key("for") >> Space >> Name >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+rule CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 rule CompClause = CompFor | CompForEach | key("when") >> Exp;
 
 extern rule TableBlock;
@@ -269,7 +254,7 @@ rule BinaryOperator =
 
 extern rule Chain;
 
-rule Assignable = Chain | Space >> Name | SelfName;
+rule Assignable = Chain | Space >> Variable | SelfName;
 
 extern rule Value;
 
@@ -324,7 +309,7 @@ rule LuaString = user(LuaStringOpen >> -Break >> LuaStringContent >> LuaStringCl
 });
 
 rule Parens = sym('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
-rule Callable = Space >> Name | SelfName | VarArg | Parens;
+rule Callable = Space >> Variable | SelfName | VarArg | Parens;
 rule FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
 
 rule FnArgs = Seperator >>
@@ -356,8 +341,8 @@ extern rule Invoke, Slice;
 
 rule Index = symx('[') >> Exp >> sym(']');
 rule ChainItem = Invoke | DotChainItem | Slice | Index;
-rule DotChainItem = symx('.') >> _Name;
-rule ColonChainItem = symx('\\') >> _Name;
+rule DotChainItem = symx('.') >> Name;
+rule ColonChainItem = symx('\\') >> Name;
 rule invoke_chain = Invoke >> -ChainItems;
 rule ColonChain = ColonChainItem >> -invoke_chain;
 
@@ -406,7 +391,7 @@ rule TableBlock = +(SpaceBreak) >> Advance >> ensure(TableBlockInner, PopIndent)
 extern rule Statement;
 
 rule class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-rule ClassLine = CheckIndent >> (class_member_list | Statement | Exp) >> -sym(',');
+rule ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
 rule ClassBlock = +(SpaceBreak) >> Advance >>Seperator >> ClassLine >> *(+(SpaceBreak) >> ClassLine) >> PopIndent;
 
 rule ClassDecl =
@@ -419,7 +404,7 @@ rule export_values = NameList >> -(sym('=') >> ExpListLow);
 rule export_op = expr('*') | expr('^');
 rule Export = key("export") >> (ClassDecl | (Space >> export_op) | export_values);
 
-rule variable_pair = sym(':') >> not_(SomeSpace) >> Space >> Name;
+rule variable_pair = sym(':') >> not_(SomeSpace) >> Space >> Variable;
 
 rule normal_pair =
 (
@@ -436,7 +421,7 @@ rule KeyValue = variable_pair | normal_pair;
 rule KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 rule KeyValueLine = CheckIndent >> KeyValueList >> -sym(',');
 
-rule FnArgDef = (Space >> Name | SelfName) >> -(sym('=') >> Exp);
+rule FnArgDef = (Space >> Variable | SelfName) >> -(sym('=') >> Exp);
 
 rule FnArgDefList = Seperator >>
 (
@@ -455,8 +440,8 @@ rule FnArgsDef = sym('(') >> White >> -FnArgDefList >> -outer_var_shadow >> Whit
 rule fn_arrow = expr("->") | expr("=>");
 rule FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
-rule NameList = Seperator >> Space >> Name >> *(sym(',') >> Space >> Name);
-rule NameOrDestructure = Space >> Name | TableLit;
+rule NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
+rule NameOrDestructure = Space >> Variable | TableLit;
 rule AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
 
 rule ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
@@ -479,18 +464,19 @@ rule InvokeArgs =
 		TableBlock
 	);
 
-rule const_value = key("nil") | key("true") | key("false");
-rule minus_exp = sym('-') >> not_(SomeSpace) >> Exp;
-rule sharp_exp = sym('#') >> Exp;
-rule tilde_exp = sym('~') >> Exp;
-rule not_exp = key("not") >> Exp;
+rule const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
+rule minus_exp = expr('-') >> not_(SomeSpace) >> Exp;
+rule sharp_exp = expr('#') >> Exp;
+rule tilde_exp = expr('~') >> Exp;
+rule not_exp = expr("not") >> not_(AlphaNum) >> Exp;
 rule unary_exp = minus_exp | sharp_exp | tilde_exp | not_exp;
 
 rule SimpleValue =
-	const_value |
+	(Space >> const_value) |
 	If | Unless | Switch | With | ClassDecl | ForEach | For | While | Do |
-	unary_exp |
-	TblComprehension | TableLit | Comprehension | FunLit | Num;
+	(Space >> unary_exp) |
+	TblComprehension | TableLit | Comprehension | FunLit |
+	(Space >> Num);
 
 rule Assignment = ExpList >> (Update | Assign);
 

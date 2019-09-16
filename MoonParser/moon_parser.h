@@ -10,10 +10,8 @@
 #include "parserlib.hpp"
 using namespace parserlib;
 
-struct State
-{
-	State()
-	{
+struct State {
+	State() {
 		indents.push(0);
 		stringOpen = -1;
 	}

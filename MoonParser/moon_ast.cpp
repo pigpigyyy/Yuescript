@@ -23,8 +23,8 @@ const input& AstLeaf::getValue() {
 	ast<type##_t> __##type##_t(type);
 
 AST_IMPL(Num)
-AST_IMPL(_Name)
 AST_IMPL(Name)
+AST_IMPL(Variable)
 AST_IMPL(self)
 AST_IMPL(self_name)
 AST_IMPL(self_class)
@@ -235,7 +235,7 @@ private:
 		return !defined;
 	}
 
-	std::string getValidName(std::string_view name) {
+	std::string getUnusedName(std::string_view name) {
 		int index = 0;
 		std::string newName;
 		do {
@@ -344,6 +344,71 @@ private:
 		return parse<T>(_codeCache.back(), r, el, &st);
 	}
 
+	Invoke_t* startWithInvoke(ast_node* chain) {
+		ast_node* invoke = nullptr;
+		chain->traverse([&](ast_node* node) {
+			switch (node->getId()) {
+				case "Invoke"_id:
+					invoke = node;
+					return traversal::Stop;
+				case "DotChainItem"_id:
+				case "ColonChainItem"_id:
+				case "Slice"_id:
+				case "Index"_id:
+				case "Callable"_id:
+				case "String"_id:
+					return traversal::Stop;
+				default:
+					return traversal::Continue;
+			}
+		});
+		return static_cast<Invoke_t*>(invoke);
+	}
+
+	Invoke_t* endWithInvoke(Chain_t* chain) {
+		ast_node* last = nullptr;
+		chain->traverse([&](ast_node* node) {
+			switch (node->getId()) {
+				case "Invoke"_id:
+				case "DotChainItem"_id:
+				case "ColonChainItem"_id:
+				case "Slice"_id:
+				case "Index"_id:
+				case "Callable"_id:
+				case "String"_id:
+					last = node;
+					return traversal::Return;
+				default:
+					return traversal::Continue;
+			}
+		});
+		if (last && last->getId() == "Invoke"_id) {
+			return static_cast<Invoke_t*>(last);
+		} else {
+			return nullptr;
+		}
+	}
+
+	std::vector<ast_node*> getChainList(ast_node* chain) {
+		std::vector<ast_node*> list;
+		chain->traverse([&](ast_node* node) {
+			switch (node->getId()) {
+				case "Invoke"_id:
+				case "DotChainItem"_id:
+				case "ColonChainItem"_id:
+				case "Slice"_id:
+				case "Index"_id:
+				case "Callable"_id:
+				case "String"_id:
+					list.push_back(node);
+					return traversal::Return;
+				default:
+					return traversal::Continue;
+			}
+		});
+		return list;
+	}
+
 	void transformStatement(Statement_t* statement, std::vector<std::string>& out) {
 		if (statement->appendix) {
 			auto appendix = statement->appendix;
@@ -354,7 +419,7 @@ private:
 					ifCond->condition = if_else_line->condition;
 
 					auto exprList = new_ptr<ExpList_t>();
-					exprList->exprs.add(if_else_line->elseExpr);
+					exprList->exprs.push_back(if_else_line->elseExpr);
 					auto stmt = new_ptr<Statement_t>();
 					stmt->content.set(exprList);
 					auto body = new_ptr<Body_t>();
@@ -369,7 +434,7 @@ private:
 					auto ifNode = new_ptr<If_t>();
 					ifNode->firstCondition.set(ifCond);
 					ifNode->firstBody.set(body);
-					ifNode->branches.add(ifElseIf);
+					ifNode->branches.push_back(ifElseIf);
 
 					statement->appendix.set(nullptr);
 					auto simpleValue = new_ptr<SimpleValue_t>();
@@ -379,7 +444,7 @@ private:
 					auto exp = new_ptr<Exp_t>();
 					exp->value.set(value);
 					exprList = new_ptr<ExpList_t>();
-					exprList->exprs.add(exp);
+					exprList->exprs.push_back(exp);
 					statement->content.set(exprList);
 					break;
 				}
@@ -416,14 +481,38 @@ private:
 					break;
 				}
 				if (auto singleValue = singleValueFrom(expList)) {
-					if (auto ifNode = static_cast<If_t*>(singleValue->getByPath({"SimpleValue"_id, "If"_id}))) {
-						transformIf(ifNode, out);
-						break;
+					if (auto simpleValue = static_cast<SimpleValue_t*>(singleValue->getByPath({"SimpleValue"_id}))) {
+						auto value = simpleValue->getFirstChild();
+						bool specialSingleValue = true;
+						switch (value->getId()) {
+							case "If"_id: transformIf(static_cast<If_t*>(value), out); break;
+							case "ClassDecl"_id: transformClassDecl(static_cast<ClassDecl_t*>(value), out); break;
+							case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out); break;
+							case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out); break;
+							case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
+							case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(value), out); break;
+							case "For"_id: transformFor(static_cast<For_t*>(value), out); break;
+							case "While"_id: transformWhile(static_cast<While_t*>(value), out); break;
+							case "Do"_id: transformDo(static_cast<Do_t*>(value), out); break;
+							default: specialSingleValue = false; break;
+						}
+						if (specialSingleValue) {
+							break;
+						}
 					}
-					if (singleValue->getByPath({"ChainValue"_id, "InvokeArgs"_id})) {
-						transformValue(singleValue, out);
-						out.back() = indent() + out.back() + nlr(singleValue);
-						break;
+					if (auto chainValue = static_cast<ChainValue_t*>(singleValue->getByPath({"ChainValue"_id}))) {
+						if (chainValue->arguments) {
+							transformValue(singleValue, out);
+							out.back() = indent() + out.back() + nlr(singleValue);
+							break;
+						} else {
+							auto chain = static_cast<Chain_t*>(chainValue->getByPath({"Chain"_id}));
+							if (chain && endWithInvoke(chain)) {
+								transformValue(singleValue, out);
+								out.back() = indent() + out.back() + nlr(singleValue);
+								break;
+							}
+						}
 					}
 				}
 				std::string preDefine;
@@ -445,7 +534,7 @@ private:
 		std::vector<ast_node*> values;
 		expList->traverse([&](ast_node* child) {
 			if (child->getId() == "Value"_id) {
-				auto target = child->getByPath({"ChainValue"_id, "Callable"_id, "Name"_id});
+				auto target = child->getByPath({"ChainValue"_id, "Callable"_id, "Variable"_id});
 				if (target) {
 					auto name = toString(target);
 					if (addToScope(name)) {
@@ -557,6 +646,14 @@ private:
 						out.push_back(preDefine + nll(statement) + temp.front());
 						return;
 					}
+					case "ClassDecl"_id: {
+						std::vector<std::string> temp;
+						auto expList = assignment->assignable.get();
+						std::string preDefine = transformAssignDefs(expList);
+						transformClassDecl(static_cast<ClassDecl_t*>(valueItem), temp, ClassDeclUsage::Assignment, expList);
+						out.push_back(preDefine + nll(statement) + temp.front());
+						return;
+					}
 				}
 			}
 		}
@@ -575,7 +672,7 @@ private:
 					if (auto body = node->getByPath({"Body"_id})) {
 						if (traversal::Stop == body->traverse([&](ast_node* n) {
 							if (n->getId() == "Callable"_id) {
-								if (auto name = n->getByPath({"Name"_id})) {
+								if (auto name = n->getByPath({"Variable"_id})) {
 									if (temp.front() ==toString(name)) {
 										return traversal::Stop;
 									}
@@ -721,7 +818,7 @@ private:
 	void transformCallable(Callable_t* callable, std::vector<std::string>& out, bool invoke) {
 		auto item = callable->item.get();
 		switch (item->getId()) {
-			case "Name"_id: transformName(static_cast<Name_t*>(item), out); break;
+			case "Variable"_id: transformVariable(static_cast<Variable_t*>(item), out); break;
 			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(item), out, invoke); break;
 			case "VarArg"_id: out.push_back(s("..."sv)); break;
 			case "Parens"_id: transformParens(static_cast<Parens_t*>(item), out); break;
@@ -742,7 +839,7 @@ private:
 			case "If"_id: transformIfClosure(static_cast<If_t*>(value), out); break;
 			case "Switch"_id: transformSwitch(value, out); break;
 			case "With"_id: transformWith(value, out); break;
-			case "ClassDecl"_id: transformClassDecl(static_cast<ClassDecl_t*>(value), out); break;
+			case "ClassDecl"_id: transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
 			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
 			case "For"_id: transformForClosure(static_cast<For_t*>(value), out); break;
 			case "While"_id: transformWhile(value, out); break;
@@ -829,6 +926,8 @@ private:
 			if (auto singleValue = singleValueFrom(valueList)) {
 				if (auto comp = singleValue->getByPath({"SimpleValue"_id, "Comprehension"_id})) {
 					transformCompReturn(static_cast<Comprehension_t*>(comp), out);
+				} else if (auto classDecl = singleValue->getByPath({"SimpleValue"_id, "ClassDecl"_id})) {
+					transformClassDecl(static_cast<ClassDecl_t*>(classDecl), out, ClassDeclUsage::Return);
 				} else {
 					transformValue(singleValue, out);
 					out.back() = indent() + s("return "sv) + out.back() + nlr(returnNode);
@@ -877,7 +976,7 @@ private:
 			auto def = static_cast<FnArgDef_t*>(_def);
 			auto& arg = argItems.emplace_back();
 			switch (def->name->getId()) {
-				case "Name"_id: arg.name = toString(def->name); break;
+				case "Variable"_id: arg.name = toString(def->name); break;
 				case "SelfName"_id: {
 					assignSelf = true;
 					auto selfName = static_cast<SelfName_t*>(def->name.get());
@@ -971,7 +1070,10 @@ private:
 		std::vector<std::string> temp;
 		auto caller = chain_call->caller.get();
 		switch (caller->getId()) {
-			case "Callable"_id: transformCallable(static_cast<Callable_t*>(caller), temp, true); break;
+			case "Callable"_id: {
+				transformCallable(static_cast<Callable_t*>(caller), temp, startWithInvoke(chain_call->chain));
+				break;
+			}
 			case "String"_id: transformString(static_cast<String_t*>(caller), temp); break;
 			default: break;
 		}
@@ -1030,7 +1132,9 @@ private:
 
 	void transformColonChain(ColonChain_t* colonChain, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		temp.push_back(s(":"sv) + toString(colonChain->colonChain->name));
+		temp.push_back(
+			s(colonChain->colonChain->switchToDot ? "."sv : ":"sv) +
+			toString(colonChain->colonChain->name));
 		if (colonChain->invokeChain) {
 			transform_invoke_chain(colonChain->invokeChain, temp);
 		}
@@ -1053,7 +1157,7 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformName(Name_t* name, std::vector<std::string>& out) {
+	void transformVariable(Variable_t* name, std::vector<std::string>& out) {
 		out.push_back(toString(name));
 	}
 
@@ -1086,8 +1190,8 @@ private:
 
 	void transformComprehension(Comprehension_t* comp, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		std::string accum = getValidName("_accum_");
-		std::string len = getValidName("_len_");
+		std::string accum = getUnusedName("_accum_");
+		std::string len = getUnusedName("_len_");
 		addToScope(accum);
 		addToScope(len);
 		transformExp(comp->value, temp);
@@ -1177,8 +1281,8 @@ private:
 		switch (loopTarget->getId()) {
 			case "star_exp"_id: {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
-				auto listName = getValidName("_list_");
-				auto indexName = getValidName("_index_");
+				auto listName = getUnusedName("_list_");
+				auto indexName = getUnusedName("_index_");
 				addToScope(listName);
 				addToScope(indexName);
 				transformExp(star_exp->value, temp);
@@ -1211,8 +1315,8 @@ private:
 		for (auto _item : nameList->items.objects()) {
 			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
 			switch (item->getId()) {
-				case "Name"_id:
-					transformName(static_cast<Name_t*>(item), temp);
+				case "Variable"_id:
+					transformVariable(static_cast<Variable_t*>(item), temp);
 					break;
 				case "TableLit"_id:
 					transformTableLit(static_cast<TableLit_t*>(item), temp);
@@ -1262,8 +1366,8 @@ private:
 
 	void transformForClosure(For_t* forNode, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		std::string accum = getValidName("_accum_");
-		std::string len = getValidName("_len_");
+		std::string accum = getUnusedName("_accum_");
+		std::string len = getUnusedName("_len_");
 		addToScope(accum);
 		addToScope(len);
 		_buf << "(function()"sv << nll(forNode);
@@ -1299,8 +1403,8 @@ private:
 
 	void transformForInPlace(For_t* forNode,  std::vector<std::string>& out, ExpList_t* assignExpList) {
 		std::vector<std::string> temp;
-		std::string accum = getValidName("_accum_");
-		std::string len = getValidName("_len_");
+		std::string accum = getUnusedName("_accum_");
+		std::string len = getUnusedName("_len_");
 		_buf << indent() << "do"sv << nll(forNode);
 		pushScope();
 		addToScope(accum);
@@ -1351,8 +1455,8 @@ private:
 
 	void transformForEachClosure(ForEach_t* forEach, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		std::string accum = getValidName("_accum_");
-		std::string len = getValidName("_len_");
+		std::string accum = getUnusedName("_accum_");
+		std::string len = getUnusedName("_len_");
 		addToScope(accum);
 		addToScope(len);
 		_buf << "(function()"sv << nll(forEach);
@@ -1388,8 +1492,8 @@ private:
 
 	void transformForEachInPlace(ForEach_t* forEach,  std::vector<std::string>& out, ExpList_t* assignExpList) {
 		std::vector<std::string> temp;
-		std::string accum = getValidName("_accum_");
-		std::string len = getValidName("_len_");
+		std::string accum = getUnusedName("_accum_");
+		std::string len = getUnusedName("_len_");
 		_buf << indent() << "do"sv << nll(forEach);
 		pushScope();
 		addToScope(accum);
@@ -1462,7 +1566,7 @@ private:
 		auto name = keyName->name.get();
 		switch (name->getId()) {
 			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(name), out, false); break;
-			case "_Name"_id: out.push_back(toString(name)); break;
+			case "Name"_id: out.push_back(toString(name)); break;
 			default: break;
 		}
 	}
@@ -1504,47 +1608,309 @@ private:
 		}
 	}
 
-	void transformClassDecl(ClassDecl_t* classDecl, std::vector<std::string>& out) {
+	std::pair<std::string,bool> defineClassVariable(Assignable_t* assignable) {
+		if (assignable->item->getId() == "Variable"_id) {
+			auto variable = static_cast<Variable_t*>(assignable->item.get());
+			auto name = toString(variable);
+			if (addToScope(name)) {
+				return {name, true};
+			} else {
+				return {name, false};
+			}
+		}
+		return {Empty, false};
+	}
+
+	enum class ClassDeclUsage {
+		Return,
+		Assignment,
+		Common
+	};
+
+	void transformClassDeclClosure(ClassDecl_t* classDecl, std::vector<std::string>& out) {
 		std::vector<std::string> temp;
-		if (classDecl->name) {
-			transformAssignable(classDecl->name, temp);
-		}
-		if (classDecl->extend) {
-			transformExp(classDecl->extend, temp);
-		}
-		if (classDecl->body) {
-			transformClassBlock(classDecl->body, temp);
-		}
-		out.push_back(join(temp, "\n"sv));
+		temp.push_back(s("(function()"sv) + nll(classDecl));
+		pushScope();
+		transformClassDecl(classDecl, temp, ClassDeclUsage::Return);
+		popScope();
+		temp.push_back(s("end)()"sv));
+		out.push_back(join(temp));
 	}
 
-	void transformClassBlock(ClassBlock_t* classBlock, std::vector<std::string>& out) {
+	struct ClassMember {
+		std::string key;
+		bool isBuiltin;
+		ast_node* node;
+	};
+
+	void transformClassDecl(ClassDecl_t* classDecl, std::vector<std::string>& out, ClassDeclUsage usage = ClassDeclUsage::Common, ExpList_t* expList = nullptr) {
 		std::vector<std::string> temp;
-		for (auto _line : classBlock->lines.objects()) {
-			auto line = static_cast<ClassLine_t*>(_line);
-			transformClassLine(line, temp);
+		auto body = classDecl->body.get();
+		auto assignable = classDecl->name.get();
+		auto extend = classDecl->extend.get();
+		std::string className;
+		if (assignable) {
+			bool newDefined = false;
+			std::tie(className, newDefined) = defineClassVariable(assignable);
+			if (newDefined) {
+				temp.push_back(indent() + s("local "sv) + className + nll(classDecl));
+			}
 		}
-		out.push_back(join(temp,"\n"sv));
+		temp.push_back(indent() + s("do"sv) + nll(classDecl));
+		pushScope();
+		auto classVar = getUnusedName("_class_"sv);
+		addToScope(classVar);
+		temp.push_back(indent() + s("local "sv) + classVar + nll(classDecl));
+		if (body) {
+			body->traverse([&](ast_node* node) {
+				if (node->getId() == "Statement"_id) {
+					if (auto assignment = static_cast<Assignment_t*>(node->getByPath({"Assignment"_id}))) {
+						std::string preDefine = transformAssignDefs(assignment->assignable.get());
+						if (!preDefine.empty()) temp.push_back(preDefine + nll(assignment));
+					}
+					return traversal::Return;
+				}
+				return traversal::Continue;
+			});
+		}
+		std::string parent, parentVar;
+		if (extend) {
+			parentVar = getUnusedName("_parent_"sv);
+			addToScope(parentVar);
+			transformExp(extend, temp);
+			parent = temp.back();
+			temp.pop_back();
+			temp.push_back(indent() + s("local "sv) + parentVar + s(" = "sv) + parent + nll(classDecl));
+		}
+		auto baseVar = getUnusedName("_base_"sv);
+		auto selfVar = getUnusedName("_self_"sv);
+		addToScope(baseVar);
+		addToScope(selfVar);
+		temp.push_back(indent() + s("local "sv) + baseVar + s(" = "sv));
+		std::vector<std::string> builtins;
+		std::vector<std::string> customs;
+		std::vector<std::string> statements;
+		if (body) {
+			std::list<ClassMember> members;
+			for (auto _classLine : classDecl->body->lines.objects()) {
+				auto classLine = static_cast<ClassLine_t*>(_classLine);
+				auto content = classLine->content.get();
+				switch (content->getId()) {
+					case "class_member_list"_id:
+						pushScope();
+						transform_class_member_list(static_cast<class_member_list_t*>(content), members, classVar);
+						popScope();
+						members.back().key = indent(1) + members.back().key;
+						break;
+					case "Statement"_id:
+						transformStatement(static_cast<Statement_t*>(content), statements);
+						break;
+					default: break;
+				}
+			}
+			for (auto& member : members) {
+				if (member.isBuiltin) {
+					builtins.push_back((builtins.empty() ? Empty : s(","sv) + nll(member.node)) + member.key);
+				} else {
+					customs.push_back((customs.empty() ? Empty : s(","sv) + nll(member.node)) + member.key);
+				}
+			}
+			if (!customs.empty()) {
+				temp.back() += s("{"sv) + nll(body);
+				temp.push_back(join(customs) + nll(body));
+				temp.push_back(indent() + s("}"sv) + nll(body));
+			} else {
+				temp.back() += s("{ }"sv) + nll(body);
+			}
+			temp.push_back(indent() + baseVar + s(".__index = "sv) + baseVar + nll(classDecl));
+		} else {
+			temp.back() += s("{ }"sv) + nll(classDecl);
+		}
+		if (extend) {
+			_buf << indent() << "setmetatable("sv << baseVar << ", "sv << parentVar << ".__base)"sv << nll(classDecl);
+		}
+		_buf << indent() << classVar << " = setmetatable({" << nll(classDecl);
+		if (!builtins.empty()) {
+			_buf << join(builtins) << ","sv << nll(classDecl);
+		} else {
+			if (extend) {
+				_buf << indent(1) << "__init = function(self, ...)"sv << nll(classDecl);
+				_buf << indent(2) << "return _class_0.__parent.__init(self, ...)"sv << nll(classDecl);
+    			_buf << indent(1) << "end,"sv << nll(classDecl);
+			} else {
+				_buf << indent(1) << "__init = function() end,"sv << nll(classDecl);
+			}
+		}
+		_buf << indent(1) << "__base = "sv << baseVar;
+    	if (!className.empty()) {
+    		_buf << ","sv << nll(classDecl) << indent(1) << "__name = \""sv << className << "\""sv << (extend ? s(","sv) : Empty) << nll(classDecl);
+		} else {
+			_buf << nll(classDecl);
+		}
+		if (extend) {
+			_buf << indent(1) << "__parent = "sv << parentVar << nll(classDecl);
+		}
+		_buf << indent() << "}, {"sv << nll(classDecl);
+		if (extend) {
+			_buf << indent(1) << "__index = function(cls, name)"sv << nll(classDecl);
+			_buf << indent(2) << "local val = rawget("sv << baseVar << ", name)"sv << nll(classDecl);
+			_buf << indent(2) << "if val == nil then"sv << nll(classDecl);
+			_buf << indent(3) << "local parent = rawget(cls, \"__parent\")"sv << nll(classDecl);
+			_buf << indent(3) << "if parent then"sv << nll(classDecl);
+			_buf << indent(4) << "return parent[name]"sv << nll(classDecl);
+			_buf << indent(3) << "end"sv << nll(classDecl);
+			_buf << indent(2) << "else"sv << nll(classDecl);
+			_buf << indent(3) << "return val"sv << nll(classDecl);
+			_buf << indent(2) << "end"sv << nll(classDecl);
+			_buf << indent(1) << "end,"sv << nll(classDecl);
+		} else {
+			_buf << indent(1) << "__index = "sv << baseVar << ","sv << nll(classDecl);
+		}
+		_buf << indent(1) << "__call = function(cls, ...)"sv << nll(classDecl);
+		_buf << indent(2) << "local " << selfVar << " = setmetatable({}, "sv << baseVar << ")"sv << nll(classDecl);
+		_buf << indent(2) << "cls.__init("sv << selfVar << ", ...)"sv << nll(classDecl);
+		_buf << indent(2) << "return "sv << selfVar << nll(classDecl);
+		_buf << indent(1) << "end"sv << nll(classDecl);
+		_buf << indent() << "})"sv << nll(classDecl);
+		_buf << indent() << baseVar << ".__class = "sv << classVar << nll(classDecl);
+		if (extend) {
+			_buf << indent() << "if "sv << parentVar << ".__inherited then"sv << nll(classDecl);
+			_buf << indent(1) << parentVar << ".__inherited("sv << parentVar << ", "sv << classVar << ")"sv << nll(classDecl);
+			_buf << indent() << "end"sv << nll(classDecl);
+		}
+		if (!statements.empty()) _buf << indent() << "local self = "sv << classVar << nll(classDecl);
+		_buf << join(statements);
+  		if (!className.empty()) _buf << indent() << className << " = "sv << classVar << nll(classDecl);
+		switch (usage) {
+			case ClassDeclUsage::Return: {
+				_buf << indent() << "return "sv << classVar << nlr(classDecl);
+				break;
+			}
+			case ClassDeclUsage::Assignment: {
+				std::vector<std::string> tmp;
+				transformExpList(expList, tmp);
+				_buf << indent() << tmp.back() << " = "sv << classVar << nlr(classDecl);
+				break;
+			}
+			default: break;
+		}
+		temp.push_back(clearBuf());
+		popScope();
+		temp.push_back(indent() + s("end"sv) + nlr(classDecl));
+		out.push_back(join(temp));
 	}
 
-	void transformClassLine(ClassLine_t* classLine, std::vector<std::string>& out) {
-		auto content = classLine->content.get();
-		switch (content->getId()) {
-			case "class_member_list"_id:
-				transform_class_member_list(static_cast<class_member_list_t*>(content), out);
-				break;
-			case "Statement"_id:
-				transformStatement(static_cast<Statement_t*>(content), out);
-				break;
-			case "Exp"_id:
-				transformExp(static_cast<Exp_t*>(content), out);
-				break;
+	void transform_class_member_list(class_member_list_t* class_member_list, std::list<ClassMember>& out, const std::string& classVar) {
+		std::vector<std::string> temp;
+		for (auto _keyValue : class_member_list->values.objects()) {
+			auto keyValue = static_cast<KeyValue_t*>(_keyValue);
+			bool isBuiltin = false;
+			do {
+				auto keyName = static_cast<KeyName_t*>(
+					keyValue->getByPath({"normal_pair"_id, "KeyName"_id})
+				);
+				if (!keyName) break;
+				auto normal_pair = static_cast<normal_pair_t*>(keyValue->getFirstChild());
+				auto nameNode = keyName->getByPath({"Name"_id});
+				if (!nameNode) break;
+				auto name = toString(nameNode);
+				input newSuperCall;
+				isBuiltin = name == "new"sv;
+				if (isBuiltin) {
+					keyName->name.set(toAst<Name_t>("__init"sv, Name));
+					newSuperCall = _converter.from_bytes(classVar) + L".__parent.__init";
+				} else {
+					newSuperCall = _converter.from_bytes(classVar) + L".__parent.__base." + _converter.from_bytes(name);
+				}
+				normal_pair->value->traverse([&](ast_node* node) {
+					if (node->getId() == "ClassDecl"_id) return traversal::Return;
+					if (auto chainValue = ast_cast<ChainValue_t>(node)) {
+						if (auto var = chainValue->caller->getByPath({"Variable"_id})) {
+							if (toString(var) == "super"sv) {
+								if (chainValue->arguments && chainValue->arguments->argsList) {
+									chainValue->arguments->argsList->exprs.push_front(toAst<Exp_t>("self"sv, Exp));
+									_codeCache.push_back(newSuperCall);
+									var->m_begin.m_it = _codeCache.back().begin();
+									var->m_end.m_it = _codeCache.back().end();
+								} else {
+									_codeCache.push_back(_converter.from_bytes(classVar) + L".__parent");
+									var->m_begin.m_it = _codeCache.back().begin();
+									var->m_end.m_it = _codeCache.back().end();
+								}
+							}
+						} else if (auto var = chainValue->caller->getByPath({"chain_call"_id, "Callable"_id, "Variable"_id})) {
+							if (toString(var) == "super"sv) {
+								auto chainList = getChainList(chainValue->caller);
+								if (auto args = chainValue->getByPath({"InvokeArgs"_id, "ExpList"_id})) {
+									chainList.push_back(args);
+								}
+								auto insertSelfToArguments = [&](ast_node* item) {
+									switch (item->getId()) {
+										case "ExpList"_id:
+											static_cast<ExpList_t*>(item)->exprs.push_front(toAst<Exp_t>("self"sv, Exp));
+											break;
+										case "Invoke"_id: {
+											auto invoke = static_cast<Invoke_t*>(item);
+											if (auto fnArgs = invoke->argument.as<FnArgs_t>()) {
+												fnArgs->args.push_front(toAst<Exp_t>("self"sv, Exp));
+											} else {
+												auto string = new_ptr<String_t>();
+												string->str.set(invoke->argument);
+												auto value = new_ptr<Value_t>();
+												value->item.set(string);
+												auto exp = new_ptr<Exp_t>();
+												exp->value.set(value);
+												auto newFnArgs = new_ptr<FnArgs_t>();
+												fnArgs->args.push_back(toAst<Exp_t>("self"sv, Exp));
+												newFnArgs->args.push_back(exp);
+												invoke->argument.set(newFnArgs);
+											}
+											break;
+										}
+										default: break;
+									}
+								};
+								if (chainList.size() == 2) {
+									_codeCache.push_back(newSuperCall);
+									var->m_begin.m_it = _codeCache.back().begin();
+									var->m_end.m_it = _codeCache.back().end();
+									auto item = chainList.back();
+									insertSelfToArguments(item);
+								} else if (chainList.size() > 2) {
+									_codeCache.push_back(_converter.from_bytes(classVar) + L".__parent");
+									var->m_begin.m_it = _codeCache.back().begin();
+									var->m_end.m_it = _codeCache.back().end();
+									if (auto colonChainItem = ast_cast<ColonChainItem_t>(chainList[1])) {
+										colonChainItem->switchToDot = true;
+										auto item = chainList[2];
+										insertSelfToArguments(item);
+									}
+								} else {
+									_codeCache.push_back(_converter.from_bytes(classVar) + L".__parent");
+									var->m_begin.m_it = _codeCache.back().begin();
+									var->m_end.m_it = _codeCache.back().end();
+								}
+							}
+						}
+					}
+					return traversal::Continue;
+				});
+			} while (false);
+			transformKeyValue(keyValue, temp);
+			out.push_back({temp.back(), isBuiltin, keyValue});
+			temp.clear();
 		}
 	}
 
-	void transform_class_member_list(class_member_list_t* class_member_list, std::vector<std::string>& out) {noop(class_member_list, out);}
-
-	void transformAssignable(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
+	void transformAssignable(Assignable_t* assignable, std::vector<std::string>& out) {
+		auto item = assignable->item.get();
+		switch (item->getId()) {
+			case "Chain"_id: transformChain(static_cast<Chain_t*>(item), out); break;
+			case "Variable"_id: transformVariable(static_cast<Variable_t*>(item), out); break;
+			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(item), out, false); break;
+			default: break;
+		}
+	}
 
 	void transformUpdate(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transformImport(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
@@ -1565,40 +1931,69 @@ private:
 	void transformCompFor(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transformCompClause(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
 	void transform_invoke_args_with_table(ast_node* node, std::vector<std::string>& out) {noop(node, out);}
+	void transformUnless(Unless_t* node, std::vector<std::string>& out) {noop(node, out);}
 };
 
 const std::string MoonCompliler::Empty;
 
 int main()
 {
-	std::string s = R"TestCodesHere(
--- vararg bubbling
-f = (...) -> #{...}
+	std::string s = R"TestCodesHere(class Hello
+  new: (@test, @world) =>
+    print "creating object.."
+  hello: =>
+    print @test, @world
+  __tostring: => "hello world"
 
-dont_bubble = ->
-  [x for x in ((...)-> print ...)("hello")]
+x = Hello 1,2
+x\hello()
 
-k = [x for x in ((...)-> print ...)("hello")]
+print x
 
-j = for i=1,10
-  (...) -> print ...
+class Simple
+  cool: => print "cool"
 
--- bubble me
+class Yikes extends Simple
+  new: => print "created hello"
 
-m = (...) ->
-  [x for x in *{...} when f(...) > 4]
-
-x = for i in *{...} do i
-y = [x for x in *{...}]
-z = [x for x in hallo when f(...) > 4]
-
-
-a = for i=1,10 do ...
-
-b = for i=1,10
-  -> print ...
+x = Yikes()
+x\cool()
 
 
+class Hi
+  new: (arg) =>
+    print "init arg", arg
+
+  cool: (num) =>
+    print "num", num
+
+
+class Simple extends Hi
+  new: => super "man"
+  cool: => super 120302
+
+x = Simple()
+x\cool()
+
+print x.__class == Simple
+
+
+class Okay
+  -- what is going on
+  something: 20323
+  -- yeaha
+
+
+class Biggie extends Okay
+  something: =>
+    super 1,2,3,4
+    super.something another_self, 1,2,3,4
+    assert super == Okay
+
+
+class Yeah
+  okay: =>
+    super\something 1,2,3,4
 )TestCodesHere";
 
 	MoonCompliler{}.complile(s);

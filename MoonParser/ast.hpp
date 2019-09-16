@@ -367,9 +367,16 @@ public:
         clear();
     }
 
-    void add(ast_node* node) {
+    void push_back(ast_node* node) {
 		if (accept(node)) {
 			m_objects.push_back(node);
+			node->retain();
+		}
+	}
+
+    void push_front(ast_node* node) {
+		if (accept(node)) {
+			m_objects.push_front(node);
 			node->retain();
 		}
 	}

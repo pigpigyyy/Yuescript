@@ -48,25 +48,25 @@ public: \
 AST_LEAF(Num, "Num"_id)
 AST_END(Num)
 
-AST_LEAF(_Name, "_Name"_id)
-AST_END(_Name)
-
-AST_NODE(Name, "Name"_id)
-	ast_ptr<_Name_t> name;
+AST_LEAF(Name, "Name"_id)
 AST_END(Name)
+
+AST_NODE(Variable, "Variable"_id)
+	ast_ptr<Name_t> name;
+AST_END(Variable)
 
 AST_LEAF(self, "self"_id)
 AST_END(self)
 
 AST_NODE(self_name, "self_name"_id)
-	ast_ptr<_Name_t> name;
+	ast_ptr<Name_t> name;
 AST_END(self_name)
 
 AST_LEAF(self_class, "self_class"_id)
 AST_END(self_class)
 
 AST_NODE(self_class_name, "self_class_name"_id)
-	ast_ptr<_Name_t> name;
+	ast_ptr<Name_t> name;
 AST_END(self_class_name)
 
 AST_NODE(SelfName, "SelfName"_id)
@@ -74,7 +74,7 @@ AST_NODE(SelfName, "SelfName"_id)
 AST_END(SelfName)
 
 AST_NODE(KeyName, "KeyName"_id)
-	ast_ptr<ast_node> name; // SelfName_t | _Name_t
+	ast_ptr<ast_node> name; // SelfName_t | Name_t
 AST_END(KeyName)
 
 AST_LEAF(VarArg, "VarArg"_id)
@@ -88,7 +88,7 @@ AST_END(Seperator)
 
 AST_NODE(NameList, "NameList"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<Name_t> names;
+	ast_list<Variable_t> names;
 AST_END(NameList)
 
 AST_NODE(Local, "Local"_id)
@@ -96,13 +96,13 @@ AST_NODE(Local, "Local"_id)
 AST_END(Local)
 
 AST_NODE(colon_import_name, "colon_import_name"_id)
-	ast_ptr<Name_t> name;
+	ast_ptr<Variable_t> name;
 AST_END(colon_import_name)
 
 class Exp_t;
 
 AST_NODE(ImportName, "ImportName"_id)
-	ast_ptr<ast_node> name; // colon_import_name_t | Name_t
+	ast_ptr<ast_node> name; // colon_import_name_t | Variable_t
 AST_END(ImportName)
 
 AST_NODE(Import, "Import"_id)
@@ -182,7 +182,7 @@ AST_NODE(for_step_value, "for_step_value"_id)
 AST_END(for_step_value)
 
 AST_NODE(For, "For"_id)
-	ast_ptr<Name_t> varName;
+	ast_ptr<Variable_t> varName;
 	ast_ptr<Exp_t> startValue;
 	ast_ptr<Exp_t> stopValue;
 	ast_ptr<for_step_value_t, true> stepValue;
@@ -228,7 +228,7 @@ AST_NODE(CompForEach, "CompForEach"_id)
 AST_END(CompForEach)
 
 AST_NODE(CompFor, "CompFor"_id)
-	ast_ptr<Name_t> varName;
+	ast_ptr<Variable_t> varName;
 	ast_ptr<Exp_t> startValue;
 	ast_ptr<Exp_t> stopValue;
 	ast_ptr<for_step_value_t, true> stepValue;
@@ -264,7 +264,7 @@ AST_END(BinaryOperator)
 class Chain_t;
 
 AST_NODE(Assignable, "Assignable"_id)
-	ast_ptr<ast_node> item; // Chain_t | Name_t | SelfName_t
+	ast_ptr<ast_node> item; // Chain_t | Variable_t | SelfName_t
 AST_END(Assignable)
 
 class Value_t;
@@ -280,7 +280,7 @@ AST_NODE(Exp, "Exp"_id)
 AST_END(Exp)
 
 AST_NODE(Callable, "Callable"_id)
-	ast_ptr<ast_node> item; // Name_t | SelfName_t | VarArg_t | Parens_t
+	ast_ptr<ast_node> item; // Variable_t | SelfName_t | VarArg_t | Parens_t
 AST_END(Callable)
 
 class InvokeArgs_t;
@@ -359,11 +359,12 @@ AST_NODE(chain_item, "chain_item"_id)
 AST_END(chain_item)
 
 AST_NODE(DotChainItem, "DotChainItem"_id)
-	ast_ptr<_Name_t> name;
+	ast_ptr<Name_t> name;
 AST_END(DotChainItem)
 
 AST_NODE(ColonChainItem, "ColonChainItem"_id)
-	ast_ptr<_Name_t> name;
+	ast_ptr<Name_t> name;
+	bool switchToDot = false;
 AST_END(ColonChainItem)
 
 AST_NODE(chain_dot_chain, "chain_dot_chain"_id)
@@ -430,7 +431,7 @@ AST_NODE(class_member_list, "class_member_list"_id)
 AST_END(class_member_list)
 
 AST_NODE(ClassLine, "ClassLine"_id)
-	ast_ptr<ast_node> content; // class_member_list_t | Statement_t | Exp_t
+	ast_ptr<ast_node> content; // class_member_list_t | Statement_t
 AST_END(ClassLine)
 
 AST_NODE(ClassBlock, "ClassBlock"_id)
@@ -457,7 +458,7 @@ AST_NODE(Export, "Export"_id)
 AST_END(Export)
 
 AST_NODE(variable_pair, "variable_pair"_id)
-	ast_ptr<Name_t> name;
+	ast_ptr<Variable_t> name;
 AST_END(variable_pair)
 
 AST_NODE(normal_pair, "normal_pair"_id)
@@ -470,7 +471,7 @@ AST_NODE(KeyValue, "KeyValue"_id)
 AST_END(KeyValue)
 
 AST_NODE(FnArgDef, "FnArgDef"_id)
-	ast_ptr<ast_node> name; // Name_t | SelfName_t
+	ast_ptr<ast_node> name; // Variable_t | SelfName_t
 	ast_ptr<Exp_t, true> defaultValue;
 AST_END(FnArgDef)
 
@@ -499,7 +500,7 @@ AST_NODE(FunLit, "FunLit"_id)
 AST_END(FunLit)
 
 AST_NODE(NameOrDestructure, "NameOrDestructure"_id)
-	ast_ptr<ast_node> item; // Name_t | TableLit_t
+	ast_ptr<ast_node> item; // Variable_t | TableLit_t
 AST_END(NameOrDestructure)
 
 AST_NODE(AssignableNameList, "AssignableNameList"_id)
