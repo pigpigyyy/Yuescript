@@ -25,8 +25,7 @@ typedef std::vector<ast_node*> ast_stack;
 extern int ast_type_id;
 
 template<class T>
-int ast_type()
-{
+int ast_type() {
 	static int type = ast_type_id++;
 	return type;
 }
@@ -211,7 +210,7 @@ public:
 
 	template <class T>
 	T* to() const {
-		assert(m_ptr->getId() == ast_type<T>());
+		assert(m_ptr->getId() != ast_type<T>());
 		return static_cast<T*>(m_ptr);
 	}
 
@@ -313,13 +312,13 @@ inline ast_ptr<T, false, false> new_ptr() {
 	return ast_ptr<T, false, false>(new T);
 }
 
-template <class ...Args> class ast_choice : public _ast_ptr {
+template <class ...Args> class ast_sel : public _ast_ptr {
 public:
-    ast_choice() : _ast_ptr(nullptr, true) {}
+    ast_sel() : _ast_ptr(nullptr, true) {}
 
-    ast_choice(const ast_choice<Args...>& other) : _ast_ptr(other.get(), true) {}
+    ast_sel(const ast_sel<Args...>& other) : _ast_ptr(other.get(), true) {}
 
-    ast_choice<Args...>& operator=(const ast_choice<Args...>& other) {
+    ast_sel<Args...>& operator=(const ast_sel<Args...>& other) {
     	set(other.get());
     	return *this;
 	}
@@ -340,7 +339,7 @@ public:
 
         ast_node* node = st.back();
 
-        if (!ast_choice::accept(node)) throw std::logic_error("invalid AST node");
+        if (!ast_sel::accept(node)) throw std::logic_error("invalid AST node");
 
         st.pop_back();
 
@@ -351,7 +350,7 @@ private:
     virtual bool accept(ast_node* node) override {
     	if (!node) return false;
 		using swallow = bool[];
-		bool* result = nullptr;
+		bool result = false;
 		(void)swallow{result || (result = ast_type<Args>() == node->get_type())...};
 		return result;
 	}
@@ -449,6 +448,49 @@ private:
 	}
 };
 
+template <class ...Args> class ast_sel_list : public _ast_list {
+public:
+    ///the default constructor.
+    ast_sel_list() {}
+
+    ast_sel_list(const ast_sel_list<Args...>& other) {
+    	clear();
+    	dup(other);
+	}
+
+    ast_sel_list<Args...>& operator=(const ast_sel_list<Args...>& other) {
+    	clear();
+    	dup(other);
+    	return *this;
+	}
+
+    /** Pops objects of type T from the stack until no more objects can be popped.
+        @param st stack.
+     */
+    virtual void construct(ast_stack &st) override {
+        while (!st.empty()) {
+            ast_node* node = st.back();
+
+            //if the object was not not of the appropriate type,
+            //end the list parsing
+            if (!ast_sel_list<Args...>::accept(node)) return;
+
+            st.pop_back();
+
+            //insert the object in the list, in reverse order
+            m_objects.push_front(node);
+            node->retain();
+        }
+    }
+private:
+    virtual bool accept(ast_node* node) override {
+    	if (!node) return false;
+		using swallow = bool[];
+		bool result = false;
+		(void)swallow{result || (result = ast_type<Args>() == node->get_type())...};
+		return result;
+	}
+};
 
 /** AST function which creates an object of type T
     and pushes it to the node stack.

@@ -312,30 +312,24 @@ rule Parens = sym('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
 rule Callable = Space >> Variable | SelfName | VarArg | Parens;
 rule FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
 
-rule FnArgs = Seperator >>
-(
-	(
-		symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')
-	) | (
-		sym('!') >> not_(expr('='))
-	)
-);
+rule FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
+	(sym('!') >> not_(expr('=')));
 
 extern rule ChainItems, DotChainItem, ColonChain;
 
 rule chain_call = (Callable | String) >> ChainItems;
-rule chain_item = not_(set(".\\")) >> ChainItems;
+rule chain_item = and_(set(".\\")) >> ChainItems;
 rule chain_dot_chain = DotChainItem >> -ChainItems;
 
-rule Chain =
+rule Chain = Seperator >> (
 	chain_call |
 	chain_item |
-	Space >> (chain_dot_chain | ColonChain);
+	Space >> (chain_dot_chain | ColonChain));
 
 extern rule ChainItem;
 
 rule chain_with_colon = +ChainItem >> -ColonChain;
-rule ChainItems = Seperator >> (chain_with_colon | ColonChain);
+rule ChainItems = chain_with_colon | ColonChain;
 
 extern rule Invoke, Slice;
 
@@ -355,11 +349,11 @@ rule Slice =
 	(sym(',') >> Exp | default_value) >>
 	sym(']');
 
-rule Invoke =
+rule Invoke = Seperator >> (
 	FnArgs |
 	SingleString |
 	DoubleString |
-	and_(expr('[')) >> LuaString;
+	and_(expr('[')) >> LuaString);
 
 extern rule TableValueList, TableLitLine;
 
@@ -448,7 +442,7 @@ rule ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
 rule ExpListLow = Seperator >> Exp >> *((sym(',') | sym(';')) >> Exp);
 
 rule ArgLine = CheckIndent >> Exp >> *(sym(',') >> Exp);
-rule ArgBlock = Seperator >> ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
+rule ArgBlock = ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
 
 rule invoke_args_with_table =
 	sym(',') >>
@@ -458,9 +452,9 @@ rule invoke_args_with_table =
 	);
 
 rule InvokeArgs =
-	not_(expr('-')) >>
+	not_(expr('-')) >> Seperator >> 
 	(
-		ExpList >> -(invoke_args_with_table | TableBlock) |
+		Exp >> *(sym(',') >> Exp) >> -(invoke_args_with_table | TableBlock) |
 		TableBlock
 	);
 

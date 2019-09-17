@@ -290,11 +290,18 @@ AST_NODE(ChainValue, "ChainValue"_id)
 	ast_ptr<InvokeArgs_t, true> arguments;
 AST_END(ChainValue)
 
-class KeyValue_t;
+AST_NODE(variable_pair, "variable_pair"_id)
+	ast_ptr<Variable_t> name;
+AST_END(variable_pair)
+
+AST_NODE(normal_pair, "normal_pair"_id)
+	ast_ptr<ast_node> key; // KeyName_t | [Exp_t] | DoubleString_t | SingleString_t
+	ast_ptr<ast_node> value; // Exp_t | TableBlock_t
+AST_END(normal_pair)
 
 AST_NODE(simple_table, "simple_table"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<KeyValue_t> pairs;
+	ast_sel_list<variable_pair_t, normal_pair_t> pairs;
 AST_END(simple_table)
 
 class String_t;
@@ -307,14 +314,6 @@ AST_NODE(SimpleValue, "SimpleValue"_id)
 	TblComprehension_t | TableLit_t | Comprehension_t | FunLit_t | Num_t;
 	*/
 AST_END(SimpleValue)
-
-AST_NODE(Chain, "Chain"_id)
-	ast_ptr<ast_node> item; // chain_call_t | chain_item_t | chain_dot_chain_t | ColonChain_t
-AST_END(Chain)
-
-AST_NODE(Value, "Value"_id)
-	ast_ptr<ast_node> item; // SimpleValue_t | simple_table_t | ChainValue_t | String_t
-AST_END(Value)
 
 AST_LEAF(LuaString, "LuaString"_id)
 AST_END(LuaString)
@@ -338,26 +337,6 @@ AST_NODE(String, "String"_id)
 	ast_ptr<ast_node> str; // DoubleString_t | SingleString_t | LuaString_t
 AST_END(String)
 
-AST_NODE(Parens, "Parens"_id)
-	ast_ptr<Exp_t> expr;
-AST_END(Parens)
-
-AST_NODE(FnArgs, "FnArgs"_id)
-	ast_ptr<Seperator_t> sep;
-	ast_list<Exp_t> args;
-AST_END(FnArgs)
-
-class ChainItems_t;
-
-AST_NODE(chain_call, "chain_call"_id)
-	ast_ptr<ast_node> caller; // Callable_t | String_t
-	ast_ptr<ChainItems_t> chain;
-AST_END(chain_call)
-
-AST_NODE(chain_item, "chain_item"_id)
-	ast_ptr<ChainItems_t> chain;
-AST_END(chain_item)
-
 AST_NODE(DotChainItem, "DotChainItem"_id)
 	ast_ptr<Name_t> name;
 AST_END(DotChainItem)
@@ -367,67 +346,46 @@ AST_NODE(ColonChainItem, "ColonChainItem"_id)
 	bool switchToDot = false;
 AST_END(ColonChainItem)
 
-AST_NODE(chain_dot_chain, "chain_dot_chain"_id)
-	ast_ptr<DotChainItem_t> caller;
-	ast_ptr<ChainItems_t, true> chain;
-AST_END(chain_dot_chain)
-
-class ColonChain_t;
-class Invoke_t;
-class Slice_t;
-
-AST_NODE(ChainItem, "ChainItem"_id)
-	ast_ptr<ast_node> item; // Invoke_t | DotChainItem_t | Slice_t | [Exp_t]
-AST_END(ChainItem)
-
-AST_NODE(ChainItems, "ChainItems"_id)
-	ast_ptr<Seperator_t> sep;
-	ast_list<ChainItem_t> simpleChain;
-	ast_ptr<ColonChain_t, true> colonChain;
-AST_END(ChainItems)
-
-AST_NODE(invoke_chain, "invoke_chain"_id)
-	ast_ptr<Invoke_t> invoke;
-	ast_ptr<ChainItems_t, true> chain;
-AST_END(invoke_chain)
-
-AST_NODE(ColonChain, "ColonChain"_id)
-	ast_ptr<ColonChainItem_t> colonChain;
-	ast_ptr<invoke_chain_t, true> invokeChain;
-AST_END(ColonChain)
-
-AST_LEAF(default_value, "default_value"_id)
-AST_END(default_value)
-
 AST_NODE(Slice, "Slice"_id)
 	ast_ptr<ast_node> startValue; // Exp_t | default_value_t
 	ast_ptr<ast_node> stopValue; // Exp_t | default_value_t
 	ast_ptr<ast_node> stepValue; // Exp_t | default_value_t
 AST_END(Slice)
 
+AST_NODE(Parens, "Parens"_id)
+	ast_ptr<Exp_t> expr;
+AST_END(Parens)
+
 AST_NODE(Invoke, "Invoke"_id)
-	ast_ptr<ast_node> argument; // FnArgs_t | SingleString_t | DoubleString_t | LuaString_t
+	ast_ptr<Seperator_t> sep;
+	ast_sel_list<Exp_t, SingleString_t, DoubleString_t, LuaString_t> args;
 AST_END(Invoke)
 
-class KeyValue_t;
+AST_NODE(Chain, "Chain"_id)
+	ast_ptr<Seperator_t> sep;
+	ast_sel_list<Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Slice_t, Exp_t> items;
+AST_END(Chain)
 
-AST_NODE(TableValue, "TableValue"_id)
-	ast_ptr<ast_node> value; // KeyValue_t | Exp_t
-AST_END(TableValue)
+AST_NODE(Value, "Value"_id)
+	ast_ptr<ast_node> item; // SimpleValue_t | simple_table_t | ChainValue_t | String_t
+AST_END(Value)
+
+AST_LEAF(default_value, "default_value"_id)
+AST_END(default_value)
 
 AST_NODE(TableLit, "TableLit"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<TableValue_t> values;
+	ast_sel_list<variable_pair_t, normal_pair_t, Exp_t> values;
 AST_END(TableLit)
 
 AST_NODE(TableBlock, "TableBlock"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<KeyValue_t> values;
+	ast_sel_list<variable_pair_t, normal_pair_t> values;
 AST_END(TableBlock)
 
 AST_NODE(class_member_list, "class_member_list"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<KeyValue_t> values;
+	ast_sel_list<variable_pair_t, normal_pair_t> values;
 AST_END(class_member_list)
 
 AST_NODE(ClassLine, "ClassLine"_id)
@@ -456,19 +414,6 @@ AST_END(export_op)
 AST_NODE(Export, "Export"_id)
 	ast_ptr<ast_node> item; // ClassDecl_t | export_op_t | export_values_t
 AST_END(Export)
-
-AST_NODE(variable_pair, "variable_pair"_id)
-	ast_ptr<Variable_t> name;
-AST_END(variable_pair)
-
-AST_NODE(normal_pair, "normal_pair"_id)
-	ast_ptr<ast_node> key; // KeyName_t | [Exp_t] | DoubleString_t | SingleString_t
-	ast_ptr<ast_node> value; // Exp_t | TableBlock_t
-AST_END(normal_pair)
-
-AST_NODE(KeyValue, "KeyValue"_id)
-	ast_ptr<ast_node> item; // variable_pair_t | normal_pair_t
-AST_END(KeyValue)
 
 AST_NODE(FnArgDef, "FnArgDef"_id)
 	ast_ptr<ast_node> name; // Variable_t | SelfName_t
@@ -508,20 +453,9 @@ AST_NODE(AssignableNameList, "AssignableNameList"_id)
 	ast_list<NameOrDestructure_t> items;
 AST_END(AssignableNameList)
 
-AST_NODE(ArgBlock, "ArgBlock"_id)
-	ast_ptr<Seperator_t> sep;
-	ast_list<Exp_t> arguments;
-AST_END(ArgBlock)
-
-AST_NODE(invoke_args_with_table, "invoke_args_with_table"_id)
-	ast_ptr<ArgBlock_t, true> argBlock;
-	ast_ptr<TableBlock_t, true> tableBlock;
-AST_END(invoke_args_with_table)
-
 AST_NODE(InvokeArgs, "InvokeArgs"_id)
-	ast_ptr<ExpList_t, true> argsList;
-	ast_ptr<invoke_args_with_table_t, true> argsTableBlock;
-	ast_ptr<TableBlock_t, true> tableBlock;
+	ast_ptr<Seperator_t> sep;
+	ast_sel_list<Exp_t, TableBlock_t> args;
 AST_END(InvokeArgs)
 
 AST_LEAF(const_value, "const_value"_id)
