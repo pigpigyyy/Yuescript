@@ -63,7 +63,18 @@ public:
      */
 	virtual traversal traverse(const std::function<traversal (ast_node*)>& func);
 
-	virtual ast_node* getByPath(std::initializer_list<size_t> paths);
+	template <typename... Ts>
+	struct select_last {
+		using type = typename decltype((std::enable_if<true,Ts>{}, ...))::type;
+	};
+	template <typename... Ts>
+	using select_last_t = typename select_last<Ts...>::type;
+
+	template <class ...Args>
+	select_last_t<Args...>* getByPath() {
+		int types[] = {ast_type<Args>()...};
+		return static_cast<select_last_t<Args...>*>(getByTypeIds(std::begin(types), std::end(types)));
+	}
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func);
 
@@ -82,6 +93,7 @@ public:
 	virtual int get_type() { return ast_type<ast_node>(); }
 private:
 	int _ref;
+	ast_node* getByTypeIds(int* begin, int* end);
     template <class T, bool OPT, bool MEM> friend class ast_ptr;
     template <class ...Args> friend class ast_choice;
     template <class T> friend class ast_list;
@@ -89,8 +101,14 @@ private:
 };
 
 template<class T>
-T* ast_cast(ast_node *node) {
+T* ast_cast(ast_node* node) {
 	return node && ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
+}
+
+template<class T>
+T* ast_to(ast_node* node) {
+	assert(node->get_type() == ast_type<T>());
+	return static_cast<T*>(node);
 }
 
 template <class ...Args>
@@ -131,8 +149,6 @@ public:
         @param st stack.
      */
     virtual void construct(ast_stack& st) override;
-
-	virtual ast_node* getByPath(std::initializer_list<size_t> paths) override;
 
 	virtual traversal traverse(const std::function<traversal (ast_node*)>& func) override;
 
@@ -210,7 +226,7 @@ public:
 
 	template <class T>
 	T* to() const {
-		assert(m_ptr->getId() != ast_type<T>());
+		assert(m_ptr->get_type() == ast_type<T>());
 		return static_cast<T*>(m_ptr);
 	}
 
@@ -380,6 +396,22 @@ public:
 		}
 	}
 
+    void set_front(ast_node* node) {
+		if (accept(node)) {
+			m_objects.front()->release();
+			m_objects.front() = node;
+			node->retain();
+		}
+	}
+
+    void set_back(ast_node* node) {
+		if (accept(node)) {
+			m_objects.back()->release();
+			m_objects.back() = node;
+			node->retain();
+		}
+	}
+
 	 const container& objects() const {
         return m_objects;
     }
@@ -410,7 +442,6 @@ protected:
  */
 template <class T> class ast_list : public _ast_list {
 public:
-    ///the default constructor.
     ast_list() {}
 
     ast_list(const ast_list<T>& other) {
@@ -450,7 +481,6 @@ private:
 
 template <class ...Args> class ast_sel_list : public _ast_list {
 public:
-    ///the default constructor.
     ast_sel_list() {}
 
     ast_sel_list(const ast_sel_list<Args...>& other) {

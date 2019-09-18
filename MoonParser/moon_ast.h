@@ -247,7 +247,8 @@ AST_END(CompInner)
 class TableBlock_t;
 
 AST_NODE(Assign, "Assign"_id)
-	ast_ptr<ast_node> value; // With_t | If_t | Switch_t | TableBlock_t | ExpListLow_t
+	ast_ptr<Seperator_t> sep;
+	ast_sel_list<With_t, If_t, Switch_t, TableBlock_t, Exp_t> values;
 AST_END(Assign)
 
 AST_LEAF(update_op, "update_op"_id)

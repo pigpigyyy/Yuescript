@@ -220,7 +220,7 @@ rule CompClause = CompFor | CompForEach | key("when") >> Exp;
 
 extern rule TableBlock;
 
-rule Assign = sym('=') >> (With | If | Switch | TableBlock | ExpListLow);
+rule Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> Exp));
 
 rule update_op =
 	expr("..=") |

@@ -14,8 +14,28 @@ traversal ast_node::traverse(const std::function<traversal (ast_node*)>& func) {
 	return func(this);
 }
 
-ast_node* ast_node::getByPath(std::initializer_list<size_t>) {
-	return nullptr;
+ast_node* ast_node::getByTypeIds(int* begin, int* end) {
+	ast_node* current = this;
+	auto it = begin;
+	while (it != end) {
+		ast_node* findNode = nullptr;
+		int type = *it;
+		current->visitChild([&](ast_node* node) {
+			if (node->get_type() == type) {
+				findNode = node;
+				return true;
+			}
+			return false;
+		});
+		if (findNode) {
+			current = findNode;
+		} else {
+			current = nullptr;
+			break;
+		}
+		++it;
+	}
+	return current;
 }
 
 bool ast_node::visitChild(const std::function<bool (ast_node*)>&) {
@@ -66,30 +86,6 @@ traversal ast_container::traverse(const std::function<traversal (ast_node*)>& fu
 		}
 	}
 	return traversal::Continue;
-}
-
-ast_node* ast_container::getByPath(std::initializer_list<size_t> paths) {
-	ast_node* current = this;
-	auto it = paths.begin();
-	while (it != paths.end()) {
-		ast_node* findNode = nullptr;
-		size_t id = *it;
-		current->visitChild([&](ast_node* node) {
-			if (node->getId() == id) {
-				findNode = node;
-				return true;
-			}
-			return false;
-		});
-		if (findNode) {
-			current = findNode;
-		} else {
-			current = nullptr;
-			break;
-		}
-		++it;
-	}
-	return current;
 }
 
 bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
