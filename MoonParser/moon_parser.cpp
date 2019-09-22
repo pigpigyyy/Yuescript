@@ -162,8 +162,8 @@ rule Switch = key("switch") >>
 rule IfCond = Exp >> -Assign;
 rule IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> -key("then") >> Body;
 rule IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> Body;
-rule If = key("if") >> IfCond >> -key("then") >> Body >> Seperator >> *IfElseIf >> -IfElse;
-rule Unless = key("unless") >> IfCond >> -key("then") >> Body >> Seperator >> *IfElseIf >> -IfElse;
+rule If = key("if") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
+rule Unless = key("unless") >> Seperator >>  IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
 
 rule While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
 

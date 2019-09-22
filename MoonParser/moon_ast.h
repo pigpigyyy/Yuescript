@@ -151,25 +151,14 @@ AST_NODE(IfCond, "IfCond"_id)
 	ast_ptr<Assign_t, true> assign;
 AST_END(IfCond)
 
-AST_NODE(IfElseIf, "IfElseIf"_id)
-	ast_ptr<IfCond_t> condition;
-	ast_ptr<Body_t> body;
-AST_END(IfElseIf)
-
 AST_NODE(If, "If"_id)
-	ast_ptr<IfCond_t> firstCondition;
-	ast_ptr<Body_t> firstBody;
 	ast_ptr<Seperator_t> sep;
-	ast_list<IfElseIf_t> branches;
-	ast_ptr<Body_t, true> lastBranch;
+	ast_sel_list<IfCond_t, Body_t> nodes;
 AST_END(If)
 
 AST_NODE(Unless, "Unless"_id)
-	ast_ptr<IfCond_t> firstCondition;
-	ast_ptr<Body_t> firstBody;
 	ast_ptr<Seperator_t> sep;
-	ast_list<IfElseIf_t> branches;
-	ast_ptr<Body_t, true> lastBranch;
+	ast_sel_list<IfCond_t, Body_t> nodes;
 AST_END(Unless)
 
 AST_NODE(While, "While"_id)

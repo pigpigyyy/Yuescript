@@ -230,13 +230,19 @@ public:
 		return static_cast<T*>(m_ptr);
 	}
 
+	template <class T>
+	bool is() const {
+		return m_ptr->get_type() == ast_type<T>();
+	}
+
 	void set(ast_node* node) {
-		if (node == m_ptr) return;
-		else if (!node) {
+		if (node == m_ptr) {
+			return;
+		} else if (!node) {
 			if (m_ptr) m_ptr->release();
 			m_ptr = nullptr;
-		}
-		else if (accept(node)) {
+		} else {
+			assert(accept(node));
 			if (m_ptr) m_ptr->release();
 			m_ptr = node;
 			node->retain();
@@ -383,33 +389,29 @@ public:
     }
 
     void push_back(ast_node* node) {
-		if (accept(node)) {
-			m_objects.push_back(node);
-			node->retain();
-		}
+    	assert(node && accept(node));
+		m_objects.push_back(node);
+		node->retain();
 	}
 
     void push_front(ast_node* node) {
-		if (accept(node)) {
-			m_objects.push_front(node);
-			node->retain();
-		}
+    	assert(node && accept(node));
+		m_objects.push_front(node);
+		node->retain();
 	}
 
     void set_front(ast_node* node) {
-		if (accept(node)) {
-			m_objects.front()->release();
-			m_objects.front() = node;
-			node->retain();
-		}
+    	assert(node && accept(node));
+		m_objects.front()->release();
+		m_objects.front() = node;
+		node->retain();
 	}
 
     void set_back(ast_node* node) {
-		if (accept(node)) {
-			m_objects.back()->release();
-			m_objects.back() = node;
-			node->retain();
-		}
+    	assert(node && accept(node));
+		m_objects.back()->release();
+		m_objects.back() = node;
+		node->retain();
 	}
 
 	 const container& objects() const {
