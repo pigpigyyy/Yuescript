@@ -101,13 +101,9 @@ AST_END(colon_import_name)
 
 class Exp_t;
 
-AST_NODE(ImportName, "ImportName"_id)
-	ast_ptr<ast_node> name; // colon_import_name_t | Variable_t
-AST_END(ImportName)
-
 AST_NODE(Import, "Import"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<ImportName_t> names;
+	ast_sel_list<colon_import_name_t, Variable_t> names;
 	ast_ptr<Exp_t> exp;
 AST_END(Import)
 
@@ -191,9 +187,10 @@ AST_NODE(Do, "Do"_id)
 AST_END(Do)
 
 class CompInner_t;
+class Statement_t;
 
 AST_NODE(Comprehension, "Comprehension"_id)
-	ast_ptr<Exp_t> value;
+	ast_sel<Exp_t, Statement_t> value;
 	ast_ptr<CompInner_t> forLoop;
 AST_END(Comprehension)
 
@@ -223,14 +220,9 @@ AST_NODE(CompFor, "CompFor"_id)
 	ast_ptr<for_step_value_t, true> stepValue;
 AST_END(CompFor)
 
-AST_NODE(CompClause, "CompClause"_id)
-	ast_ptr<ast_node> nestExp; // CompFor_t | CompForEach_t | Exp_t
-AST_END(CompClause)
-
 AST_NODE(CompInner, "CompInner"_id)
-	ast_ptr<ast_node> compFor; // CompFor_t | CompForEach_t
 	ast_ptr<Seperator_t> sep;
-	ast_list<CompClause_t> clauses;
+	ast_sel_list<CompFor_t, CompForEach_t, Exp_t> items;
 AST_END(CompInner)
 
 class TableBlock_t;

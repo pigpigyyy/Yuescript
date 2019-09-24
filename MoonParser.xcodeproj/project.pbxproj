@@ -107,7 +107,7 @@
 		3C0F0F641EF3781E000EADDB /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1030;
+				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = "Li Jin";
 				TargetAttributes = {
 					3C0F0F6B1EF3781E000EADDB = {
@@ -257,6 +257,7 @@
 		3C0F0F741EF3781E000EADDB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-ftemplate-depth=512",
@@ -269,6 +270,7 @@
 		3C0F0F751EF3781E000EADDB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-ftemplate-depth=512",

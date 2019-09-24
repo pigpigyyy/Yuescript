@@ -208,11 +208,11 @@ extern rule CompInner;
 
 rule Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
 rule comp_value = sym(',') >> Exp;
-rule TblComprehension = sym('{') >> (Exp >> -comp_value) >> CompInner >> sym('}');
+rule TblComprehension = sym('{') >> (Exp >> -comp_value)   >> CompInner >> sym('}');
 
 extern rule CompForEach, CompFor, CompClause;
 
-rule CompInner = (CompForEach | CompFor) >> Seperator >> *CompClause;
+rule CompInner = Seperator >> (CompForEach | CompFor) >> *CompClause;
 rule star_exp = sym('*') >> Exp;
 rule CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
 rule CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
