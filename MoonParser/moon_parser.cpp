@@ -223,20 +223,20 @@ extern rule TableBlock;
 rule Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> Exp));
 
 rule update_op =
-	expr("..=") |
-	expr("+=") |
-	expr("-=") |
-	expr("*=") |
-	expr("/=") |
-	expr("%=") |
-	expr("or=") |
-	expr("and=") |
-	expr("&=") |
-	expr("|=") |
-	expr(">>=") |
-	expr("<<=");
+	expr("..") |
+	expr("+") |
+	expr("-") |
+	expr("*") |
+	expr("/") |
+	expr("%") |
+	expr("or") |
+	expr("and") |
+	expr("&") |
+	expr("|") |
+	expr(">>") |
+	expr("<<");
 
-rule Update = Space >> update_op >> Exp;
+rule Update = Space >> update_op >> expr("=") >> Exp;
 
 rule BinaryOperator =
 	(expr("or") >> not_(AlphaNum)) |
