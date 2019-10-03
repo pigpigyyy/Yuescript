@@ -706,6 +706,19 @@ private:
 		return preDefine.empty() ? preDefine : preDefine + nll(assignment);
 	}
 
+	void assignLastExplist(ExpList_t* expList, Body_t* body) {
+		auto last = lastStatementFrom(body);
+		auto valueList = last ? last->content.as<ExpList_t>() : nullptr;
+		if (last && valueList) {
+			auto newAssignment = new_ptr<Assignment_t>();
+			newAssignment->assignable.set(expList);
+			auto assign = new_ptr<Assign_t>();
+			assign->values.dup(valueList->exprs);
+			newAssignment->target.set(assign);
+			last->content.set(newAssignment);
+		}
+	}
+
 	void transformAssignment(Assignment_t* assignment, std::vector<std::string>& out) {
 		auto assign = ast_cast<Assign_t>(assignment->target);
 		do {
@@ -715,7 +728,7 @@ private:
 			if (ast_is<If_t>(value)) {
 				item = value;
 			} else if (auto val = simpleSingleValueFrom(value)) {
-				if (ast_is<If_t,Unless_t>(val->value)) {
+				if (ast_is<If_t, Unless_t>(val->value)) {
 					item = val->value;
 				}
 			}
@@ -729,16 +742,7 @@ private:
 						case "IfCond"_id: return traversal::Return;
 						case "Body"_id: {
 							auto body = static_cast<Body_t*>(node);
-							auto last = lastStatementFrom(body);
-							auto valueList = last ? last->content.as<ExpList_t>() : nullptr;
-							if (last && valueList) {
-								auto newAssignment = new_ptr<Assignment_t>();
-								newAssignment->assignable.set(expList);
-								auto assign = new_ptr<Assign_t>();
-								assign->values.dup(valueList->exprs);
-								newAssignment->target.set(assign);
-								last->content.set(newAssignment);
-							}
+							assignLastExplist(expList, body);
 							return traversal::Return;
 						}
 						default: return traversal::Continue;
@@ -751,27 +755,32 @@ private:
 				out.push_back(join(temp));
 				return;
 			}
+			if (auto switchNode = ast_cast<Switch_t>(value)) {
+				auto expList = assignment->assignable.get();
+				for (auto branch_ : switchNode->branches.objects()) {
+					auto branch = static_cast<SwitchCase_t*>(branch_);
+					assignLastExplist(expList, branch->body);
+				}
+				if (switchNode->lastBranch) {
+					assignLastExplist(expList, switchNode->lastBranch);
+				}
+				std::string preDefine = getPredefine(assignment);
+				transformSwitch(switchNode, out);
+				out.back() = preDefine + out.back();
+				return;
+			}
 			auto exp = ast_cast<Exp_t>(value);
 			if (!exp) break;
 			if (auto simpleVal = exp->value->item.as<SimpleValue_t>()) {
 				auto valueItem = simpleVal->value.get();
 				switch (valueItem->getId()) {
 					case "Do"_id: {
-						auto expList = assignment->assignable.get();
 						auto doNode = static_cast<Do_t*>(valueItem);
-						auto last = lastStatementFrom(doNode->body);
-						auto valueList = last ? last->content.as<ExpList_t>() : nullptr;
-						if (last && valueList) {
-							auto newAssignment = new_ptr<Assignment_t>();
-							newAssignment->assignable.set(expList);
-							auto assign = new_ptr<Assign_t>();
-							assign->values.dup(valueList->exprs);
-							newAssignment->target.set(assign);
-							last->content.set(newAssignment);
-							std::string preDefine = getPredefine(assignment);
-							transformDo(doNode, out);
-							out.back() = preDefine + out.back();
-						}
+						auto expList = assignment->assignable.get();
+						assignLastExplist(expList, doNode->body);
+						std::string preDefine = getPredefine(assignment);
+						transformDo(doNode, out);
+						out.back() = preDefine + out.back();
 						return;
 					}
 					case "Comprehension"_id: {
@@ -899,7 +908,7 @@ private:
 		switch (value->getId()) {
 			case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, IfUsage::Closure); break;
-			case "Switch"_id: transformSwitchClosure(static_cast<>(value), out); break;
+			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
 			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
 			case "Exp"_id: transformExp(static_cast<Exp_t*>(value), out); break;
 			default: break;
@@ -1322,7 +1331,7 @@ private:
 			case "const_value"_id: transform_const_value(static_cast<const_value_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, IfUsage::Closure); break;
 			case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, IfUsage::Closure); break;
-			case "Switch"_id: transformSwitch(value, out); break;
+			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
 			case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
 			case "ClassDecl"_id: transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
 			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
@@ -1436,6 +1445,10 @@ private:
 				}
 				if (auto doNode = singleValue->getByPath<SimpleValue_t, Do_t>()) {
 					transformDo(doNode, out, true);
+					return;
+				}
+				if (auto switchNode = singleValue->getByPath<SimpleValue_t, Switch_t>()) {
+					transformSwitch(switchNode, out, true);
 					return;
 				}
 				if (auto chainValue = singleValue->getByPath<ChainValue_t>()) {
@@ -3084,11 +3097,21 @@ private:
 		out.push_back(clearBuf());
 	}
 
+	void transformSwitchClosure(Switch_t* switchNode, std::vector<std::string>& out) {
+		std::vector<std::string> temp;
+		temp.push_back(s("(function()"sv) + nll(switchNode));
+		pushScope();
+		transformSwitch(switchNode, temp, true);
+		popScope();
+		temp.push_back(indent() + s("end)()"sv));
+		out.push_back(join(temp));
+	}
+
 	void transformSwitch(Switch_t* switchNode, std::vector<std::string>& out, bool implicitReturn = false) {
 		std::vector<std::string> temp;
 		auto objVar = variableFrom(switchNode->target);
 		if (objVar.empty()) {
-			objVar = getUnusedName("_obj_"sv);
+			objVar = getUnusedName("_exp_"sv);
 			addToScope(objVar);
 			transformExp(switchNode->target, temp);
 			_buf << indent() << "local "sv << objVar << " = "sv << temp.back() << nll(switchNode);
@@ -3103,8 +3126,8 @@ private:
 			for (auto exp_ : exprs) {
 				auto exp = static_cast<Exp_t*>(exp_);
 				transformExp(exp, tmp);
-				temp.back().append(s(" "sv) + objVar + s(" == "sv) + tmp.back +
-					(exp == exprs.back() ? ""sv : " or"sv));
+				temp.back().append(s(" "sv) + tmp.back() + s(" == "sv) + objVar +
+					s(exp == exprs.back() ? ""sv : " or"sv));
 			}
 			temp.back().append(s(" then"sv) + nll(branch));
 			pushScope();

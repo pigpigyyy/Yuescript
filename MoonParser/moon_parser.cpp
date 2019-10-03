@@ -481,7 +481,7 @@ rule statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
 rule Statement =
 (
 	Import | While | With | For | ForEach |
-	Switch | Return | Local | Export | BreakLoop |
+	Return | Local | Export | BreakLoop |
 	Assignment | ExpList
 ) >> Space >>
 -statement_appendix;
