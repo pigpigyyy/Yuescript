@@ -135,7 +135,7 @@ rule ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak |
 extern rule Exp;
 
 rule Import = key("import") >> ImportNameList >> *SpaceBreak >> key("from") >> Exp;
-rule BreakLoop = key("break") | key("continue");
+rule BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
 
 extern rule ExpListLow, ExpList, Assign;
 
@@ -481,7 +481,7 @@ rule statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
 rule Statement =
 (
 	Import | While | With | For | ForEach |
-	Return | Local | Export | BreakLoop |
+	Return | Local | Export | Space >> BreakLoop |
 	Assignment | ExpList
 ) >> Space >>
 -statement_appendix;

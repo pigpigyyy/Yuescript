@@ -93,6 +93,8 @@ AST_END(NameList)
 
 AST_NODE(Local, "Local"_id)
 	ast_ptr<ast_node> name; // local_flag_t | NameList_t
+	std::list<std::string> forceDecls;
+	std::list<std::string> decls;
 AST_END(Local)
 
 AST_NODE(colon_import_name, "colon_import_name"_id)
@@ -370,13 +372,9 @@ AST_NODE(class_member_list, "class_member_list"_id)
 	ast_sel_list<variable_pair_t, normal_pair_t> values;
 AST_END(class_member_list)
 
-AST_NODE(ClassLine, "ClassLine"_id)
-	ast_ptr<ast_node> content; // class_member_list_t | Statement_t
-AST_END(ClassLine)
-
 AST_NODE(ClassBlock, "ClassBlock"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<ClassLine_t> lines;
+	ast_sel_list<class_member_list_t, Statement_t> contents;
 AST_END(ClassBlock)
 
 AST_NODE(ClassDecl, "ClassDecl"_id)
@@ -471,7 +469,7 @@ AST_END(BreakLoop)
 AST_NODE(Statement, "Statement"_id)
 	ast_ptr<ast_node> content; /*
 	Import_t | While_t | With_t | For_t | ForEach_t |
-	Switch_t | Return_t | Local_t | Export_t | BreakLoop_t |
+	Return_t | Local_t | Export_t | BreakLoop_t |
 	Assignment_t | ExpList_t
 	*/
 	ast_ptr<statement_appendix_t, true> appendix;
@@ -483,13 +481,9 @@ AST_NODE(Body, "Body"_id)
 	ast_ptr<ast_node> content; // Block | Statement
 AST_END(Body)
 
-AST_NODE(Line, "Line"_id)
-	ast_ptr<Statement_t, true> statment;
-AST_END(Line)
-
 AST_NODE(Block, "Block"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_list<Line_t> lines;
+	ast_list<Statement_t> statements;
 AST_END(Block)
 
 AST_NODE(BlockEnd, "BlockEnd"_id)

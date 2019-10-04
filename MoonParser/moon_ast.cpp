@@ -10,6 +10,8 @@
 using namespace std::string_view_literals;
 #include "moon_ast.h"
 
+typedef std::list<std::string> str_list;
+
 const input& AstLeaf::getValue() {
 	if (_value.empty()) {
 		_value.assign(m_begin.m_it, m_end.m_it);
@@ -86,7 +88,6 @@ AST_IMPL(Invoke)
 AST_IMPL(TableLit)
 AST_IMPL(TableBlock)
 AST_IMPL(class_member_list)
-AST_IMPL(ClassLine)
 AST_IMPL(ClassBlock)
 AST_IMPL(ClassDecl)
 AST_IMPL(export_values)
@@ -112,7 +113,6 @@ AST_IMPL(statement_appendix)
 AST_IMPL(BreakLoop)
 AST_IMPL(Statement)
 AST_IMPL(Body)
-AST_IMPL(Line)
 AST_IMPL(Block)
 AST_IMPL(BlockEnd)
 
@@ -132,7 +132,7 @@ public:
 		auto root = parse<BlockEnd_t>(input, BlockEnd, el, &st);
 		if (root) {
 			std::cout << "compiled!\n\n";
-			std::vector<std::string> out;
+			str_list out;
 			pushScope();
 			transformBlock(root->block, out);
 			popScope();
@@ -146,17 +146,25 @@ public:
 			}
 		}
 		_codeCache.clear();
-		std::stack<std::string> empty;
-		_withVars.swap(empty);
+		std::stack<std::string> emptyWith;
+		_withVars.swap(emptyWith);
+		std::stack<std::string> emptyContinue;
+		_continueVars.swap(emptyContinue);
 	}
 private:
 	int _indentOffset = 0;
 	Converter _converter;
 	std::list<input> _codeCache;
 	std::stack<std::string> _withVars;
+	std::stack<std::string> _continueVars;
 	std::ostringstream _buf;
 	std::string _newLine = "\n";
 	std::vector<int> _lineTable;
+	enum class LocalMode {
+		None = 0,
+		Capital = 1,
+		Any = 2
+	};
 	enum class ExportMode {
 		None = 0,
 		Capital = 1,
@@ -347,18 +355,20 @@ private:
 		return str;
 	}
 
-	std::string join(const std::vector<std::string>& items) {
+	std::string join(const str_list& items) {
 		if (items.empty()) return Empty;
 		else if (items.size() == 1) return items.front();
-		return std::accumulate(items.begin()+1, items.end(), items.front(),
+		auto begin = ++items.begin();
+		return std::accumulate(begin, items.end(), items.front(),
 					[&](const std::string& a, const std::string& b) { return a + b; });
 	}
 
-	std::string join(const std::vector<std::string>& items, std::string_view sep) {
+	std::string join(const str_list& items, std::string_view sep) {
 		if (items.empty()) return Empty;
 		else if (items.size() == 1) return items.front();
 		std::string sepStr = s(sep);
-		return std::accumulate(items.begin()+1, items.end(), items.front(),
+		auto begin = ++items.begin();
+		return std::accumulate(begin, items.end(), items.front(),
 					[&](const std::string& a, const std::string& b) { return a + sepStr + b; });
 	}
 
@@ -407,29 +417,30 @@ private:
 		return firstValue;
 	}
 
-	void noop(ast_node* node, std::vector<std::string>& out) {
+	void noop(ast_node* node, str_list& out) {
 		auto str = _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
 		out.push_back(s("<"sv) + node->getName() + s(">"sv) + trim(str));
 		// out.push_back(trim(str));
 	}
 
-	void noopnl(ast_node* node, std::vector<std::string>& out) {
+	void noopnl(ast_node* node, str_list& out) {
 		auto str = _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
 		out.push_back(s("<"sv) + node->getName() + s(">"sv) + trim(str) + nll(node));
 		// out.push_back(trim(str) + nll(node));
 	}
 
-	Statement_t* lastStatementFrom(ast_node* body) {
-		ast_node* last = nullptr;
-		body->traverse([&](ast_node* n) {
-			switch (n->getId()) {
-				case "Statement"_id:
-					last = n;
-					return traversal::Return;
-				default: return traversal::Continue;
-			}
-		});
-		return static_cast<Statement_t*>(last);
+	Statement_t* lastStatementFrom(Body_t* body) {
+		if (auto stmt = body->content.as<Statement_t>()) {
+			return stmt;
+		} else {
+			auto node = body->content.to<Block_t>()->statements.objects().back();
+			return static_cast<Statement_t*>(node);
+		}
+	}
+
+	Statement_t* lastStatementFrom(Block_t* block) {
+		auto node = block->statements.objects().back();
+		return static_cast<Statement_t*>(node);
 	}
 
 	template <class T>
@@ -497,7 +508,7 @@ private:
 		return temp;
 	}
 
-	void transformStatement(Statement_t* statement, std::vector<std::string>& out) {
+	void transformStatement(Statement_t* statement, str_list& out) {
 		if (statement->appendix) {
 			if (auto assignment = statement->content.as<Assignment_t>()) {
 				auto preDefine = getPredefine(transformAssignDefs(assignment->assignable));
@@ -593,9 +604,9 @@ private:
 			case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(content), out); break;
 			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(content), out); break;
 			case "Return"_id: transformReturn(static_cast<Return_t*>(content), out); break;
-			case "Local"_id: transformLocal(content, out); break;
+			case "Local"_id: transformLocal(static_cast<Local_t*>(content), out); break;
 			case "Export"_id: transformExport(static_cast<Export_t*>(content), out); break;
-			case "BreakLoop"_id: transformBreakLoop(content, out); break;
+			case "BreakLoop"_id: transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case "Assignment"_id: transformAssignment(static_cast<Assignment_t*>(content), out); break;
 			case "Comprehension"_id: transformCompCommon(static_cast<Comprehension_t*>(content), out); break;
 			case "ExpList"_id: {
@@ -644,17 +655,27 @@ private:
 		}
 	}
 
-	std::vector<std::string> getAssignVars(ExpList_t* expList) {
-		std::vector<std::string> vars;
-		for (auto exp : expList->exprs.objects()) {
+	str_list getAssignVars(Assignment_t* assignment) {
+		str_list vars;
+		if (!assignment->target.is<Assign_t>()) return vars;
+		for (auto exp : assignment->assignable->exprs.objects()) {
 			auto var = variableFrom(exp);
 			vars.push_back(var.empty() ? Empty : var);
 		}
 		return vars;
 	}
 
-	std::vector<std::string> transformAssignDefs(ExpList_t* expList) {
-		std::vector<std::string> preDefs;
+	str_list getAssignVars(With_t* with) {
+		str_list vars;
+		for (auto exp : with->valueList->exprs.objects()) {
+			auto var = variableFrom(exp);
+			vars.push_back(var.empty() ? Empty : var);
+		}
+		return vars;
+	}
+
+	str_list transformAssignDefs(ExpList_t* expList) {
+		str_list preDefs;
 		expList->traverse([&](ast_node* child) {
 			if (child->getId() == "Value"_id) {
 				if (auto callable = child->getByPath<ChainValue_t, Callable_t>()) {
@@ -677,7 +698,7 @@ private:
 		return preDefs;
 	}
 
-	std::string getPredefine(const std::vector<std::string>& defs) {
+	std::string getPredefine(const str_list& defs) {
 		if (defs.empty()) return Empty;
 		return indent() + s("local "sv) + join(defs, ", "sv);
 	}
@@ -686,7 +707,7 @@ private:
 		auto info = extractDestructureInfo(assignment);
 		if (!info.first.empty()) {
 			for (const auto& destruct : info.first) {
-				std::vector<std::string> defs;
+				str_list defs;
 				for (const auto& item : destruct.items) {
 					if (item.isVariable && addToScope(item.name)) {
 						defs.push_back(item.name);
@@ -719,7 +740,7 @@ private:
 		}
 	}
 
-	void transformAssignment(Assignment_t* assignment, std::vector<std::string>& out) {
+	void transformAssignment(Assignment_t* assignment, str_list& out) {
 		auto assign = ast_cast<Assign_t>(assignment->target);
 		do {
 			if (!assign || assign->values.objects().size() != 1) break;
@@ -734,7 +755,7 @@ private:
 			}
 			if (item) {
 				auto expList = assignment->assignable.get();
-				std::vector<std::string> temp;
+				str_list temp;
 				auto defs = transformAssignDefs(expList);
 				if (!defs.empty()) temp.push_back(getPredefine(defs) + nll(expList));
 				item->traverse([&](ast_node* node) {
@@ -798,7 +819,7 @@ private:
 						return;
 					}
 					case "For"_id: {
-						std::vector<std::string> temp;
+						str_list temp;
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformForInPlace(static_cast<For_t*>(valueItem), temp, expList);
@@ -806,7 +827,7 @@ private:
 						return;
 					}
 					case "ForEach"_id: {
-						std::vector<std::string> temp;
+						str_list temp;
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformForEachInPlace(static_cast<ForEach_t*>(valueItem), temp, expList);
@@ -814,7 +835,7 @@ private:
 						return;
 					}
 					case "ClassDecl"_id: {
-						std::vector<std::string> temp;
+						str_list temp;
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformClassDecl(static_cast<ClassDecl_t*>(valueItem), temp, ExpUsage::Assignment, expList);
@@ -822,7 +843,7 @@ private:
 						return;
 					}
 					case "While"_id: {
-						std::vector<std::string> temp;
+						str_list temp;
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformWhileClosure(static_cast<While_t*>(valueItem), temp, expList);
@@ -846,7 +867,7 @@ private:
 		if (info.first.empty()) {
 			transformAssignmentCommon(assignment, out);
 		} else {
-			std::vector<std::string> temp;
+			str_list temp;
 			for (const auto& destruct : info.first) {
 				if (destruct.items.size() == 1) {
 					auto& pair = destruct.items.front();
@@ -857,7 +878,7 @@ private:
 					_buf << pair.name << " = "sv << info.first.front().value << pair.structure << nll(assignment);
 					temp.push_back(clearBuf());
 				} else if (matchAst(Name, destruct.value)) {
-					std::vector<std::string> defs, names, values;
+					str_list defs, names, values;
 					for (const auto& item : destruct.items) {
 						if (item.isVariable && addToScope(item.name)) {
 							defs.push_back(item.name);
@@ -877,7 +898,7 @@ private:
 					}
 					temp.push_back(clearBuf());
 				} else {
-					std::vector<std::string> defs, names, values;
+					str_list defs, names, values;
 					for (const auto& item : destruct.items) {
 						if (item.isVariable && addToScope(item.name)) {
 							defs.push_back(item.name);
@@ -904,7 +925,7 @@ private:
 		}
 	}
 
-	void transformAssignItem(ast_node* value, std::vector<std::string>& out) {
+	void transformAssignItem(ast_node* value, str_list& out) {
 		switch (value->getId()) {
 			case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, IfUsage::Closure); break;
@@ -947,7 +968,7 @@ private:
 								s("["sv) + std::to_string(index) + s("]"sv) + p.structure});
 						}
 					} else {
-						std::vector<std::string> temp;
+						str_list temp;
 						transformExp(static_cast<Exp_t*>(pair), temp);
 						pairs.push_back({
 							item->getByPath<Callable_t, Variable_t>() != nullptr,
@@ -978,7 +999,7 @@ private:
 									s("."sv) + toString(key) + p.structure});
 							}
 						} else {
-							std::vector<std::string> temp;
+							str_list temp;
 							transformExp(exp, temp);
 							pairs.push_back({
 								item->getByPath<Callable_t, Variable_t>() != nullptr,
@@ -1020,7 +1041,7 @@ private:
 		}
 		using iter = std::list<ast_node*>::iterator;
 		std::vector<std::pair<iter, iter>> destructPairs;
-		std::vector<std::string> temp;
+		str_list temp;
 		for (auto i = exprs.begin(), j = values.begin(); i != exprs.end(); ++i, ++j) {
 			auto expr = *i;
 			ast_node* destructNode = expr->getByPath<Value_t, SimpleValue_t, TableLit_t>();
@@ -1054,8 +1075,8 @@ private:
 		return {std::move(destructs), newAssignment};
 	}
 
-	void transformAssignmentCommon(Assignment_t* assignment, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformAssignmentCommon(Assignment_t* assignment, str_list& out) {
+		str_list temp;
 		auto expList = assignment->assignable.get();
 		auto action = assignment->target.get();
 		switch (action->getId()) {
@@ -1103,7 +1124,7 @@ private:
 		}
 	}
 
-	void transformCond(const std::list<ast_node*>& nodes, std::vector<std::string>& out, IfUsage usage = IfUsage::Common, bool unless = false) {
+	void transformCond(const std::list<ast_node*>& nodes, str_list& out, IfUsage usage = IfUsage::Common, bool unless = false) {
 		std::vector<ast_ptr<ast_node, false, false>> ns;
 		for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
 			ns.push_back(*it);
@@ -1138,7 +1159,7 @@ private:
 			transformCond(newIf->nodes.objects(), out, usage, unless);
 			return;
 		}
-		std::vector<std::string> temp;
+		str_list temp;
 		if (usage == IfUsage::Closure) {
 			temp.push_back(s("(function()"sv) + nll(nodes.front()));
 			pushScope();
@@ -1206,7 +1227,7 @@ private:
 		}
 		for (const auto& pair : ifCondPairs) {
 			if (pair.first) {
-				std::vector<std::string> tmp;
+				str_list tmp;
 				auto condition = pair.first->condition.get();
 				transformExp(condition, tmp);
 				_buf << indent() << (pair == ifCondPairs.front() ? ""sv : "else"sv) <<
@@ -1237,32 +1258,32 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformIf(If_t* ifNode, std::vector<std::string>& out, IfUsage usage = IfUsage::Common) {
+	void transformIf(If_t* ifNode, str_list& out, IfUsage usage = IfUsage::Common) {
 		transformCond(ifNode->nodes.objects(), out, usage);
 	}
 
-	void transformUnless(Unless_t* unless, std::vector<std::string>& out, IfUsage usage = IfUsage::Common) {
+	void transformUnless(Unless_t* unless, str_list& out, IfUsage usage = IfUsage::Common) {
 		transformCond(unless->nodes.objects(), out, usage, true);
 	}
 
-	void transformExpList(ExpList_t* expList, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformExpList(ExpList_t* expList, str_list& out) {
+		str_list temp;
 		for (auto exp : expList->exprs.objects()) {
 			transformExp(static_cast<Exp_t*>(exp), temp);
 		}
 		out.push_back(join(temp, ", "sv));
 	}
 
-	void transformExpListLow(ExpListLow_t* expListLow, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformExpListLow(ExpListLow_t* expListLow, str_list& out) {
+		str_list temp;
 		for (auto exp : expListLow->exprs.objects()) {
 			transformExp(static_cast<Exp_t*>(exp), temp);
 		}
 		out.push_back(join(temp, ", "sv));
 	}
 
-	void transformExp(Exp_t* exp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformExp(Exp_t* exp, str_list& out) {
+		str_list temp;
 		transformValue(exp->value, temp);
 		for (auto _opValue : exp->opValues.objects()) {
 			auto opValue = static_cast<exp_op_value_t*>(_opValue);
@@ -1272,7 +1293,7 @@ private:
 		out.push_back(join(temp, " "sv));
 	}
 
-	void transformValue(Value_t* value, std::vector<std::string>& out) {
+	void transformValue(Value_t* value, str_list& out) {
 		auto item = value->item.get();
 		switch (item->getId()) {
 			case "SimpleValue"_id: transformSimpleValue(static_cast<SimpleValue_t*>(item), out); break;
@@ -1291,8 +1312,8 @@ private:
 		}
 	}
 
-	void transformChainValue(ChainValue_t* chainValue, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformChainValue(ChainValue_t* chainValue, str_list& out) {
+		str_list temp;
 		auto caller = chainValue->caller.get();
 		bool hasArgs = chainValue->arguments;
 		switch (caller->getId()) {
@@ -1302,13 +1323,13 @@ private:
 		}
 		if (hasArgs) {
 			transformInvokeArgs(chainValue->arguments, temp);
-			out.push_back(temp[0] + s("("sv) + temp[1] + s(")"sv));
+			out.push_back(temp.front() + s("("sv) + temp.back() + s(")"sv));
 		} else {
-			out.push_back(temp[0]);
+			out.push_back(temp.front());
 		}
 	}
 
-	void transformCallable(Callable_t* callable, std::vector<std::string>& out, bool invoke) {
+	void transformCallable(Callable_t* callable, str_list& out, bool invoke) {
 		auto item = callable->item.get();
 		switch (item->getId()) {
 			case "Variable"_id: transformVariable(static_cast<Variable_t*>(item), out); break;
@@ -1319,13 +1340,13 @@ private:
 		}
 	}
 
-	void transformParens(Parens_t* parans, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformParens(Parens_t* parans, str_list& out) {
+		str_list temp;
 		transformExp(parans->expr, temp);
 		out.push_back(s("("sv) + temp.front() + s(")"sv));
 	}
 
-	void transformSimpleValue(SimpleValue_t* simpleValue, std::vector<std::string>& out) {
+	void transformSimpleValue(SimpleValue_t* simpleValue, str_list& out) {
 		auto value = simpleValue->value.get();
 		switch (value->getId()) {
 			case "const_value"_id: transform_const_value(static_cast<const_value_t*>(value), out); break;
@@ -1348,8 +1369,8 @@ private:
 		}
 	}
 
-	void transformFunLit(FunLit_t* funLit, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformFunLit(FunLit_t* funLit, str_list& out) {
+		str_list temp;
 		bool isFatArrow = toString(funLit->arrow) == "=>"sv;
 		pushScope();
 		if (auto argsDef = funLit->argsDef.get()) {
@@ -1359,9 +1380,10 @@ private:
 			} else {
 				temp.push_back(Empty);
 			}
-			auto& args = temp[0];
-			auto& initArgs = temp[1];
-			auto& bodyCodes = temp[2];
+			auto it = temp.begin();
+			auto& args = *it;
+			auto& initArgs = *(++it);
+			auto& bodyCodes = *(++it);
 			_buf << "function("sv <<
 				(isFatArrow ? s("self, "sv) : Empty) <<
 				args << ')';
@@ -1395,9 +1417,81 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformCodes(ast_node* nodes, std::vector<std::string>& out, bool implicitReturn) {
+	void transformCodes(const std::list<ast_node*>& nodes, str_list& out, bool implicitReturn) {
+		LocalMode mode = LocalMode::None;
+		Local_t* any = nullptr, *capital = nullptr;
+		for (auto node : nodes) {
+			auto stmt = static_cast<Statement_t*>(node);
+			if (auto local = stmt->content.as<Local_t>()) {
+				if (auto flag = local->name.as<local_flag_t>()) {
+					LocalMode newMode = toString(flag) == "*"sv ? LocalMode::Any : LocalMode::Capital;
+					if (int(newMode) > int(mode)) {
+						mode = newMode;
+					}
+					if (mode == LocalMode::Any) {
+						if (!any) any = local;
+						if (!capital) capital = local;
+					} else {
+						if (!capital) capital = local;
+					}
+				} else {
+					auto names = local->name.to<NameList_t>();
+					for (auto name : names->names.objects()) {
+						local->forceDecls.push_back(toString(name));
+					}
+				}
+			} else if (mode != LocalMode::None) {
+				ClassDecl_t* classDecl = nullptr;
+				if (auto assignment = stmt->content.as<Assignment_t>()) {
+					auto vars = getAssignVars(assignment);
+					for (const auto& var : vars) {
+						if (var.empty()) continue;
+						if (std::isupper(var[0]) && capital) {
+							capital->decls.push_back(var);
+						} else if (any) {
+							any->decls.push_back(var);
+						}
+					}
+					auto info = extractDestructureInfo(assignment);
+					if (!info.first.empty()) {
+						for (const auto& destruct : info.first)
+							for (const auto& item : destruct.items)
+								if (item.isVariable) {
+									if (std::isupper(item.name[0]) && capital) { capital->decls.push_back(item.name);
+									} else if (any) {
+										any->decls.push_back(item.name);
+									}
+								}
+					}
+					do {
+						auto assign = assignment->target.as<Assign_t>();
+						if (!assign) break;
+						if (assign->values.objects().size() != 1) break;
+						auto exp = ast_cast<Exp_t>(assign->values.objects().front());
+						if (!exp) break;
+						auto value = singleValueFrom(exp);
+						classDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
+					} while (false);
+				} else if (auto expList = stmt->content.as<ExpList_t>()) {
+					auto value = singleValueFrom(expList);
+					classDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
+				}
+				if (classDecl) {
+					if (auto variable = classDecl->name->item.as<Variable_t>()) {
+						auto className = toString(variable);
+						if (!className.empty()) {
+							if (std::isupper(className[0]) && capital) {
+									capital->decls.push_back(className);
+							} else if (any) {
+								any->decls.push_back(className);
+							}
+						}
+					}
+				}
+			}
+		}
 		if (implicitReturn) {
-			auto last = lastStatementFrom(nodes);
+			auto last = static_cast<Statement_t*>(nodes.back());
 			if (ast_is<ExpList_t>(last->content) && (!last->appendix ||
 				!last->appendix->item.is<CompInner_t>())) {
 				auto expList = static_cast<ExpList_t*>(last->content.get());
@@ -1408,27 +1502,26 @@ private:
 				last->content.set(returnNode);
 			}
 		}
-		std::vector<std::string> temp;
-		nodes->traverse([&](ast_node* node) {
-			switch (node->getId()) {
-				case "Statement"_id:
-					transformStatement(static_cast<Statement_t*>(node), temp);
-					return traversal::Return;
-				default: return traversal::Continue;
-			}
-		});
+		str_list temp;
+		for (auto node : nodes) {
+			transformStatement(static_cast<Statement_t*>(node), temp);
+		}
 		out.push_back(join(temp));
 	}
 
-	void transformBody(Body_t* body, std::vector<std::string>& out, bool implicitReturn = false) {
-		transformCodes(body, out, implicitReturn);
+	void transformBody(Body_t* body, str_list& out, bool implicitReturn = false) {
+		if (auto stmt = body->content.as<Statement_t>()) {
+			transformCodes(std::list<ast_node*>{stmt}, out, implicitReturn);
+		} else {
+			transformCodes(body->content.to<Block_t>()->statements.objects(), out, implicitReturn);
+		}
 	}
 
-	void transformBlock(Block_t* block, std::vector<std::string>& out, bool implicitReturn = true) {
-		transformCodes(block, out, implicitReturn);
+	void transformBlock(Block_t* block, str_list& out, bool implicitReturn = true) {
+		transformCodes(block->statements.objects(), out, implicitReturn);
 	}
 
-	void transformReturn(Return_t* returnNode, std::vector<std::string>& out) {
+	void transformReturn(Return_t* returnNode, str_list& out) {
 		if (auto valueList = returnNode->valueList.get()) {
 			if (auto singleValue = singleValueFrom(valueList)) {
 				if (auto comp = singleValue->getByPath<SimpleValue_t, Comprehension_t>()) {
@@ -1465,7 +1558,7 @@ private:
 				out.back() = indent() + s("return "sv) + out.back() + nlr(returnNode);
 				return;
 			} else {
-				std::vector<std::string> temp;
+				str_list temp;
 				transformExpListLow(valueList, temp);
 				out.push_back(indent() + s("return "sv) + temp.back() + nlr(returnNode));
 			}
@@ -1474,7 +1567,7 @@ private:
 		}
 	}
 
-	void transformFnArgsDef(FnArgsDef_t* argsDef, std::vector<std::string>& out) {
+	void transformFnArgsDef(FnArgsDef_t* argsDef, str_list& out) {
 		if (!argsDef->defList) {
 			out.push_back(Empty);
 			out.push_back(Empty);
@@ -1486,7 +1579,7 @@ private:
 		}
 	}
 
-	void transform_outer_var_shadow(outer_var_shadow_t* shadow, std::vector<std::string>& out) {
+	void transform_outer_var_shadow(outer_var_shadow_t* shadow, str_list& out) {
 		markVarShadowed();
 		if (shadow->varList) {
 			for (auto name : shadow->varList->names.objects()) {
@@ -1495,13 +1588,13 @@ private:
 		}
 	}
 
-	void transformFnArgDefList(FnArgDefList_t* argDefList, std::vector<std::string>& out) {
+	void transformFnArgDefList(FnArgDefList_t* argDefList, str_list& out) {
 		struct ArgItem {
 			std::string name;
 			std::string assignSelf;
 		};
 		std::list<ArgItem> argItems;
-		std::vector<std::string> temp;
+		str_list temp;
 		std::string varNames;
 		bool assignSelf = false;
 		for (auto _def : argDefList->definitions.objects()) {
@@ -1576,7 +1669,7 @@ private:
 		out.push_back(initCodes);
 	}
 
-	void transformSelfName(SelfName_t* selfName, std::vector<std::string>& out, bool invoke) {
+	void transformSelfName(SelfName_t* selfName, str_list& out, bool invoke) {
 		auto name = selfName->name.get();
 		switch (name->getId()) {
 			case "self_class_name"_id:
@@ -1594,8 +1687,8 @@ private:
 		}
 	}
 
-	void transformColonChainClosure(ChainValue_t* chainValue, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformColonChainClosure(ChainValue_t* chainValue, str_list& out) {
+		str_list temp;
 		temp.push_back(s("(function()"sv) + nll(chainValue));
 		pushScope();
 		transformColonChain(chainValue, temp, ExpUsage::Return);
@@ -1604,8 +1697,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformColonChain(ChainValue_t* chainValue, std::vector<std::string>& out, ExpUsage usage = ExpUsage::Common, ExpList_t* expList = nullptr) {
-		std::vector<std::string> temp;
+	void transformColonChain(ChainValue_t* chainValue, str_list& out, ExpUsage usage = ExpUsage::Common, ExpList_t* expList = nullptr) {
+		str_list temp;
 		auto chain = chainValue->caller.to<Chain_t>();
 		const auto& chainList = chain->items.objects();
 		auto end = --chainList.end();
@@ -1639,7 +1732,7 @@ private:
 		auto funcName = toString(colonChainItem->name);
 		std::string assignList;
 		if (expList) {
-			std::vector<std::string> tmp;
+			str_list tmp;
 			transformExpList(expList, tmp);
 			assignList = tmp.back();
 		}
@@ -1674,8 +1767,8 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformChain(Chain_t* chain, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformChain(Chain_t* chain, str_list& out) {
+		str_list temp;
 		const auto& chainList = chain->items.objects();
 		switch (chainList.front()->getId()) {
 			case "DotChainItem"_id:
@@ -1715,20 +1808,20 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformDotChainItem(DotChainItem_t* dotChainItem, std::vector<std::string>& out) {
+	void transformDotChainItem(DotChainItem_t* dotChainItem, str_list& out) {
 		out.push_back(s("."sv) + toString(dotChainItem->name));
 	}
 
-	void transformColonChainItem(ColonChainItem_t* colonChainItem, std::vector<std::string>& out) {
+	void transformColonChainItem(ColonChainItem_t* colonChainItem, str_list& out) {
 		out.push_back(s(colonChainItem->switchToDot ? "."sv : ":"sv) + toString(colonChainItem->name));
 	}
 
-	void transformSlice(Slice_t* slice, std::vector<std::string>& out) {
+	void transformSlice(Slice_t* slice, str_list& out) {
 		throw std::logic_error("Slice syntax not supported here");
 	}
 
-	void transformInvoke(Invoke_t* invoke, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformInvoke(Invoke_t* invoke, str_list& out) {
+		str_list temp;
 		for (auto arg : invoke->args.objects()) {
 			switch (arg->getId()) {
 				case "Exp"_id: transformExp(static_cast<Exp_t*>(arg), temp); break;
@@ -1741,27 +1834,27 @@ private:
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
 	}
 
-	void transform_unary_exp(unary_exp_t* unary_exp, std::vector<std::string>& out) {
+	void transform_unary_exp(unary_exp_t* unary_exp, str_list& out) {
 		std::string op = toString(unary_exp->m_begin.m_it, unary_exp->item->m_begin.m_it);
-		std::vector<std::string> temp{op + (op == "not"sv ? op + " " : Empty)};
+		str_list temp{op + (op == "not"sv ? op + " " : Empty)};
 		transformExp(unary_exp->item, temp);
 		out.push_back(join(temp));
 	}
 
-	void transformVariable(Variable_t* name, std::vector<std::string>& out) {
+	void transformVariable(Variable_t* name, str_list& out) {
 		out.push_back(toString(name));
 	}
 
-	void transformNum(Num_t* num, std::vector<std::string>& out) {
+	void transformNum(Num_t* num, str_list& out) {
 		out.push_back(toString(num));
 	}
 
-	void transformTableLit(TableLit_t* table, std::vector<std::string>& out) {
+	void transformTableLit(TableLit_t* table, str_list& out) {
 		transformTable(table, table->values.objects(), out);
 	}
 
-	void transformCompCommon(Comprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformCompCommon(Comprehension_t* comp, str_list& out) {
+		str_list temp;
 		auto compInner = comp->forLoop.get();
 		for (auto item : compInner->items.objects()) {
 			switch (item->getId()) {
@@ -1789,8 +1882,8 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformComprehension(Comprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformComprehension(Comprehension_t* comp, str_list& out) {
+		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
 		addToScope(accum);
@@ -1829,8 +1922,8 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformCompInPlace(Comprehension_t* comp, ExpList_t* expList, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformCompInPlace(Comprehension_t* comp, ExpList_t* expList, str_list& out) {
+		str_list temp;
 		pushScope();
 		transformComprehension(comp, temp);
 		auto assign = new_ptr<Assign_t>();
@@ -1843,20 +1936,20 @@ private:
 		transformAssignment(assignment, temp);
 		out.push_back(
 			s("do"sv) + nll(comp) +
-			temp[1] +
+			*(++temp.begin()) +
 			temp.back());
 		popScope();
 		out.back() = out.back() + indent() + s("end"sv) + nlr(comp);
 	}
 
-	void transformCompReturn(Comprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformCompReturn(Comprehension_t* comp, str_list& out) {
+		str_list temp;
 		transformComprehension(comp, temp);
 		out.push_back(temp.back() + indent() + s("return "sv) + temp.front() + nlr(comp));
 	}
 
-	void transformCompClosure(Comprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformCompClosure(Comprehension_t* comp, str_list& out) {
+		str_list temp;
 		std::string before = s("(function()"sv) + nll(comp);
 		pushScope();
 		transformComprehension(comp, temp);
@@ -1868,9 +1961,9 @@ private:
 		out.back() = out.back() + indent() + s("end)()"sv);
 	}
 
-	void transformForEachHead(AssignableNameList_t* nameList, ast_node* loopTarget, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
-		std::vector<std::string> vars;
+	void transformForEachHead(AssignableNameList_t* nameList, ast_node* loopTarget, str_list& out) {
+		str_list temp;
+		str_list vars;
 		std::list<std::pair<ast_node*, ast_ptr<ast_node,false,false>>> destructPairs;
 		for (auto _item : nameList->items.objects()) {
 			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
@@ -1887,7 +1980,7 @@ private:
 				default: break;
 			}
 		}
-		std::list<std::string> varBefore, varAfter;
+		str_list varBefore, varAfter;
 		switch (loopTarget->getId()) {
 			case "star_exp"_id: {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
@@ -2009,12 +2102,12 @@ private:
 		for (auto& var : varAfter) addToScope(var);
 	}
 
-	void transformCompForEach(CompForEach_t* comp, std::vector<std::string>& out) {
+	void transformCompForEach(CompForEach_t* comp, str_list& out) {
 		transformForEachHead(comp->nameList, comp->loopValue, out);
 	}
 
-	void transformInvokeArgs(InvokeArgs_t* invokeArgs, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformInvokeArgs(InvokeArgs_t* invokeArgs, str_list& out) {
+		str_list temp;
 		for (auto arg : invokeArgs->args.objects()) {
 			switch (arg->getId()) {
 				case "Exp"_id: transformExp(static_cast<Exp_t*>(arg), temp); break;
@@ -2025,8 +2118,8 @@ private:
 		out.push_back(join(temp, ", "sv));
 	}
 
-	void transformForHead(For_t* forNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformForHead(For_t* forNode, str_list& out) {
+		str_list temp;
 		std::string varName = toString(forNode->varName);
 		transformExp(forNode->startValue, temp);
 		transformExp(forNode->stopValue, temp);
@@ -2035,21 +2128,63 @@ private:
 		} else {
 			temp.emplace_back();
 		}
-		_buf << indent() << "for "sv << varName << " = "sv << temp[0] << ", "sv << temp[1] << (temp[2].empty() ? Empty : s(", "sv) + temp[2]) << " do"sv << nll(forNode);
+		auto it = temp.begin();
+		const auto& start = *it;
+		const auto& stop = *(++it);
+		const auto& step = *(++it);
+		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : s(", "sv) + step) << " do"sv << nll(forNode);
 		out.push_back(clearBuf());
 	}
 
-	void transformFor(For_t* forNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
-		transformForHead(forNode, temp);
-		pushScope();
-		transformBody(forNode->body, temp);
-		popScope();
-		out.push_back(temp[0] + temp[1] + indent() + s("end"sv) + nlr(forNode));
+	void transformLoopBody(Body_t* body, str_list& out) {
+		str_list temp;
+		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
+			switch (node->getId()) {
+				case "For"_id:
+				case "ForEach"_id:
+					return traversal::Return;
+				case "BreakLoop"_id: {
+					return toString(node) == "continue"sv ?
+						traversal::Stop : traversal::Return;
+				}
+				default:
+					return traversal::Continue;
+			}
+		});
+		if (withContinue) {
+			auto continueVar = getUnusedName("_continue_"sv);
+			addToScope(continueVar);
+			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
+			_buf << indent() << "repeat"sv << nll(body);
+			temp.push_back(clearBuf());
+			_continueVars.push(continueVar);
+			pushScope();
+		}
+		transformBody(body, temp);
+		if (withContinue) {
+			_buf << indent() << _continueVars.top() << " = true"sv << nll(body);
+			popScope();
+			_buf << indent() << "until true"sv << nlr(body);
+			_buf << indent() << "if not "sv << _continueVars.top() << " then"sv << nlr(body);
+			_buf << indent(1) << "break"sv << nlr(body);
+			_buf << indent() << "end"sv << nlr(body);
+			temp.push_back(clearBuf());
+			_continueVars.pop();
+		}
+		out.push_back(join(temp));
 	}
 
-	void transformForClosure(For_t* forNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformFor(For_t* forNode, str_list& out) {
+		str_list temp;
+		transformForHead(forNode, temp);
+		pushScope();
+		transformLoopBody(forNode->body, temp);
+		popScope();
+		out.push_back(join(temp) + indent() + s("end"sv) + nlr(forNode));
+	}
+
+	void transformForClosure(For_t* forNode, str_list& out) {
+		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
 		addToScope(accum);
@@ -2074,7 +2209,7 @@ private:
 			last->content.set(assignment);
 		}
 		pushScope();
-		transformBody(forNode->body, temp);
+		transformLoopBody(forNode->body, temp);
 		temp.push_back(indent() + len + s(" = "sv) + len + s(" + 1"sv) + nlr(forNode->body));
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(forNode) + indent() + s("return "sv) + accum + nlr(forNode));
@@ -2083,8 +2218,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformForInPlace(For_t* forNode,  std::vector<std::string>& out, ExpList_t* assignExpList) {
-		std::vector<std::string> temp;
+	void transformForInPlace(For_t* forNode,  str_list& out, ExpList_t* assignExpList) {
+		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
 		_buf << indent() << "do"sv << nll(forNode);
@@ -2109,7 +2244,7 @@ private:
 			last->content.set(assignment);
 		}
 		pushScope();
-		transformBody(forNode->body, temp);
+		transformLoopBody(forNode->body, temp);
 		temp.push_back(indent() + len + s(" = "sv) + len + s(" + 1"sv) + nlr(forNode->body));
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(forNode));
@@ -2126,22 +2261,21 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformBinaryOperator(BinaryOperator_t* node, std::vector<std::string>& out) {
+	void transformBinaryOperator(BinaryOperator_t* node, str_list& out) {
 		auto op = toString(node);
 		out.push_back(op == "!="sv ? s("~="sv) : op);
 	}
 
-	void transformForEach(ForEach_t* forEach, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformForEach(ForEach_t* forEach, str_list& out) {
+		str_list temp;
 		transformForEachHead(forEach->nameList, forEach->loopValue, temp);
-		pushScope();
-		transformBody(forEach->body, temp);
+		transformLoopBody(forEach->body, temp);
 		popScope();
-		out.push_back(temp[0] + temp[1] + indent() + s("end"sv) + nlr(forEach));
+		out.push_back(temp.front() + temp.back() + indent() + s("end"sv) + nlr(forEach));
 	}
 
-	void transformForEachClosure(ForEach_t* forEach, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformForEachClosure(ForEach_t* forEach, str_list& out) {
+		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
 		addToScope(accum);
@@ -2165,8 +2299,7 @@ private:
 			assignment->target.set(assign);
 			last->content.set(assignment);
 		}
-		pushScope();
-		transformBody(forEach->body, temp);
+		transformLoopBody(forEach->body, temp);
 		temp.push_back(indent() + len + s(" = "sv) + len + s(" + 1"sv) + nlr(forEach->body));
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(forEach) + indent() + s("return "sv) + accum + nlr(forEach));
@@ -2175,8 +2308,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformForEachInPlace(ForEach_t* forEach,  std::vector<std::string>& out, ExpList_t* assignExpList) {
-		std::vector<std::string> temp;
+	void transformForEachInPlace(ForEach_t* forEach,  str_list& out, ExpList_t* assignExpList) {
+		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
 		_buf << indent() << "do"sv << nll(forEach);
@@ -2200,8 +2333,7 @@ private:
 			assignment->target.set(assign);
 			last->content.set(assignment);
 		}
-		pushScope();
-		transformBody(forEach->body, temp);
+		transformLoopBody(forEach->body, temp);
 		temp.push_back(indent() + len + s(" = "sv) + len + s(" + 1"sv) + nlr(forEach->body));
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(forEach));
@@ -2218,14 +2350,14 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transform_variable_pair(variable_pair_t* pair, std::vector<std::string>& out) {
+	void transform_variable_pair(variable_pair_t* pair, str_list& out) {
 		auto name = toString(pair->name);
 		out.push_back(name + s(" = "sv) + name);
 	}
 
-	void transform_normal_pair(normal_pair_t* pair, std::vector<std::string>& out) {
+	void transform_normal_pair(normal_pair_t* pair, str_list& out) {
 		auto key = pair->key.get();
-		std::vector<std::string> temp;
+		str_list temp;
 		switch (key->getId()) {
 			case "KeyName"_id: transformKeyName(static_cast<KeyName_t*>(key), temp); break;
 			case "Exp"_id:
@@ -2247,10 +2379,10 @@ private:
 			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), temp); break;
 			default: break;
 		}
-		out.push_back(temp[0] + s(" = "sv) + temp[1]);
+		out.push_back(temp.front() + s(" = "sv) + temp.back());
 	}
 
-	void transformKeyName(KeyName_t* keyName, std::vector<std::string>& out) {
+	void transformKeyName(KeyName_t* keyName, str_list& out) {
 		auto name = keyName->name.get();
 		switch (name->getId()) {
 			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(name), out, false); break;
@@ -2259,23 +2391,38 @@ private:
 		}
 	}
 
-	void transformLuaString(LuaString_t* luaString, std::vector<std::string>& out) {
+	void transformLuaString(LuaString_t* luaString, str_list& out) {
 		out.push_back(toString(luaString));
 	}
 
-	void transformSingleString(SingleString_t* singleString, std::vector<std::string>& out) {
-		out.push_back(toString(singleString));
+	void replace(std::string& str, std::string_view from, std::string_view to) {
+		size_t start_pos = 0;
+		while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+			str.replace(start_pos, from.size(), to);
+			start_pos += to.size();
+		}
 	}
 
-	void transformDoubleString(DoubleString_t* doubleString, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformSingleString(SingleString_t* singleString, str_list& out) {
+		auto str = toString(singleString);
+		replace(str, "\r"sv, "");
+		replace(str, "\n"sv, "\\n"sv);
+		out.push_back(str);
+	}
+
+	void transformDoubleString(DoubleString_t* doubleString, str_list& out) {
+		str_list temp;
 		for (auto _seg : doubleString->segments.objects()) {
 			auto seg = static_cast<double_string_content_t*>(_seg);
 			auto content = seg->content.get();
 			switch (content->getId()) {
-				case "double_string_inner"_id:
-					temp.push_back(s("\""sv) + toString(content) + s("\""sv));
+				case "double_string_inner"_id: {
+					auto str = toString(content);
+					replace(str, "\r"sv, "");
+					replace(str, "\n"sv, "\\n"sv);
+					temp.push_back(s("\""sv) + str + s("\""sv));
 					break;
+				}
 				case "Exp"_id:
 					transformExp(static_cast<Exp_t*>(content), temp);
 					temp.back() = s("tostring("sv) + temp.back() + s(")"sv);
@@ -2286,7 +2433,7 @@ private:
 		out.push_back(join(temp, " .. "sv));
 	}
 
-	void transformString(String_t* string, std::vector<std::string>& out) {
+	void transformString(String_t* string, str_list& out) {
 		auto str = string->str.get();
 		switch (str->getId()) {
 			case "SingleString"_id: transformSingleString(static_cast<SingleString_t*>(str), out); break;
@@ -2309,8 +2456,8 @@ private:
 		return {Empty, false};
 	}
 
-	void transformClassDeclClosure(ClassDecl_t* classDecl, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformClassDeclClosure(ClassDecl_t* classDecl, str_list& out) {
+		str_list temp;
 		temp.push_back(s("(function()"sv) + nll(classDecl));
 		pushScope();
 		transformClassDecl(classDecl, temp, ExpUsage::Return);
@@ -2319,8 +2466,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformClassDecl(ClassDecl_t* classDecl, std::vector<std::string>& out, ExpUsage usage = ExpUsage::Common, ExpList_t* expList = nullptr) {
-		std::vector<std::string> temp;
+	void transformClassDecl(ClassDecl_t* classDecl, str_list& out, ExpUsage usage = ExpUsage::Common, ExpList_t* expList = nullptr) {
+		str_list temp;
 		auto body = classDecl->body.get();
 		auto assignable = classDecl->name.get();
 		auto extend = classDecl->extend.get();
@@ -2364,9 +2511,10 @@ private:
 		addToScope(classVar);
 		temp.push_back(indent() + s("local "sv) + classVar + nll(classDecl));
 		if (body) {
-			std::vector<std::string> varDefs;
+			str_list varDefs;
 			body->traverse([&](ast_node* node) {
 				if (node->getId() == "Statement"_id) {
+					ClassDecl_t* clsDecl = nullptr;
 					if (auto assignment = node->getByPath<Assignment_t>()) {
 						auto names = transformAssignDefs(assignment->assignable.get());
 						varDefs.insert(varDefs.end(), names.begin(), names.end());
@@ -2377,6 +2525,24 @@ private:
 									if (item.isVariable && addToScope(item.name))
 										varDefs.push_back(item.name);
 						}
+						do {
+							auto assign = assignment->target.as<Assign_t>();
+							if (!assign) break;
+							if (assign->values.objects().size() != 1) break;
+							auto exp = ast_cast<Exp_t>(assign->values.objects().front());
+							if (!exp) break;
+							auto value = singleValueFrom(exp);
+							clsDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
+						} while (false);
+					} else if (auto expList = node->getByPath<ExpList_t>()) {
+						auto value = singleValueFrom(expList);
+						clsDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
+					}
+					if (clsDecl) {
+						std::string clsName;
+						bool newDefined = false;
+						std::tie(clsName,newDefined) = defineClassVariable(clsDecl->name);
+						if (newDefined) varDefs.push_back(clsName);
 					}
 					return traversal::Return;
 				}
@@ -2400,14 +2566,12 @@ private:
 		addToScope(baseVar);
 		addToScope(selfVar);
 		temp.push_back(indent() + s("local "sv) + baseVar + s(" = "sv));
-		std::vector<std::string> builtins;
-		std::vector<std::string> commons;
-		std::vector<std::string> statements;
+		str_list builtins;
+		str_list commons;
+		str_list statements;
 		if (body) {
 			std::list<ClassMember> members;
-			for (auto _classLine : classDecl->body->lines.objects()) {
-				auto classLine = static_cast<ClassLine_t*>(_classLine);
-				auto content = classLine->content.get();
+			for (auto content : classDecl->body->contents.objects()) {
 				switch (content->getId()) {
 					case "class_member_list"_id: {
 						size_t inc = transform_class_member_list(static_cast<class_member_list_t*>(content), members, classVar);
@@ -2451,7 +2615,7 @@ private:
 			temp.back() += s("{ }"sv) + nll(classDecl);
 		}
 		temp.push_back(indent() + baseVar + s(".__index = "sv) + baseVar + nll(classDecl));
-		std::vector<std::string> tmp;
+		str_list tmp;
 		if (usage == ExpUsage::Assignment) {
 			auto assign = new_ptr<Assign_t>();
 			assign->values.push_back(toAst<Exp_t>(classVar, Exp));
@@ -2535,7 +2699,7 @@ private:
 	}
 
 	size_t transform_class_member_list(class_member_list_t* class_member_list, std::list<ClassMember>& out, const std::string& classVar) {
-		std::vector<std::string> temp;
+		str_list temp;
 		size_t count = 0;
 		for (auto keyValue : class_member_list->values.objects()) {
 			MemType type = MemType::Common;
@@ -2645,7 +2809,7 @@ private:
 		return count;
 	}
 
-	void transformAssignable(Assignable_t* assignable, std::vector<std::string>& out) {
+	void transformAssignable(Assignable_t* assignable, str_list& out) {
 		auto item = assignable->item.get();
 		switch (item->getId()) {
 			case "Chain"_id: transformChain(static_cast<Chain_t*>(item), out); break;
@@ -2655,12 +2819,12 @@ private:
 		}
 	}
 
-	void transformWith(With_t* with, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformWith(With_t* with, str_list& out) {
+		str_list temp;
 		std::string withVar;
 		bool scoped = false;
 		if (with->assigns) {
-			auto vars = getAssignVars(with->valueList);
+			auto vars = getAssignVars(with);
 			if (vars.front().empty()) {
 				if (with->assigns->values.objects().size() == 1) {
 					auto var = variableFrom(with->assigns->values.objects().front());
@@ -2731,11 +2895,11 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transform_const_value(const_value_t* const_value, std::vector<std::string>& out) {
+	void transform_const_value(const_value_t* const_value, str_list& out) {
 		out.push_back(toString(const_value));
 	}
 
-	void transformExport(Export_t* exportNode, std::vector<std::string>& out) {
+	void transformExport(Export_t* exportNode, str_list& out) {
 		auto item = exportNode->item.get();
 		switch (item->getId()) {
 			case "ClassDecl"_id: {
@@ -2789,8 +2953,8 @@ private:
 		}
 	}
 
-	void transformTable(ast_node* table, const std::list<ast_node*>& pairs, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformTable(ast_node* table, const std::list<ast_node*>& pairs, str_list& out) {
+		str_list temp;
 		pushScope();
 		for (auto pair : pairs) {
 			switch (pair->getId()) {
@@ -2805,15 +2969,15 @@ private:
 		out.back() += (indent() + s("}"sv));
 	}
 
-	void transform_simple_table(simple_table_t* table, std::vector<std::string>& out) {
+	void transform_simple_table(simple_table_t* table, str_list& out) {
 		transformTable(table, table->pairs.objects(), out);
 	}
 
-	void transformTblComprehension(TblComprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> kv;
+	void transformTblComprehension(TblComprehension_t* comp, str_list& out) {
+		str_list kv;
 		std::string tbl = getUnusedName("_tbl_");
 		addToScope(tbl);
-		std::vector<std::string> temp;
+		str_list temp;
 		auto compInner = comp->forLoop.get();
 		for (auto item : compInner->items.objects()) {
 			switch (item->getId()) {
@@ -2857,8 +3021,8 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformTblCompInPlace(TblComprehension_t* comp, ExpList_t* expList, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformTblCompInPlace(TblComprehension_t* comp, ExpList_t* expList, str_list& out) {
+		str_list temp;
 		pushScope();
 		transformTblComprehension(comp, temp);
 		auto assign = new_ptr<Assign_t>();
@@ -2871,20 +3035,20 @@ private:
 		transformAssignment(assignment, temp);
 		out.push_back(
 			s("do"sv) + nll(comp) +
-			temp[1] +
+			*(++temp.begin()) +
 			temp.back());
 		popScope();
 		out.back() = out.back() + indent() + s("end"sv) + nlr(comp);
 	}
 
-	void transformTblCompReturn(TblComprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformTblCompReturn(TblComprehension_t* comp, str_list& out) {
+		str_list temp;
 		transformTblComprehension(comp, temp);
 		out.push_back(temp.back() + indent() + s("return "sv) + temp.front() + nlr(comp));
 	}
 
-	void transformTblCompClosure(TblComprehension_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformTblCompClosure(TblComprehension_t* comp, str_list& out) {
+		str_list temp;
 		std::string before = s("(function()"sv) + nll(comp);
 		pushScope();
 		transformTblComprehension(comp, temp);
@@ -2898,8 +3062,8 @@ private:
 		out.back() = out.back() + indent() + s("end)()"sv);
 	}
 
-	void transformCompFor(CompFor_t* comp, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformCompFor(CompFor_t* comp, str_list& out) {
+		str_list temp;
 		std::string varName = toString(comp->varName);
 		transformExp(comp->startValue, temp);
 		transformExp(comp->stopValue, temp);
@@ -2908,18 +3072,22 @@ private:
 		} else {
 			temp.emplace_back();
 		}
-		_buf << indent() << "for "sv << varName << " = "sv << temp[0] << ", "sv << temp[1] << (temp[2].empty() ? Empty : s(", "sv) + temp[2]) << " do"sv << nll(comp);
+		auto it = temp.begin();
+		const auto& start = *it;
+		const auto& stop = *(++it);
+		const auto& step = *(++it);
+		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : s(", "sv) + step) << " do"sv << nll(comp);
 		out.push_back(clearBuf());
 		pushScope();
 		addToScope(varName);
 	}
 
-	void transformTableBlock(TableBlock_t* table, std::vector<std::string>& out) {
+	void transformTableBlock(TableBlock_t* table, str_list& out) {
 		transformTable(table, table->values.objects(), out);
 	}
 
-	void transformDo(Do_t* doNode, std::vector<std::string>& out, bool implicitReturn = false) {
-		std::vector<std::string> temp;
+	void transformDo(Do_t* doNode, str_list& out, bool implicitReturn = false) {
+		str_list temp;
 		temp.push_back(indent() + s("do"sv) + nll(doNode));
 		pushScope();
 		transformBody(doNode->body, temp, implicitReturn);
@@ -2928,8 +3096,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformDoClosure(Do_t* doNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformDoClosure(Do_t* doNode, str_list& out) {
+		str_list temp;
 		temp.push_back(s("(function()"sv) + nll(doNode));
 		pushScope();
 		transformBody(doNode->body, temp, true);
@@ -2938,8 +3106,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformImport(Import_t* import, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformImport(Import_t* import, str_list& out) {
+		str_list temp;
 		auto objVar = variableFrom(import->exp);
 		ast_ptr<Assignment_t, false, false> objAssign;
 		if (objVar.empty()) {
@@ -3035,8 +3203,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformWhileClosure(While_t* whileNode, std::vector<std::string>& out, ExpList_t* expList = nullptr) {
-		std::vector<std::string> temp;
+	void transformWhileClosure(While_t* whileNode, str_list& out, ExpList_t* expList = nullptr) {
+		str_list temp;
 		if (expList) {
 			temp.push_back(indent() + s("do"sv) + nll(whileNode));
 		} else {
@@ -3062,7 +3230,7 @@ private:
 			newAssignment->target.set(assign);
 			last->content.set(newAssignment);
 		}
-		transformBody(whileNode->body, temp);
+		transformLoopBody(whileNode->body, temp);
 		temp.push_back(indent() + lenVar + s(" = "sv) + lenVar + s(" + 1"sv) + nlr(whileNode));
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(whileNode));
@@ -3085,11 +3253,11 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformWhile(While_t* whileNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformWhile(While_t* whileNode, str_list& out) {
+		str_list temp;
 		pushScope();
 		transformExp(whileNode->condition, temp);
-		transformBody(whileNode->body, temp);
+		transformLoopBody(whileNode->body, temp);
 		popScope();
 		_buf << indent() << "while "sv << temp.front() << " do"sv << nll(whileNode);
 		_buf << temp.back();
@@ -3097,8 +3265,8 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformSwitchClosure(Switch_t* switchNode, std::vector<std::string>& out) {
-		std::vector<std::string> temp;
+	void transformSwitchClosure(Switch_t* switchNode, str_list& out) {
+		str_list temp;
 		temp.push_back(s("(function()"sv) + nll(switchNode));
 		pushScope();
 		transformSwitch(switchNode, temp, true);
@@ -3107,8 +3275,8 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformSwitch(Switch_t* switchNode, std::vector<std::string>& out, bool implicitReturn = false) {
-		std::vector<std::string> temp;
+	void transformSwitch(Switch_t* switchNode, str_list& out, bool implicitReturn = false) {
+		str_list temp;
 		auto objVar = variableFrom(switchNode->target);
 		if (objVar.empty()) {
 			objVar = getUnusedName("_exp_"sv);
@@ -3121,7 +3289,7 @@ private:
 		for (auto branch_ : branches) {
 			auto branch = static_cast<SwitchCase_t*>(branch_);
 			temp.push_back(indent() + s(branches.front() == branch ? "if"sv : "elseif"sv));
-			std::vector<std::string> tmp;
+			str_list tmp;
 			const auto& exprs = branch->valueList->exprs.objects();
 			for (auto exp_ : exprs) {
 				auto exp = static_cast<Exp_t*>(exp_);
@@ -3144,8 +3312,36 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformLocal(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
-	void transformBreakLoop(ast_node* node, std::vector<std::string>& out) {noopnl(node, out);}
+	void transformLocal(Local_t* local, str_list& out) {
+		if (!local->forceDecls.empty() || !local->decls.empty()) {
+			str_list defs;
+			for (const auto& decl : local->forceDecls) {
+				forceAddToScope(decl);
+				defs.push_back(decl);
+			}
+			for (const auto& decl : local->decls) {
+				if (addToScope(decl)) {
+					defs.push_back(decl);
+				}
+			}
+			auto preDefine = getPredefine(defs);
+			if (!preDefine.empty()) {
+				out.push_back(preDefine + nll(local));
+			}
+		}
+	}
+	
+	void transformBreakLoop(BreakLoop_t* breakLoop, str_list& out) {
+		auto keyword = toString(breakLoop);
+		if (keyword == "break"sv) {
+			out.push_back(indent() + keyword + nll(breakLoop));
+			return;
+		}
+		if (_continueVars.empty()) throw std::logic_error("continue must be inside of a loop");
+		_buf << indent() << _continueVars.top() << " = true"sv << nll(breakLoop);
+		_buf << indent() << "break"sv << nll(breakLoop);
+		out.push_back(clearBuf());
+	}
 };
 
 const std::string MoonCompliler::Empty;
@@ -3153,22 +3349,139 @@ const std::string MoonCompliler::Empty;
 int main()
 {
 	std::string s = R"TestCodesHere(
-switch abc.x
-	when "a","b" then 1
-	when "c" then 2
-	else 3
-a = switch abc.x
-	when "a","b" then 1
-	when "c" then 2
-	else 3
-f switch abc.x
-	when "a","b" then 1
-	when "c" then 2
-	else 3
-switch abc.x
-	when "a","b" then 1
-	when "c" then 2
-	else 3
+
+for x=1,10
+  print "yeah"
+
+for x=1,#something
+  print "yeah"
+
+for y=100,60,-3
+  print "count down", y
+
+for a=1,10 do print "okay"
+
+for a=1,10
+  for b = 2,43
+    print a,b
+
+for i in iter
+  for j in yeah
+    x = 343 + i + j
+    print i, j
+
+for x in *something
+  print x
+
+for k,v in pairs hello do print k,v
+
+for x in y, z
+  print x
+
+for x in y, z, k
+  print x
+
+
+x = ->
+  for x in y
+    y
+
+hello = {1,2,3,4,5}
+
+x = for y in *hello
+  if y % 2 == 0
+    y
+
+x = ->
+  for x in *hello
+    y
+
+t = for i=10,20 do i * 2
+
+hmm = 0
+y = for j = 3,30, 8
+  hmm += 1
+  j * hmm
+
+->
+  for k=10,40
+    "okay"
+
+->
+  return for k=10,40
+    "okay"
+
+while true do print "name"
+
+while 5 + 5
+  print "okay world"
+  working man
+
+while also do
+  i work too
+  "okay"
+
+i = 0
+x = while i < 10
+  i += 1
+
+-- values that can'e be coerced
+
+x = for thing in *3
+  y = "hello"
+
+x = for x=1,2
+  y = "hello"
+
+
+-- continue
+
+while true
+  continue if false
+  print "yes"
+  break if true
+  print "no"
+
+
+for x=1,10
+  continue if x > 3 and x < 7
+  print x
+
+
+list = for x=1,10
+  continue if x > 3 and x < 7
+  x
+
+
+for a in *{1,2,3,4,5,6}
+  continue if a == 1
+  continue if a == 3
+  print a
+
+
+
+for x=1,10
+  continue if x % 2 == 0
+  for y = 2,12
+    continue if y % 3 == 0
+
+
+while true
+  continue if false
+  break
+
+while true
+  continue if false
+  return 22
+
+--
+
+do
+  xxx = {1,2,3,4}
+  for thing in *xxx
+    print thing
+
+
 )TestCodesHere";
 	MoonCompliler{}.complile(s);
 	return 0;
