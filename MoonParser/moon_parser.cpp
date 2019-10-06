@@ -1,11 +1,21 @@
 #include "moon_parser.h"
 
+std::unordered_set<std::string> State::luaKeywords = {
+	"and", "break", "do", "else", "elseif",
+	"end", "false", "for", "function", "if",
+	"in", "local", "nil", "not", "or",
+	"repeat", "return", "then", "true", "until",
+	"while"
+};
+
 std::unordered_set<std::string> State::keywords = {
-	"and", "while", "else", "using", "continue",
-	"local", "not", "then", "return", "from",
-	"extends", "for", "do", "or", "export",
-	"class", "in", "unless", "when", "elseif",
-	"switch", "break", "if", "with", "import", "true", "false", "nil"
+	"and", "break", "do", "else", "elseif",
+	"end", "false", "for", "function", "if",
+	"in", "local", "nil", "not", "or",
+	"repeat", "return", "then", "true", "until",
+	"while", // Lua keywords
+	"class", "continue", "export", "extends",
+	"import", "switch", "unless", "using", "with" // Moon keywords
 };
 
 rule plain_space = *set(" \t");
@@ -44,12 +54,9 @@ rule Seperator = true_();
 
 rule Variable = user(Name, [](const item_t& item) {
 	State* st = reinterpret_cast<State*>(item.user_data);
-	for (auto it = item.begin; it != item.end; ++it) st->buffer << static_cast<char>(*it);
-	std::string name;
-	st->buffer >> name;
-	st->buffer.str("");
+	for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+	auto it = st->keywords.find(st->buffer);
 	st->buffer.clear();
-	auto it = st->keywords.find(name);
 	return it == st->keywords.end();
 });
 
@@ -252,18 +259,18 @@ rule BinaryOperator =
 	expr("//") |
 	set("+-*/%^><|&");
 
-extern rule Chain;
+extern rule AssignableChain;
 
-rule Assignable = Chain | Space >> Variable | SelfName;
+rule Assignable = AssignableChain | Space >> Variable | SelfName;
 
 extern rule Value;
 
 rule exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> Value;
 rule Exp = Value >> *exp_op_value;
 
-extern rule Callable, InvokeArgs;
+extern rule Chain, Callable, InvokeArgs;
 
-rule ChainValue = (Chain | Callable) >> -InvokeArgs;
+rule ChainValue = Seperator >> (Chain | Callable) >> -InvokeArgs;
 
 extern rule KeyValue, String, SimpleValue;
 
@@ -321,10 +328,10 @@ rule chain_call = (Callable | String) >> ChainItems;
 rule chain_item = and_(set(".\\")) >> ChainItems;
 rule chain_dot_chain = DotChainItem >> -ChainItems;
 
-rule Chain = Seperator >> (
-	chain_call |
-	chain_item |
-	Space >> (chain_dot_chain | ColonChain));
+rule Chain = chain_call | chain_item |
+	Space >> (chain_dot_chain | ColonChain);
+
+rule AssignableChain = Seperator >> Chain;
 
 extern rule ChainItem;
 
@@ -491,4 +498,6 @@ rule Body = -Space >> Break >> *EmptyLine >> InBlock | Statement;
 rule empty_line_stop = Space >> and_(Stop);
 rule Line = CheckIndent >> Statement | empty_line_stop;
 rule Block = Seperator >> Line >> *(+Break >> Line);
-rule BlockEnd = Block >> eof();
+
+rule Shebang = expr("#!") >> *(not_(Stop) >> Any);
+rule File = White >> -Shebang >> Block >> eof();

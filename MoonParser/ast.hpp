@@ -388,6 +388,22 @@ public:
         clear();
     }
 
+	inline ast_node* back() const {
+		return m_objects.back();
+	}
+
+	inline ast_node* front() const {
+		return m_objects.front();
+	}
+
+	inline size_t size() const {
+		return m_objects.size();
+	}
+
+	inline bool empty() const {
+		return m_objects.empty();
+	}
+
     void push_back(ast_node* node) {
     	assert(node && accept(node));
 		m_objects.push_back(node);

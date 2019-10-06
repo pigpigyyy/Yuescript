@@ -245,10 +245,8 @@ AST_END(Update)
 AST_LEAF(BinaryOperator, "BinaryOperator"_id)
 AST_END(BinaryOperator)
 
-class Chain_t;
-
 AST_NODE(Assignable, "Assignable"_id)
-	ast_ptr<ast_node> item; // Chain_t | Variable_t | SelfName_t
+	ast_ptr<ast_node> item; // AssignableChain_t | Variable_t | SelfName_t
 AST_END(Assignable)
 
 class Value_t;
@@ -266,13 +264,6 @@ AST_END(Exp)
 AST_NODE(Callable, "Callable"_id)
 	ast_ptr<ast_node> item; // Variable_t | SelfName_t | VarArg_t | Parens_t
 AST_END(Callable)
-
-class InvokeArgs_t;
-
-AST_NODE(ChainValue, "ChainValue"_id)
-	ast_ptr<ast_node> caller; // Chain_t | Callable_t
-	ast_ptr<InvokeArgs_t, true> arguments;
-AST_END(ChainValue)
 
 AST_NODE(variable_pair, "variable_pair"_id)
 	ast_ptr<Variable_t> name;
@@ -299,7 +290,19 @@ AST_NODE(SimpleValue, "SimpleValue"_id)
 	*/
 AST_END(SimpleValue)
 
-AST_LEAF(LuaString, "LuaString"_id)
+AST_LEAF(LuaStringOpen, "LuaStringOpen"_id)
+AST_END(LuaStringOpen)
+
+AST_LEAF(LuaStringContent, "LuaStringContent"_id)
+AST_END(LuaStringContent)
+
+AST_LEAF(LuaStringClose, "LuaStringClose"_id)
+AST_END(LuaStringClose)
+
+AST_NODE(LuaString, "LuaString"_id)
+	ast_ptr<LuaStringOpen_t> open;
+	ast_ptr<LuaStringContent_t> content;
+	ast_ptr<LuaStringClose_t> close;
 AST_END(LuaString)
 
 AST_LEAF(SingleString, "SingleString"_id)
@@ -345,10 +348,17 @@ AST_NODE(Invoke, "Invoke"_id)
 	ast_sel_list<Exp_t, SingleString_t, DoubleString_t, LuaString_t> args;
 AST_END(Invoke)
 
-AST_NODE(Chain, "Chain"_id)
+class InvokeArgs_t;
+
+AST_NODE(ChainValue, "ChainValue"_id)
 	ast_ptr<Seperator_t> sep;
-	ast_sel_list<Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Slice_t, Exp_t> items;
-AST_END(Chain)
+	ast_sel_list<Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Slice_t, Exp_t, String_t, InvokeArgs_t> items;
+AST_END(ChainValue)
+
+AST_NODE(AssignableChain, "AssignableChain"_id)
+	ast_ptr<Seperator_t> sep;
+	ast_sel_list<Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Exp_t, String_t> items;
+AST_END(AssignableChain)
 
 AST_NODE(Value, "Value"_id)
 	ast_ptr<ast_node> item; // SimpleValue_t | simple_table_t | ChainValue_t | String_t
@@ -486,6 +496,6 @@ AST_NODE(Block, "Block"_id)
 	ast_list<Statement_t> statements;
 AST_END(Block)
 
-AST_NODE(BlockEnd, "BlockEnd"_id)
+AST_NODE(File, "File"_id)
 	ast_ptr<Block_t> block;
-AST_END(BlockEnd)
+AST_END(File)
