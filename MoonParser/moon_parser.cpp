@@ -15,7 +15,8 @@ std::unordered_set<std::string> State::keywords = {
 	"repeat", "return", "then", "true", "until",
 	"while", // Lua keywords
 	"class", "continue", "export", "extends",
-	"import", "switch", "unless", "using", "with" // Moon keywords
+	"import", "switch", "when", "unless", "using",
+	"with" // Moon keywords
 };
 
 rule plain_space = *set(" \t");
@@ -487,7 +488,7 @@ rule unless_line = key("unless") >> Exp;
 rule statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
 rule Statement =
 (
-	Import | While | With | For | ForEach |
+	Import | While | For | ForEach |
 	Return | Local | Export | Space >> BreakLoop |
 	Assignment | ExpList
 ) >> Space >>

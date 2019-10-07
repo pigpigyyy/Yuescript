@@ -420,18 +420,6 @@ private:
 		return firstValue;
 	}
 
-	void noop(ast_node* node, str_list& out) {
-		auto str = _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
-		out.push_back(s("<"sv) + node->getName() + s(">"sv) + trim(str));
-		// out.push_back(trim(str));
-	}
-
-	void noopnl(ast_node* node, str_list& out) {
-		auto str = _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
-		out.push_back(s("<"sv) + node->getName() + s(">"sv) + trim(str) + nll(node));
-		// out.push_back(trim(str) + nll(node));
-	}
-
 	Statement_t* lastStatementFrom(Body_t* body) {
 		if (auto stmt = body->content.as<Statement_t>()) {
 			return stmt;
@@ -561,7 +549,15 @@ private:
 					auto stmt = new_ptr<Statement_t>();
 					stmt->content.set(statement->content);
 					comp->value.set(stmt);
-					statement->content.set(comp);
+					auto simpleValue = new_ptr<SimpleValue_t>();
+					simpleValue->value.set(comp);
+					auto value = new_ptr<Value_t>();
+					value->item.set(simpleValue);
+					auto exp = new_ptr<Exp_t>();
+					exp->value.set(value);
+					auto expList = new_ptr<ExpList_t>();
+					expList->exprs.push_back(exp);
+					statement->content.set(expList);
 					statement->appendix.set(nullptr);
 					break;
 				}
@@ -576,16 +572,13 @@ private:
 		switch (content->getId()) {
 			case "Import"_id: transformImport(static_cast<Import_t*>(content), out); break;
 			case "While"_id: transformWhile(static_cast<While_t*>(content), out); break;
-			case "With"_id: transformWith(static_cast<With_t*>(content), out); break;
 			case "For"_id: transformFor(static_cast<For_t*>(content), out); break;
 			case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(content), out); break;
-			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(content), out); break;
 			case "Return"_id: transformReturn(static_cast<Return_t*>(content), out); break;
 			case "Local"_id: transformLocal(static_cast<Local_t*>(content), out); break;
 			case "Export"_id: transformExport(static_cast<Export_t*>(content), out); break;
 			case "BreakLoop"_id: transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case "Assignment"_id: transformAssignment(static_cast<Assignment_t*>(content), out); break;
-			case "Comprehension"_id: transformCompCommon(static_cast<Comprehension_t*>(content), out); break;
 			case "ExpList"_id: {
 				auto expList = static_cast<ExpList_t*>(content);
 				if (expList->exprs.objects().empty()) {
@@ -606,6 +599,7 @@ private:
 							case "For"_id: transformFor(static_cast<For_t*>(value), out); break;
 							case "While"_id: transformWhile(static_cast<While_t*>(value), out); break;
 							case "Do"_id: transformDo(static_cast<Do_t*>(value), out); break;
+							case "Comprehension"_id: transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
 							default: specialSingleValue = false; break;
 						}
 						if (specialSingleValue) {
@@ -653,25 +647,24 @@ private:
 
 	str_list transformAssignDefs(ExpList_t* expList) {
 		str_list preDefs;
-		expList->traverse([&](ast_node* child) {
-			if (child->getId() == "Value"_id) {
-				if (auto callable = child->getByPath<ChainValue_t, Callable_t>()) {
-					if (ast_is<Variable_t>(callable->item)) {
+		for (auto exp_ : expList->exprs.objects()) {
+			auto exp = static_cast<Exp_t*>(exp_);
+			if (auto value = singleValueFrom(exp)) {
+				if (auto chain = value->item.as<ChainValue_t>()) {
+					do {
+						if (chain->items.size() != 1) break;
+						auto callable = ast_cast<Callable_t>(chain->items.front());
+						if (!callable) break;
 						auto name = toString(callable->item);
 						if (addToScope(name)) {
 							preDefs.push_back(name);
 						}
-					} else if (callable->getByPath<SelfName_t, self_t>()) {
-						auto self = s("self"sv);
-						if (addToScope(self)) {
-							preDefs.push_back(self);
-						}
-					}
+					} while (false);
 				}
-				return traversal::Return;
+			} else {
+				throw std::logic_error("left hand expression is not assignable");
 			}
-			return traversal::Continue;
-		});
+		}
 		return preDefs;
 	}
 
@@ -706,12 +699,22 @@ private:
 
 	void assignLastExplist(ExpList_t* expList, Body_t* body) {
 		auto last = lastStatementFrom(body);
-		auto valueList = last ? last->content.as<ExpList_t>() : nullptr;
-		if (last && valueList) {
+		bool lastAssignable = last && ast_is<ExpList_t, For_t, ForEach_t, While_t>(last->content);
+		if (lastAssignable) {
 			auto newAssignment = new_ptr<Assignment_t>();
 			newAssignment->assignable.set(expList);
 			auto assign = new_ptr<Assign_t>();
-			assign->values.dup(valueList->exprs);
+			if (auto valueList = last->content.as<ExpList_t>()) {
+				assign->values.dup(valueList->exprs);
+			} else {
+				auto simpleValue = new_ptr<SimpleValue_t>();
+				simpleValue->value.set(last->content);
+				auto value = new_ptr<Value_t>();
+				value->item.set(simpleValue);
+				auto exp = new_ptr<Exp_t>();
+				exp->value.set(value);
+				assign->values.push_back(exp);
+			}
 			newAssignment->target.set(assign);
 			last->content.set(newAssignment);
 		}
@@ -767,19 +770,19 @@ private:
 				out.back() = preDefine + out.back();
 				return;
 			}
+			if (auto withNode = ast_cast<With_t>(value)) {
+				str_list temp;
+				auto expList = assignment->assignable.get();
+				std::string preDefine = getPredefine(assignment);
+				transformWith(withNode, temp, expList);
+				out.push_back(preDefine + temp.back());
+				return;
+			}
 			auto exp = ast_cast<Exp_t>(value);
 			if (!exp) break;
 			if (auto simpleVal = exp->value->item.as<SimpleValue_t>()) {
 				auto valueItem = simpleVal->value.get();
 				switch (valueItem->getId()) {
-					case "With"_id: {
-						str_list temp;
-						auto expList = assignment->assignable.get();
-						std::string preDefine = getPredefine(assignment);
-						transformWith(static_cast<With_t*>(valueItem), temp, expList);
-						out.push_back(preDefine + temp.front());
-						return;
-					}
 					case "Do"_id: {
 						auto doNode = static_cast<Do_t*>(valueItem);
 						auto expList = assignment->assignable.get();
@@ -808,7 +811,7 @@ private:
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformForInPlace(static_cast<For_t*>(valueItem), temp, expList);
-						out.push_back(preDefine + temp.front());
+						out.push_back(preDefine + temp.back());
 						return;
 					}
 					case "ForEach"_id: {
@@ -816,7 +819,7 @@ private:
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformForEachInPlace(static_cast<ForEach_t*>(valueItem), temp, expList);
-						out.push_back(preDefine + temp.front());
+						out.push_back(preDefine + temp.back());
 						return;
 					}
 					case "ClassDecl"_id: {
@@ -824,7 +827,7 @@ private:
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformClassDecl(static_cast<ClassDecl_t*>(valueItem), temp, ExpUsage::Assignment, expList);
-						out.push_back(preDefine + temp.front());
+						out.push_back(preDefine + temp.back());
 						return;
 					}
 					case "While"_id: {
@@ -832,7 +835,7 @@ private:
 						auto expList = assignment->assignable.get();
 						std::string preDefine = getPredefine(assignment);
 						transformWhileClosure(static_cast<While_t*>(valueItem), temp, expList);
-						out.push_back(preDefine + temp.front());
+						out.push_back(preDefine + temp.back());
 						return;
 					}
 				}
@@ -912,7 +915,7 @@ private:
 
 	void transformAssignItem(ast_node* value, str_list& out) {
 		switch (value->getId()) {
-			case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
+			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, IfUsage::Closure); break;
 			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
 			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
@@ -1248,9 +1251,19 @@ private:
 			if (pair.first) {
 				str_list tmp;
 				auto condition = pair.first->condition.get();
-				transformExp(condition, tmp);
+				if (unless) {
+					if (auto value = singleValueFrom(condition)) {
+						transformValue(value, tmp);
+					} else {
+						transformExp(condition, tmp);
+						tmp.back() = s("("sv) + tmp.back() + s(")"sv);
+					}
+					tmp.back().insert(0, s("not "sv));
+				} else {
+					transformExp(condition, tmp);
+				}
 				_buf << indent() << (pair == ifCondPairs.front() ? ""sv : "else"sv) <<
-					"if "sv << (unless ? "not ("sv : ""sv) << tmp.front() << (unless ? ") then"sv : " then"sv) << nll(condition);
+					"if "sv << tmp.back() << " then"sv << nll(condition);
 				temp.push_back(clearBuf());
 			}
 			if (pair.second) {
@@ -1355,7 +1368,7 @@ private:
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, IfUsage::Closure); break;
 			case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, IfUsage::Closure); break;
 			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
-			case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
+			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
 			case "ClassDecl"_id: transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
 			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
 			case "For"_id: transformForClosure(static_cast<For_t*>(value), out); break;
@@ -1535,6 +1548,10 @@ private:
 						transformTblCompReturn(comp, out);
 						return;
 					}
+					if (auto with = simpleValue->value.as<With_t>()) {
+						transformWith(with, out, nullptr, true);
+						return;
+					}
 					if (auto classDecl = simpleValue->value.as<ClassDecl_t>()) {
 						transformClassDecl(classDecl, out, ExpUsage::Return);
 						return;
@@ -1579,15 +1596,15 @@ private:
 		if (!argsDef->defList) {
 			out.push_back(Empty);
 			out.push_back(Empty);
-			return;
+		} else {
+			transformFnArgDefList(argsDef->defList, out);
 		}
-		transformFnArgDefList(argsDef->defList, out);
 		if (argsDef->shadowOption) {
-			transform_outer_var_shadow(argsDef->shadowOption, out);
+			transform_outer_var_shadow(argsDef->shadowOption);
 		}
 	}
 
-	void transform_outer_var_shadow(outer_var_shadow_t* shadow, str_list& out) {
+	void transform_outer_var_shadow(outer_var_shadow_t* shadow) {
 		markVarShadowed();
 		if (shadow->varList) {
 			for (auto name : shadow->varList->names.objects()) {
@@ -1752,7 +1769,12 @@ private:
 			_buf << indent(-1) << "do"sv << nll(chainValue);
 		}
 		_buf << indent() << "local "sv << baseVar << " = "sv << caller << nll(chainValue);
-		_buf << indent() << "local "sv << fnVar << " = "sv << baseVar << "."sv << funcName << nll(chainValue);
+		_buf << indent() << "local "sv << fnVar << " = "sv << baseVar;
+		if (State::luaKeywords.find(funcName) != State::luaKeywords.end()) {
+			_buf << "[\""sv << funcName << "\"]" << nll(chainValue);
+		} else {
+			_buf << "."sv << funcName << nll(chainValue);
+		}
 		switch (usage) {
 			case ExpUsage::Return:
 				_buf << indent() << "return function(...)" << nll(chainValue);
@@ -1841,7 +1863,8 @@ private:
 	}
 
 	void transformColonChainItem(ColonChainItem_t* colonChainItem, str_list& out) {
-		out.push_back(s(colonChainItem->switchToDot ? "."sv : ":"sv) + toString(colonChainItem->name));
+		auto name = toString(colonChainItem->name);
+		out.push_back(s(colonChainItem->switchToDot ? "."sv : ":"sv) + name);
 	}
 
 	void transformSlice(Slice_t* slice, str_list& out) {
@@ -1899,7 +1922,15 @@ private:
 					break;
 			}
 		}
-		transformStatement(comp->value.to<Statement_t>(), temp);
+		if (auto stmt = comp->value.as<Statement_t>()) {
+			transformStatement(stmt, temp);
+		} else if (auto exp = comp->value.as<Exp_t>()) {
+			auto expList = new_ptr<ExpList_t>();
+			expList->exprs.push_back(exp);
+			auto statement = new_ptr<Statement_t>();
+			statement->content.set(expList);
+			transformStatement(statement, temp);
+		}
 		auto value = temp.back();
 		temp.pop_back();
 		_buf << join(temp) << value;
@@ -2306,10 +2337,10 @@ private:
 		str_list temp;
 		std::string accum = getUnusedName("_accum_");
 		std::string len = getUnusedName("_len_");
-		addToScope(accum);
-		addToScope(len);
 		_buf << "(function()"sv << nll(forEach);
 		pushScope();
+		addToScope(accum);
+		addToScope(len);
 		_buf << indent() << "local "sv << accum << " = { }"sv << nll(forEach);
 		_buf << indent() << "local "sv << len << " = 1"sv << nll(forEach);
 		temp.push_back(clearBuf());
@@ -2599,9 +2630,7 @@ private:
 			temp.push_back(indent() + s("local "sv) + parentVar + s(" = "sv) + parent + nll(classDecl));
 		}
 		auto baseVar = getUnusedName("_base_"sv);
-		auto selfVar = getUnusedName("_self_"sv);
 		addToScope(baseVar);
-		addToScope(selfVar);
 		temp.push_back(indent() + s("local "sv) + baseVar + s(" = "sv));
 		str_list builtins;
 		str_list commons;
@@ -2702,9 +2731,13 @@ private:
 			_buf << indent(1) << "__index = "sv << baseVar << ","sv << nll(classDecl);
 		}
 		_buf << indent(1) << "__call = function(cls, ...)"sv << nll(classDecl);
-		_buf << indent(2) << "local " << selfVar << " = setmetatable({}, "sv << baseVar << ")"sv << nll(classDecl);
-		_buf << indent(2) << "cls.__init("sv << selfVar << ", ...)"sv << nll(classDecl);
-		_buf << indent(2) << "return "sv << selfVar << nll(classDecl);
+		pushScope();
+		auto selfVar = getUnusedName("_self_"sv);
+		addToScope(selfVar);
+		_buf << indent(1) << "local " << selfVar << " = setmetatable({}, "sv << baseVar << ")"sv << nll(classDecl);
+		_buf << indent(1) << "cls.__init("sv << selfVar << ", ...)"sv << nll(classDecl);
+		_buf << indent(1) << "return "sv << selfVar << nll(classDecl);
+		popScope();
 		_buf << indent(1) << "end"sv << nll(classDecl);
 		_buf << indent() << "})"sv << nll(classDecl);
 		_buf << indent() << baseVar << ".__class = "sv << classVar << nll(classDecl);
@@ -2846,7 +2879,17 @@ private:
 		}
 	}
 
-	void transformWith(With_t* with, str_list& out, ExpList_t* assignList = nullptr) {
+	void transformWithClosure(With_t* with, str_list& out) {
+		str_list temp;
+		temp.push_back(s("(function()"sv) + nll(with));
+		pushScope();
+		transformWith(with, temp, nullptr, true);
+		popScope();
+		temp.push_back(indent() + s("end)()"sv));
+		out.push_back(join(temp));
+	}
+
+	void transformWith(With_t* with, str_list& out, ExpList_t* assignList = nullptr, bool returnValue = false) {
 		str_list temp;
 		std::string withVar;
 		bool scoped = false;
@@ -2926,6 +2969,12 @@ private:
 			assignment->target.set(assign);
 			transformAssignment(assignment, temp);
 		}
+		if (returnValue) {
+			auto stmt = lastStatementFrom(with->body);
+			if (!stmt->content.is<Return_t>()) {
+				temp.push_back(indent() + s("return "sv) + withVar + nll(with));
+			}
+		}
 		if (scoped) {
 			popScope();
 			temp.push_back(indent() + s("end"sv) + nll(with));
@@ -2992,6 +3041,10 @@ private:
 	}
 
 	void transformTable(ast_node* table, const std::list<ast_node*>& pairs, str_list& out) {
+		if (pairs.empty()) {
+			out.push_back(s("{ }"sv));
+			return;
+		}
 		str_list temp;
 		pushScope();
 		for (auto pair : pairs) {
@@ -3386,13 +3439,346 @@ const std::string MoonCompliler::Empty;
 int main()
 {
 	std::string s = R"TestCodesHere(
+Dorothy builtin.ImGui
+import Set,Path from require "Utils"
+LintGlobal = require "LintGlobal"
+moonscript = require "moonscript"
 
-do
-  a = ->
-    with something
-      print .hello
-      print hi
-      print "world"
+LoadFontTTF "Font/DroidSansFallback.ttf", 20, "Chinese"
+
+moduleCache = {}
+oldRequire = _G.require
+newRequire = (path)->
+	loaded = package.loaded[path]
+	if not loaded
+		table.insert moduleCache,path
+		return oldRequire path
+	loaded
+_G.require = newRequire
+builtin.require = newRequire
+
+allowedUseOfGlobals = Set {
+}
+
+LintMoonGlobals = (moonCodes,entry)->
+	globals,err = LintGlobal moonCodes
+	if not globals
+		error "Compile failed in #{entry}\n#{err}"
+	requireModules = {}
+	withImGui = false
+	withPlatformer = false
+	importCodes = table.concat (
+		for importLine in moonCodes\gmatch "Dorothy%s*%(?([^%)!\r\n]*)%s*[%)!]?"
+			continue if importLine == ""
+			importLine
+		), ","
+	importItems = if importCodes
+		for item in importCodes\gmatch "%s*([^,\n\r]+)%s*"
+			getImport = loadstring "return #{item}"
+			importItem = if getImport then getImport! else nil
+			continue if not importItem or "table" ~= type importItem
+			{importItem, item}
+	else {}
+	importSet = {}
+	for name,_ in pairs globals
+		if not allowedUseOfGlobals[name]
+			if builtin[name]
+				table.insert requireModules, "local #{name} = require(\"#{name}\")"
+			else
+				findModule = false
+				for i,importItem in ipairs importItems
+					if importItem[1][name] ~= nil
+						moduleName = "_module_#{i-1}"
+						if not importSet[importItem[1]]
+							importSet[importItem[1]] = true
+							table.insert requireModules, "local #{moduleName} = #{importItem[2]}"
+						table.insert requireModules, "local #{name} = #{moduleName}.#{name}"
+						findModule = true
+						break
+				if not findModule
+					error "Used invalid global value \"#{name}\" in \"#{entry}\"."
+	table.concat requireModules, "\n"
+
+totalFiles = 0
+totalMoonTime = 0
+totalXmlTime = 0
+totalMinifyTime = 0
+compile = (dir,clean,minify)->
+	{:ParseLua} = require "luaminify.ParseLua"
+	FormatMini = require "luaminify.FormatMini"
+	files = Path.getAllFiles dir, {"moon","xml"}
+	for file in *files
+		path = Path.getPath file
+		name = Path.getName file
+		isXml = "xml" == Path.getExtension file
+		compileFunc = isXml and xmltolua or moonscript.to_lua
+		requires = nil
+		if not clean
+			sourceCodes = Content\loadAsync "#{dir}/#{file}"
+			requires = LintMoonGlobals sourceCodes, file unless isXml
+			startTime = App.eclapsedTime
+			codes,err = compileFunc sourceCodes
+			if isXml
+				totalXmlTime += App.eclapsedTime - startTime
+			else
+				totalMoonTime += App.eclapsedTime - startTime
+			startTime = App.eclapsedTime
+			if not codes
+				print "Compile errors in #{file}."
+				print err
+				return false
+			else
+				codes = requires..codes\gsub "Dorothy%([^%)]*%)","" unless isXml
+				if minify
+					st, ast = ParseLua codes
+					if not st
+						print ast
+						return false
+					codes = FormatMini ast
+				totalMinifyTime += App.eclapsedTime - startTime
+				filePath = Content.writablePath..path
+				Content\mkdir filePath
+				filename = "#{filePath}#{name}.lua"
+				Content\saveAsync filename,codes
+				print "#{isXml and "Xml" or "Moon"} compiled: #{path}#{name}.#{isXml and "xml" or "moon"}"
+				totalFiles += 1
+		else
+			filePath = Content.writablePath..path
+			Content\mkdir filePath
+			filename = "#{filePath}#{name}.lua"
+			if Content\exist filename
+				print "#{isXml and "Xml" or "Moon"} cleaned: #{path}#{name}.lua"
+				Content\remove filename
+	if clean or minify
+		files = Path.getAllFiles dir, "lua"
+		for file in *files
+			path = Path.getPath file
+			name = Path.getName file
+			if not clean
+				sourceCodes = Content\loadAsync "#{dir}/#{file}"
+				startTime = App.eclapsedTime
+				st, ast = ParseLua sourceCodes
+				if not st
+					print ast
+					return false
+				codes = FormatMini ast
+				totalMinifyTime += App.eclapsedTime - startTime
+				filePath = Content.writablePath..path
+				Content\mkdir filePath
+				filename = "#{filePath}#{name}.lua"
+				Content\saveAsync filename,codes
+				print "Lua minified: #{path}#{name}.lua"
+				totalFiles += 1
+			else
+				filePath = Content.writablePath..path
+				Content\mkdir filePath
+				filename = "#{filePath}#{name}.lua"
+				if Content\exist filename
+					print "Lua cleaned: #{path}#{name}.lua"
+					Content\remove filename
+	return true
+
+building = false
+
+doCompile = (minify)->
+	return if building
+	building = true
+	totalFiles = 0
+	totalMoonTime = 0
+	totalXmlTime = 0
+	totalMinifyTime = 0
+	thread ->
+		print "Output path: #{Content.writablePath}"
+		xpcall (-> compile Content.assetPath\sub(1,-2),false,minify),(msg)->
+			msg = debug.traceback msg
+			print msg
+			building = false
+		print string.format "Compile #{minify and 'and minify ' or ''}done. %d files in total.\nCompile time, Moon %.3fs, Xml %.3fs#{minify and ', Minify %.3fs' or ''}.\n",totalFiles,totalMoonTime,totalXmlTime,totalMinifyTime
+		building = false
+
+doClean = ->
+	return if building
+	building = true
+	thread ->
+		print "Clean path: #{Content.writablePath}"
+		compile Content.assetPath\sub(1,-2),true
+		print "Clean done.\n"
+		building = false
+
+isInEntry = true
+
+allClear = ->
+	for module in *moduleCache
+		package.loaded[module] = nil
+	moduleCache = {}
+	with Director.ui
+		\removeAllChildren!
+		.userData = nil
+	with Director.entry
+		\removeAllChildren!
+		.userData = nil
+	with Director.postNode
+		\removeAllChildren!
+		.userData = nil
+	Director\popCamera!
+	Cache\unload!
+	Entity\clear!
+	Platformer.Data\clear!
+	Platformer.UnitAction\clear!
+	currentEntryName = nil
+	isInEntry = true
+	Audio\stopStream 0.2
+
+games = [Path.getName item for item in *Path.getFolders Content.assetPath.."Script/Game", {"xml","lua","moon"}]
+table.sort games
+examples = [Path.getName item for item in *Path.getAllFiles Content.assetPath.."Script/Example", {"xml","lua","moon"}]
+table.sort examples
+tests = [Path.getName item for item in *Path.getAllFiles Content.assetPath.."Script/Test", {"xml","lua","moon"}]
+table.sort tests
+currentEntryName = nil
+allNames = for game in *games do "Game/#{game}/init"
+for example in *examples do table.insert allNames,"Example/#{example}"
+for test in *tests do table.insert allNames,"Test/#{test}"
+
+enterDemoEntry = (name)->
+	isInEntry = false
+	xpcall (->
+		result = require name
+		if "function" == type result
+			result = result!
+			Director.entry\addChild if tolua.cast result, "Node"
+				result
+			else
+				Node!
+		else
+			Director.entry\addChild Node!
+		currentEntryName = name
+	),(msg)->
+		msg = debug.traceback msg
+		print msg
+		allClear!
+
+showEntry = false
+
+thread ->
+	{:width,:height} = App.visualSize
+	scale = App.deviceRatio*0.7*math.min(width,height)/760
+	with Sprite GetDorothySSRHappyWhite scale
+		\addTo Director.entry
+		sleep 1.0
+		\removeFromParent!
+	showEntry = true
+	Director.clearColor = Color 0xff1a1a1a
+
+showStats = false
+showLog = false
+showFooter = true
+scaleContent = false
+footerFocus = false
+screenScale = 2 -- App.deviceRatio
+threadLoop ->
+	return unless showEntry
+	left = Keyboard\isKeyDown "Left"
+	right = Keyboard\isKeyDown "Right"
+	App\shutdown! if Keyboard\isKeyDown "Escape"
+	{:width,:height} = App.visualSize
+	SetNextWindowSize Vec2(190,50)
+	SetNextWindowPos Vec2(width-190,height-50)
+	if width >= 600
+		if not footerFocus
+			footerFocus = true
+			SetNextWindowFocus!
+		PushStyleColor "WindowBg", Color(0x0), ->
+			Begin "Show", "NoTitleBar|NoResize|NoMove|NoCollapse|NoSavedSettings", ->
+				Columns 2,false
+				if showFooter
+					changed, scaleContent = Checkbox string.format("%.1fx",screenScale), scaleContent
+					View.scale = scaleContent and screenScale or 1 if changed
+				else
+					Dummy Vec2 10,30
+				SameLine!
+				NextColumn!
+				_, showFooter = Checkbox "Footer", showFooter
+	elseif footerFocus
+		footerFocus = false
+	return unless showFooter
+	SetNextWindowSize Vec2(width,60)
+	SetNextWindowPos Vec2(0,height-60)
+	Begin "Footer", "NoTitleBar|NoResize|NoMove|NoCollapse|NoBringToFrontOnFocus|NoSavedSettings", ->
+		Separator!
+		_, showStats = Checkbox "Stats", showStats
+		SameLine!
+		_, showLog = Checkbox "Log", showLog
+		SameLine!
+		if isInEntry
+			OpenPopup "build" if Button "Build", Vec2(70,30)
+			BeginPopup "build", ->
+				doCompile false if Selectable "Compile"
+				Separator!
+				doCompile true if Selectable "Minify"
+				Separator!
+				doClean! if Selectable "Clean"
+		else
+			SameLine!
+			allClear! if Button "Home", Vec2(70,30)
+			currentIndex = 1
+			for i,name in ipairs allNames
+				if currentEntryName == name
+					currentIndex = i
+			SameLine!
+			if currentIndex > 1
+				if Button("Prev", Vec2(70,30)) or left
+					allClear!
+					isInEntry = false
+					thread -> enterDemoEntry allNames[currentIndex-1]
+			else Dummy Vec2 70,30
+			SameLine!
+			if currentIndex < #allNames
+				if Button("Next", Vec2(70,30)) or right
+					allClear!
+					isInEntry = false
+					thread -> enterDemoEntry allNames[currentIndex+1]
+			else Dummy Vec2 70,30
+		if showStats
+			SetNextWindowPos Vec2(0,height-65-296), "FirstUseEver"
+			ShowStats!
+		if showLog
+			SetNextWindowPos Vec2(width-400,height-65-300), "FirstUseEver"
+			ShowLog!
+
+threadLoop ->
+	return unless showEntry
+	return unless isInEntry
+	{:width,:height} = App.visualSize
+	SetNextWindowPos Vec2.zero
+	SetNextWindowSize Vec2(width,53)
+	PushStyleColor "TitleBgActive", Color(0xcc000000), ->
+		Begin "Dorothy Dev", "NoResize|NoMove|NoCollapse|NoBringToFrontOnFocus|NoSavedSettings", ->
+			Separator!
+	SetNextWindowPos Vec2(0,53)
+	SetNextWindowSize Vec2(width,height-107)
+	PushStyleColor "WindowBg",Color(0x0), ->
+		Begin "Content", "NoTitleBar|NoResize|NoMove|NoCollapse|NoBringToFrontOnFocus|NoSavedSettings", ->
+			TextColored Color(0xff00ffff), "Game Demos"
+			Columns math.max(math.floor(width/200),1), false
+			for game in *games
+				if Button game, Vec2(-1,40)
+					enterDemoEntry "Game/#{game}/init"
+				NextColumn!
+			Columns 1, false
+			TextColored Color(0xff00ffff), "Examples"
+			Columns math.max(math.floor(width/200),1), false
+			for example in *examples
+				if Button example, Vec2(-1,40)
+					enterDemoEntry "Example/#{example}"
+				NextColumn!
+			Columns 1, false
+			TextColored Color(0xff00ffff), "Tests"
+			Columns math.max(math.floor(width/200),1), false
+			for test in *tests
+				if Button test, Vec2(-1,40)
+					enterDemoEntry "Test/#{test}"
+				NextColumn!
 )TestCodesHere";
 	MoonCompliler{}.complile(s);
 	return 0;

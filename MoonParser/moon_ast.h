@@ -477,11 +477,9 @@ AST_LEAF(BreakLoop, "BreakLoop"_id)
 AST_END(BreakLoop)
 
 AST_NODE(Statement, "Statement"_id)
-	ast_ptr<ast_node> content; /*
-	Import_t | While_t | With_t | For_t | ForEach_t |
-	Return_t | Local_t | Export_t | BreakLoop_t |
-	Assignment_t | ExpList_t
-	*/
+	ast_sel<Import_t, While_t, For_t, ForEach_t,
+		Return_t, Local_t, Export_t, BreakLoop_t,
+		Assignment_t, ExpList_t> content;
 	ast_ptr<statement_appendix_t, true> appendix;
 AST_END(Statement)
 
