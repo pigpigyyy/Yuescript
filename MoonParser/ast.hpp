@@ -1,5 +1,4 @@
-#ifndef AST_HPP
-#define AST_HPP
+#pragma once
 
 
 #include <cassert>
@@ -13,14 +12,15 @@ namespace parserlib {
 
 
 class ast_node;
-template <class T, bool OPT, bool MEM> class ast_ptr;
-template <class T> class ast_list;
+template <bool Required, class T> class ast_ptr;
+template <bool Required, class T> class ast_list;
 template <class T> class ast;
 
 
 /** type of AST node stack.
  */
 typedef std::vector<ast_node*> ast_stack;
+typedef std::list<ast_node*> node_container;
 
 extern int ast_type_id;
 
@@ -78,26 +78,22 @@ public:
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func);
 
-	virtual ast_node* getChild(int) const { return nullptr; }
-
-	virtual size_t getChildCount() const { return 0; }
-
-	virtual ast_node* getFirstChild() const { return nullptr; }
-
-	virtual ast_node* getLastChild() const { return nullptr; }
-
 	virtual size_t getId() const { return "ast_node"_id; }
 
 	virtual const char* getName() const { return "ast_node"; }
 
 	virtual int get_type() { return ast_type<ast_node>(); }
+
+	template<class T>
+	inline ast_ptr<false, T> new_ptr() {
+		auto item = new T;
+		item->m_begin.m_line = m_begin.m_line;
+		item->m_end.m_line = m_begin.m_line;
+		return ast_ptr<false, T>(item);
+	}
 private:
 	int _ref;
 	ast_node* getByTypeIds(int* begin, int* end);
-    template <class T, bool OPT, bool MEM> friend class ast_ptr;
-    template <class ...Args> friend class ast_choice;
-    template <class T> friend class ast_list;
-    template <class T> friend class ast;
 };
 
 template<class T>
@@ -132,9 +128,11 @@ typedef std::vector<ast_member*> ast_member_vector;
  */
 class ast_container : public ast_node {
 public:
-    /** sets the container under construction to be this.
-     */
-    ast_container();
+	void add_members(std::initializer_list<ast_member*> members) {
+		for (auto member : members) {
+			m_members.push_back(member);
+		}
+	}
 
     /** returns the vector of AST members.
         @return the vector of AST members.
@@ -154,14 +152,6 @@ public:
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func) override;
 
-	virtual ast_node* getChild(int index) const override;
-
-	virtual size_t getChildCount() const override;
-
-	virtual ast_node* getFirstChild() const override;
-
-	virtual ast_node* getLastChild() const override;
-
 	virtual size_t getId() const override { return "ast_container"_id; }
 
 	virtual const char* getName() const override { return "ast_container"; }
@@ -176,12 +166,6 @@ private:
  */
 class ast_member {
 public:
-    /** automatically registers itself to the container under construction.
-     */
-    ast_member(bool is_member) {
-    	if (is_member) add_to_owner();
-	}
-
     virtual ~ast_member() {}
 
     /** interface for filling the the member from a node stack.
@@ -192,9 +176,6 @@ public:
     virtual bool accept(ast_node* node) = 0;
 
 	virtual int get_type() { return ast_type<ast_member>(); }
-private:
-    //register the AST member to the current container.
-    void add_to_owner();
 };
 
 template<class T>
@@ -204,7 +185,7 @@ T* ast_cast(ast_member* member) {
 
 class _ast_ptr : public ast_member {
 public:
-	_ast_ptr(ast_node* node, bool is_member) : ast_member(is_member), m_ptr(node) {
+	_ast_ptr(ast_node* node) : m_ptr(node) {
 		if (node) node->retain();
 	}
 
@@ -226,13 +207,13 @@ public:
 
 	template <class T>
 	T* to() const {
-		assert(m_ptr->get_type() == ast_type<T>());
+		assert(m_ptr && m_ptr->get_type() == ast_type<T>());
 		return static_cast<T*>(m_ptr);
 	}
 
 	template <class T>
 	bool is() const {
-		return m_ptr->get_type() == ast_type<T>();
+		return m_ptr && m_ptr->get_type() == ast_type<T>();
 	}
 
 	void set(ast_node* node) {
@@ -259,16 +240,16 @@ protected:
 /** pointer to an AST object.
     It assumes ownership of the object.
     It pops an object of the given type from the stack.
+    @tparam Required if true, the object is required.
     @tparam T type of object to control.
-    @tparam OPT if true, the object becomes optional.
  */
-template <class T, bool OPT = false, bool MEM = true> class ast_ptr : public _ast_ptr {
+template <bool Required, class T> class ast_ptr : public _ast_ptr {
 public:
-    ast_ptr(T* node = nullptr) : _ast_ptr(node, MEM) {}
+    ast_ptr(T* node = nullptr) : _ast_ptr(node) {}
 
-    ast_ptr(const ast_ptr<T, OPT, MEM>& other) : _ast_ptr(other.get(), MEM) {}
+    ast_ptr(const ast_ptr& other) : _ast_ptr(other.get()) {}
 
-    ast_ptr<T, OPT, MEM>& operator=(const ast_ptr<T, OPT, MEM>& other) {
+    ast_ptr& operator=(const ast_ptr& other) {
     	set(other.get());
     	return *this;
 	}
@@ -298,28 +279,22 @@ public:
     /** Pops a node from the stack.
         @param st stack.
         @exception std::logic_error thrown if the node is not of the appropriate type;
-            thrown only if OPT == false or if the stack is empty.
+            thrown only if Required == true or if the stack is empty.
      */
     virtual void construct(ast_stack& st) override {
-        //check the stack node
+        // check the stack node
         if (st.empty()) {
-			if (OPT) return;
-			else throw std::logic_error("invalid AST stack");
+			if (!Required) return;
+			throw std::logic_error("Invalid AST stack");
 		}
-
         ast_node* node = st.back();
-
 		if (!ast_ptr::accept(node)) {
-			//if the object is optional, simply return
-			if (OPT) {
-				return;
-			} else { //else if the object is mandatory, throw an exception
-				throw std::logic_error("invalid AST node");
-			}
+			// if the object is not required, simply return
+			if (!Required) return;
+			// else if the object is mandatory, throw an exception
+			throw std::logic_error("Invalid AST node");
 		}
-
         st.pop_back();
-
         m_ptr = node;
         node->retain();
     }
@@ -329,18 +304,13 @@ private:
 	}
 };
 
-template<class T>
-inline ast_ptr<T, false, false> new_ptr() {
-	return ast_ptr<T, false, false>(new T);
-}
-
-template <class ...Args> class ast_sel : public _ast_ptr {
+template <bool Required, class ...Args> class ast_sel : public _ast_ptr {
 public:
-    ast_sel() : _ast_ptr(nullptr, true) {}
+    ast_sel() : _ast_ptr(nullptr) {}
 
-    ast_sel(const ast_sel<Args...>& other) : _ast_ptr(other.get(), true) {}
+    ast_sel(const ast_sel& other) : _ast_ptr(other.get()) {}
 
-    ast_sel<Args...>& operator=(const ast_sel<Args...>& other) {
+    ast_sel& operator=(const ast_sel& other) {
     	set(other.get());
     	return *this;
 	}
@@ -356,15 +326,15 @@ public:
 
     virtual void construct(ast_stack& st) override {
         if (st.empty()) {
-			throw std::logic_error("invalid AST stack");
+        	if (!Required) return;
+			throw std::logic_error("Invalid AST stack");
 		}
-
         ast_node* node = st.back();
-
-        if (!ast_sel::accept(node)) throw std::logic_error("invalid AST node");
-
+        if (!ast_sel::accept(node)) {
+        	if (!Required) return;
+        	throw std::logic_error("Invalid AST node");
+		}
         st.pop_back();
-
         m_ptr = node;
         node->retain();
     }
@@ -380,10 +350,6 @@ private:
 
 class _ast_list : public ast_member {
 public:
-    typedef std::list<ast_node*> container;
-
-    _ast_list() : ast_member(true) {}
-
    ~_ast_list() {
         clear();
     }
@@ -416,6 +382,12 @@ public:
 		node->retain();
 	}
 
+	void pop_front() {
+		auto node = m_objects.front();
+		m_objects.pop_front();
+		node->release();
+	}
+
     void set_front(ast_node* node) {
     	assert(node && accept(node));
 		m_objects.front()->release();
@@ -430,7 +402,7 @@ public:
 		node->retain();
 	}
 
-	 const container& objects() const {
+	 const node_container& objects() const {
         return m_objects;
     }
 
@@ -450,24 +422,24 @@ public:
 
 	virtual int get_type() override { return ast_type<_ast_list>(); }
 protected:
-	container m_objects;
+	node_container m_objects;
 };
 
 /** A list of objects.
     It pops objects of the given type from the ast stack, until no more objects can be popped.
     It assumes ownership of objects.
+    @tparam Required if true, the object is required.
     @tparam T type of object to control.
  */
-template <class T> class ast_list : public _ast_list {
+template <bool Required, class T> class ast_list : public _ast_list {
 public:
-    ast_list() {}
+	ast_list() { }
 
-    ast_list(const ast_list<T>& other) {
-    	clear();
+    ast_list(const ast_list& other) {
     	dup(other);
 	}
 
-    ast_list<T>& operator=(const ast_list<T>& other) {
+    ast_list& operator=(const ast_list& other) {
     	clear();
     	dup(other);
     	return *this;
@@ -479,17 +451,22 @@ public:
     virtual void construct(ast_stack &st) override {
         while (!st.empty()) {
             ast_node* node = st.back();
-
-            //if the object was not not of the appropriate type,
-            //end the list parsing
-            if (!ast_list::accept(node)) return;
-
+            // if the object was not not of the appropriate type,
+            // end the list parsing
+            if (!ast_list::accept(node)) {
+            	if (Required && m_objects.empty()) {
+            		throw std::logic_error("Invalid AST node");
+				}
+            	return;
+            }
             st.pop_back();
-            
-            //insert the object in the list, in reverse order
+            // insert the object in the list, in reverse order
             m_objects.push_front(node);
             node->retain();
         }
+		if (Required && m_objects.empty()) {
+			throw std::logic_error("Invalid AST stack");
+		}
     }
 private:
     virtual bool accept(ast_node* node) override {
@@ -497,38 +474,36 @@ private:
 	}
 };
 
-template <class ...Args> class ast_sel_list : public _ast_list {
+template <bool Required, class ...Args> class ast_sel_list : public _ast_list {
 public:
-    ast_sel_list() {}
+	ast_sel_list() { }
 
-    ast_sel_list(const ast_sel_list<Args...>& other) {
-    	clear();
+    ast_sel_list(const ast_sel_list& other) {
     	dup(other);
 	}
 
-    ast_sel_list<Args...>& operator=(const ast_sel_list<Args...>& other) {
+    ast_sel_list& operator=(const ast_sel_list& other) {
     	clear();
     	dup(other);
     	return *this;
 	}
 
-    /** Pops objects of type T from the stack until no more objects can be popped.
-        @param st stack.
-     */
     virtual void construct(ast_stack &st) override {
         while (!st.empty()) {
             ast_node* node = st.back();
-
-            //if the object was not not of the appropriate type,
-            //end the list parsing
-            if (!ast_sel_list<Args...>::accept(node)) return;
-
+            if (!ast_sel_list::accept(node)) {
+            	if (Required && m_objects.empty()) {
+            		throw std::logic_error("Invalid AST node");
+				}
+            	return;
+            }
             st.pop_back();
-
-            //insert the object in the list, in reverse order
             m_objects.push_front(node);
             node->retain();
         }
+		if (Required && m_objects.empty()) {
+			throw std::logic_error("Invalid AST stack");
+		}
     }
 private:
     virtual bool accept(ast_node* node) override {
@@ -583,10 +558,10 @@ ast_node* _parse(input &i, rule &g, error_list &el, void* ud);
     @param ud user data, passed to the parse procedures.
     @return ast nodes.
  */
-template <class T> ast_ptr<T, false, false> parse(input &i, rule &g, error_list &el, void* ud = nullptr) {
+template <class T> ast_ptr<false, T> parse(input &i, rule &g, error_list &el, void* ud = nullptr) {
     ast_node* node = _parse(i, g, el, ud);
     T* ast = ast_cast<T>(node);
-    ast_ptr<T, false, false> ptr;
+    ast_ptr<false, T> ptr;
     if (ast) {
     	ast_stack st{node};
     	ptr.construct(st);
@@ -598,6 +573,3 @@ template <class T> ast_ptr<T, false, false> parse(input &i, rule &g, error_list 
 
 
 } //namespace parserlib
-
-
-#endif //AST_HPP

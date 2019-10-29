@@ -1,5 +1,4 @@
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#pragma once
 
 
 //gcc chokes without rule::rule(const rule &),
@@ -15,6 +14,8 @@
 #include <functional>
 #include <codecvt>
 #include <locale>
+
+namespace parserlib {
 
 // const str hash helper functions
 inline constexpr size_t hash(char const* input)
@@ -34,9 +35,6 @@ inline size_t constexpr operator"" _id(const char* s, size_t)
 typedef std::basic_string<wchar_t> input;
 typedef input::iterator input_it;
 typedef std::wstring_convert<std::codecvt_utf8<input::value_type>> Converter;
-
-namespace parserlib {
-
 
 class _private;
 class _expr;
@@ -66,7 +64,7 @@ public:
     int m_col;
 
     ///null constructor.
-    pos() {}
+    pos():m_line(-1),m_col(0) {}
 
     /** constructor from input.
         @param i input.
@@ -425,6 +423,3 @@ template <class T> T &operator << (T &stream, const input_range &ir) {
 
 
 } //namespace parserlib
-
-
-#endif //PARSER_HPP

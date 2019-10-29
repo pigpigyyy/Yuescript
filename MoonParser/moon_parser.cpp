@@ -1,5 +1,7 @@
 #include "moon_parser.h"
 
+namespace MoonP {
+
 std::unordered_set<std::string> State::luaKeywords = {
 	"and", "break", "do", "else", "elseif",
 	"end", "false", "for", "function", "if",
@@ -14,8 +16,8 @@ std::unordered_set<std::string> State::keywords = {
 	"in", "local", "nil", "not", "or",
 	"repeat", "return", "then", "true", "until",
 	"while", // Lua keywords
-	"class", "continue", "export", "extends",
-	"import", "switch", "when", "unless", "using",
+	"class", "continue", "export", "extends", "from",
+	"import", "switch", "unless", "using", "when",
 	"with" // Moon keywords
 };
 
@@ -35,10 +37,7 @@ rule Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
 rule Num =
 	(
 		"0x" >>
-		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
-		-(-set("uU") >> set("lL") >> set("lL"))
-	) | (
-		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
+		+(range('0', '9') | range('a', 'f') | range('A', 'F'))
 	) | (
 		(
 			(+range('0', '9') >> -('.' >> +range('0', '9'))) |
@@ -56,9 +55,17 @@ rule Seperator = true_();
 rule Variable = user(Name, [](const item_t& item) {
 	State* st = reinterpret_cast<State*>(item.user_data);
 	for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
-	auto it = st->keywords.find(st->buffer);
+	auto it = State::keywords.find(st->buffer);
 	st->buffer.clear();
-	return it == st->keywords.end();
+	return it == State::keywords.end();
+});
+
+rule LuaKeyword = user(Name, [](const item_t& item) {
+	State* st = reinterpret_cast<State*>(item.user_data);
+	for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+	auto it = State::luaKeywords.find(st->buffer);
+	st->buffer.clear();
+	return it != State::luaKeywords.end();
 });
 
 rule self = expr('@');
@@ -344,7 +351,7 @@ extern rule Invoke, Slice;
 rule Index = symx('[') >> Exp >> sym(']');
 rule ChainItem = Invoke | DotChainItem | Slice | Index;
 rule DotChainItem = symx('.') >> Name;
-rule ColonChainItem = symx('\\') >> Name;
+rule ColonChainItem = symx('\\') >> (LuaKeyword | Name);
 rule invoke_chain = Invoke >> -ChainItems;
 rule ColonChain = ColonChainItem >> -invoke_chain;
 
@@ -480,7 +487,7 @@ rule SimpleValue =
 	TblComprehension | TableLit | Comprehension | FunLit |
 	(Space >> Num);
 
-rule Assignment = ExpList >> (Update | Assign);
+rule ExpListAssign = ExpList >> -(Update | Assign);
 
 rule if_else_line = key("if") >> Exp >> (key("else") >> Exp | default_value);
 rule unless_line = key("unless") >> Exp;
@@ -490,7 +497,7 @@ rule Statement =
 (
 	Import | While | For | ForEach |
 	Return | Local | Export | Space >> BreakLoop |
-	Assignment | ExpList
+	ExpListAssign
 ) >> Space >>
 -statement_appendix;
 
@@ -502,3 +509,5 @@ rule Block = Seperator >> Line >> *(+Break >> Line);
 
 rule Shebang = expr("#!") >> *(not_(Stop) >> Any);
 rule File = White >> -Shebang >> Block >> eof();
+
+} // namespace MoonP

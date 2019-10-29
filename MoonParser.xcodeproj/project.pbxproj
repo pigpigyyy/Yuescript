@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3C1C21CD2367E69100147A19 /* moon_compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21CC2367E69100147A19 /* moon_compiler.cpp */; };
 		3C3B1C601F1EF0AB0052A206 /* moon_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */; };
+		3C54E26C234C80CC00202423 /* moonc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C54E26B234C80CC00202423 /* moonc.cpp */; };
 		3C6FFA331F16F97400541BCA /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA2D1F16F97400541BCA /* ast.cpp */; };
 		3C6FFA341F16F97400541BCA /* moon_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */; };
 		3C6FFA351F16F97400541BCA /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA301F16F97400541BCA /* parser.cpp */; };
@@ -27,15 +29,17 @@
 
 /* Begin PBXFileReference section */
 		3C0F0F6C1EF3781E000EADDB /* MoonParser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MoonParser; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C1C21CB2367E69100147A19 /* moon_compiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_compiler.h; sourceTree = "<group>"; };
+		3C1C21CC2367E69100147A19 /* moon_compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_compiler.cpp; sourceTree = "<group>"; };
 		3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_ast.cpp; sourceTree = "<group>"; };
 		3C3B1C5F1F1EF0AB0052A206 /* moon_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_ast.h; sourceTree = "<group>"; };
 		3C3B1C611F1EFC810052A206 /* moon_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_parser.h; sourceTree = "<group>"; };
+		3C54E26B234C80CC00202423 /* moonc.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = moonc.cpp; sourceTree = "<group>"; };
 		3C6FFA2D1F16F97400541BCA /* ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast.cpp; sourceTree = "<group>"; };
 		3C6FFA2E1F16F97400541BCA /* ast.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ast.hpp; sourceTree = "<group>"; };
 		3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_parser.cpp; sourceTree = "<group>"; };
 		3C6FFA301F16F97400541BCA /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
 		3C6FFA311F16F97400541BCA /* parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
-		3C6FFA321F16F97400541BCA /* parserlib.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = parserlib.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,13 +58,15 @@
 			children = (
 				3C6FFA2D1F16F97400541BCA /* ast.cpp */,
 				3C6FFA2E1F16F97400541BCA /* ast.hpp */,
+				3C6FFA301F16F97400541BCA /* parser.cpp */,
+				3C6FFA311F16F97400541BCA /* parser.hpp */,
 				3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */,
 				3C3B1C611F1EFC810052A206 /* moon_parser.h */,
 				3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */,
 				3C3B1C5F1F1EF0AB0052A206 /* moon_ast.h */,
-				3C6FFA301F16F97400541BCA /* parser.cpp */,
-				3C6FFA311F16F97400541BCA /* parser.hpp */,
-				3C6FFA321F16F97400541BCA /* parserlib.hpp */,
+				3C1C21CC2367E69100147A19 /* moon_compiler.cpp */,
+				3C1C21CB2367E69100147A19 /* moon_compiler.h */,
+				3C54E26B234C80CC00202423 /* moonc.cpp */,
 			);
 			path = MoonParser;
 			sourceTree = "<group>";
@@ -141,8 +147,10 @@
 			files = (
 				3C6FFA341F16F97400541BCA /* moon_parser.cpp in Sources */,
 				3C3B1C601F1EF0AB0052A206 /* moon_ast.cpp in Sources */,
+				3C54E26C234C80CC00202423 /* moonc.cpp in Sources */,
 				3C6FFA351F16F97400541BCA /* parser.cpp in Sources */,
 				3C6FFA331F16F97400541BCA /* ast.cpp in Sources */,
+				3C1C21CD2367E69100147A19 /* moon_compiler.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

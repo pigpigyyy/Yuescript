@@ -4,10 +4,6 @@
 
 namespace parserlib {
 
-
-//current AST container.
-static ast_container* _current = 0;
-
 int ast_type_id = 0;
 
 traversal ast_node::traverse(const std::function<traversal (ast_node*)>& func) {
@@ -40,12 +36,6 @@ ast_node* ast_node::getByTypeIds(int* begin, int* end) {
 
 bool ast_node::visitChild(const std::function<bool (ast_node*)>&) {
 	return false;
-}
-
-/** sets the container under construction to be this.
- */
-ast_container::ast_container() {
-    _current = this;
 }
 
     
@@ -106,71 +96,6 @@ bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
 	return false;
 }
 
-ast_node* ast_container::getChild(int index) const {
-	int i = 0;
-	const auto& members = this->members();
-	for (auto member : members) {
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			if (i == index) return ptr->get();
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			for (auto obj : list->objects()) {
-				if (i == index) return obj;
-			}
-		}
-		i++;
-	}
-	return nullptr;
-}
-
-ast_node* ast_container::getFirstChild() const {
-	const auto& members = this->members();
-	if (!members.empty()) {
-		auto member = members.front();
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			return ptr->get();
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			if (!list->objects().empty()) {
-				return list->objects().front();
-			}
-		}
-	}
-	return nullptr;
-}
-
-ast_node* ast_container::getLastChild() const {
-	const auto& members = this->members();
-	if (!members.empty()) {
-		auto member = members.back();
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			return ptr->get();
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			if (!list->objects().empty()) {
-				return list->objects().front();
-			}
-		}
-	}
-	return nullptr;
-}
-
-size_t ast_container::getChildCount() const {
-	size_t count = 0;
-	const auto& members = this->members();
-	for (auto member : members) {
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			count += 1;
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			count += list->objects().size();
-		}
-	}
-	return count;
-}
-
-//register the AST member to the current container.
-void ast_member::add_to_owner() {
-	assert(_current);
-	_current->m_members.push_back(this);
-}
-
 
 /** parses the given input.
     @param i input.
@@ -182,9 +107,15 @@ void ast_member::add_to_owner() {
  */
 ast_node* _parse(input &i, rule &g, error_list &el, void* ud) {
     ast_stack st;
-    if (!parse(i, g, el, &st, ud)) return 0;
+    if (!parse(i, g, el, &st, ud)) {
+    	for (auto node : st) {
+    		delete node;
+		}
+		st.clear();
+    	return nullptr;
+	}
     assert(st.size() == 1);
-    return st[0];
+    return st.front();
 }
 
 

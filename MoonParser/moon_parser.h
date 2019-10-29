@@ -6,8 +6,10 @@
 #include <stack>
 #include <algorithm>
 #include <vector>
-#include "parserlib.hpp"
+#include "ast.hpp"
 using namespace parserlib;
+
+namespace MoonP {
 
 struct State {
 	State() {
@@ -21,3 +23,5 @@ struct State {
 	static std::unordered_set<std::string> luaKeywords;
 	static std::unordered_set<std::string> keywords;
 };
+
+} // namespace MoonP
