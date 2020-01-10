@@ -69,7 +69,7 @@ int main(int narg, const char** args) {
 				return 0;
 			case "-v"_id:
 				std::cout << "Moonscript version: " << MoonP::moonScriptVersion() << '\n';
-				break;
+				return 0;
 			case "-o"_id:
 				++i;
 				if (i < narg) {
