@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3C1C21CD2367E69100147A19 /* moon_compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21CC2367E69100147A19 /* moon_compiler.cpp */; };
-		3C3B1C601F1EF0AB0052A206 /* moon_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */; };
-		3C54E26C234C80CC00202423 /* moonc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C54E26B234C80CC00202423 /* moonc.cpp */; };
-		3C6FFA331F16F97400541BCA /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA2D1F16F97400541BCA /* ast.cpp */; };
-		3C6FFA341F16F97400541BCA /* moon_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */; };
-		3C6FFA351F16F97400541BCA /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FFA301F16F97400541BCA /* parser.cpp */; };
+		3C1C21EE2368322900147A19 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21E52368322900147A19 /* ast.cpp */; };
+		3C1C21EF2368322900147A19 /* moon_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21E62368322900147A19 /* moon_ast.cpp */; };
+		3C1C21F02368322900147A19 /* moon_compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21E92368322900147A19 /* moon_compiler.cpp */; };
+		3C1C21F12368322900147A19 /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21EA2368322900147A19 /* parser.cpp */; };
+		3C1C21F22368322900147A19 /* moon_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21EB2368322900147A19 /* moon_parser.cpp */; };
+		3C1C21F32368322900147A19 /* moonc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C21ED2368322900147A19 /* moonc.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,18 +28,18 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		3C0F0F6C1EF3781E000EADDB /* MoonParser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MoonParser; sourceTree = BUILT_PRODUCTS_DIR; };
-		3C1C21CB2367E69100147A19 /* moon_compiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_compiler.h; sourceTree = "<group>"; };
-		3C1C21CC2367E69100147A19 /* moon_compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_compiler.cpp; sourceTree = "<group>"; };
-		3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_ast.cpp; sourceTree = "<group>"; };
-		3C3B1C5F1F1EF0AB0052A206 /* moon_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_ast.h; sourceTree = "<group>"; };
-		3C3B1C611F1EFC810052A206 /* moon_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_parser.h; sourceTree = "<group>"; };
-		3C54E26B234C80CC00202423 /* moonc.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = moonc.cpp; sourceTree = "<group>"; };
-		3C6FFA2D1F16F97400541BCA /* ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast.cpp; sourceTree = "<group>"; };
-		3C6FFA2E1F16F97400541BCA /* ast.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ast.hpp; sourceTree = "<group>"; };
-		3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_parser.cpp; sourceTree = "<group>"; };
-		3C6FFA301F16F97400541BCA /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
-		3C6FFA311F16F97400541BCA /* parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		3C0F0F6C1EF3781E000EADDB /* MoonPlusPlus */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MoonPlusPlus; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C1C21E32368322900147A19 /* parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		3C1C21E42368322900147A19 /* moon_compiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_compiler.h; sourceTree = "<group>"; };
+		3C1C21E52368322900147A19 /* ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast.cpp; sourceTree = "<group>"; };
+		3C1C21E62368322900147A19 /* moon_ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_ast.cpp; sourceTree = "<group>"; };
+		3C1C21E72368322900147A19 /* moon_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_ast.h; sourceTree = "<group>"; };
+		3C1C21E82368322900147A19 /* moon_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moon_parser.h; sourceTree = "<group>"; };
+		3C1C21E92368322900147A19 /* moon_compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_compiler.cpp; sourceTree = "<group>"; };
+		3C1C21EA2368322900147A19 /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
+		3C1C21EB2368322900147A19 /* moon_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moon_parser.cpp; sourceTree = "<group>"; };
+		3C1C21EC2368322900147A19 /* ast.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ast.hpp; sourceTree = "<group>"; };
+		3C1C21ED2368322900147A19 /* moonc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moonc.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,28 +53,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3C0631A11F0CBE210089D0AB /* MoonParser */ = {
-			isa = PBXGroup;
-			children = (
-				3C6FFA2D1F16F97400541BCA /* ast.cpp */,
-				3C6FFA2E1F16F97400541BCA /* ast.hpp */,
-				3C6FFA301F16F97400541BCA /* parser.cpp */,
-				3C6FFA311F16F97400541BCA /* parser.hpp */,
-				3C6FFA2F1F16F97400541BCA /* moon_parser.cpp */,
-				3C3B1C611F1EFC810052A206 /* moon_parser.h */,
-				3C3B1C5E1F1EF0AB0052A206 /* moon_ast.cpp */,
-				3C3B1C5F1F1EF0AB0052A206 /* moon_ast.h */,
-				3C1C21CC2367E69100147A19 /* moon_compiler.cpp */,
-				3C1C21CB2367E69100147A19 /* moon_compiler.h */,
-				3C54E26B234C80CC00202423 /* moonc.cpp */,
-			);
-			path = MoonParser;
-			sourceTree = "<group>";
-		};
 		3C0F0F631EF3781E000EADDB = {
 			isa = PBXGroup;
 			children = (
-				3C0631A11F0CBE210089D0AB /* MoonParser */,
+				3C1C21E12368322900147A19 /* src */,
 				3C0F0F6D1EF3781E000EADDB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -82,17 +64,43 @@
 		3C0F0F6D1EF3781E000EADDB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3C0F0F6C1EF3781E000EADDB /* MoonParser */,
+				3C0F0F6C1EF3781E000EADDB /* MoonPlusPlus */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3C1C21E12368322900147A19 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				3C1C21E22368322900147A19 /* MoonP */,
+				3C1C21ED2368322900147A19 /* moonc.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		3C1C21E22368322900147A19 /* MoonP */ = {
+			isa = PBXGroup;
+			children = (
+				3C1C21E32368322900147A19 /* parser.hpp */,
+				3C1C21E42368322900147A19 /* moon_compiler.h */,
+				3C1C21E52368322900147A19 /* ast.cpp */,
+				3C1C21E62368322900147A19 /* moon_ast.cpp */,
+				3C1C21E72368322900147A19 /* moon_ast.h */,
+				3C1C21E82368322900147A19 /* moon_parser.h */,
+				3C1C21E92368322900147A19 /* moon_compiler.cpp */,
+				3C1C21EA2368322900147A19 /* parser.cpp */,
+				3C1C21EB2368322900147A19 /* moon_parser.cpp */,
+				3C1C21EC2368322900147A19 /* ast.hpp */,
+			);
+			path = MoonP;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3C0F0F6B1EF3781E000EADDB /* MoonParser */ = {
+		3C0F0F6B1EF3781E000EADDB /* MoonPlusPlus */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3C0F0F731EF3781E000EADDB /* Build configuration list for PBXNativeTarget "MoonParser" */;
+			buildConfigurationList = 3C0F0F731EF3781E000EADDB /* Build configuration list for PBXNativeTarget "MoonPlusPlus" */;
 			buildPhases = (
 				3C0F0F681EF3781E000EADDB /* Sources */,
 				3C0F0F691EF3781E000EADDB /* Frameworks */,
@@ -102,9 +110,9 @@
 			);
 			dependencies = (
 			);
-			name = MoonParser;
+			name = MoonPlusPlus;
 			productName = PegtlStudy;
-			productReference = 3C0F0F6C1EF3781E000EADDB /* MoonParser */;
+			productReference = 3C0F0F6C1EF3781E000EADDB /* MoonPlusPlus */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -122,7 +130,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 3C0F0F671EF3781E000EADDB /* Build configuration list for PBXProject "MoonParser" */;
+			buildConfigurationList = 3C0F0F671EF3781E000EADDB /* Build configuration list for PBXProject "MoonPlusPlus" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -135,7 +143,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3C0F0F6B1EF3781E000EADDB /* MoonParser */,
+				3C0F0F6B1EF3781E000EADDB /* MoonPlusPlus */,
 			);
 		};
 /* End PBXProject section */
@@ -145,12 +153,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3C6FFA341F16F97400541BCA /* moon_parser.cpp in Sources */,
-				3C3B1C601F1EF0AB0052A206 /* moon_ast.cpp in Sources */,
-				3C54E26C234C80CC00202423 /* moonc.cpp in Sources */,
-				3C6FFA351F16F97400541BCA /* parser.cpp in Sources */,
-				3C6FFA331F16F97400541BCA /* ast.cpp in Sources */,
-				3C1C21CD2367E69100147A19 /* moon_compiler.cpp in Sources */,
+				3C1C21F12368322900147A19 /* parser.cpp in Sources */,
+				3C1C21EE2368322900147A19 /* ast.cpp in Sources */,
+				3C1C21F32368322900147A19 /* moonc.cpp in Sources */,
+				3C1C21EF2368322900147A19 /* moon_ast.cpp in Sources */,
+				3C1C21F02368322900147A19 /* moon_compiler.cpp in Sources */,
+				3C1C21F22368322900147A19 /* moon_parser.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -291,7 +299,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3C0F0F671EF3781E000EADDB /* Build configuration list for PBXProject "MoonParser" */ = {
+		3C0F0F671EF3781E000EADDB /* Build configuration list for PBXProject "MoonPlusPlus" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3C0F0F711EF3781E000EADDB /* Debug */,
@@ -300,7 +308,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3C0F0F731EF3781E000EADDB /* Build configuration list for PBXNativeTarget "MoonParser" */ = {
+		3C0F0F731EF3781E000EADDB /* Build configuration list for PBXNativeTarget "MoonPlusPlus" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3C0F0F741EF3781E000EADDB /* Debug */,
