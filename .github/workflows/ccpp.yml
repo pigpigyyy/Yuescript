@@ -1,4 +1,4 @@
-name: CPPCI
+name: build-test
 
 on: [push]
 
