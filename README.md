@@ -63,5 +63,14 @@ for _index_0 = 1, #_list_0 do
 end
 ```
 
+## Standalone Compiler Usage
+
+Test compiler with `make test`.
+Run `moonc` complier in project folder with:
+```shell
+make
+./moonc -h
+```
+
 ## License
 MIT
