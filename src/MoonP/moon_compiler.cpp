@@ -1239,6 +1239,7 @@ private:
 		auto action = assignment->action.get();
 		switch (action->getId()) {
 			case "Update"_id: {
+				if (expList->exprs.size() > 1) throw std::logic_error(debugInfo("Can not apply update to multiple values."sv, expList));
 				auto update = static_cast<Update_t*>(action);
 				auto leftExp = static_cast<Exp_t*>(expList->exprs.objects().front());
 				auto leftValue = singleValueFrom(leftExp);
