@@ -437,7 +437,7 @@ private:
 		auto callable = ast_cast<Callable_t>(chainValue->items.front());
 		BREAK_IF(!callable || !callable->item.is<Variable_t>());
 		str_list tmp;
-		transformCallable(callable, tmp, false);
+		transformCallable(callable, tmp);
 		return tmp.back();
 		BLOCK_END
 		return Empty;
@@ -1552,7 +1552,7 @@ private:
 		}
 	}
 
-	void transformCallable(Callable_t* callable, str_list& out, bool invoke) {
+	void transformCallable(Callable_t* callable, str_list& out, const ast_sel<false,Invoke_t,InvokeArgs_t>& invoke = {}) {
 		auto item = callable->item.get();
 		switch (item->getId()) {
 			case "Variable"_id: {
@@ -1564,7 +1564,8 @@ private:
 				}
 				break;
 			}
-			case "SelfName"_id: { transformSelfName(static_cast<SelfName_t*>(item), out, invoke);
+			case "SelfName"_id: {
+				transformSelfName(static_cast<SelfName_t*>(item), out, invoke);
 				if (_config.lintGlobalVariable) {
 					std::string self("self"sv);
 					if (!isDefined(self)) {
@@ -1938,12 +1939,26 @@ private:
 		out.push_back(initCodes);
 	}
 
-	void transformSelfName(SelfName_t* selfName, str_list& out, bool invoke) {
+	void transformSelfName(SelfName_t* selfName, str_list& out, const ast_sel<false,Invoke_t,InvokeArgs_t>& invoke = {}) {
+		auto x = selfName;
 		auto name = selfName->name.get();
 		switch (name->getId()) {
 			case "self_class_name"_id: {
 				auto clsName = static_cast<self_class_name_t*>(name);
-				out.push_back(s("self.__class"sv) + s(invoke ? ":"sv : "."sv) + toString(clsName->name));
+				auto nameStr = toString(clsName->name);
+				if (State::luaKeywords.find(nameStr) != State::luaKeywords.end()) {
+					out.push_back(s("self.__class[\""sv) + nameStr + s("\"]"));
+					if (invoke) {
+						if (auto invokePtr = invoke.as<Invoke_t>()) {
+							invokePtr->args.push_front(toAst<Exp_t>("self.__class"sv, Exp, x));
+						} else {
+							auto invokeArgsPtr = invoke.as<InvokeArgs_t>();
+							invokeArgsPtr->args.push_front(toAst<Exp_t>("self.__class"sv, Exp, x));
+						}
+					}
+				} else {
+					out.push_back(s("self.__class"sv) + s(invoke ? ":"sv : "."sv) + nameStr);
+				}
 				break;
 			}
 			case "self_class"_id:
@@ -1951,7 +1966,20 @@ private:
 				break;
 			case "self_name"_id: {
 				auto sfName = static_cast<self_class_name_t*>(name);
-				out.push_back(s("self"sv) + s(invoke ? ":"sv : "."sv) + toString(sfName->name));
+				auto nameStr = toString(sfName->name);
+				if (State::luaKeywords.find(nameStr) != State::luaKeywords.end()) {
+					out.push_back(s("self[\""sv) + nameStr + s("\"]"));
+					if (invoke) {
+						if (auto invokePtr = invoke.as<Invoke_t>()) {
+							invokePtr->args.push_front(toAst<Exp_t>("self"sv, Exp, x));
+						} else {
+							auto invokeArgsPtr = invoke.as<InvokeArgs_t>();
+							invokeArgsPtr->args.push_front(toAst<Exp_t>("self"sv, Exp, x));
+						}
+					}
+				} else {
+					out.push_back(s("self"sv) + s(invoke ? ":"sv : "."sv) + nameStr);
+				}
 				break;
 			}
 			case "self"_id:
@@ -2191,8 +2219,11 @@ private:
 				case "Callable"_id: {
 					auto next = it; ++next;
 					auto followItem = next != chainList.end() ? *next : nullptr;
-					transformCallable(static_cast<Callable_t*>(item), temp,
-						followItem && ast_is<Invoke_t, InvokeArgs_t>(followItem));
+					ast_sel<false, Invoke_t, InvokeArgs_t> invoke;
+					if (ast_is<Invoke_t, InvokeArgs_t>(followItem)) {
+						invoke.set(followItem);
+					}
+					transformCallable(static_cast<Callable_t*>(item), temp, invoke);
 					break;
 				}
 				case "String"_id:
@@ -2440,7 +2471,7 @@ private:
 				endWithSlice = true;
 				if (listVar.empty() && chainList.size() == 2 &&
 					ast_is<Callable_t>(chainList.front())) {
-					transformCallable(static_cast<Callable_t*>(chainList.front()), temp, false);
+					transformCallable(static_cast<Callable_t*>(chainList.front()), temp);
 					listVar = temp.back();
 					temp.pop_back();
 				}
@@ -2796,7 +2827,7 @@ private:
 	void transformKeyName(KeyName_t* keyName, str_list& out) {
 		auto name = keyName->name.get();
 		switch (name->getId()) {
-			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(name), out, false); break;
+			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(name), out); break;
 			case "Name"_id: out.push_back(toString(name)); break;
 			default: break;
 		}
@@ -3223,7 +3254,7 @@ private:
 		switch (item->getId()) {
 			case "AssignableChain"_id: transformAssignableChain(static_cast<AssignableChain_t*>(item), out); break;
 			case "Variable"_id: transformVariable(static_cast<Variable_t*>(item), out); break;
-			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(item), out, false); break;
+			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(item), out); break;
 			default: break;
 		}
 	}

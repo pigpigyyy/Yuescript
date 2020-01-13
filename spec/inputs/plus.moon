@@ -5,3 +5,5 @@ res = b.function\do!\while("OK")\if "def",998
 
 c.repeat.if\then("xyz")\else res
 
+print @for,@@function 123
+
