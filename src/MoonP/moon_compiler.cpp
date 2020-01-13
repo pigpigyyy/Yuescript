@@ -288,11 +288,11 @@ private:
 	}
 
 	std::string indent() {
-		return _config.spaceOverTab ? std::string((_scopes.size() - 1 + _indentOffset) * 2, ' ') : std::string(_scopes.size() - 1 + _indentOffset, '\t');
+		return std::string(_scopes.size() - 1 + _indentOffset, '\t');
 	}
 
 	std::string indent(int offset) {
-		return _config.spaceOverTab ? std::string((_scopes.size() - 1 + _indentOffset + offset) * 2, ' ') : std::string(_scopes.size() - 1 + _indentOffset + offset, '\t');
+		return std::string(_scopes.size() - 1 + _indentOffset + offset, '\t');
 	}
 
 	std::string clearBuf() {
@@ -707,16 +707,7 @@ private:
 							}
 						}
 					}
-					if (_config.allowExprNotInTheEndOfBody) {
-						auto assign = x->new_ptr<Assign_t>();
-						assign->values.dup(expList->exprs);
-						auto assignment = x->new_ptr<ExpListAssign_t>();
-						assignment->expList.set(toAst<ExpList_t>("_", ExpList, x));
-						assignment->action.set(assign);
-						transformAssignment(assignment, out);
-					} else {
-						throw std::logic_error(debugInfo("Expression list must appear at the end of body block."sv, expList));
-					}
+					throw std::logic_error(debugInfo("Expression list must appear at the end of body block."sv, expList));
 				}
 				break;
 			}
@@ -2456,8 +2447,7 @@ private:
 		switch (loopTarget->getId()) {
 			case "star_exp"_id: {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
-				std::string listVar;
-				if (_config.reuseVariable) listVar = singleVariableFrom(star_exp->value);
+				auto listVar = singleVariableFrom(star_exp->value);
 				auto indexVar = getUnusedName("_index_");
 				varAfter.push_back(indexVar);
 				auto value = singleValueFrom(star_exp->value);
@@ -3279,7 +3269,7 @@ private:
 			checkAssignable(with->valueList);
 			auto vars = getAssignVars(with);
 			if (vars.front().empty()) {
-				if (_config.reuseVariable && with->assigns->values.objects().size() == 1) {
+				if (with->assigns->values.objects().size() == 1) {
 					auto var = singleVariableFrom(with->assigns->values.objects().front());
 					if (!var.empty()) {
 						withVar = var;
@@ -3326,7 +3316,7 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		} else {
-			if (_config.reuseVariable) withVar = singleVariableFrom(with->valueList);
+			withVar = singleVariableFrom(with->valueList);
 			if (withVar.empty()) {
 				withVar = getUnusedName("_with_");
 				auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -3882,7 +3872,7 @@ private:
 
 const std::string MoonCompliler::Empty;
 
-std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes,  const MoonConfig& config) {
+std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes, const MoonConfig& config) {
 	auto compiler = MoonCompliler{};
 	auto result = compiler.complile(codes, config);
 	auto globals = std::make_unique<std::list<GlobalVar>>();

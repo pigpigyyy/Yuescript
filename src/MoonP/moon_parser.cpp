@@ -236,7 +236,7 @@ extern rule CompInner;
 
 rule Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
 rule comp_value = sym(',') >> Exp;
-rule TblComprehension = sym('{') >> (Exp >> -comp_value)   >> CompInner >> sym('}');
+rule TblComprehension = sym('{') >> (Exp >> -comp_value) >> CompInner >> sym('}');
 
 extern rule CompForEach, CompFor, CompClause;
 

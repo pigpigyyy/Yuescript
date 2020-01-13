@@ -20,10 +20,7 @@ const char* moonScriptVersion();
 struct MoonConfig {
 	bool lintGlobalVariable = false;
 	bool implicitReturnRoot = true;
-	bool reserveLineNumber = false;
-	bool spaceOverTab = false;
-	bool reuseVariable = false;
-	bool allowExprNotInTheEndOfBody = false;
+	bool reserveLineNumber = true;
 };
 
 struct GlobalVar {
