@@ -23,7 +23,7 @@ local _call_4 = _call_3["then"](_call_3, "xyz")
 _call_4["else"](_call_4, res)
 ```
 
-* Add a compiler flag `reuseVariable` which can help generate reduced Lua codes. For example, when set `reuseVariable` to `true`. Will generate codes from:
+* Add a compiler flag `reuseVariable` which can help generate reduced Lua codes. For example, when set `reuseVariable` to `true`, MoonPlus will generate codes from:
 ```Moonscript
 with leaf
   .world 1,2,3
