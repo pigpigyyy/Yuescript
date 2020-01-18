@@ -1,7 +1,7 @@
 # MoonPlus
 
 ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)  
-MoonPlus is a compiler for Moonscript language 0.5.0 written in C++ which could be 2~4 times faster than the original Moonscript compiler written in Moonscript.
+MoonPlus is a compiler adopting features from Moonscript language 0.5.0 and could be 2~4 times faster than the original Moonscript compiler. 
 
 ## Features
 
@@ -23,7 +23,7 @@ local _call_4 = _call_3["then"](_call_3, "xyz")
 _call_4["else"](_call_4, res)
 ```
 
-* Add a compiler flag `reuseVariable` which can help generate reduced Lua codes. For example, when set `reuseVariable` to `true`, MoonPlus will generate codes from:
+* Add feature of `reusing variable` which helps generate reduced Lua codes. For example, MoonPlus will generate codes from:
 ```Moonscript
 with leaf
   .world 1,2,3
