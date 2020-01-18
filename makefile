@@ -206,7 +206,7 @@ clean:
 .PHONY: test
 test: release
 	@echo "Compiling Moonscript codes..."
-	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -a -s -t $(TEST_OUTPUT)
+	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -l -t $(TEST_OUTPUT)
 
 # Main rule, checks the executable and symlinks to the output
 all: $(BIN_PATH)/$(BIN_NAME)

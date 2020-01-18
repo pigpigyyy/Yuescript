@@ -407,11 +407,14 @@ AST_NODE(Invoke, "Invoke"_id)
 	AST_MEMBER(Invoke, &sep, &args)
 AST_END(Invoke)
 
+AST_LEAF(existential_op, "existential_op"_id)
+AST_END(existential_op)
+
 class InvokeArgs_t;
 
 AST_NODE(ChainValue, "ChainValue"_id)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Slice_t, Exp_t, String_t, InvokeArgs_t> items;
+	ast_sel_list<true, Callable_t, Invoke_t, DotChainItem_t, ColonChainItem_t, Slice_t, Exp_t, String_t, InvokeArgs_t, existential_op_t> items;
 	AST_MEMBER(ChainValue, &sep, &items)
 AST_END(ChainValue)
 

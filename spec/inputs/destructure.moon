@@ -90,7 +90,7 @@ do
 do
   {a,b,c} = z
 
-(z) ->
+_ = (z) ->
   {a,b,c} = z
 
 do

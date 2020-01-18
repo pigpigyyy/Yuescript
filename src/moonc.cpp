@@ -22,14 +22,13 @@ int main(int narg, const char** args) {
 "    -p          Write output to standard out\n"
 "    -b          Dump compile time (doesn't write output)\n"
 "    -l          Write line numbers from source codes\n"
-"    -a          Allow expression list not in the end of body block\n"
-"    -s          Use space over tab\n"
 "    -v          Print version\n";
 	if (narg == 0) {
 		std::cout << help;
 		return 0;
 	}
 	MoonP::MoonConfig config;
+	config.reserveLineNumber = false;
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
 	std::string targetPath;
@@ -37,17 +36,8 @@ int main(int narg, const char** args) {
 	std::list<std::string> files;
 	for (int i = 1; i < narg; ++i) {
 		switch (hash(args[i])) {
-			case "-a"_id:
-				config.allowExprNotInTheEndOfBody = true;
-				break;
-			case "-s"_id:
-				config.spaceOverTab = true;
-				break;
 			case "-l"_id:
 				config.reserveLineNumber = true;
-				break;
-			case "-r"_id:
-				config.reuseVariable = true;
 				break;
 			case "-p"_id:
 				writeToFile = false;

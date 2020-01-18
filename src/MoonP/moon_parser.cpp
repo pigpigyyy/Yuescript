@@ -289,9 +289,9 @@ extern rule Value;
 rule exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> Value;
 rule Exp = Value >> *exp_op_value;
 
-extern rule Chain, Callable, InvokeArgs;
+extern rule Chain, Callable, InvokeArgs, existential_op;
 
-rule ChainValue = Seperator >> (Chain | Callable) >> -InvokeArgs;
+rule ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
 
 extern rule KeyValue, String, SimpleValue;
 
@@ -345,9 +345,10 @@ rule FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(
 
 extern rule ChainItems, DotChainItem, ColonChain;
 
-rule chain_call = (Callable | String) >> ChainItems;
+rule existential_op = expr('?');
+rule chain_call = (Callable | String) >> -existential_op >> ChainItems;
 rule chain_item = and_(set(".\\")) >> ChainItems;
-rule chain_dot_chain = DotChainItem >> -ChainItems;
+rule chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;
 
 rule Chain = chain_call | chain_item |
 	Space >> (chain_dot_chain | ColonChain);
@@ -362,11 +363,11 @@ rule ChainItems = chain_with_colon | ColonChain;
 extern rule Invoke, Slice;
 
 rule Index = symx('[') >> Exp >> sym(']');
-rule ChainItem = Invoke | DotChainItem | Slice | Index;
+rule ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
 rule DotChainItem = symx('.') >> Name;
 rule ColonChainItem = symx('\\') >> (LuaKeyword | Name);
-rule invoke_chain = Invoke >> -ChainItems;
-rule ColonChain = ColonChainItem >> -invoke_chain;
+rule invoke_chain = Invoke >> -existential_op >> -ChainItems;
+rule ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
 
 rule default_value = true_();
 rule Slice =

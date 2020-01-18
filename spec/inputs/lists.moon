@@ -3,14 +3,14 @@ hi = [x*2 for _, x in ipairs{1,2,3,4}]
 
 items = {1,2,3,4,5,6}
 
-[z for z in ipairs items when z > 4]
+_ = [z for z in ipairs items when z > 4]
 
 rad = [{a} for a in ipairs {
    1,2,3,4,5,6,
 } when good_number a]
 
 
-[z for z in items for j in list when z > 4]
+_ = [z for z in items for j in list when z > 4]
 
 require "util"
 
@@ -32,7 +32,7 @@ print x,y for x in ipairs{1,2,4} for y in ipairs{1,2,3} when x != 2
 
 print "hello", x for x in items
 
-[x for x in x]
+_ = [x for x in x]
 x = [x for x in x]
 
 print x,y for x in ipairs{1,2,4} for y in ipairs{1,2,3} when x != 2
@@ -67,6 +67,6 @@ normal = (hello) ->
 test = x 1,2,3,4,5
 print thing for thing in *test
 
--> a = b for row in *rows
+_ = -> a = b for row in *rows
 
 

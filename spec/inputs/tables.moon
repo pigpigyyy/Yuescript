@@ -138,7 +138,7 @@ thing what:
 thing what:
   "great", no:
     "more"
-okay: 123 -- a anon table
+_ = okay: 123 -- a anon table
 
 
 -- 

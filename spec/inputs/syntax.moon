@@ -27,7 +27,7 @@ what(the)[3243] world, yeck heck
 
 hairy[hands][are](gross) okay okay[world]
 
-(get[something] + 5)[years]
+_ = (get[something] + 5)[years]
 
 i,x  = 200, 300
 
@@ -37,27 +37,27 @@ yeah = ((1+5)*3)/2 + i % 100
 
 whoa = (1+2) * (3+4) * (4+5)
 
-->
+_ = ->
   if something
     return 1,2,4
 
   print "hello"
 
-->
+_ = ->
   if hello
     "heloo", "world"
   else
     no, way
 
 
--> 1,2,34
+_ = -> 1,2,34
 
 return 5 + () -> 4 + 2
 
 return 5 + (() -> 4) + 2
 
 print 5 + () ->
-	34
+	_ = 34
 	good nads
 
 
@@ -66,19 +66,19 @@ something 'else', "ya"
 something'else'
 something"else"
 
-something[[hey]] * 2
-something[======[hey]======] * 2
+_ = something[[hey]] * 2
+_ = something[======[hey]======] * 2
 
 
-something'else', 2
-something"else", 2
-something[[else]], 2
+_ = something'else', 2
+_ = something"else", 2
+_ = something[[else]], 2
 
 something 'else', 2
 something "else", 2
 something [[else]], 2
 
-here(we)"go"[12123]
+_ = here(we)"go"[12123]
 
 -- this runs
 something =
@@ -120,9 +120,9 @@ print "hello" for i=1,10
 
 print "nutjob"
 
-if hello then 343
+if hello then _ = 343
 
-print "what" if cool else whack
+print "what" if cool else whack!
 
 arg = {...}
 
@@ -139,7 +139,7 @@ y = #"hello"
 
 x = #{#{},#{1},#{1,2}}
 
-hello, world
+_ = hello, world
 
 something\hello(what) a,b
 something\hello what
@@ -163,7 +163,7 @@ a["hello#{tostring ff}"] += 10
 a[four].x += 10
 
 x = 0
-(if ntype(v) == "fndef" then x += 1) for v in *values
+_ = (if ntype(v) == "fndef" then x += 1) for v in *values
 
 
 hello =
@@ -176,10 +176,10 @@ hello =
 
 div class: "cool"
 
-5 + what wack
+_ = 5 + what wack
 what whack + 5
 
-5 - what wack
+_ = 5 - what wack
 what whack - 5
 
 x = hello - world - something
@@ -189,16 +189,16 @@ x = hello - world - something
   print something)!
 
 if something
-  03589
+  _ = 03589
 
 -- okay what about this
 
 else
-  3434
+  _ = 3434
 
 
 if something
-  yeah
+  _ = yeah
 
 
 elseif "ymmm"
@@ -207,7 +207,7 @@ elseif "ymmm"
 
 else
 
-  okay
+  _ = okay
 
 
 -- test names containing keywords

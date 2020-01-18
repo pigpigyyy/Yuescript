@@ -37,7 +37,7 @@ do
 
 do
   with foo
-    \prop"something".hello
+    _ = \prop"something".hello
     .prop\send(one)
     .prop\send one
 
@@ -107,7 +107,7 @@ do
       print .c
 
 do
-  ->
+  _ = ->
     with hi
       return .a, .b
 

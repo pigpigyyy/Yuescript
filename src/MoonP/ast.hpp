@@ -392,6 +392,12 @@ public:
 		node->release();
 	}
 
+	void pop_back() {
+		auto node = m_objects.back();
+		m_objects.pop_back();
+		node->release();
+	}
+
 	 const node_container& objects() const {
         return m_objects;
     }

@@ -2,9 +2,9 @@
 
 x = -> print what
 
-->
+_ = ->
 
--> -> ->
+_ = -> -> ->
 
 go to the barn
 
@@ -27,29 +27,29 @@ x = (...) ->
 hello!
 hello.world!
 
-hello!.something
-what!["ofefe"]
+_ = hello!.something
+_ = what!["ofefe"]
 
 what! the! heck!
 
-(a,b,c,d,e) ->
+_ = (a,b,c,d,e) ->
 
-(a,a,a,a,a) ->
+_ = (a,a,a,a,a) ->
   print a
 
-(x=23023) ->
+_ = (x=23023) ->
 
-(x=(y=()->) ->) ->
+_ = (x=(y=()->) ->) ->
 
-(x = if something then yeah else no) ->
+_ = (x = if something then yeah else no) ->
 
 something = (hello=100, world=(x=[[yeah cool]])-> print "eat rice") ->
   print hello
 
-(x, y) =>
-(@x, @y) =>
-(x=1) =>
-(@x=1,y,@z="hello world") =>
+_ = (x, y) =>
+_ = (@x, @y) =>
+_ = (x=1) =>
+_ = (@x=1,y,@z="hello world") =>
 
 
 x -> return
@@ -57,7 +57,7 @@ y -> return 1
 z -> return 1, "hello", "world"
 k -> if yes then return else return
 
--> real_name if something
+_ = -> real_name if something
 
 --
 
@@ -97,7 +97,7 @@ f(
 
 x = (a,
   b) ->
-    print "what"
+   print "what"
 
 
 y = (a="hi",

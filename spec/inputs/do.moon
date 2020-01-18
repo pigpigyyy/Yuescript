@@ -11,7 +11,7 @@ y = do
   things = "shhh"
   -> "hello: " .. things
 
--> if something then do "yeah"
+_ = -> if something then do "yeah"
 
 t = {
   y: do

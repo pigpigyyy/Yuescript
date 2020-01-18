@@ -73,11 +73,11 @@ class CoolSuper
   hi: =>
     super(1,2,3,4) 1,2,3,4
     super.something 1,2,3,4
-    super.something(1,2,3,4).world
+    _ = super.something(1,2,3,4).world
     super\yeah"world".okay hi, hi, hi
-    something.super
-    super.super.super.super
-    super\hello
+    _ = something.super
+    _ = super.super.super.super
+    _ = super\hello
     nil
 
 
@@ -114,11 +114,11 @@ y = @@
 @ = 343
 @.hello 2,3,4
 
-hello[@].world
+_ = hello[@].world
 
 
 class Whacko
-  @hello
+  _ = @hello
   if something
     print "hello world"
 
@@ -132,20 +132,20 @@ print "hello"
 
 yyy = ->
   class Cool
-    nil
+    _ = nil
 
 
 --
 
 class a.b.c.D
-  nil
+  _ = nil
 
 
 class a.b["hello"]
-  nil
+  _ = nil
 
 class (-> require "moon")!.Something extends Hello.World
-  nil
+  _ = nil
 
 --
 
@@ -160,7 +160,7 @@ print (class WhatsUp).__name
 
 export ^
 class Something
-  nil
+  _ = nil
 
 
 --
@@ -197,17 +197,17 @@ class Whack extends Thing
 class Wowha extends Thing
   @butt: ->
     super!
-    super.hello
+    _ = super.hello
     super\hello!
-    super\hello
+    _ = super\hello
 
 
   @zone: cool {
     ->
       super!
-      super.hello
+      _ = super.hello
       super\hello!
-      super\hello
+      _ = super\hello
   }
 
 nil

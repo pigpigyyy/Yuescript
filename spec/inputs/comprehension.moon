@@ -11,11 +11,11 @@ copy  = {k,v for k,v in pairs x when k != "okay"}
 
 --
 
-{ unpack(x) for x in yes }
-{ unpack(x) for x in *yes }
+_ = { unpack(x) for x in yes }
+_ = { unpack(x) for x in *yes }
 
-{ xxxx for x in yes }
-{ unpack [a*i for i, a in ipairs x] for x in *{{1,2}, {3,4}} }
+_ = { xxxx for x in yes }
+_ = { unpack [a*i for i, a in ipairs x] for x in *{{1,2}, {3,4}} }
 
 
 --
@@ -28,7 +28,7 @@ bb = [y for thing in y for i=1,10]
 cc = [y for i=1,10 for thing in y]
 dd = [y for i=1,10 when cool for thing in y when x > 3 when c + 3]
 
-{"hello", "world" for i=1,10}
+_ = {"hello", "world" for i=1,10}
 
 --
 
@@ -44,8 +44,8 @@ ok(a,b,c) for {a,b,c} in things
 
 --
 
-[item for item in *items[1 + 2,3+4]]
-[item for item in *items[hello! * 4, 2 - thing[4]]]
+_ = [item for item in *items[1 + 2,3+4]]
+_ = [item for item in *items[hello! * 4, 2 - thing[4]]]
 
 
 

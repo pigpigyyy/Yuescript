@@ -33,7 +33,7 @@ for x in y, z, k
 
 x = ->
   for x in y
-    y
+    _ = y
 
 hello = {1,2,3,4,5}
 
@@ -43,7 +43,7 @@ x = for y in *hello
 
 x = ->
   for x in *hello
-    y
+    _ = y
 
 t = for i=10,20 do i * 2
 
@@ -52,11 +52,11 @@ y = for j = 3,30, 8
   hmm += 1
   j * hmm
 
-->
+_ = ->
   for k=10,40
-    "okay"
+    _ = "okay"
 
-->
+_ = ->
   return for k=10,40
     "okay"
 
@@ -68,7 +68,7 @@ while 5 + 5
 
 while also do
   i work too
-  "okay"
+  _ = "okay"
 
 i = 0
 x = while i < 10

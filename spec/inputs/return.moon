@@ -1,7 +1,7 @@
 -- testing `return` propagation
 
--> x for x in *things
--> [x for x in *things]
+_ = -> _ = x for x in *things
+_ = -> [x for x in *things]
 
 
 -- doesn't make sense on purpose
@@ -14,7 +14,7 @@ do
 do
   return {x,y for x,y in *things}
 
-->
+_ = ->
   if a
     if a
       a
@@ -49,7 +49,7 @@ do
     else
       b
 
--> a\b
+_ = -> a\b
 do a\b
 
 

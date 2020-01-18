@@ -15,7 +15,7 @@ switch value
   when "cool"
     print "hello world"
   when "yeah"
-    [[FFFF]] + [[MMMM]]
+    _ = [[FFFF]] + [[MMMM]]
   when 2323 + 32434
     print "okay"
   else
@@ -33,9 +33,9 @@ out = switch value
 with something
   switch \value!
     when .okay
-      "world"
+      _ = "world"
     else
-      "yesh"
+      _ = "yesh"
 
 fix this
 call_func switch something
@@ -46,7 +46,7 @@ call_func switch something
 
 switch hi
   when hello or world
-    greene
+    _ = greene
 
 --
 
@@ -54,7 +54,7 @@ switch hi
   when "one", "two"
     print "cool"
   when "dad"
-    no
+    _ = no
 
 switch hi
   when 3+1, hello!, (-> 4)!

@@ -1,25 +1,25 @@
 
 you_cool = false
 
-if cool
+_ = if cool
   if you_cool
     one
   else if eatdic
     yeah
   else
-    two
+    _ = two
     three
 else
   no
 
-if cool then no
-if cool then no else yes
+_ = if cool then no
+_ = if cool then no else yes
 
 if cool then wow cool else
   noso cool
 
 if working
-  if cool then if cool then okay else what else nah
+  _ = if cool then if cool then okay else what else nah
 
 
 if yeah then no day elseif cool me then okay ya else u way
@@ -70,7 +70,7 @@ hello = 5 + if something = 10
 
 z = false
 
-if false
+_ = if false
   one
 elseif x = true
   two

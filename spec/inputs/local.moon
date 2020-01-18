@@ -89,6 +89,6 @@ do
 do
   local *
   -- this generates a nil value in the body
-  for a in *{} do a
+  for a in *{} do _ = a
 
 g = 2323 -- test if anything leaked
