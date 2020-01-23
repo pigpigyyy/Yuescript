@@ -95,6 +95,11 @@ _ = (z) ->
 
 do
   z = "oo"
-  (k) ->
+  _ = (k) ->
     {a,b,c} = z
 
+do
+  {function:{end:endVar}} = thing
+
+do
+  {if:{a,b,c}} = thing

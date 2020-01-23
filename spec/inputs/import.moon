@@ -46,3 +46,22 @@ do
     c
     from z
 
+
+do
+  import 'module'
+  import 'module_x'
+  import "d-a-s-h-e-s"
+  import "module.part"
+
+do
+  import "player" as Player
+  import "lpeg" as {:C, :Ct, :Cmt}
+
+do
+  export *
+  import 'module'
+  import 'module_x'
+  import "org.package.module-y"
+
+do
+  import "org.package.module" as {function:func,if:ifVar}

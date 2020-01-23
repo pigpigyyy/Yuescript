@@ -26,9 +26,9 @@ std::unordered_set<std::string> State::keywords = {
 	"in", "local", "nil", "not", "or",
 	"repeat", "return", "then", "true", "until",
 	"while", // Lua keywords
-	"class", "continue", "export", "extends", "from",
-	"import", "switch", "unless", "using", "when",
-	"with" // Moon keywords
+	"as", "class", "continue", "export", "extends",
+	"from", "import", "switch", "unless", "using",
+	"when", "with" // Moon keywords
 };
 
 rule plain_space = *set(" \t");
@@ -160,9 +160,16 @@ rule colon_import_name = sym('\\') >> Space >> Variable;
 rule ImportName = colon_import_name | Space >> Variable;
 rule ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
 
-extern rule Exp;
+extern rule Exp, TableLit;
 
-rule Import = key("import") >> ImportNameList >> *SpaceBreak >> key("from") >> Exp;
+rule import_literal_inner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(AlphaNum | '-');
+rule import_literal_chain = Seperator >> import_literal_inner >> *(expr('.') >> import_literal_inner);
+rule ImportLiteral = sym('\'') >> import_literal_chain >> symx('\'') | sym('"') >> import_literal_chain >> symx('"');
+
+rule ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
+rule ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | TableLit));
+
+rule Import = key("import") >> (ImportAs | ImportFrom);
 rule BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
 
 extern rule ExpListLow, ExpList, Assign;
@@ -301,12 +308,12 @@ rule Value = SimpleValue | simple_table | ChainValue | String;
 extern rule LuaString;
 
 rule single_string_inner = expr("\\'") | "\\\\" | not_(expr('\'')) >> Any;
-rule SingleString = symx('\'') >> *single_string_inner >> sym('\'');
+rule SingleString = symx('\'') >> *single_string_inner >> symx('\'');
 rule interp = symx("#{") >> Exp >> sym('}');
 rule double_string_plain = expr("\\\"") | "\\\\" | not_(expr('"')) >> Any;
 rule double_string_inner = +(not_(interp) >> double_string_plain);
 rule double_string_content = double_string_inner | interp;
-rule DoubleString = symx('"') >> Seperator >> *double_string_content >> sym('"');
+rule DoubleString = symx('"') >> Seperator >> *double_string_content >> symx('"');
 rule String = Space >> (DoubleString | SingleString | LuaString);
 
 rule lua_string_open = '[' >> *expr('=') >> '[';

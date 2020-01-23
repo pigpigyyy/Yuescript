@@ -47,6 +47,6 @@ ok(a,b,c) for {a,b,c} in things
 _ = [item for item in *items[1 + 2,3+4]]
 _ = [item for item in *items[hello! * 4, 2 - thing[4]]]
 
-
+list = [item?\invoke 123 for item in items]
 
 nil
