@@ -199,7 +199,7 @@ class Wowha extends Thing
     super!
     _ = super.hello
     super\hello!
-    _ = super\hello
+    super\hello
 
 
   @zone: cool {
@@ -207,7 +207,7 @@ class Wowha extends Thing
       super!
       _ = super.hello
       super\hello!
-      _ = super\hello
+      super\hello
   }
 
 nil

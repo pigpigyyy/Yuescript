@@ -13,9 +13,10 @@ _ = (a,b,c using a,b,c) ->
   a,b,c = 1,2,3
   world = 12321
 
-_ = (a,e,f using a,b,c, hello) ->
+(a,e,f using a,b,c, hello) ->
   a,b,c = 1,2,3
   hello = 12321
   world = "yeah"
+
 
 
