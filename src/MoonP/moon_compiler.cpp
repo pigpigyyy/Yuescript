@@ -426,20 +426,31 @@ private:
 		return ast_is<InvokeArgs_t, Invoke_t>(chainValue->items.back());
 	}
 
-	bool isSpecialChainValue(ChainValue_t* chainValue) {
+	enum class ChainType {
+		Common,
+		EndWithColon,
+		EndWithEOP,
+		HasEOP,
+		HasKeyword
+	};
+
+	ChainType specialChainValue(ChainValue_t* chainValue) {
 		if (ast_is<ColonChainItem_t>(chainValue->items.back())) {
-			return true;
+			return ChainType::EndWithColon;
+		}
+		if (ast_is<existential_op_t>(chainValue->items.back())) {
+			return ChainType::EndWithEOP;
 		}
 		for (auto item : chainValue->items.objects()) {
 			if (auto colonChain = ast_cast<ColonChainItem_t>(item)) {
 				if (ast_is<LuaKeyword_t>(colonChain->name)) {
-					return true;
+					return ChainType::HasKeyword;
 				}
 			} else if (ast_is<existential_op_t>(item) && item != chainValue->items.back()) {
-				return true;
+				return ChainType::HasEOP;
 			}
 		}
-		return false;
+		return ChainType::Common;
 	}
 
 	std::string singleVariableFrom(ChainValue_t* chainValue) {
@@ -998,16 +1009,22 @@ private:
 		auto exp = ast_cast<Exp_t>(value);
 		BREAK_IF(!exp);
 		if (auto chainValue = exp->value->item.as<ChainValue_t>()) {
-			if (isSpecialChainValue(chainValue)) {
-				auto expList = assignment->expList.get();
-				if (ast_is<ColonChainItem_t>(chainValue->items.back())) {
+			auto type = specialChainValue(chainValue);
+			auto expList = assignment->expList.get();
+			switch (type) {
+				case ChainType::HasEOP:
+				case ChainType::EndWithColon: {
 					std::string preDefine = getPredefine(assignment);
 					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
 					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
-				} else {
-					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
+					return;
 				}
-				return;
+				case ChainType::HasKeyword:
+					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
+					return;
+				case ChainType::Common:
+				case ChainType::EndWithEOP:
+					break;
 			}
 		}
 		BLOCK_END
@@ -1858,7 +1875,7 @@ private:
 					}
 				}
 				if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
-					if (isSpecialChainValue(chainValue)) {
+					if (specialChainValue(chainValue) != ChainType::Common) {
 						transformChainValue(chainValue, out, ExpUsage::Return);
 						return;
 					}
