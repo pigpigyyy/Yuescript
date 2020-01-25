@@ -47,18 +47,7 @@ if print and (x ~= nil) then
 end
 ```
 
-* Can do slash call with Lua keywords. Generate codes from:
-```Moonscript
-c.repeat.if\then("xyz")\else res
-```
-&emsp;&emsp;to:
-```Lua
-local _call_3 = c["repeat"]["if"]
-local _call_4 = _call_3["then"](_call_3, "xyz")
-_call_4["else"](_call_4, res)
-```
-
-* Add more usage for `import` keyword. Will compile codes from:
+* Add more features for `import` keyword. Will compile codes from:
 ```Moonscript
 import 'module'
 import "module.part"
@@ -77,6 +66,17 @@ do
   local _obj_0 = require("lpeg")
   C, Ct, Cmt = _obj_0.C, _obj_0.Ct, _obj_0.Cmt
 end
+```
+
+* Can do slash call with Lua keywords. Generate codes from:
+```Moonscript
+c.repeat.if\then("xyz")\else res
+```
+&emsp;&emsp;to:
+```Lua
+local _call_3 = c["repeat"]["if"]
+local _call_4 = _call_3["then"](_call_3, "xyz")
+_call_4["else"](_call_4, res)
 ```
 
 * Add feature of `reusing variable` which helps generate reduced Lua codes. For example, MoonPlus will generate codes from:
