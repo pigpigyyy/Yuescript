@@ -18,50 +18,50 @@ import something from a table
 
 
 if indent
-  import okay, \well from tables[100]
+	import okay, \well from tables[100]
 
 do
-  import a, b, c from z
+	import a, b, c from z
 
 do
-  import a,
-    b, c from z
+	import a,
+		b, c from z
 
 do
-  import a
-    b
-    c from z
+	import a
+		b
+		c from z
 
 do
-  import
-    a
-    b
-    c from z
-
-
-do
-  import
-    a
-    b
-    c
-    from z
+	import
+		a
+		b
+		c from z
 
 
 do
-  import 'module'
-  import 'module_x'
-  import "d-a-s-h-e-s"
-  import "module.part"
+	import
+		a
+		b
+		c
+		from z
+
 
 do
-  import "player" as Player
-  import "lpeg" as {:C, :Ct, :Cmt}
+	import 'module'
+	import 'module_x'
+	import "d-a-s-h-e-s"
+	import "module.part"
 
 do
-  export *
-  import 'module'
-  import 'module_x'
-  import "org.package.module-y"
+	import "player" as Player
+	import "lpeg" as {:C, :Ct, :Cmt}
 
 do
-  import "org.package.module" as {function:func,if:ifVar}
+	export *
+	import 'module'
+	import 'module_x'
+	import "org.package.module-y"
+
+do
+	import "org.package.module" as {function:func,if:ifVar}

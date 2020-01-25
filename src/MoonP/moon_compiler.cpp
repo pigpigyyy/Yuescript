@@ -601,6 +601,7 @@ private:
 
 					auto ifCond = x->new_ptr<IfCond_t>();
 					ifCond->condition.set(if_else_line->condition);
+					ifCond->assign.set(if_else_line->assign);
 					ifNode->nodes.push_back(ifCond);
 
 					auto stmt = x->new_ptr<Statement_t>();

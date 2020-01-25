@@ -11,9 +11,9 @@ go to the barn
 open -> the -> door
 
 open ->
-  the door
-  hello = ->
-    my func
+	the door
+	hello = ->
+		my func
 
 h = -> hi
 
@@ -35,7 +35,7 @@ what! the! heck!
 _ = (a,b,c,d,e) ->
 
 _ = (a,a,a,a,a) ->
-  print a
+	print a
 
 _ = (x=23023) ->
 
@@ -44,7 +44,7 @@ _ = (x=(y=()->) ->) ->
 _ = (x = if something then yeah else no) ->
 
 something = (hello=100, world=(x=[[yeah cool]])-> print "eat rice") ->
-  print hello
+	print hello
 
 _ = (x, y) =>
 _ = (@x, @y) =>
@@ -62,99 +62,99 @@ _ = -> real_name if something
 --
 
 d(
-  ->
-    print "hello world"
-  10
+	->
+		print "hello world"
+	10
 )
 
 
 
 d(
-  1,2,3
-  4
-  5
-  6
+	1,2,3
+	4
+	5
+	6
 
-  if something
-    print "okay"
-    10
+	if something
+		print "okay"
+		10
 
-  10,20
+	10,20
 )
 
 
 f(
-  
-  )(
-  
-  )(
-    what
-  )(->
-    print "srue"
-  123)
+	
+	)(
+	
+	)(
+		what
+	)(->
+		print "srue"
+	123)
 
 --
 
 x = (a,
-  b) ->
-   print "what"
+	b) ->
+	 print "what"
 
 
 y = (a="hi",
-  b=23) ->
-    print "what"
+	b=23) ->
+		print "what"
 
 z = (
-  a="hi",
-  b=23) ->
-    print "what"
+	a="hi",
+	b=23) ->
+		print "what"
 
 
 j = (f,g,m,
-  a="hi",
-  b=23
+	a="hi",
+	b=23
 ) ->
-    print "what"
+		print "what"
 
 
 y = (a="hi",
-  b=23,
-  ...) ->
-    print "what"
+	b=23,
+	...) ->
+		print "what"
 
 
 y = (a="hi",
-  b=23,
-  ...
+	b=23,
+	...
 ) ->
-    print "what"
+		print "what"
 
 --
 
 args = (a
-  b) ->
-    print "what"
+	b) ->
+		print "what"
 
 
 args = (a="hi"
-  b=23) ->
-    print "what"
+	b=23) ->
+		print "what"
 
 args = (
-  a="hi"
-  b=23) ->
-    print "what"
+	a="hi"
+	b=23) ->
+		print "what"
 
 
 args = (f,g,m
-  a="hi"
-  b=23
+	a="hi"
+	b=23
 ) ->
-    print "what"
+		print "what"
 
 
 @ = (n)->
-  return 1 if n == 0
-  n * @(n-1)
+	return 1 if n == 0
+	n * @(n-1)
 
 nil

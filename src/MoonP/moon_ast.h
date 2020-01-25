@@ -565,8 +565,9 @@ AST_END(ExpListAssign)
 
 AST_NODE(if_else_line, "if_else_line"_id)
 	ast_ptr<true, Exp_t> condition;
+	ast_ptr<false, Assign_t> assign;
 	ast_sel<false, Exp_t, default_value_t> elseExpr;
-	AST_MEMBER(if_else_line, &condition, &elseExpr)
+	AST_MEMBER(if_else_line, &condition, &assign, &elseExpr)
 AST_END(if_else_line)
 
 AST_NODE(unless_line, "unless_line"_id)

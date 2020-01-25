@@ -6,7 +6,7 @@ items = {1,2,3,4,5,6}
 _ = [z for z in ipairs items when z > 4]
 
 rad = [{a} for a in ipairs {
-   1,2,3,4,5,6,
+	 1,2,3,4,5,6,
 } when good_number a]
 
 
@@ -17,11 +17,11 @@ require "util"
 dump = (x) -> print util.dump x
 
 range = (count) ->
-  i = 0
-  return coroutine.wrap ->
-    while i < count
-      coroutine.yield i
-      i = i + 1
+	i = 0
+	return coroutine.wrap ->
+		while i < count
+			coroutine.yield i
+			i = i + 1
 
 dump [x for x in range 10]
 dump [{x, y} for x in range 5 when x > 2 for y in range 5]
@@ -61,7 +61,7 @@ print y for y in *x[a,b,c]
 
 
 normal = (hello) ->
-  [x for x in yeah]
+	[x for x in yeah]
 
 
 test = x 1,2,3,4,5

@@ -29,7 +29,7 @@ hairy[hands][are](gross) okay okay[world]
 
 _ = (get[something] + 5)[years]
 
-i,x  = 200, 300
+i,x	= 200, 300
 
 yeah = (1 + 5) * 3
 yeah = ((1+5)*3)/2
@@ -38,16 +38,16 @@ yeah = ((1+5)*3)/2 + i % 100
 whoa = (1+2) * (3+4) * (4+5)
 
 _ = ->
-  if something
-    return 1,2,4
+	if something
+		return 1,2,4
 
-  print "hello"
+	print "hello"
 
 _ = ->
-  if hello
-    "heloo", "world"
-  else
-    no, way
+	if hello
+		"heloo", "world"
+	else
+		no, way
 
 
 _ = -> 1,2,34
@@ -82,23 +82,23 @@ _ = here(we)"go"[12123]
 
 -- this runs
 something =
-  test: 12323
-  what: -> print "hello world"
+	test: 12323
+	what: -> print "hello world"
 
 print something.test
 
 frick = hello: "world"
 
 argon =
-  num: 100
-  world: (self) ->
-    print self.num
-    return {
-      something: -> print "hi from something"
-    }
-  somethin: (self, str) ->
-    print "string is", str
-    return world: (a,b) -> print "sum", a + b
+	num: 100
+	world: (self) ->
+		print self.num
+		return {
+			something: -> print "hi from something"
+		}
+	somethin: (self, str) ->
+		print "string is", str
+		return world: (a,b) -> print "sum", a + b
 
 something.what()
 argon\world().something()
@@ -127,7 +127,7 @@ print "what" if cool else whack!
 arg = {...}
 
 x = (...) ->
-  dump {...}
+	dump {...}
 
 
 x = not true
@@ -167,11 +167,11 @@ _ = (if ntype(v) == "fndef" then x += 1) for v in *values
 
 
 hello =
-  something: world
-  if: "hello"
-  else: 3434
-  function: "okay"
-  good: 230203
+	something: world
+	if: "hello"
+	else: 3434
+	function: "okay"
+	good: 230203
 
 
 div class: "cool"
@@ -185,29 +185,29 @@ what whack - 5
 x = hello - world - something
 
 ((something = with what
-  \cool 100) ->
-  print something)!
+	\cool 100) ->
+	print something)!
 
 if something
-  _ = 03589
+	_ = 03589
 
 -- okay what about this
 
 else
-  _ = 3434
+	_ = 3434
 
 
 if something
-  _ = yeah
+	_ = yeah
 
 
 elseif "ymmm"
 
-  print "cool"
+	print "cool"
 
 else
 
-  _ = okay
+	_ = okay
 
 
 -- test names containing keywords
@@ -220,15 +220,15 @@ z = x andb
 -- undelimited tables
 
 while 10 > something
-  something: "world"
-    print "yeah"
+	something: "world"
+		print "yeah"
 
 x =
-  okay: sure
+	okay: sure
 
 yeah
-  okay: man
-  sure: sir
+	okay: man
+	sure: sir
 
 hello "no comma"
  yeah: dada
@@ -240,8 +240,8 @@ hello "comma",
 
 -- creates two tables
 another hello, one,
-  two, three, four, yeah: man
-  okay: yeah
+	two, three, four, yeah: man
+	okay: yeah
 
 -- 
 a += 3 - 5

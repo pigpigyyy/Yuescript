@@ -1,9 +1,9 @@
 
 
 x = {
-  val: 100
-  hello: =>
-    print @val
+	val: 100
+	hello: =>
+		print @val
 }
 
 fn = x\val

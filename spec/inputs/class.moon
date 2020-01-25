@@ -1,10 +1,10 @@
 
 class Hello
-  new: (@test, @world) =>
-    print "creating object.."
-  hello: =>
-    print @test, @world
-  __tostring: => "hello world"
+	new: (@test, @world) =>
+		print "creating object.."
+	hello: =>
+		print @test, @world
+	__tostring: => "hello world"
 
 x = Hello 1,2
 x\hello()
@@ -12,26 +12,26 @@ x\hello()
 print x
 
 class Simple
-  cool: => print "cool"
+	cool: => print "cool"
 
 class Yikes extends Simple
-  new: => print "created hello"
+	new: => print "created hello"
 
 x = Yikes()
 x\cool()
 
 
 class Hi
-  new: (arg) =>
-    print "init arg", arg
+	new: (arg) =>
+		print "init arg", arg
 
-  cool: (num) =>
-    print "num", num
+	cool: (num) =>
+		print "num", num
 
 
 class Simple extends Hi
-  new: => super "man"
-  cool: => super 120302
+	new: => super "man"
+	cool: => super 120302
 
 x = Simple()
 x\cool()
@@ -40,45 +40,45 @@ print x.__class == Simple
 
 
 class Okay
-  -- what is going on
-  something: 20323
-  -- yeaha
+	-- what is going on
+	something: 20323
+	-- yeaha
 
 
 class Biggie extends Okay
-  something: =>
-    super 1,2,3,4
-    super.something another_self, 1,2,3,4
-    assert super == Okay
+	something: =>
+		super 1,2,3,4
+		super.something another_self, 1,2,3,4
+		assert super == Okay
 
 
 class Yeah
-  okay: =>
-    super\something 1,2,3,4
+	okay: =>
+		super\something 1,2,3,4
 
 
 class What
-  something: => print "val:", @val
+	something: => print "val:", @val
 
 class Hello extends What
-  val: 2323
-  something: => super\something
+	val: 2323
+	something: => super\something
 
 with Hello!
-  x = \something!
-  print x
-  x!
+	x = \something!
+	print x
+	x!
 
 class CoolSuper
-  hi: =>
-    super(1,2,3,4) 1,2,3,4
-    super.something 1,2,3,4
-    _ = super.something(1,2,3,4).world
-    super\yeah"world".okay hi, hi, hi
-    _ = something.super
-    _ = super.super.super.super
-    _ = super\hello
-    nil
+	hi: =>
+		super(1,2,3,4) 1,2,3,4
+		super.something 1,2,3,4
+		_ = super.something(1,2,3,4).world
+		super\yeah"world".okay hi, hi, hi
+		_ = something.super
+		_ = super.super.super.super
+		_ = super\hello
+		nil
 
 
 -- selfing
@@ -95,11 +95,11 @@ xx = (@hello, @@world, cool) ->
 
 -- class properties
 class ClassMan
-  @yeah: 343
-  blue: =>
-  @hello: 3434, @world: 23423
-  green: =>
-  @red: =>
+	@yeah: 343
+	blue: =>
+	@hello: 3434, @world: 23423
+	green: =>
+	@red: =>
 
 
 x = @
@@ -118,34 +118,34 @@ _ = hello[@].world
 
 
 class Whacko
-  _ = @hello
-  if something
-    print "hello world"
+	_ = @hello
+	if something
+		print "hello world"
 
-  hello = "world"
-  @another = "day"
+	hello = "world"
+	@another = "day"
 
-  print "yeah" if something -- this is briken
+	print "yeah" if something -- this is briken
 
 
 print "hello"
 
 yyy = ->
-  class Cool
-    _ = nil
+	class Cool
+		_ = nil
 
 
 --
 
 class a.b.c.D
-  _ = nil
+	_ = nil
 
 
 class a.b["hello"]
-  _ = nil
+	_ = nil
 
 class (-> require "moon")!.Something extends Hello.World
-  _ = nil
+	_ = nil
 
 --
 
@@ -160,54 +160,54 @@ print (class WhatsUp).__name
 
 export ^
 class Something
-  _ = nil
+	_ = nil
 
 
 --
 
 -- hoisting
 class Something
-  val = 23
-  {:insert} = table
-  new: => print insert, val -- prints nil 23
+	val = 23
+	{:insert} = table
+	new: => print insert, val -- prints nil 23
 
 --
 
 class X
-  new: hi
+	new: hi
 
 
 --
 
 class Cool extends Thing
-  dang: =>
-    {
-      hello: -> super!
-      world: -> super.one
-    }
+	dang: =>
+		{
+			hello: -> super!
+			world: -> super.one
+		}
 
 -- 
 
 class Whack extends Thing
-  dang: do_something =>
-    super!
+	dang: do_something =>
+		super!
 
 ---
 
 class Wowha extends Thing
-  @butt: ->
-    super!
-    _ = super.hello
-    super\hello!
-    super\hello
+	@butt: ->
+		super!
+		_ = super.hello
+		super\hello!
+		super\hello
 
 
-  @zone: cool {
-    ->
-      super!
-      _ = super.hello
-      super\hello!
-      super\hello
-  }
+	@zone: cool {
+		->
+			super!
+			_ = super.hello
+			super\hello!
+			super\hello
+	}
 
 nil

@@ -198,7 +198,7 @@ rule IfCond = Exp >> -Assign;
 rule IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> -key("then") >> Body;
 rule IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> Body;
 rule If = key("if") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
-rule Unless = key("unless") >> Seperator >>  IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
+rule Unless = key("unless") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
 
 rule While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
 
@@ -510,7 +510,7 @@ rule SimpleValue =
 
 rule ExpListAssign = ExpList >> -(Update | Assign);
 
-rule if_else_line = key("if") >> Exp >> (key("else") >> Exp | default_value);
+rule if_else_line = key("if") >> Exp >> -Assign >> (key("else") >> Exp | default_value);
 rule unless_line = key("unless") >> Exp;
 
 rule statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
