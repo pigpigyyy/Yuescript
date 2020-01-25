@@ -441,16 +441,17 @@ private:
 		if (ast_is<existential_op_t>(chainValue->items.back())) {
 			return ChainType::EndWithEOP;
 		}
+		ChainType type = ChainType::Common;
 		for (auto item : chainValue->items.objects()) {
 			if (auto colonChain = ast_cast<ColonChainItem_t>(item)) {
 				if (ast_is<LuaKeyword_t>(colonChain->name)) {
-					return ChainType::HasKeyword;
+					type = ChainType::HasKeyword;
 				}
-			} else if (ast_is<existential_op_t>(item) && item != chainValue->items.back()) {
+			} else if (ast_is<existential_op_t>(item)) {
 				return ChainType::HasEOP;
 			}
 		}
-		return ChainType::Common;
+		return type;
 	}
 
 	std::string singleVariableFrom(ChainValue_t* chainValue) {
