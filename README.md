@@ -1,7 +1,7 @@
 # MoonPlus
 
 ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)  
-MoonPlus is a compiler with features from Moonscript language 0.5.0 and could be 2~4 times faster than the original Moonscript compiler. 
+MoonPlus is a compiler with features from Moonscript language 0.5.0 and could be faster than the original Moonscript compiler. 
 
 ## Features
 
