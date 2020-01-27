@@ -1944,6 +1944,8 @@ private:
 				transformStatement(static_cast<Statement_t*>(node), temp);
 			}
 			out.push_back(join(temp));
+		} else {
+			out.push_back(Empty);
 		}
 	}
 
