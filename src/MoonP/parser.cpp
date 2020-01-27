@@ -824,7 +824,7 @@ bool _context::parse_non_term(rule &r) {
     rule::_state old_state = r.m_state;
 
     //success/failure result
-    bool ok;
+    bool ok = false;
 
     //compute the new position
     size_t new_pos = m_pos.m_it - m_begin;
@@ -927,7 +927,7 @@ bool _context::parse_term(rule &r) {
     rule::_state old_state = r.m_state;
 
     //success/failure result
-    bool ok;
+    bool ok = false;
 
     //compute the new position
     size_t new_pos = m_pos.m_it - m_begin;
@@ -1026,7 +1026,7 @@ bool _context::parse_term(rule &r) {
 
 //parse non-term rule internal.
 bool _context::_parse_non_term(rule &r) {
-    bool ok;
+    bool ok = false;
     if (_private::get_parse_proc(r)) {
         pos b = m_pos;
         ok = _private::get_expr(r)->parse_non_term(*this);
@@ -1043,7 +1043,7 @@ bool _context::_parse_non_term(rule &r) {
 
 //parse term rule internal.
 bool _context::_parse_term(rule &r) {
-    bool ok;
+    bool ok = false;
     if (_private::get_parse_proc(r)) {
         pos b = m_pos;
         ok = _private::get_expr(r)->parse_term(*this);
