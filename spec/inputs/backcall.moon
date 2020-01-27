@@ -14,6 +14,19 @@ b = 1 + 2 + (4 |> tostring |> print(1) or 123)
 if x = 233 |> math.max 998
 	print x
 
+with b |> create? "new"
+	.value = 123
+	print \work!
+
+123 |> f?
+
+"abc" |> f1? |> f2?
+
+c = "abc" |> f1? |> f2?
+
+f = ->
+	arg |> x.y?\if
+
 998 |> func2 "abc", 233 |> func0 |> func1
 998 |> func0("abc", 233) |> func1 |> func2
 
