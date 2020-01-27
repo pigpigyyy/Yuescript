@@ -389,14 +389,14 @@ private:
 		if (auto stmt = body->content.as<Statement_t>()) {
 			return stmt;
 		} else {
-			auto node = body->content.to<Block_t>()->statements.objects().back();
-			return static_cast<Statement_t*>(node);
+			const auto& stmts = body->content.to<Block_t>()->statements.objects();
+			return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
 		}
 	}
 
 	Statement_t* lastStatementFrom(Block_t* block) {
-		auto node = block->statements.objects().back();
-		return static_cast<Statement_t*>(node);
+		const auto& stmts = block->statements.objects();
+		return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
 	}
 
 	template <class T>
@@ -3824,8 +3824,8 @@ private:
 			transformAssignment(assignment, temp);
 		}
 		if (returnValue) {
-			auto stmt = lastStatementFrom(with->body);
-			if (!stmt->content.is<Return_t>()) {
+			auto last = lastStatementFrom(with->body);
+			if (last && !last->content.is<Return_t>()) {
 				temp.push_back(indent() + s("return "sv) + withVar + nll(with));
 			}
 		}
