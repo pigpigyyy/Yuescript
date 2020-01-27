@@ -12,6 +12,63 @@ MoonPlus is a compiler with features from Moonscript language 0.5.0 and could be
 
 ## Changes
 
+* Add multi-line comment support.
+* Add usage for symbol `\` to escape new line. Will compile codes:
+```Moonscript
+str = --[[
+   This is a multi line comment.
+   It's OK.
+]] strA \ -- comment 1
+   .. strB \ -- comment 2
+   .. strC
+
+func --[[ip]] "192.168.126.110", --[[port]] 3000
+```
+&emsp;&emsp;to:
+```Lua
+local str = strA .. strB .. strC
+func("192.168.126.110", 3000)
+```
+
+* Add back call features support with new operator and syntax. For example:
+```Moonscript
+{1,2,3} \
+  |> map((x)-> x * 2) \
+  |> filter((x)-> x > 4) \
+  |> reduce(0, (a,b)-> a + b) \
+  |> print
+
+do
+  (data) <- http.get "ajaxtest"
+  body[".result"]\html data
+  (processed) <- http.get "ajaxprocess", data
+  body[".result"]\append processed
+  print "done"
+```
+&emsp;&emsp;compiles to:
+```Lua
+print(reduce(filter(map({
+  1,
+  2,
+  3
+}, function(x)
+  return x * 2
+end), function(x)
+  return x > 4
+end), 0, function(a, b)
+  return a + b
+end))
+do
+  http.get("ajaxtest", function(data)
+    body[".result"]:html(data)
+    return http.get("ajaxprocess", data, function(processed)
+      body[".result"]:append(processed)
+      return print("done")
+    end)
+  end)
+end
+```
+
 * Add existential operator support. Generate codes from:
 ```Moonscript
 func?!

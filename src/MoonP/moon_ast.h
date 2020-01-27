@@ -135,6 +135,15 @@ AST_NODE(Import, "Import"_id)
 	AST_MEMBER(Import, &content)
 AST_END(Import)
 
+class FnArgsDef_t;
+class ChainValue_t;
+
+AST_NODE(Backcall, "Backcall"_id)
+	ast_ptr<false, FnArgsDef_t> argsDef;
+	ast_ptr<true, ChainValue_t> value;
+	AST_MEMBER(Backcall, &argsDef, &value)
+AST_END(Backcall)
+
 AST_NODE(ExpListLow, "ExpListLow"_id)
 	ast_ptr<true, Seperator_t> sep;
 	ast_list<true, Exp_t> exprs;
@@ -295,6 +304,9 @@ AST_END(Update)
 AST_LEAF(BinaryOperator, "BinaryOperator"_id)
 AST_END(BinaryOperator)
 
+AST_LEAF(BackcallOperator, "BackcallOperator"_id)
+AST_END(BackcallOperator)
+
 class AssignableChain_t;
 
 AST_NODE(Assignable, "Assignable"_id)
@@ -305,7 +317,7 @@ AST_END(Assignable)
 class Value_t;
 
 AST_NODE(exp_op_value, "exp_op_value"_id)
-	ast_ptr<true, BinaryOperator_t> op;
+	ast_sel<true, BinaryOperator_t, BackcallOperator_t> op;
 	ast_ptr<true, Value_t> value;
 	AST_MEMBER(exp_op_value, &op, &value)
 AST_END(exp_op_value)
@@ -586,7 +598,7 @@ AST_END(BreakLoop)
 AST_NODE(Statement, "Statement"_id)
 	ast_sel<true, Import_t, While_t, For_t, ForEach_t,
 		Return_t, Local_t, Export_t, BreakLoop_t,
-		ExpListAssign_t> content;
+		Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	AST_MEMBER(Statement, &content, &appendix)
 AST_END(Statement)
