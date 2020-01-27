@@ -61,7 +61,7 @@ end))
 do
   http.get("ajaxtest", function(data)
     body[".result"]:html(data)
-    return http.get("ajaxprocess", data, function(processed)
+    return http.post("ajaxprocess", data, function(processed)
       body[".result"]:append(processed)
       return print("done")
     end)
