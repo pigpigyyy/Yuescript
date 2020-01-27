@@ -41,7 +41,7 @@ func("192.168.126.110", 3000)
 do
   (data) <- http.get "ajaxtest"
   body[".result"]\html data
-  (processed) <- http.get "ajaxprocess", data
+  (processed) <- http.post "ajaxprocess", data
   body[".result"]\append processed
   print "done"
 ```
