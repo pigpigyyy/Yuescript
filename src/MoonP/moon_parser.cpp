@@ -37,8 +37,13 @@ rule Any = Break | any();
 rule White = *(set(" \t") | Break);
 rule Stop = Break | eof();
 rule Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);
-rule Indent = *set(" \t");
-rule Space = plain_space >> -Comment;
+rule multi_line_open = expr("--[[");
+rule multi_line_close = expr("]]");
+rule multi_line_content = *(not_(multi_line_close) >> Any);
+rule MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
+rule Indent = plain_space;
+rule EscapeNewLine = expr('\\') >> plain_space >> -Comment >> Break;
+rule Space = *(set(" \t") | MultiLineComment | EscapeNewLine) >> -Comment;
 rule SomeSpace = +set(" \t") >> -Comment;
 rule SpaceBreak = Space >> Break;
 rule EmptyLine = SpaceBreak;
@@ -287,13 +292,15 @@ rule BinaryOperator =
 	expr("//") |
 	set("+-*/%^><|&");
 
+rule BackcallOperator = expr("|>");
+
 extern rule AssignableChain;
 
 rule Assignable = AssignableChain | Space >> Variable | SelfName;
 
 extern rule Value;
 
-rule exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> Value;
+rule exp_op_value = Space >> (BackcallOperator | BinaryOperator) >> *SpaceBreak >> Value;
 rule Exp = Value >> *exp_op_value;
 
 extern rule Chain, Callable, InvokeArgs, existential_op;
@@ -334,7 +341,7 @@ rule LuaStringClose = pl::user(lua_string_close, [](const item_t& item)
 	return st->stringOpen == count;
 });
 
-rule LuaStringContent = *(not_(LuaStringClose) >> (Break | Any));
+rule LuaStringContent = *(not_(LuaStringClose) >> Any);
 
 rule LuaString = pl::user(LuaStringOpen >> -Break >> LuaStringContent >> LuaStringClose, [](const item_t& item)
 {
@@ -474,6 +481,8 @@ rule NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variabl
 rule NameOrDestructure = Space >> Variable | TableLit;
 rule AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
 
+rule Backcall = -FnArgsDef >> Space >> symx("<-") >> Space >> ChainValue;
+
 rule ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
 rule ExpListLow = Seperator >> Exp >> *((sym(',') | sym(';')) >> Exp);
 
@@ -518,7 +527,7 @@ rule Statement =
 (
 	Import | While | For | ForEach |
 	Return | Local | Export | Space >> BreakLoop |
-	ExpListAssign
+	Backcall | ExpListAssign
 ) >> Space >>
 -statement_appendix;
 

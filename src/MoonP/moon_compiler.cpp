@@ -739,6 +739,23 @@ private:
 								break;
 							}
 						}
+					} else if (expList->exprs.size() == 1){
+						auto exp = static_cast<Exp_t*>(expList->exprs.back());
+						if (exp->opValues.size() > 0) {
+							bool backcall = true;
+							for (auto _opValue : exp->opValues.objects()) {
+								auto opValue = static_cast<exp_op_value_t*>(_opValue);
+								if (!opValue->op.is<BackcallOperator_t>()) {
+									backcall = false;
+									break;
+								}
+							}
+							if (backcall) {
+								transformExp(exp, out);
+								out.back().append(nll(exp));
+								break;
+							}
+						}
 					}
 					throw std::logic_error(debugInfo("Expression list must appear at the end of body block."sv, expList));
 				}
@@ -1593,11 +1610,55 @@ private:
 	}
 
 	void transformExp(Exp_t* exp, str_list& out) {
+		auto x = exp;
+		const auto& opValues = exp->opValues.objects();
+		for (auto it = opValues.begin(); it != opValues.end(); ++it) {
+			auto opValue = static_cast<exp_op_value_t*>(*it);
+			if (opValue->op.is<BackcallOperator_t>()) {
+				if (auto chainValue = opValue->value->item.as<ChainValue_t>()) {
+					auto newExp = x->new_ptr<Exp_t>();
+					{
+						auto arg = x->new_ptr<Exp_t>();
+						arg->value.set(exp->value);
+						for (auto i = opValues.begin(); i != it; ++i) {
+							arg->opValues.push_back(*i);
+						}
+						auto next = it; ++next;
+						for (auto i = next; i != opValues.end(); ++i) {
+							newExp->opValues.push_back(*i);
+						}
+						if (isChainValueCall(chainValue)) {
+							auto last = chainValue->items.back();
+							if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
+								invoke->args.push_front(arg);
+							} else {
+								ast_to<Invoke_t>(last)->args.push_front(arg);
+							}
+						} else {
+							auto invoke = x->new_ptr<Invoke_t>();
+							invoke->args.push_front(arg);
+							chainValue->items.push_back(invoke);
+						}
+						auto value = x->new_ptr<Value_t>();
+						value->item.set(chainValue);
+						newExp->value.set(value);
+					}
+					transformExp(newExp, out);
+					return;
+				} else {
+					throw std::logic_error(debugInfo("Backcall operator must be followed by chain value."sv, opValue->value));
+				}
+			}
+		}
 		str_list temp;
 		transformValue(exp->value, temp);
 		for (auto _opValue : exp->opValues.objects()) {
 			auto opValue = static_cast<exp_op_value_t*>(_opValue);
-			transformBinaryOperator(opValue->op, temp);
+			if (auto op = opValue->op.as<BinaryOperator_t>()) {
+				transformBinaryOperator(op, temp);
+			} else {
+				temp.push_back(s("|>"sv));
+			}
 			transformValue(opValue->value, temp);
 		}
 		out.push_back(join(temp, " "sv));
@@ -1731,8 +1792,68 @@ private:
 	void transformCodes(const node_container& nodes, str_list& out, bool implicitReturn) {
 		LocalMode mode = LocalMode::None;
 		Local_t* any = nullptr, *capital = nullptr;
-		for (auto node : nodes) {
+		for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+			auto node = *it;
 			auto stmt = static_cast<Statement_t*>(node);
+			if (auto backcall = stmt->content.as<Backcall_t>()) {
+				auto x = *nodes.begin();
+				auto newBlock = x->new_ptr<Block_t>();
+				if (it != nodes.begin()) {
+					for (auto i = nodes.begin(); i != it; ++i) {
+						newBlock->statements.push_back(*i);
+					}
+				}
+				x = backcall;
+				auto arg = x->new_ptr<Exp_t>();
+				{
+					auto block = x->new_ptr<Block_t>();
+					auto next = it; ++next;
+					if (next != nodes.end()) {
+						for (auto i = next; i != nodes.end(); ++i) {
+							block->statements.push_back(*i);
+						}
+					}
+					auto body = x->new_ptr<Body_t>();
+					body->content.set(block);
+					auto funLit = x->new_ptr<FunLit_t>();
+					funLit->argsDef.set(backcall->argsDef);
+					funLit->arrow.set(toAst<fn_arrow_t>("->"sv, fn_arrow, x));
+					funLit->body.set(body);
+					auto simpleValue = x->new_ptr<SimpleValue_t>();
+					simpleValue->value.set(funLit);
+					auto value = x->new_ptr<Value_t>();
+					value->item.set(simpleValue);
+					arg->value.set(value);
+				}
+				if (isChainValueCall(backcall->value)) {
+					auto last = backcall->value->items.back();
+					if (auto invoke = ast_cast<Invoke_t>(last)) {
+						invoke->args.push_back(arg);
+					} else {
+						ast_to<InvokeArgs_t>(last)->args.push_back(arg);
+					}
+				} else {
+					auto invoke = x->new_ptr<Invoke_t>();
+					invoke->args.push_back(arg);
+					backcall->value->items.push_back(invoke);
+				}
+				auto newStmt = x->new_ptr<Statement_t>();
+				{
+					auto chainValue = backcall->value.get();
+					auto value = x->new_ptr<Value_t>();
+					value->item.set(chainValue);
+					auto exp = x->new_ptr<Exp_t>();
+					exp->value.set(value);
+					auto expList = x->new_ptr<ExpList_t>();
+					expList->exprs.push_back(exp);
+					auto expListAssign = x->new_ptr<ExpListAssign_t>();
+					expListAssign->expList.set(expList);
+					newStmt->content.set(expListAssign);
+					newBlock->statements.push_back(newStmt);
+				}
+				transformBlock(newBlock, out, implicitReturn);
+				return;
+			}
 			if (auto local = stmt->content.as<Local_t>()) {
 				if (auto flag = local->name.as<local_flag_t>()) {
 					LocalMode newMode = toString(flag) == "*"sv ? LocalMode::Any : LocalMode::Capital;
@@ -1802,9 +1923,10 @@ private:
 			}
 		}
 		if (implicitReturn) {
+			BLOCK_START
+			BREAK_IF(nodes.empty());
 			auto last = static_cast<Statement_t*>(nodes.back());
 			auto x = last;
-			BLOCK_START
 			auto expList = expListFrom(last);
 			BREAK_IF(!expList ||
 				(last->appendix &&
@@ -1816,11 +1938,13 @@ private:
 			last->content.set(returnNode);
 			BLOCK_END
 		}
-		str_list temp;
-		for (auto node : nodes) {
-			transformStatement(static_cast<Statement_t*>(node), temp);
+		if (!nodes.empty()) {
+			str_list temp;
+			for (auto node : nodes) {
+				transformStatement(static_cast<Statement_t*>(node), temp);
+			}
+			out.push_back(join(temp));
 		}
-		out.push_back(join(temp));
 	}
 
 	void transformBody(Body_t* body, str_list& out, bool implicitReturn = false) {
