@@ -33,7 +33,7 @@ f = ->
 do
 	(data) <- http?.get "ajaxtest"
 	body[".result"]\html data
-	(processed) <- http.get "ajaxprocess", data
+	(processed) <- http.post "ajaxprocess", data
 	body[".result"]\append processed
 	<- setTimeout 1000
 	print "done"
