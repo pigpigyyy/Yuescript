@@ -33,12 +33,12 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0";
+	return "0.5.0-r0.1.0";
 }
 
-class MoonCompliler {
+class MoonCompiler {
 public:
-	std::pair<std::string,std::string> complile(const std::string& codes, const MoonConfig& config) {
+	std::pair<std::string,std::string> compile(const std::string& codes, const MoonConfig& config) {
 		_config = config;
 		try {
 			_input = _converter.from_bytes(codes);
@@ -107,7 +107,7 @@ private:
 	std::unordered_map<std::string,std::pair<int,int>> _globals;
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
-	std::string _newLine = "\n";
+	const std::string _newLine = "\n";
 	enum class LocalMode {
 		None = 0,
 		Capital = 1,
@@ -166,7 +166,7 @@ private:
 		_scopes.pop_back();
 	}
 
-	bool isDefined(const std::string& name) {
+	bool isDefined(const std::string& name) const {
 		bool isDefined = false;
 		int mode = int(std::isupper(name[0]) ? ExportMode::Capital : ExportMode::Any);
 		const auto& current = _scopes.back();
@@ -200,7 +200,7 @@ private:
 		return isDefined;
 	}
 
-	bool isSolidDefined(const std::string& name) {
+	bool isSolidDefined(const std::string& name) const {
 		bool isDefined = false;
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			auto vars = it->vars.get();
@@ -253,7 +253,7 @@ private:
 		return !defined;
 	}
 
-	std::string getUnusedName(std::string_view name) {
+	std::string getUnusedName(std::string_view name) const {
 		int index = 0;
 		std::string newName;
 		do {
@@ -263,7 +263,7 @@ private:
 		return newName;
 	}
 
-	const std::string nll(ast_node* node) {
+	const std::string nll(ast_node* node) const {
 		if (_config.reserveLineNumber) {
 			return s(" -- "sv) + std::to_string(node->m_begin.m_line) + _newLine;
 		} else {
@@ -271,7 +271,7 @@ private:
 		}
 	}
 
-	const std::string nlr(ast_node* node) {
+	const std::string nlr(ast_node* node) const {
 		if (_config.reserveLineNumber) {
 			return s(" -- "sv) + std::to_string(node->m_end.m_line) + _newLine;
 		} else {
@@ -287,11 +287,11 @@ private:
 		_indentOffset--;
 	}
 
-	std::string indent() {
+	std::string indent() const {
 		return std::string(_scopes.size() - 1 + _indentOffset, '\t');
 	}
 
-	std::string indent(int offset) {
+	std::string indent(int offset) const {
 		return std::string(_scopes.size() - 1 + _indentOffset + offset, '\t');
 	}
 
@@ -365,7 +365,7 @@ private:
 		return nullptr;
 	}
 
-	SimpleValue_t* simpleSingleValueFrom(ast_node* expList) {
+	SimpleValue_t* simpleSingleValueFrom(ast_node* expList) const {
 		auto value = singleValueFrom(expList);
 		if (value && value->item.is<SimpleValue_t>()) {
 			return static_cast<SimpleValue_t*>(value->item.get());
@@ -373,7 +373,7 @@ private:
 		return nullptr;
 	}
 
-	Value_t* firstValueFrom(ast_node* item) {
+	Value_t* firstValueFrom(ast_node* item) const {
 		Exp_t* exp = nullptr;
 		if (auto expList = ast_cast<ExpList_t>(item)) {
 			if (!expList->exprs.empty()) {
@@ -385,7 +385,7 @@ private:
 		return exp->value.get();
 	}
 
-	Statement_t* lastStatementFrom(Body_t* body) {
+	Statement_t* lastStatementFrom(Body_t* body) const {
 		if (auto stmt = body->content.as<Statement_t>()) {
 			return stmt;
 		} else {
@@ -394,7 +394,7 @@ private:
 		}
 	}
 
-	Statement_t* lastStatementFrom(Block_t* block) {
+	Statement_t* lastStatementFrom(Block_t* block) const {
 		const auto& stmts = block->statements.objects();
 		return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
 	}
@@ -422,7 +422,7 @@ private:
 		return result;
 	}
 
-	bool isChainValueCall(ChainValue_t* chainValue) {
+	bool isChainValueCall(ChainValue_t* chainValue) const {
 		return ast_is<InvokeArgs_t, Invoke_t>(chainValue->items.back());
 	}
 
@@ -434,7 +434,7 @@ private:
 		HasKeyword
 	};
 
-	ChainType specialChainValue(ChainValue_t* chainValue) {
+	ChainType specialChainValue(ChainValue_t* chainValue) const {
 		if (ast_is<ColonChainItem_t>(chainValue->items.back())) {
 			return ChainType::EndWithColon;
 		}
@@ -4375,11 +4375,11 @@ private:
 	}
 };
 
-const std::string MoonCompliler::Empty;
+const std::string MoonCompiler::Empty;
 
 std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes, const MoonConfig& config) {
-	auto compiler = MoonCompliler{};
-	auto result = compiler.complile(codes, config);
+	auto compiler = MoonCompiler{};
+	auto result = compiler.compile(codes, config);
 	auto globals = std::make_unique<std::list<GlobalVar>>();
 	for (const auto& var : compiler.getGlobals()) {
 		int line,col;
