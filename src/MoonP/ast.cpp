@@ -115,7 +115,7 @@ bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
     @return pointer to ast node created, or null if there was an error.
         The return object must be deleted by the caller.
  */
-ast_node* _parse(input &i, rule &g, error_list &el, void* ud) {
+ast_node* parse(input &i, rule &g, error_list &el, void* ud) {
     ast_stack st;
     if (!parse(i, g, el, &st, ud)) {
     	for (auto node : st) {

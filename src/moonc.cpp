@@ -9,9 +9,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <iomanip>
 #include <fstream>
 #include <chrono>
+#include <future>
 #include "MoonP/moon_compiler.h"
-#include "MoonP/parser.hpp"
-#include "MoonP/moon_ast.h"
+#include "MoonP/moon_parser.h"
 
 int main(int narg, const char** args) {
 	const char* help =
@@ -82,87 +82,98 @@ int main(int narg, const char** args) {
 		std::cout << "Error: -o can not be used with multiple input files.\n";
 		std::cout << help;
 	}
+	if (targetPath.back() != '/' && targetPath.back() != '\\') {
+		targetPath.append("/");
+	}
+	std::list<std::future<std::result_of_t<std::decay_t<int()>()>>> results;
 	for (const auto& file : files) {
-		std::ifstream input(file, input.in);
-		if (input) {
-			std::string s(
-				(std::istreambuf_iterator<char>(input)),
-				std::istreambuf_iterator<char>());
-			if (dumpCompileTime) {
-				auto start = std::chrono::high_resolution_clock::now();
+		auto task = std::async(std::launch::async, [=]() {
+			std::ifstream input(file, input.in);
+			if (input) {
+				std::string s(
+					(std::istreambuf_iterator<char>(input)),
+					std::istreambuf_iterator<char>());
+				if (dumpCompileTime) {
+					auto start = std::chrono::high_resolution_clock::now();
+					auto result = MoonP::moonCompile(s, config);
+					auto end = std::chrono::high_resolution_clock::now();
+					if (!std::get<0>(result).empty()) {
+						std::chrono::duration<double> diff = end - start;
+						start = std::chrono::high_resolution_clock::now();
+						MoonP::MoonParser{}.parse<MoonP::File_t>(s);
+						end = std::chrono::high_resolution_clock::now();
+						std::chrono::duration<double> parseDiff = end - start;
+						std::cout << file << " \n";
+						std::cout << "Parse time:     " << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
+						std::cout << "Compile time:   " << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
+						return 0;
+					} else {
+						std::cout << "Fail to compile: " << file << ".\n";
+						std::cout << std::get<1>(result) << '\n';
+						return 1;
+					}
+				}
 				auto result = MoonP::moonCompile(s, config);
-				auto end = std::chrono::high_resolution_clock::now();
 				if (!std::get<0>(result).empty()) {
-					std::chrono::duration<double> diff = end - start;
-					error_list el;
-					MoonP::State st;
-					start = std::chrono::high_resolution_clock::now();
-					auto input = Converter{}.from_bytes(s);
-					parserlib::parse<MoonP::File_t>(input, MoonP::File, el, &st);
-					end = std::chrono::high_resolution_clock::now();
-					std::chrono::duration<double> parseDiff = end - start;
-					std::cout << file << " \n";
-					std::cout << "Parse time:     " << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
-					std::cout << "Compile time:   " << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
+					if (!writeToFile) {
+						std::cout << std::get<0>(result) << '\n';
+						return 1;
+					} else {
+						std::string targetFile;
+						if (resultFile.empty()) {
+							std::string ext;
+							targetFile = file;
+							size_t pos = file.rfind('.');
+							if (pos != std::string::npos) {
+								ext = file.substr(pos + 1);
+								for (size_t i = 0; i < ext.length(); i++) {
+									ext[i] = static_cast<char>(tolower(ext[i]));
+								}
+								targetFile = file.substr(0, pos) + ".lua";
+							}
+							if (!targetPath.empty()) {
+								std::string name;
+								pos = targetFile.find_last_of("/\\");
+								if (pos == std::string::npos) {
+									name = targetFile;
+								} else {
+									name = targetFile.substr(pos + 1);
+								}
+								targetFile = targetPath + name;
+							}
+						} else {
+							targetFile = resultFile;
+						}
+						std::ofstream output(targetFile, output.trunc | output.out);
+						if (output) {
+							const auto& codes = std::get<0>(result);
+							output.write(codes.c_str(), codes.size());
+							std::cout << "Built " << file << '\n';
+							return 0;
+						} else {
+							std::cout << "Fail to write file: " << targetFile << ".\n";
+							return 1;
+						}
+					}
 				} else {
 					std::cout << "Fail to compile: " << file << ".\n";
 					std::cout << std::get<1>(result) << '\n';
 					return 1;
 				}
-				continue;
-			}
-			auto result = MoonP::moonCompile(s, config);
-			if (!std::get<0>(result).empty()) {
-				if (!writeToFile) {
-					std::cout << std::get<0>(result) << '\n';
-				} else {
-					std::string targetFile;
-					if (resultFile.empty()) {
-						std::string ext;
-						targetFile = file;
-						size_t pos = file.rfind('.');
-						if (pos != std::string::npos) {
-							ext = file.substr(pos + 1);
-							for (size_t i = 0; i < ext.length(); i++) {
-								ext[i] = static_cast<char>(tolower(ext[i]));
-							}
-							targetFile = file.substr(0, pos) + ".lua";
-						}
-						if (!targetPath.empty()) {
-							std::string name;
-							pos = targetFile.find_last_of("/\\");
-							if (pos == std::string::npos) {
-								name = targetFile;
-							} else {
-								name = targetFile.substr(pos + 1);
-							}
-							if (targetPath.back() != '/' && targetPath.back() != '\\') {
-								targetPath.append("/");
-							}
-							targetFile = targetPath + name;
-						}
-					} else {
-						targetFile = resultFile;
-					}
-					std::ofstream output(targetFile, output.trunc | output.out);
-					if (output) {
-						const auto& codes = std::get<0>(result);
-						output.write(codes.c_str(), codes.size());
-						std::cout << "Built " << file << '\n';
-					} else {
-						std::cout << "Fail to write file: " << targetFile << ".\n";
-						return 1;
-					}
-				}
 			} else {
-				std::cout << "Fail to compile: " << file << ".\n";
-				std::cout << std::get<1>(result) << '\n';
+				std::cout << "Fail to read file: " << file << ".\n";
 				return 1;
 			}
-		} else {
-			std::cout << "Fail to read file: " << file << ".\n";
-			return 1;
+		});
+		results.push_back(std::move(task));
+	}
+	int ret = 0;
+	for (auto& result : results) {
+		int val = result.get();
+		if (val != 0) {
+			ret = val;
 		}
 	}
-	return 0;
+	return ret;
 }
+

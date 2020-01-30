@@ -8,12 +8,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #pragma once
 
-#include "MoonP/moon_parser.h"
+#include "MoonP/ast.hpp"
+using namespace parserlib;
 
 namespace MoonP {
 
 #define AST_LEAF(type, id) \
-extern rule type; \
 class type##_t : public ast_node \
 { \
 public: \
@@ -21,7 +21,6 @@ public: \
 	virtual size_t getId() const override { return id; } \
 
 #define AST_NODE(type, id) \
-extern rule type; \
 class type##_t : public ast_container \
 { \
 public: \

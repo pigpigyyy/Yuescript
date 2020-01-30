@@ -12,7 +12,7 @@ namespace pl = parserlib;
 
 namespace MoonP {
 
-std::unordered_set<std::string> State::luaKeywords = {
+std::unordered_set<std::string> LuaKeywords = {
 	"and", "break", "do", "else", "elseif",
 	"end", "false", "for", "function", "if",
 	"in", "local", "nil", "not", "or",
@@ -20,7 +20,7 @@ std::unordered_set<std::string> State::luaKeywords = {
 	"while"
 };
 
-std::unordered_set<std::string> State::keywords = {
+std::unordered_set<std::string> Keywords = {
 	"and", "break", "do", "else", "elseif",
 	"end", "false", "for", "function", "if",
 	"in", "local", "nil", "not", "or",
@@ -31,513 +31,561 @@ std::unordered_set<std::string> State::keywords = {
 	"when", "with" // Moon keywords
 };
 
-rule plain_space = *set(" \t");
-rule Break = nl(-expr('\r') >> '\n');
-rule Any = Break | any();
-rule White = *(set(" \t") | Break);
-rule Stop = Break | eof();
-rule Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);
-rule multi_line_open = expr("--[[");
-rule multi_line_close = expr("]]");
-rule multi_line_content = *(not_(multi_line_close) >> Any);
-rule MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
-rule Indent = plain_space;
-rule EscapeNewLine = expr('\\') >> plain_space >> -Comment >> Break;
-rule Space = *(set(" \t") | MultiLineComment | EscapeNewLine) >> -Comment;
-rule SomeSpace = +set(" \t") >> -Comment;
-rule SpaceBreak = Space >> Break;
-rule EmptyLine = SpaceBreak;
-rule AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
-rule Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-rule Num =
-(
-	"0x" >>
-	+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
-	-(-set("uU") >> set("lL") >> set("lL"))
-) | (
-	+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
-) | (
+MoonParser::MoonParser() {
+	plain_space = *set(" \t");
+	Break = nl(-expr('\r') >> '\n');
+	Any = Break | any();
+	White = *(set(" \t") | Break);
+	Stop = Break | eof();
+	Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);
+	multi_line_open = expr("--[[");
+	multi_line_close = expr("]]");
+	multi_line_content = *(not_(multi_line_close) >> Any);
+	MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
+	Indent = plain_space;
+	EscapeNewLine = expr('\\') >> plain_space >> -Comment >> Break;
+	Space = *(set(" \t") | MultiLineComment | EscapeNewLine) >> -Comment;
+	SomeSpace = +set(" \t") >> -Comment;
+	SpaceBreak = Space >> Break;
+	EmptyLine = SpaceBreak;
+	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
+	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
+	Num =
 	(
-		(+range('0', '9') >> -('.' >> +range('0', '9'))) |
-		('.' >> +range('0', '9'))
-	) >> -(set("eE") >> -expr('-') >> +range('0', '9'))
-);
-rule Cut = false_();
-rule Seperator = true_();
+		"0x" >>
+		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
+		-(-set("uU") >> set("lL") >> set("lL"))
+	) | (
+		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
+	) | (
+		(
+			(+range('0', '9') >> -('.' >> +range('0', '9'))) |
+			('.' >> +range('0', '9'))
+		) >> -(set("eE") >> -expr('-') >> +range('0', '9'))
+	);
+	Cut = false_();
+	Seperator = true_();
 
-#define sym(str) (Space >> str)
-#define symx(str) expr(str)
-#define ensure(patt, finally) (((patt) >> (finally)) | ((finally) >> (Cut)))
-#define key(str) (Space >> str >> not_(AlphaNum))
+	#define sym(str) (Space >> str)
+	#define symx(str) expr(str)
+	#define ensure(patt, finally) (((patt) >> (finally)) | ((finally) >> (Cut)))
+	#define key(str) (Space >> str >> not_(AlphaNum))
 
-rule Variable = pl::user(Name, [](const item_t& item) {
-	State* st = reinterpret_cast<State*>(item.user_data);
-	for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
-	auto it = State::keywords.find(st->buffer);
-	st->buffer.clear();
-	return it == State::keywords.end();
-});
+	Variable = pl::user(Name, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		auto it = Keywords.find(st->buffer);
+		st->buffer.clear();
+		return it == Keywords.end();
+	});
 
-rule LuaKeyword = pl::user(Name, [](const item_t& item) {
-	State* st = reinterpret_cast<State*>(item.user_data);
-	for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
-	auto it = State::luaKeywords.find(st->buffer);
-	st->buffer.clear();
-	return it != State::luaKeywords.end();
-});
+	LuaKeyword = pl::user(Name, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		auto it = LuaKeywords.find(st->buffer);
+		st->buffer.clear();
+		return it != LuaKeywords.end();
+	});
 
-rule self = expr('@');
-rule self_name = '@' >> Name;
-rule self_class = expr("@@");
-rule self_class_name = "@@" >> Name;
+	self = expr('@');
+	self_name = '@' >> Name;
+	self_class = expr("@@");
+	self_class_name = "@@" >> Name;
 
-rule SelfName = Space >> (self_class_name | self_class | self_name | self);
-rule KeyName = SelfName | Space >> Name;
-rule VarArg = Space >> "...";
+	SelfName = Space >> (self_class_name | self_class | self_name | self);
+	KeyName = SelfName | Space >> Name;
+	VarArg = Space >> "...";
 
-rule check_indent = pl::user(Indent, [](const item_t& item) {
-	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i) {
-		switch (*i) {
-			case ' ': indent++; break;
-			case '\t': indent += 4; break;
+	check_indent = pl::user(Indent, [](const item_t& item) {
+		int indent = 0;
+		for (input_it i = item.begin; i != item.end; ++i) {
+			switch (*i) {
+				case ' ': indent++; break;
+				case '\t': indent += 4; break;
+			}
 		}
-	}
-	State* st = reinterpret_cast<State*>(item.user_data);
-	return st->indents.top() == indent;
-});
-rule CheckIndent = and_(check_indent);
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->indents.top() == indent;
+	});
+	CheckIndent = and_(check_indent);
 
-rule advance = pl::user(Indent, [](const item_t& item) {
-	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i) {
-		switch (*i) {
-			case ' ': indent++; break;
-			case '\t': indent += 4; break;
+	advance = pl::user(Indent, [](const item_t& item) {
+		int indent = 0;
+		for (input_it i = item.begin; i != item.end; ++i) {
+			switch (*i) {
+				case ' ': indent++; break;
+				case '\t': indent += 4; break;
+			}
 		}
-	}
-	State* st = reinterpret_cast<State*>(item.user_data);
-	int top = st->indents.top();
-	if (top != -1 && indent > top) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		int top = st->indents.top();
+		if (top != -1 && indent > top) {
+			st->indents.push(indent);
+			return true;
+		}
+		return false;
+	});
+	Advance = and_(advance);
+
+	push_indent = pl::user(Indent, [](const item_t& item) {
+		int indent = 0;
+		for (input_it i = item.begin; i != item.end; ++i) {
+			switch (*i) {
+				case ' ': indent++; break;
+				case '\t': indent += 4; break;
+			}
+		}
+		State* st = reinterpret_cast<State*>(item.user_data);
 		st->indents.push(indent);
 		return true;
-	}
-	return false;
-});
-rule Advance = and_(advance);
+	});
+	PushIndent = and_(push_indent);
 
-rule push_indent = pl::user(Indent, [](const item_t& item) {
-	int indent = 0;
-	for (input_it i = item.begin; i != item.end; ++i) {
-		switch (*i) {
-			case ' ': indent++; break;
-			case '\t': indent += 4; break;
+	PreventIndent = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->indents.push(-1);
+		return true;
+	});
+
+	PopIndent = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->indents.pop();
+		return true;
+	});
+
+	InBlock = Advance >> Block >> PopIndent;
+
+	local_flag = expr('*') | expr('^');
+	Local = key("local") >> ((Space >> local_flag) | NameList);
+
+	colon_import_name = sym('\\') >> Space >> Variable;
+	ImportName = colon_import_name | Space >> Variable;
+	ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
+
+	import_literal_inner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(AlphaNum | '-');
+	import_literal_chain = Seperator >> import_literal_inner >> *(expr('.') >> import_literal_inner);
+	ImportLiteral = sym('\'') >> import_literal_chain >> symx('\'') | sym('"') >> import_literal_chain >> symx('"');
+
+	ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
+	ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | TableLit));
+
+	Import = key("import") >> (ImportAs | ImportFrom);
+	BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
+
+	Return = key("return") >> -ExpListLow;
+	WithExp = ExpList >> -Assign;
+
+	With = key("with") >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
+	SwitchCase = key("when") >> ExpList >> -key("then") >> Body;
+	SwitchElse = key("else") >> Body;
+
+	SwitchBlock = *EmptyLine >>
+		Advance >> Seperator >>
+		SwitchCase >>
+		*(+SpaceBreak >> SwitchCase) >>
+		-(+SpaceBreak >> SwitchElse) >>
+		PopIndent;
+
+	Switch = key("switch") >>
+		DisableDo >> ensure(Exp, PopDo) >>
+		-key("do") >> -Space >> Break >> SwitchBlock;
+
+	IfCond = Exp >> -Assign;
+	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> -key("then") >> Body;
+	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> Body;
+	If = key("if") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
+	Unless = key("unless") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
+
+	While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
+
+	for_step_value = sym(',') >> Exp;
+	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+
+	For = key("for") >> DisableDo >>
+		ensure(for_args, PopDo) >>
+		-key("do") >> Body;
+
+	for_in = star_exp | ExpList;
+
+	ForEach = key("for") >> AssignableNameList >> key("in") >>
+		DisableDo >> ensure(for_in, PopDo) >>
+		-key("do") >> Body;
+
+	Do = pl::user(key("do") >> Body, [](const item_t& item)
+	{
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->doStack.empty() || st->doStack.top();
+	});
+
+	DisableDo = pl::user(true_(), [](const item_t& item)
+	{
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->doStack.push(false);
+		return true;
+	});
+
+	PopDo = pl::user(true_(), [](const item_t& item)
+	{
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->doStack.pop();
+		return true;
+	});
+
+	Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
+	comp_value = sym(',') >> Exp;
+	TblComprehension = sym('{') >> (Exp >> -comp_value) >> CompInner >> sym('}');
+
+	CompInner = Seperator >> (CompForEach | CompFor) >> *CompClause;
+	star_exp = sym('*') >> Exp;
+	CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
+	CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
+	CompClause = CompFor | CompForEach | key("when") >> Exp;
+
+	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> Exp));
+
+	update_op =
+		expr("..") |
+		expr("+") |
+		expr("-") |
+		expr("*") |
+		expr("/") |
+		expr("%") |
+		expr("or") |
+		expr("and") |
+		expr("&") |
+		expr("|") |
+		expr(">>") |
+		expr("<<");
+
+	Update = Space >> update_op >> expr("=") >> Exp;
+
+	BinaryOperator =
+		(expr("or") >> not_(AlphaNum)) |
+		(expr("and") >> not_(AlphaNum)) |
+		expr("<=") |
+		expr(">=") |
+		expr("~=") |
+		expr("!=") |
+		expr("==") |
+		expr("..") |
+		expr("<<") |
+		expr(">>") |
+		expr("//") |
+		set("+-*/%^><|&");
+
+	BackcallOperator = expr("|>");
+
+	Assignable = AssignableChain | Space >> Variable | SelfName;
+
+	exp_op_value = Space >> (BackcallOperator | BinaryOperator) >> *SpaceBreak >> Value;
+	Exp = Value >> *exp_op_value;
+
+	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
+
+	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
+	Value = SimpleValue | simple_table | ChainValue | String;
+
+	single_string_inner = expr("\\'") | "\\\\" | not_(expr('\'')) >> Any;
+	SingleString = symx('\'') >> *single_string_inner >> symx('\'');
+	interp = symx("#{") >> Exp >> sym('}');
+	double_string_plain = expr("\\\"") | "\\\\" | not_(expr('"')) >> Any;
+	double_string_inner = +(not_(interp) >> double_string_plain);
+	double_string_content = double_string_inner | interp;
+	DoubleString = symx('"') >> Seperator >> *double_string_content >> symx('"');
+	String = Space >> (DoubleString | SingleString | LuaString);
+
+	lua_string_open = '[' >> *expr('=') >> '[';
+	lua_string_close = ']' >> *expr('=') >> ']';
+
+	LuaStringOpen = pl::user(lua_string_open, [](const item_t& item) {
+		size_t count = std::distance(item.begin, item.end);
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->stringOpen = count;
+		return true;
+	});
+
+	LuaStringClose = pl::user(lua_string_close, [](const item_t& item) {
+		size_t count = std::distance(item.begin, item.end);
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->stringOpen == count;
+	});
+
+	LuaStringContent = *(not_(LuaStringClose) >> Any);
+
+	LuaString = pl::user(LuaStringOpen >> -Break >> LuaStringContent >> LuaStringClose, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->stringOpen = -1;
+		return true;
+	});
+
+	Parens = sym('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
+	Callable = Space >> Variable | SelfName | VarArg | Parens;
+	FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
+
+	FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
+		(sym('!') >> not_(expr('=')));
+
+	existential_op = expr('?');
+	chain_call = (Callable | String) >> -existential_op >> ChainItems;
+	chain_item = and_(set(".\\")) >> ChainItems;
+	chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;
+
+	Chain = chain_call | chain_item |
+		Space >> (chain_dot_chain | ColonChain);
+
+	AssignableChain = Seperator >> Chain;
+
+	chain_with_colon = +ChainItem >> -ColonChain;
+	ChainItems = chain_with_colon | ColonChain;
+
+	Index = symx('[') >> Exp >> sym(']');
+	ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
+	DotChainItem = symx('.') >> Name;
+	ColonChainItem = symx('\\') >> (LuaKeyword | Name);
+	invoke_chain = Invoke >> -existential_op >> -ChainItems;
+	ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
+
+	default_value = true_();
+	Slice =
+		symx('[') >>
+		(Exp | default_value) >>
+		sym(',') >>
+		(Exp | default_value) >>
+		(sym(',') >> Exp | default_value) >>
+		sym(']');
+
+	Invoke = Seperator >> (
+		FnArgs |
+		SingleString |
+		DoubleString |
+		and_(expr('[')) >> LuaString);
+
+	TableValue = KeyValue | Exp;
+
+	table_lit_lines = SpaceBreak >> TableLitLine >> *(-sym(',') >> SpaceBreak >> TableLitLine) >> -sym(',');
+
+	TableLit =
+		sym('{') >> Seperator >>
+		-TableValueList >>
+		-sym(',') >>
+		-table_lit_lines >>
+		White >> sym('}');
+
+	TableValueList = TableValue >> *(sym(',') >> TableValue);
+
+	TableLitLine = (
+		PushIndent >> (TableValueList >> PopIndent | PopIndent)
+	) | (
+		Space
+	);
+
+	TableBlockInner = Seperator >> KeyValueLine >> *(+(SpaceBreak) >> KeyValueLine);
+	TableBlock = +(SpaceBreak) >> Advance >> ensure(TableBlockInner, PopIndent);
+
+	class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
+	ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
+	ClassBlock = +(SpaceBreak) >> Advance >>Seperator >> ClassLine >> *(+(SpaceBreak) >> ClassLine) >> PopIndent;
+
+	ClassDecl =
+		key("class") >> not_(expr(':')) >>
+		-Assignable >>
+		-(key("extends")  >> PreventIndent >> ensure(Exp, PopIndent)) >>
+		-ClassBlock;
+
+	export_values = NameList >> -(sym('=') >> ExpListLow);
+	export_op = expr('*') | expr('^');
+	Export = key("export") >> (ClassDecl | (Space >> export_op) | export_values);
+
+	variable_pair = sym(':') >> not_(SomeSpace) >> Space >> Variable;
+
+	normal_pair = (
+		KeyName |
+		sym('[') >> Exp >> sym(']') |
+		Space >> DoubleString |
+		Space >> SingleString
+	) >>
+	symx(':') >>
+	(Exp | TableBlock | +(SpaceBreak) >> Exp);
+
+	KeyValue = variable_pair | normal_pair;
+
+	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
+	KeyValueLine = CheckIndent >> KeyValueList >> -sym(',');
+
+	FnArgDef = (Space >> Variable | SelfName) >> -(sym('=') >> Exp);
+
+	FnArgDefList = Seperator >> (
+		(
+			FnArgDef >>
+			*((sym(',') | Break) >> White >> FnArgDef) >>
+			-((sym(',') | Break) >> White >> VarArg)
+		) | (
+			VarArg
+		)
+	);
+
+	outer_var_shadow = key("using") >> (NameList | Space >> expr("nil"));
+
+	FnArgsDef = sym('(') >> White >> -FnArgDefList >> -outer_var_shadow >> White >> sym(')');
+	fn_arrow = expr("->") | expr("=>");
+	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
+
+	NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
+	NameOrDestructure = Space >> Variable | TableLit;
+	AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
+
+	Backcall = -FnArgsDef >> Space >> symx("<-") >> Space >> ChainValue;
+
+	ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
+	ExpListLow = Seperator >> Exp >> *((sym(',') | sym(';')) >> Exp);
+
+	ArgLine = CheckIndent >> Exp >> *(sym(',') >> Exp);
+	ArgBlock = ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
+
+	invoke_args_with_table =
+		sym(',') >>
+		(
+			TableBlock |
+			SpaceBreak >> Advance >> ArgBlock >> -TableBlock
+		);
+
+	InvokeArgs =
+		not_(expr('-')) >> Seperator >>
+		(
+			Exp >> *(sym(',') >> Exp) >> -(invoke_args_with_table | TableBlock) |
+			TableBlock
+		);
+
+	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
+	minus_exp = expr('-') >> not_(SomeSpace) >> Exp;
+	sharp_exp = expr('#') >> Exp;
+	tilde_exp = expr('~') >> Exp;
+	not_exp = expr("not") >> not_(AlphaNum) >> Exp;
+	unary_exp = minus_exp | sharp_exp | tilde_exp | not_exp;
+
+	SimpleValue =
+		(Space >> const_value) |
+		If | Unless | Switch | With | ClassDecl | ForEach | For | While | Do |
+		(Space >> unary_exp) |
+		TblComprehension | TableLit | Comprehension | FunLit |
+		(Space >> Num);
+
+	ExpListAssign = ExpList >> -(Update | Assign);
+
+	if_else_line = key("if") >> Exp >> -Assign >> (key("else") >> Exp | default_value);
+	unless_line = key("unless") >> Exp;
+
+	statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
+	Statement = (
+		Import | While | For | ForEach |
+		Return | Local | Export | Space >> BreakLoop |
+		Backcall | ExpListAssign
+	) >> Space >>
+	-statement_appendix;
+
+	Body = -Space >> Break >> *EmptyLine >> InBlock | Statement;
+
+	empty_line_stop = Space >> and_(Stop);
+	Line = CheckIndent >> Statement | empty_line_stop;
+	Block = Seperator >> Line >> *(+Break >> Line);
+
+	Shebang = expr("#!") >> *(not_(Stop) >> Any);
+	File = White >> -Shebang >> Block >> eof();
+}
+
+ParseInfo MoonParser::parse(const std::string& codes, rule& r) {
+	ParseInfo res;
+	try {
+		res.input = std::make_unique<input>();
+		*(res.input) = _converter.from_bytes(codes);
+	} catch (const std::range_error&) {
+		res.error = "Invalid text encoding."sv;
+		return res;
+	}
+	error_list errors;
+	try {
+		State state;
+		res.node.set(pl::parse(*(res.input), r, errors, &state));
+	} catch (const std::logic_error& err) {
+		res.error = err.what();
+		return res;
+	}
+	if (!errors.empty()) {
+		std::ostringstream buf;
+		for (error_list::iterator it = errors.begin(); it != errors.end(); ++it) {
+			const error& err = *it;
+			switch (err.m_type) {
+				case ERROR_TYPE::ERROR_SYNTAX_ERROR:
+					buf << res.errorMessage("Syntax error."sv, &err);
+					break;
+				case ERROR_TYPE::ERROR_INVALID_EOF:
+					buf << res.errorMessage("Invalid EOF."sv, &err);
+					break;
+			}
+		}
+		res.error = buf.str();
+	}
+	return res;
+}
+
+std::string MoonParser::toString(ast_node* node) {
+	return _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
+}
+
+std::string MoonParser::toString(input::iterator begin, input::iterator end) {
+	return _converter.to_bytes(std::wstring(begin, end));
+}
+
+input MoonParser::encode(std::string_view input) {
+	return _converter.from_bytes(std::string(input));
+}
+
+std::string MoonParser::decode(const input& input) {
+	return _converter.to_bytes(input);
+}
+
+namespace Utils {
+	void replace(std::string& str, std::string_view from, std::string_view to) {
+		size_t start_pos = 0;
+		while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+			str.replace(start_pos, from.size(), to);
+			start_pos += to.size();
 		}
 	}
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->indents.push(indent);
-	return true;
-});
-rule PushIndent = and_(push_indent);
-
-rule PreventIndent = pl::user(true_(), [](const item_t& item) {
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->indents.push(-1);
-	return true;
-});
-
-rule PopIndent = pl::user(true_(), [](const item_t& item) {
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->indents.pop();
-	return true;
-});
-
-extern rule Block;
-
-rule InBlock = Advance >> Block >> PopIndent;
-
-extern rule NameList;
-
-rule local_flag = expr('*') | expr('^');
-rule Local = key("local") >> ((Space >> local_flag) | NameList);
-
-rule colon_import_name = sym('\\') >> Space >> Variable;
-rule ImportName = colon_import_name | Space >> Variable;
-rule ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
-
-extern rule Exp, TableLit;
-
-rule import_literal_inner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(AlphaNum | '-');
-rule import_literal_chain = Seperator >> import_literal_inner >> *(expr('.') >> import_literal_inner);
-rule ImportLiteral = sym('\'') >> import_literal_chain >> symx('\'') | sym('"') >> import_literal_chain >> symx('"');
-
-rule ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
-rule ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | TableLit));
-
-rule Import = key("import") >> (ImportAs | ImportFrom);
-rule BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
-
-extern rule ExpListLow, ExpList, Assign;
-
-rule Return = key("return") >> -ExpListLow;
-rule WithExp = ExpList >> -Assign;
-
-extern rule DisableDo, PopDo, Body;
-
-rule With = key("with") >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
-rule SwitchCase = key("when") >> ExpList >> -key("then") >> Body;
-rule SwitchElse = key("else") >> Body;
-
-rule SwitchBlock = *EmptyLine >>
-	Advance >> Seperator >>
-	SwitchCase >>
-	*(+SpaceBreak >> SwitchCase) >>
-	-(+SpaceBreak >> SwitchElse) >>
-	PopIndent;
-
-rule Switch = key("switch") >>
-	DisableDo >> ensure(Exp, PopDo) >>
-	-key("do") >> -Space >> Break >> SwitchBlock;
-
-rule IfCond = Exp >> -Assign;
-rule IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> -key("then") >> Body;
-rule IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> Body;
-rule If = key("if") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
-rule Unless = key("unless") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
-
-rule While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
-
-rule for_step_value = sym(',') >> Exp;
-rule for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
-
-rule For = key("for") >> DisableDo >>
-	ensure(for_args, PopDo) >>
-	-key("do") >> Body;
-
-extern rule AssignableNameList;
-
-extern rule star_exp;
-
-rule for_in = star_exp | ExpList;
-
-rule ForEach = key("for") >> AssignableNameList >> key("in") >>
-	DisableDo >> ensure(for_in, PopDo) >>
-	-key("do") >> Body;
-
-rule Do = pl::user(key("do") >> Body, [](const item_t& item)
-{
-	State* st = reinterpret_cast<State*>(item.user_data);
-	return st->doStack.empty() || st->doStack.top();
-});
-
-rule DisableDo = pl::user(true_(), [](const item_t& item)
-{
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->doStack.push(false);
-	return true;
-});
-
-rule PopDo = pl::user(true_(), [](const item_t& item)
-{
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->doStack.pop();
-	return true;
-});
-
-extern rule CompInner;
-
-rule Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
-rule comp_value = sym(',') >> Exp;
-rule TblComprehension = sym('{') >> (Exp >> -comp_value) >> CompInner >> sym('}');
-
-extern rule CompForEach, CompFor, CompClause;
-
-rule CompInner = Seperator >> (CompForEach | CompFor) >> *CompClause;
-rule star_exp = sym('*') >> Exp;
-rule CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
-rule CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
-rule CompClause = CompFor | CompForEach | key("when") >> Exp;
-
-extern rule TableBlock;
-
-rule Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> Exp));
-
-rule update_op =
-	expr("..") |
-	expr("+") |
-	expr("-") |
-	expr("*") |
-	expr("/") |
-	expr("%") |
-	expr("or") |
-	expr("and") |
-	expr("&") |
-	expr("|") |
-	expr(">>") |
-	expr("<<");
-
-rule Update = Space >> update_op >> expr("=") >> Exp;
-
-rule BinaryOperator =
-	(expr("or") >> not_(AlphaNum)) |
-	(expr("and") >> not_(AlphaNum)) |
-	expr("<=") |
-	expr(">=") |
-	expr("~=") |
-	expr("!=") |
-	expr("==") |
-	expr("..") |
-	expr("<<") |
-	expr(">>") |
-	expr("//") |
-	set("+-*/%^><|&");
-
-rule BackcallOperator = expr("|>");
-
-extern rule AssignableChain;
-
-rule Assignable = AssignableChain | Space >> Variable | SelfName;
-
-extern rule Value;
-
-rule exp_op_value = Space >> (BackcallOperator | BinaryOperator) >> *SpaceBreak >> Value;
-rule Exp = Value >> *exp_op_value;
-
-extern rule Chain, Callable, InvokeArgs, existential_op;
-
-rule ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
-
-extern rule KeyValue, String, SimpleValue;
-
-rule simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-rule Value = SimpleValue | simple_table | ChainValue | String;
-
-extern rule LuaString;
-
-rule single_string_inner = expr("\\'") | "\\\\" | not_(expr('\'')) >> Any;
-rule SingleString = symx('\'') >> *single_string_inner >> symx('\'');
-rule interp = symx("#{") >> Exp >> sym('}');
-rule double_string_plain = expr("\\\"") | "\\\\" | not_(expr('"')) >> Any;
-rule double_string_inner = +(not_(interp) >> double_string_plain);
-rule double_string_content = double_string_inner | interp;
-rule DoubleString = symx('"') >> Seperator >> *double_string_content >> symx('"');
-rule String = Space >> (DoubleString | SingleString | LuaString);
-
-rule lua_string_open = '[' >> *expr('=') >> '[';
-rule lua_string_close = ']' >> *expr('=') >> ']';
-
-rule LuaStringOpen = pl::user(lua_string_open, [](const item_t& item)
-{
-	size_t count = std::distance(item.begin, item.end);
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->stringOpen = count;
-	return true;
-});
-
-rule LuaStringClose = pl::user(lua_string_close, [](const item_t& item)
-{
-	size_t count = std::distance(item.begin, item.end);
-	State* st = reinterpret_cast<State*>(item.user_data);
-	return st->stringOpen == count;
-});
-
-rule LuaStringContent = *(not_(LuaStringClose) >> Any);
-
-rule LuaString = pl::user(LuaStringOpen >> -Break >> LuaStringContent >> LuaStringClose, [](const item_t& item)
-{
-	State* st = reinterpret_cast<State*>(item.user_data);
-	st->stringOpen = -1;
-	return true;
-});
-
-rule Parens = sym('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
-rule Callable = Space >> Variable | SelfName | VarArg | Parens;
-rule FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
-
-rule FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
-	(sym('!') >> not_(expr('=')));
-
-extern rule ChainItems, DotChainItem, ColonChain;
-
-rule existential_op = expr('?');
-rule chain_call = (Callable | String) >> -existential_op >> ChainItems;
-rule chain_item = and_(set(".\\")) >> ChainItems;
-rule chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;
-
-rule Chain = chain_call | chain_item |
-	Space >> (chain_dot_chain | ColonChain);
-
-rule AssignableChain = Seperator >> Chain;
-
-extern rule ChainItem;
-
-rule chain_with_colon = +ChainItem >> -ColonChain;
-rule ChainItems = chain_with_colon | ColonChain;
-
-extern rule Invoke, Slice;
-
-rule Index = symx('[') >> Exp >> sym(']');
-rule ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
-rule DotChainItem = symx('.') >> Name;
-rule ColonChainItem = symx('\\') >> (LuaKeyword | Name);
-rule invoke_chain = Invoke >> -existential_op >> -ChainItems;
-rule ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
-
-rule default_value = true_();
-rule Slice =
-	symx('[') >>
-	(Exp | default_value) >>
-	sym(',') >>
-	(Exp | default_value) >>
-	(sym(',') >> Exp | default_value) >>
-	sym(']');
-
-rule Invoke = Seperator >> (
-	FnArgs |
-	SingleString |
-	DoubleString |
-	and_(expr('[')) >> LuaString);
-
-extern rule TableValueList, TableLitLine;
-
-rule TableValue = KeyValue | Exp;
-
-rule table_lit_lines = SpaceBreak >> TableLitLine >> *(-sym(',') >> SpaceBreak >> TableLitLine) >> -sym(',');
-
-rule TableLit =
-	sym('{') >> Seperator >>
-	-TableValueList >>
-	-sym(',') >>
-	-table_lit_lines >>
-	White >> sym('}');
-
-rule TableValueList = TableValue >> *(sym(',') >> TableValue);
-
-rule TableLitLine =
-(
-	PushIndent >> (TableValueList >> PopIndent | PopIndent)
-) | (
-	Space
-);
-
-extern rule KeyValueLine;
-
-rule TableBlockInner = Seperator >> KeyValueLine >> *(+(SpaceBreak) >> KeyValueLine);
-rule TableBlock = +(SpaceBreak) >> Advance >> ensure(TableBlockInner, PopIndent);
-
-extern rule Statement;
-
-rule class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-rule ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
-rule ClassBlock = +(SpaceBreak) >> Advance >>Seperator >> ClassLine >> *(+(SpaceBreak) >> ClassLine) >> PopIndent;
-
-rule ClassDecl =
-	key("class") >> not_(expr(':')) >>
-	-Assignable >>
-	-(key("extends")  >> PreventIndent >> ensure(Exp, PopIndent)) >>
-	-ClassBlock;
-
-rule export_values = NameList >> -(sym('=') >> ExpListLow);
-rule export_op = expr('*') | expr('^');
-rule Export = key("export") >> (ClassDecl | (Space >> export_op) | export_values);
-
-rule variable_pair = sym(':') >> not_(SomeSpace) >> Space >> Variable;
-
-rule normal_pair =
-(
-	KeyName |
-	sym('[') >> Exp >> sym(']') |
-	Space >> DoubleString |
-	Space >> SingleString
-) >>
-symx(':') >>
-(Exp | TableBlock | +(SpaceBreak) >> Exp);
-
-rule KeyValue = variable_pair | normal_pair;
-
-rule KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
-rule KeyValueLine = CheckIndent >> KeyValueList >> -sym(',');
-
-rule FnArgDef = (Space >> Variable | SelfName) >> -(sym('=') >> Exp);
-
-rule FnArgDefList = Seperator >>
-(
-	(
-		FnArgDef >>
-		*((sym(',') | Break) >> White >> FnArgDef) >>
-		-((sym(',') | Break) >> White >> VarArg)
-	) | (
-		VarArg
-	)
-);
-
-rule outer_var_shadow = key("using") >> (NameList | Space >> expr("nil"));
-
-rule FnArgsDef = sym('(') >> White >> -FnArgDefList >> -outer_var_shadow >> White >> sym(')');
-rule fn_arrow = expr("->") | expr("=>");
-rule FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
-
-rule NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
-rule NameOrDestructure = Space >> Variable | TableLit;
-rule AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
-
-rule Backcall = -FnArgsDef >> Space >> symx("<-") >> Space >> ChainValue;
-
-rule ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
-rule ExpListLow = Seperator >> Exp >> *((sym(',') | sym(';')) >> Exp);
-
-rule ArgLine = CheckIndent >> Exp >> *(sym(',') >> Exp);
-rule ArgBlock = ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
-
-rule invoke_args_with_table =
-	sym(',') >>
-	(
-		TableBlock |
-		SpaceBreak >> Advance >> ArgBlock >> -TableBlock
-	);
-
-rule InvokeArgs =
-	not_(expr('-')) >> Seperator >> 
-	(
-		Exp >> *(sym(',') >> Exp) >> -(invoke_args_with_table | TableBlock) |
-		TableBlock
-	);
-
-rule const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
-rule minus_exp = expr('-') >> not_(SomeSpace) >> Exp;
-rule sharp_exp = expr('#') >> Exp;
-rule tilde_exp = expr('~') >> Exp;
-rule not_exp = expr("not") >> not_(AlphaNum) >> Exp;
-rule unary_exp = minus_exp | sharp_exp | tilde_exp | not_exp;
-
-rule SimpleValue =
-	(Space >> const_value) |
-	If | Unless | Switch | With | ClassDecl | ForEach | For | While | Do |
-	(Space >> unary_exp) |
-	TblComprehension | TableLit | Comprehension | FunLit |
-	(Space >> Num);
-
-rule ExpListAssign = ExpList >> -(Update | Assign);
-
-rule if_else_line = key("if") >> Exp >> -Assign >> (key("else") >> Exp | default_value);
-rule unless_line = key("unless") >> Exp;
-
-rule statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
-rule Statement =
-(
-	Import | While | For | ForEach |
-	Return | Local | Export | Space >> BreakLoop |
-	Backcall | ExpListAssign
-) >> Space >>
--statement_appendix;
-
-rule Body = -Space >> Break >> *EmptyLine >> InBlock | Statement;
-
-rule empty_line_stop = Space >> and_(Stop);
-rule Line = CheckIndent >> Statement | empty_line_stop;
-rule Block = Seperator >> Line >> *(+Break >> Line);
-
-rule Shebang = expr("#!") >> *(not_(Stop) >> Any);
-rule File = White >> -Shebang >> Block >> eof();
+}
+
+std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc) const {
+	const int ASCII = 255;
+	int length = loc->m_begin.m_line;
+	auto begin = input->begin();
+	auto end = input->end();
+	int count = 0;
+	for (auto it = input->begin(); it != input->end(); ++it) {
+		if (*it == '\n') {
+			if (count + 1 == length) {
+				end = it;
+				break;
+			} else {
+				begin = it + 1;
+			}
+			count++;
+		}
+	}
+	auto line = Converter{}.to_bytes(std::wstring(begin, end));
+	int oldCol = loc->m_begin.m_col;
+	int col = std::max(0, oldCol - 1);
+	auto it = begin;
+	for (int i = 0; i < oldCol; ++i) {
+		if (*it > ASCII) {
+			++col;
+		}
+		++it;
+	}
+	Utils::replace(line, "\t"sv, " "sv);
+	std::ostringstream buf;
+	buf << loc->m_begin.m_line << ": "sv << msg <<
+		'\n' << line << '\n' << std::string(col, ' ') << "^"sv;
+	return buf.str();
+}
 
 } // namespace MoonP

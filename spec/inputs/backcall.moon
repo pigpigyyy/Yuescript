@@ -31,17 +31,19 @@ f = ->
 998 |> func0("abc", 233) |> func1 |> func2
 
 do
-	(data) <- http?.get "ajaxtest"
+	(data)<- http?.get "ajaxtest"
 	body[".result"]\html data
-	(processed) <- http.post "ajaxprocess", data
+	(processed)<- http.post "ajaxprocess", data
 	body[".result"]\append processed
 	<- setTimeout 1000
 	print "done"
 
 do
 	<- syncStatus
-	(err,data="nil") <- loadAsync "file.moon"
-	print err if err
+	(err,data="nil")<- loadAsync "file.moon"
+	if err
+		print err
+		return
 	(codes) <- compileAsync data
 	func = loadstring codes
 	func!

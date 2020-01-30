@@ -522,7 +522,6 @@ public:
     ast(rule& r) {
         r.set_parse_proc(&_parse_proc);
     }
-
 private:
     //parse proc
     static void _parse_proc(const pos& b, const pos& e, void* d) {
@@ -544,28 +543,7 @@ private:
     @return pointer to ast node created, or null if there was an error.
         The return object must be deleted by the caller.
  */
-ast_node* _parse(input& i, rule& g, error_list& el, void* ud);
-
-
-/** parses the given input.
-    @param i input.
-    @param g root rule of grammar.
-    @param el list of errors.
-    @param ud user data, passed to the parse procedures.
-    @return ast nodes.
- */
-template <class T> ast_ptr<false, T> parse(input& i, rule& g, error_list& el, void* ud = nullptr) {
-    ast_node* node = _parse(i, g, el, ud);
-    T* ast = ast_cast<T>(node);
-    ast_ptr<false, T> ptr;
-    if (ast) {
-    	ast_stack st{node};
-    	ptr.construct(st);
-    } else if (node) {
-    	delete node;
-    }
-	return ptr;
-}
+ast_node* parse(input& i, rule& g, error_list& el, void* ud);
 
 
 } //namespace parserlib

@@ -21,25 +21,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 namespace parserlib {
 
 
-//internal map from rules to parse procs
-typedef std::unordered_map<rule *, parse_proc> _parse_proc_map_t;
-
-//on exit, it deletes the parse proc map
-static _parse_proc_map_t& _get_parse_proc_map() {
-    static _parse_proc_map_t _parse_proc_map;
-    return _parse_proc_map;
-}
-
-
-//get the parse proc from the map
-static parse_proc _get_parse_proc(rule *r) {
-    _parse_proc_map_t& _parse_proc_map = _get_parse_proc_map();
-    _parse_proc_map_t::iterator it = _parse_proc_map.find(r);
-    if (it == _parse_proc_map.end()) return 0;
-    return it->second;
-}
-
-
 //internal private class that manages access to the public classes' internals.
 class _private {
 public:
@@ -1175,14 +1156,19 @@ bool error::operator < (const error &e) const {
     return m_begin.m_it < e.m_begin.m_it;
 }
 
+rule::rule() :
+	 m_expr(nullptr),
+	 m_parse_proc(nullptr)
+{
+}
 
 /** character terminal constructor.
     @param c character.
  */
 rule::rule(char c) :
-    m_expr(new _char(c))
+    m_expr(new _char(c)),
+	 m_parse_proc(nullptr)
 {
-    m_parse_proc = _get_parse_proc(this);
 }
 
 
@@ -1190,9 +1176,9 @@ rule::rule(char c) :
     @param s null-terminated string.
  */
 rule::rule(const char *s) :
-    m_expr(new _string(s))
+    m_expr(new _string(s)),
+	 m_parse_proc(nullptr)
 {
-    m_parse_proc = _get_parse_proc(this);
 }
 
 
@@ -1200,9 +1186,9 @@ rule::rule(const char *s) :
     @param e expression.
  */
 rule::rule(const expr &e) :
-    m_expr(_private::get_expr(e))
+    m_expr(_private::get_expr(e)),
+	 m_parse_proc(nullptr)
 {
-    m_parse_proc = _get_parse_proc(this);
 }
 
 
@@ -1211,11 +1197,19 @@ rule::rule(const expr &e) :
  */
 rule::rule(rule &r) :
     m_expr(new _ref(r)),
-    m_parse_proc(0)
+	 m_parse_proc(nullptr)
 {
-    m_parse_proc = _get_parse_proc(this);
 }
 
+rule& rule::operator = (rule & r) {
+	m_expr = new _ref(r);
+	return *this;
+}
+
+rule &rule::operator = (const expr & e) {
+	m_expr = _private::get_expr(e);
+	return *this;
+}
 
 /** invalid constructor from rule (required by gcc).
     @exception std::logic_error always thrown.
@@ -1278,8 +1272,6 @@ expr rule::operator !() {
 void rule::set_parse_proc(parse_proc p) {
     assert(p);
     m_parse_proc = p;
-    _parse_proc_map_t& _parse_proc_map = _get_parse_proc_map();
-    _parse_proc_map[this] = p;
 }
 
 

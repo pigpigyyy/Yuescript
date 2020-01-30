@@ -28,16 +28,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 namespace parserlib {
 
 // const str hash helper functions
-inline constexpr size_t hash(char const* input)
-{
+inline constexpr size_t hash(char const* input) {
 	return *input ? *input + 33ull * hash(input + 1) : 5381;
 }
-inline size_t hash(const char* input, int size, int index)
-{
+inline size_t hash(const char* input, int size, int index) {
 	return index < size ? input[index] + 33ull * hash(input, size, index + 1) : 5381;
 }
-inline size_t constexpr operator"" _id(const char* s, size_t)
-{
+inline size_t constexpr operator"" _id(const char* s, size_t) {
 	return hash(s);
 }
 
@@ -52,8 +49,7 @@ class _context;
 class rule;
 
 
-struct item_t
-{
+struct item_t {
 	input_it begin;
 	input_it end;
 	void* user_data;
@@ -74,7 +70,7 @@ public:
     int m_col;
 
     ///null constructor.
-    pos():m_line(-1),m_col(0) {}
+    pos():m_line(0),m_col(0) {}
 
     /** constructor from input.
         @param i input.
@@ -216,6 +212,7 @@ public:
     /** character terminal constructor.
         @param c character.
      */
+	rule();
     rule(char c);
 
     /** null-terminated string terminal constructor.
@@ -278,6 +275,10 @@ public:
      */
     rule *this_ptr() { return this; }
 
+    rule &operator = (rule &);
+
+    rule &operator = (const expr &);
+
 private:
     //mode
     enum _MODE {
@@ -307,9 +308,6 @@ private:
 
     //state
     _state m_state;
-
-    //assignment not allowed
-    rule &operator = (rule &);
 
     friend class _private;
     friend class _context;
