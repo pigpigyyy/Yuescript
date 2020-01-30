@@ -381,7 +381,7 @@ private:
 			node->m_end.m_line = parent->m_begin.m_line;
 			return traversal::Continue;
 		});
-		_codeCache.push_back(std::move(res.input));
+		_codeCache.push_back(std::move(res.codes));
 		return ast_ptr<false, T>(res.node.template to<T>());
 	}
 

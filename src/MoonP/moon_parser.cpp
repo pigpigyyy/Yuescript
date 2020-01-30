@@ -496,8 +496,8 @@ MoonParser::MoonParser() {
 ParseInfo MoonParser::parse(const std::string& codes, rule& r) {
 	ParseInfo res;
 	try {
-		res.input = std::make_unique<input>();
-		*(res.input) = _converter.from_bytes(codes);
+		res.codes = std::make_unique<input>();
+		*(res.codes) = _converter.from_bytes(codes);
 	} catch (const std::range_error&) {
 		res.error = "Invalid text encoding."sv;
 		return res;
@@ -505,7 +505,7 @@ ParseInfo MoonParser::parse(const std::string& codes, rule& r) {
 	error_list errors;
 	try {
 		State state;
-		res.node.set(pl::parse(*(res.input), r, errors, &state));
+		res.node.set(pl::parse(*(res.codes), r, errors, &state));
 	} catch (const std::logic_error& err) {
 		res.error = err.what();
 		return res;
@@ -536,12 +536,12 @@ std::string MoonParser::toString(input::iterator begin, input::iterator end) {
 	return _converter.to_bytes(std::wstring(begin, end));
 }
 
-input MoonParser::encode(std::string_view input) {
-	return _converter.from_bytes(std::string(input));
+input MoonParser::encode(std::string_view codes) {
+	return _converter.from_bytes(std::string(codes));
 }
 
-std::string MoonParser::decode(const input& input) {
-	return _converter.to_bytes(input);
+std::string MoonParser::decode(const input& codes) {
+	return _converter.to_bytes(codes);
 }
 
 namespace Utils {
@@ -557,10 +557,10 @@ namespace Utils {
 std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc) const {
 	const int ASCII = 255;
 	int length = loc->m_begin.m_line;
-	auto begin = input->begin();
-	auto end = input->end();
+	auto begin = codes->begin();
+	auto end = codes->end();
 	int count = 0;
-	for (auto it = input->begin(); it != input->end(); ++it) {
+	for (auto it = codes->begin(); it != codes->end(); ++it) {
 		if (*it == '\n') {
 			if (count + 1 == length) {
 				end = it;

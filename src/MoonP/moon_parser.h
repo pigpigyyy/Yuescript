@@ -24,14 +24,17 @@ namespace MoonP {
 struct ParseInfo {
 	ast_ptr<false,ast_node> node;
 	std::string error;
-	std::unique_ptr<input> input;
+	std::unique_ptr<input> codes;
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;
 };
+
+template<typename T>
+struct identity { typedef T type; };
 
 #define AST_RULE(type) \
 	rule type; \
 	ast<type##_t> type##_impl = type; \
-	template<> inline rule& getRule<type##_t>() { return type; }
+	inline rule& getRule(identity<type##_t>) { return type; }
 
 extern std::unordered_set<std::string> LuaKeywords;
 extern std::unordered_set<std::string> Keywords;
@@ -76,11 +79,17 @@ protected:
 		std::stack<bool> doStack;
 	};
 
+
+	template <class T>
+	inline rule& getRule() {
+		return getRule(identity<T>());
+	}
+
 private:
 	Converter _converter;
 
 	template <class T>
-	inline rule& getRule() {
+	inline rule& getRule(identity<T>) {
 		assert(false);
 		return Cut;
 	}
