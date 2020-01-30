@@ -34,28 +34,34 @@ const char* moonScriptVersion() {
 
 class MoonCompiler {
 public:
-	std::pair<std::string,std::string> compile(const std::string& codes, const MoonConfig& config) {
+	std::tuple<std::string,std::string,GlobalVars> compile(const std::string& codes, const MoonConfig& config) {
 		_config = config;
 		_info = _parser.parse<File_t>(codes);
+		GlobalVars globals;
 		if (_info.node) {
 			try {
 				str_list out;
 				pushScope();
 				transformBlock(_info.node.to<File_t>()->block, out, config.implicitReturnRoot);
 				popScope();
-				return {std::move(out.back()), Empty};
+				if (config.lintGlobalVariable) {
+					globals = std::make_unique<std::list<GlobalVar>>();
+					for (const auto& var : _globals) {
+						int line,col;
+						std::tie(line,col) = var.second;
+						globals->push_back({var.first, line, col});
+					}
+				}
+				clear();
+				return {std::move(out.back()), Empty, std::move(globals)};
 			} catch (const std::logic_error& error) {
 				clear();
-				return {Empty, error.what()};
+				return {Empty, error.what(), std::move(globals)};
 			}
 		} else {
 			clear();
-			return {Empty, _info.error};
+			return {Empty, _info.error, std::move(globals)};
 		}
-	}
-
-	const std::unordered_map<std::string,std::pair<int,int>>& getGlobals() const {
-		return _globals;
 	}
 
 	void clear() {
@@ -4293,15 +4299,7 @@ private:
 const std::string MoonCompiler::Empty;
 
 std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes, const MoonConfig& config) {
-	auto compiler = MoonCompiler{};
-	auto result = compiler.compile(codes, config);
-	auto globals = std::make_unique<std::list<GlobalVar>>();
-	for (const auto& var : compiler.getGlobals()) {
-		int line,col;
-		std::tie(line,col) = var.second;
-		globals->push_back({var.first, line, col});
-	}
-	return std::make_tuple(std::move(result.first),std::move(result.second),std::move(globals));
+	return MoonCompiler{}.compile(codes, config);
 }
 
 } // namespace MoonP
