@@ -1,7 +1,7 @@
 # MoonPlus
 
 ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)  
-MoonPlus is a compiler with features from Moonscript language 0.5.0 and could be faster than the original Moonscript compiler. 
+MoonPlus is a compiler with features from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and could be faster than the original Moonscript compiler. 
 
 ## Features
 
@@ -12,8 +12,10 @@ MoonPlus is a compiler with features from Moonscript language 0.5.0 and could be
 
 ## Changes
 
-* Add multi-line comment support.
-* Add usage for symbol `\` to escape new line. Will compile codes:
+The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus
+
+* Multi-line comment.
+* Usage for symbol `\` to escape new line. Will compile codes:
 ```Moonscript
 str = --[[
    This is a multi line comment.
@@ -30,7 +32,7 @@ local str = strA .. strB .. strC
 func("192.168.126.110", 3000)
 ```
 
-* Add back call features support with new operator and syntax. For example:
+* Back call features with new operator and syntax. For example:
 ```Moonscript
 {1,2,3} \
   |> map((x)-> x * 2) \
@@ -45,7 +47,7 @@ do
   body[".result"]\append processed
   print "done"
 ```
-&emsp;&emsp;compiles to:
+&emsp;&emsp;will be compiled to:
 ```Lua
 print(reduce(filter(map({
   1,
@@ -69,7 +71,7 @@ do
 end
 ```
 
-* Add existential operator support. Generate codes from:
+* Existential operator support. Generate codes from:
 ```Moonscript
 func?!
 
@@ -104,7 +106,7 @@ if print and (x ~= nil) then
 end
 ```
 
-* Add more features for `import` keyword. Will compile codes from:
+* More usages for `import` keyword. Will compile codes from:
 ```Moonscript
 import 'module'
 import "module.part"
@@ -136,7 +138,7 @@ local _call_4 = _call_3["then"](_call_3, "xyz")
 _call_4["else"](_call_4, res)
 ```
 
-* Add feature of `reusing variable` which helps generate reduced Lua codes. For example, MoonPlus will generate codes from:
+* Feature of `Reusing variable` which helps generate reduced Lua codes. For example, MoonPlus will generate codes from:
 ```Moonscript
 with leaf
   .world 1,2,3
