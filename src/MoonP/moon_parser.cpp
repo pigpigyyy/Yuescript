@@ -37,13 +37,13 @@ MoonParser::MoonParser() {
 	Any = Break | any();
 	White = *(set(" \t") | Break);
 	Stop = Break | eof();
+	Indent = plain_space;
 	Comment = "--" >> *(not_(set("\r\n")) >> Any) >> and_(Stop);
 	multi_line_open = expr("--[[");
 	multi_line_close = expr("]]");
 	multi_line_content = *(not_(multi_line_close) >> Any);
 	MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
-	Indent = plain_space;
-	EscapeNewLine = expr('\\') >> plain_space >> -Comment >> Break;
+	EscapeNewLine = expr('\\') >> *(set(" \t") | MultiLineComment) >> -Comment >> Break;
 	Space = *(set(" \t") | MultiLineComment | EscapeNewLine) >> -Comment;
 	SomeSpace = +set(" \t") >> -Comment;
 	SpaceBreak = Space >> Break;

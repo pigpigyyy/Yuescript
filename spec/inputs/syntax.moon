@@ -280,3 +280,25 @@ It's OK.
 
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
 
+f = ->
+	a,b, \
+	c,d, \
+	e,f
+
+with obj
+	invoke \
+		--[[arg1]] \func!,
+		--[[arg2]] 123,
+		--[[arg3]] "abc"
+
+invokeA \
+	invokeB \
+		invokeC 123
+
+123 \
+	|> invokeC \
+	|> invokeB \
+	|> invokeA
+
+nil
+
