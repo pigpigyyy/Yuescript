@@ -31,6 +31,10 @@ f = ->
 998 |> func0("abc", 233) |> func1 |> func2
 
 do
+	(x)<-map {1,2,3}
+	x * 2
+
+do
 	(data)<- http?.get "ajaxtest"
 	body[".result"]\html data
 	(processed)<- http.post "ajaxprocess", data
@@ -44,7 +48,7 @@ do
 	if err
 		print err
 		return
-	(codes) <- compileAsync data
+	(codes)<- compileAsync data
 	func = loadstring codes
 	func!
 
@@ -59,13 +63,15 @@ do
 	f7!
 
 do
-	result = do
-		(data)<- loadAsync "filename.txt"
+	{:result,:msg} = do
+		(data)<- receiveAsync "filename.txt"
 		print data
-	print result
+		(info)<- processAsync data
+		check info
+	print result,msg
 
 	totalSize = (for file in *files
-		(data)<-loadAsync file
+		(data)<- loadAsync file
 		addToCache file,data) |> reduce 0,(a,b)-> a+b
 
 alert "hi"
