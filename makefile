@@ -1,6 +1,6 @@
 #### PROJECT SETTINGS ####
 # The name of the executable to be created
-BIN_NAME := moonc
+BIN_NAME := moonp
 # Compiler used
 CXX ?= g++
 # Extension of source files used in the project
@@ -206,7 +206,7 @@ clean:
 .PHONY: test
 test: release
 	@echo "Compiling Moonscript codes..."
-	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -l -t $(TEST_OUTPUT)
+	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -t $(TEST_OUTPUT)
 
 # Main rule, checks the executable and symlinks to the output
 all: $(BIN_PATH)/$(BIN_NAME)

@@ -58,4 +58,14 @@ do
 	<- f6
 	f7!
 
+do
+	result = do
+		(data)<- loadAsync "filename.txt"
+		print data
+	print result
+
+	totalSize = (for file in *files
+		(data)<-loadAsync file
+		addToCache file,data) |> reduce 0,(a,b)-> a+b
+
 alert "hi"

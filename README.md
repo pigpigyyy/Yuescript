@@ -182,10 +182,11 @@ end
 ## Standalone Compiler Usage
 
 Test compiler with `make test`.
-Run `moonc` complier in project folder with:
+Run `moonp` complier in project folder with:
+
 ```shell
 make
-./moonc -h
+./moonp -h
 ```
 
 ## License

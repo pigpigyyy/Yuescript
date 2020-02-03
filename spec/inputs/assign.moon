@@ -27,3 +27,7 @@ else
 	"nothing", "yeah"
 
 c, d = 1, 2 if true
+
+x = (do
+	f!
+	123) if f = getHandler!

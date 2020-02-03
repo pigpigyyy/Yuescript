@@ -42,7 +42,7 @@ public:
 			try {
 				str_list out;
 				pushScope();
-				transformBlock(_info.node.to<File_t>()->block, out, config.implicitReturnRoot);
+				transformBlock(_info.node.to<File_t>()->block, out, config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common);
 				popScope();
 				if (config.lintGlobalVariable) {
 					globals = std::make_unique<std::list<GlobalVar>>();
@@ -664,12 +664,12 @@ private:
 								case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Common); break;
 								case "ClassDecl"_id: transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Common); break;
 								case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Common); break;
-								case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out); break;
+								case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Common); break;
 								case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
 								case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(value), out); break;
 								case "For"_id: transformFor(static_cast<For_t*>(value), out); break;
 								case "While"_id: transformWhile(static_cast<While_t*>(value), out); break;
-								case "Do"_id: transformDo(static_cast<Do_t*>(value), out); break;
+								case "Do"_id: transformDo(static_cast<Do_t*>(value), out, ExpUsage::Common); break;
 								case "Comprehension"_id: transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
 								default: specialSingleValue = false; break;
 							}
@@ -822,31 +822,6 @@ private:
 		return nullptr;
 	}
 
-	void assignLastExplist(ExpList_t* expList, Body_t* body) {
-		auto last = lastStatementFrom(body);
-		if (!last) return;
-		bool lastAssignable = expListFrom(last) || ast_is<For_t, ForEach_t, While_t>(last->content);
-		if (lastAssignable) {
-			auto x = last;
-			auto newAssignment = x->new_ptr<ExpListAssign_t>();
-			newAssignment->expList.set(expList);
-			auto assign = x->new_ptr<Assign_t>();
-			if (auto valueList = last->content.as<ExpListAssign_t>()) {
-				assign->values.dup(valueList->expList->exprs);
-			} else {
-				auto simpleValue = x->new_ptr<SimpleValue_t>();
-				simpleValue->value.set(last->content);
-				auto value = x->new_ptr<Value_t>();
-				value->item.set(simpleValue);
-				auto exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
-				assign->values.push_back(exp);
-			}
-			newAssignment->action.set(assign);
-			last->content.set(newAssignment);
-		}
-	}
-
 	void transformAssignment(ExpListAssign_t* assignment, str_list& out) {
 		checkAssignable(assignment->expList);
 		BLOCK_START
@@ -865,36 +840,18 @@ private:
 				str_list temp;
 				auto defs = transformAssignDefs(expList);
 				if (!defs.empty()) temp.push_back(getPredefine(defs) + nll(expList));
-				value->traverse([&](ast_node* node) {
-					switch (node->getId()) {
-						case "IfCond"_id: return traversal::Return;
-						case "Body"_id: {
-							auto body = static_cast<Body_t*>(node);
-							assignLastExplist(expList, body);
-							return traversal::Return;
-						}
-						default: return traversal::Continue;
-					}
-				});
 				switch (value->getId()) {
-					case "If"_id: transformIf(static_cast<If_t*>(value), temp, ExpUsage::Common); break;
-					case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), temp, ExpUsage::Common); break;
+					case "If"_id: transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList); break;
+					case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), temp, ExpUsage::Assignment, expList); break;
 				}
 				out.push_back(join(temp));
 				return;
 			}
 			case "Switch"_id: {
 				auto switchNode = static_cast<Switch_t*>(value);
-				auto expList = assignment->expList.get();
-				for (auto branch_ : switchNode->branches.objects()) {
-					auto branch = static_cast<SwitchCase_t*>(branch_);
-					assignLastExplist(expList, branch->body);
-				}
-				if (switchNode->lastBranch) {
-					assignLastExplist(expList, switchNode->lastBranch);
-				}
+				auto assignList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
-				transformSwitch(switchNode, out);
+				transformSwitch(switchNode, out, ExpUsage::Assignment, assignList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
@@ -909,9 +866,8 @@ private:
 			case "Do"_id: {
 				auto expList = assignment->expList.get();
 				auto doNode = static_cast<Do_t*>(value);
-				assignLastExplist(expList, doNode->body);
 				std::string preDefine = getPredefine(assignment);
-				transformDo(doNode, out);
+				transformDo(doNode, out, ExpUsage::Assignment, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
@@ -1052,7 +1008,7 @@ private:
 		switch (value->getId()) {
 			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
-			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
+			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
 			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
 			case "Exp"_id: transformExp(static_cast<Exp_t*>(value), out, ExpUsage::Closure); break;
 			default: break;
@@ -1359,7 +1315,7 @@ private:
 		}
 	}
 
-	void transformCond(const node_container& nodes, str_list& out, ExpUsage usage, bool unless = false) {
+	void transformCond(const node_container& nodes, str_list& out, ExpUsage usage, bool unless, ExpList_t* assignList) {
 		std::vector<ast_ptr<false, ast_node>> ns(false);
 		for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
 			ns.push_back(*it);
@@ -1395,7 +1351,7 @@ private:
 			for (auto j = ns.rbegin(); j != ns.rend(); ++j) {
 				newIf->nodes.push_back(*j);
 			}
-			transformCond(newIf->nodes.objects(), out, usage, unless);
+			transformCond(newIf->nodes.objects(), out, usage, unless, assignList);
 			return;
 		}
 		str_list temp;
@@ -1504,7 +1460,7 @@ private:
 				if (pair == ifCondPairs.front() && extraAssignment) {
 					transformAssignment(extraAssignment, temp);
 				}
-				transformBody(pair.second, temp, usage != ExpUsage::Common);
+				transformBody(pair.second, temp, usage, assignList);
 				popScope();
 			}
 			if (!pair.first) {
@@ -1523,12 +1479,12 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformIf(If_t* ifNode, str_list& out, ExpUsage usage) {
-		transformCond(ifNode->nodes.objects(), out, usage);
+	void transformIf(If_t* ifNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		transformCond(ifNode->nodes.objects(), out, usage, false, assignList);
 	}
 
-	void transformUnless(Unless_t* unless, str_list& out, ExpUsage usage) {
-		transformCond(unless->nodes.objects(), out, usage, true);
+	void transformUnless(Unless_t* unless, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		transformCond(unless->nodes.objects(), out, usage, true, assignList);
 	}
 
 	void transformExpList(ExpList_t* expList, str_list& out) {
@@ -1672,13 +1628,13 @@ private:
 			case "const_value"_id: transform_const_value(static_cast<const_value_t*>(value), out); break;
 			case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
 			case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Closure); break;
-			case "Switch"_id: transformSwitchClosure(static_cast<Switch_t*>(value), out); break;
+			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
 			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
 			case "ClassDecl"_id: transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
 			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
 			case "For"_id: transformForClosure(static_cast<For_t*>(value), out); break;
 			case "While"_id: transformWhileClosure(static_cast<While_t*>(value), out); break;
-			case "Do"_id: transformDoClosure(static_cast<Do_t*>(value), out); break;
+			case "Do"_id: transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
 			case "unary_exp"_id: transform_unary_exp(static_cast<unary_exp_t*>(value), out); break;
 			case "TblComprehension"_id: transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
 			case "TableLit"_id: transformTableLit(static_cast<TableLit_t*>(value), out); break;
@@ -1699,7 +1655,7 @@ private:
 		if (auto argsDef = funLit->argsDef.get()) {
 			transformFnArgsDef(argsDef, temp);
 			if (funLit->body) {
-				transformBody(funLit->body, temp, true);
+				transformBody(funLit->body, temp, ExpUsage::Return);
 			} else {
 				temp.push_back(Empty);
 			}
@@ -1720,7 +1676,7 @@ private:
 			}
 		} else {
 			if (funLit->body) {
-				transformBody(funLit->body, temp, true);
+				transformBody(funLit->body, temp, ExpUsage::Return);
 			} else {
 				temp.push_back(Empty);
 			}
@@ -1740,7 +1696,19 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformCodes(const node_container& nodes, str_list& out, bool implicitReturn) {
+	void transformBody(Body_t* body, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		auto x = body;
+		if (auto stmt = body->content.as<Statement_t>()) {
+			auto block = x->new_ptr<Block_t>();
+			block->statements.push_back(stmt);
+			transformBlock(block, out, usage, assignList);
+		} else {
+			transformBlock(body->content.to<Block_t>(), out, usage, assignList);
+		}
+	}
+
+	void transformBlock(Block_t* block, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		const auto& nodes = block->statements.objects();
 		LocalMode mode = LocalMode::None;
 		Local_t* any = nullptr, *capital = nullptr;
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {
@@ -1802,7 +1770,7 @@ private:
 					newStmt->content.set(expListAssign);
 					newBlock->statements.push_back(newStmt);
 				}
-				transformBlock(newBlock, out, implicitReturn);
+				transformBlock(newBlock, out, usage, assignList);
 				return;
 			}
 			if (auto local = stmt->content.as<Local_t>()) {
@@ -1873,21 +1841,52 @@ private:
 				}
 			}
 		}
-		if (implicitReturn) {
-			BLOCK_START
-			BREAK_IF(nodes.empty());
-			auto last = static_cast<Statement_t*>(nodes.back());
-			auto x = last;
-			auto expList = expListFrom(last);
-			BREAK_IF(!expList ||
-				(last->appendix &&
-					last->appendix->item.is<CompInner_t>()));
-			auto expListLow = x->new_ptr<ExpListLow_t>();
-			expListLow->exprs.dup(expList->exprs);
-			auto returnNode = x->new_ptr<Return_t>();
-			returnNode->valueList.set(expListLow);
-			last->content.set(returnNode);
-			BLOCK_END
+		switch (usage) {
+			case ExpUsage::Closure:
+			case ExpUsage::Return: {
+				BLOCK_START
+				BREAK_IF(nodes.empty());
+				auto last = static_cast<Statement_t*>(nodes.back());
+				auto x = last;
+				auto expList = expListFrom(last);
+				BREAK_IF(!expList ||
+					(last->appendix &&
+						last->appendix->item.is<CompInner_t>()));
+				auto expListLow = x->new_ptr<ExpListLow_t>();
+				expListLow->exprs.dup(expList->exprs);
+				auto returnNode = x->new_ptr<Return_t>();
+				returnNode->valueList.set(expListLow);
+				last->content.set(returnNode);
+				BLOCK_END
+				break;
+			}
+			case ExpUsage::Assignment: {
+				auto last = lastStatementFrom(block);
+				if (!last) return;
+				bool lastAssignable = expListFrom(last) || ast_is<For_t, ForEach_t, While_t>(last->content);
+				if (lastAssignable) {
+					auto x = last;
+					auto newAssignment = x->new_ptr<ExpListAssign_t>();
+					newAssignment->expList.set(assignList);
+					auto assign = x->new_ptr<Assign_t>();
+					if (auto valueList = last->content.as<ExpListAssign_t>()) {
+						assign->values.dup(valueList->expList->exprs);
+					} else {
+						auto simpleValue = x->new_ptr<SimpleValue_t>();
+						simpleValue->value.set(last->content);
+						auto value = x->new_ptr<Value_t>();
+						value->item.set(simpleValue);
+						auto exp = x->new_ptr<Exp_t>();
+						exp->value.set(value);
+						assign->values.push_back(exp);
+					}
+					newAssignment->action.set(assign);
+					last->content.set(newAssignment);
+				}
+				break;
+			}
+			default:
+				break;
 		}
 		if (!nodes.empty()) {
 			str_list temp;
@@ -1898,18 +1897,6 @@ private:
 		} else {
 			out.push_back(Empty);
 		}
-	}
-
-	void transformBody(Body_t* body, str_list& out, bool implicitReturn = false) {
-		if (auto stmt = body->content.as<Statement_t>()) {
-			transformCodes(node_container{stmt}, out, implicitReturn);
-		} else {
-			transformCodes(body->content.to<Block_t>()->statements.objects(), out, implicitReturn);
-		}
-	}
-
-	void transformBlock(Block_t* block, str_list& out, bool implicitReturn = true) {
-		transformCodes(block->statements.objects(), out, implicitReturn);
 	}
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
@@ -1938,10 +1925,10 @@ private:
 							transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Return);
 							return;
 						case "Do"_id:
-							transformDo(static_cast<Do_t*>(value), out, true);
+							transformDo(static_cast<Do_t*>(value), out, ExpUsage::Return);
 							return;
 						case "Switch"_id:
-							transformSwitch(static_cast<Switch_t*>(value), out, true);
+							transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Return);
 							return;
 						case "While"_id:
 							transformWhileInPlace(static_cast<While_t*>(value), out);
@@ -2541,16 +2528,11 @@ private:
 						}
 						switch (usage) {
 							case ExpUsage::Common:
-								transformBlock(block, out, false);
-								return;
 							case ExpUsage::Return:
-								transformBlock(block, out, true);
+								transformBlock(block, out, usage);
 								return;
 							case ExpUsage::Assignment: {
-								auto body = x->new_ptr<Body_t>();
-								body->content.set(block);
-								assignLastExplist(assignList, body);
-								transformBlock(block, out);
+								transformBlock(block, out, ExpUsage::Assignment, assignList);
 								return;
 							}
 							default:
@@ -2996,7 +2978,7 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformLoopBody(Body_t* body, str_list& out, const std::string& appendContent) {
+	void transformLoopBody(Body_t* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
 		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
 			switch (node->getId()) {
@@ -3020,7 +3002,7 @@ private:
 			_continueVars.push(continueVar);
 			pushScope();
 		}
-		transformBody(body, temp);
+		transformBody(body, temp, usage, assignList);
 		if (withContinue) {
 			if (!appendContent.empty()) {
 				_buf << indent() << appendContent;
@@ -3042,7 +3024,7 @@ private:
 	void transformFor(For_t* forNode, str_list& out) {
 		str_list temp;
 		transformForHead(forNode, temp);
-		transformLoopBody(forNode->body, temp, Empty);
+		transformLoopBody(forNode->body, temp, Empty, ExpUsage::Common);
 		popScope();
 		out.push_back(join(temp) + indent() + s("end"sv) + nlr(forNode));
 	}
@@ -3058,9 +3040,8 @@ private:
 		out.push_back(clearBuf());
 		transformForHead(forNode, out);
 		auto expList = toAst<ExpList_t>(accum + s("["sv) + len + s("]"sv), x);
-		assignLastExplist(expList, forNode->body);
 		auto lenLine = len + s(" = "sv) + len + s(" + 1"sv) + nlr(forNode->body);
-		transformLoopBody(forNode->body, out, lenLine);
+		transformLoopBody(forNode->body, out, lenLine, ExpUsage::Assignment, expList);
 		popScope();
 		out.push_back(indent() + s("end"sv) + nlr(forNode));
 		return accum;
@@ -3110,7 +3091,7 @@ private:
 	void transformForEach(ForEach_t* forEach, str_list& out) {
 		str_list temp;
 		transformForEachHead(forEach->nameList, forEach->loopValue, temp);
-		transformLoopBody(forEach->body, temp, Empty);
+		transformLoopBody(forEach->body, temp, Empty, ExpUsage::Common);
 		popScope();
 		out.push_back(temp.front() + temp.back() + indent() + s("end"sv) + nlr(forEach));
 	}
@@ -3126,9 +3107,8 @@ private:
 		out.push_back(clearBuf());
 		transformForEachHead(forEach->nameList, forEach->loopValue, out);
 		auto expList = toAst<ExpList_t>(accum + s("["sv) + len + s("]"sv), x);
-		assignLastExplist(expList, forEach->body);
 		auto lenLine = len + s(" = "sv) + len + s(" + 1"sv) + nlr(forEach->body);
-		transformLoopBody(forEach->body, out, lenLine);
+		transformLoopBody(forEach->body, out, lenLine, ExpUsage::Assignment, expList);
 		popScope();
 		out.push_back(indent() + s("end"sv) + nlr(forEach));
 		return accum;
@@ -3763,7 +3743,7 @@ private:
 			}
 		}
 		_withVars.push(withVar);
-		transformBody(with->body, temp);
+		transformBody(with->body, temp, ExpUsage::Common);
 		_withVars.pop();
 		if (assignList) {
 			auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -3975,23 +3955,21 @@ private:
 		transformTable(table, table->values.objects(), out);
 	}
 
-	void transformDo(Do_t* doNode, str_list& out, bool implicitReturn = false) {
+	void transformDo(Do_t* doNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
-		temp.push_back(indent() + s("do"sv) + nll(doNode));
+		if (usage == ExpUsage::Closure) {
+			temp.push_back(s("(function()"sv) + nll(doNode));
+		} else {
+			temp.push_back(indent() + s("do"sv) + nll(doNode));
+		}
 		pushScope();
-		transformBody(doNode->body, temp, implicitReturn);
+		transformBody(doNode->body, temp, usage, assignList);
 		popScope();
-		temp.push_back(indent() + s("end"sv) + nlr(doNode));
-		out.push_back(join(temp));
-	}
-
-	void transformDoClosure(Do_t* doNode, str_list& out) {
-		str_list temp;
-		temp.push_back(s("(function()"sv) + nll(doNode));
-		pushScope();
-		transformBody(doNode->body, temp, true);
-		popScope();
-		temp.push_back(indent() + s("end)()"sv));
+		if (usage == ExpUsage::Closure) {
+			temp.push_back(indent() + s("end)()"sv));
+		} else {
+			temp.push_back(indent() + s("end"sv) + nlr(doNode));
+		}
 		out.push_back(join(temp));
 	}
 
@@ -4154,9 +4132,8 @@ private:
 		temp.back() = indent() + s("while "sv) + temp.back() + s(" do"sv) + nll(whileNode);
 		pushScope();
 		auto assignLeft = toAst<ExpList_t>(accumVar + s("["sv) + lenVar + s("]"sv), x);
-		assignLastExplist(assignLeft, whileNode->body);
 		auto lenLine = lenVar + s(" = "sv) + lenVar + s(" + 1"sv) + nlr(whileNode);
-		transformLoopBody(whileNode->body, temp, lenLine);
+		transformLoopBody(whileNode->body, temp, lenLine, ExpUsage::Assignment, assignLeft);
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(whileNode));
 		if (expList) {
@@ -4191,9 +4168,8 @@ private:
 		temp.back() = indent() + s("while "sv) + temp.back() + s(" do"sv) + nll(whileNode);
 		pushScope();
 		auto assignLeft = toAst<ExpList_t>(accumVar + s("["sv) + lenVar + s("]"sv), x);
-		assignLastExplist(assignLeft, whileNode->body);
 		auto lenLine = lenVar + s(" = "sv) + lenVar + s(" + 1"sv) + nlr(whileNode);
-		transformLoopBody(whileNode->body, temp, lenLine);
+		transformLoopBody(whileNode->body, temp, lenLine, ExpUsage::Assignment, assignLeft);
 		popScope();
 		temp.push_back(indent() + s("end"sv) + nlr(whileNode));
 		temp.push_back(indent() + s("return "sv) + accumVar + nlr(whileNode));
@@ -4206,7 +4182,7 @@ private:
 		str_list temp;
 		pushScope();
 		transformExp(whileNode->condition, temp, ExpUsage::Closure);
-		transformLoopBody(whileNode->body, temp, Empty);
+		transformLoopBody(whileNode->body, temp, Empty, ExpUsage::Common);
 		popScope();
 		_buf << indent() << "while "sv << temp.front() << " do"sv << nll(whileNode);
 		_buf << temp.back();
@@ -4214,18 +4190,12 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformSwitchClosure(Switch_t* switchNode, str_list& out) {
+	void transformSwitch(Switch_t* switchNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
-		temp.push_back(s("(function()"sv) + nll(switchNode));
-		pushScope();
-		transformSwitch(switchNode, temp, true);
-		popScope();
-		temp.push_back(indent() + s("end)()"sv));
-		out.push_back(join(temp));
-	}
-
-	void transformSwitch(Switch_t* switchNode, str_list& out, bool implicitReturn = false) {
-		str_list temp;
+		if (usage == ExpUsage::Closure) {
+			temp.push_back(s("(function()"sv) + nll(switchNode));
+			pushScope();
+		}
 		auto objVar = singleVariableFrom(switchNode->target);
 		if (objVar.empty()) {
 			objVar = getUnusedName("_exp_"sv);
@@ -4251,16 +4221,20 @@ private:
 			}
 			temp.back().append(s(" then"sv) + nll(branch));
 			pushScope();
-			transformBody(branch->body, temp, implicitReturn);
+			transformBody(branch->body, temp, usage, assignList);
 			popScope();
 		}
 		if (switchNode->lastBranch) {
 			temp.push_back(indent() + s("else"sv) + nll(switchNode->lastBranch));
 			pushScope();
-			transformBody(switchNode->lastBranch, temp, implicitReturn);
+			transformBody(switchNode->lastBranch, temp, usage, assignList);
 			popScope();
 		}
 		temp.push_back(indent() + s("end"sv) + nlr(switchNode));
+		if (usage == ExpUsage::Closure) {
+			popScope();
+			temp.push_back(indent() + s("end)()"sv));
+		}
 		out.push_back(join(temp));
 	}
 

@@ -79,7 +79,6 @@ protected:
 		std::stack<bool> doStack;
 	};
 
-
 	template <class T>
 	inline rule& getRule() {
 		return getRule(identity<T>());
