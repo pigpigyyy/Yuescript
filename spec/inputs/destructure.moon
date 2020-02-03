@@ -103,3 +103,12 @@ do
 
 do
 	{if:{a,b,c}} = thing
+
+do
+	{:a, :b} = {a: "Hello", b: "World"} if true
+
+	{days, hours, mins, secs} = [tonumber a for a in *{
+		string.match "1 2 3 4", "(.+)%s(.+)%s(.+)%s(.+)"
+	}]
+
+	{:one, :two, :three} = {w,true for w in foo\gmatch("%S+")}

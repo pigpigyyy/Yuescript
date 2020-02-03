@@ -26,5 +26,4 @@ else
 	print "the other"
 	"nothing", "yeah"
 
-
-
+c, d = 1, 2 if true

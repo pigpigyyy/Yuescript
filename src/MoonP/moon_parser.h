@@ -107,7 +107,6 @@ private:
 	rule Indent;
 	rule EscapeNewLine;
 	rule Space;
-	rule SomeSpace;
 	rule SpaceBreak;
 	rule EmptyLine;
 	rule AlphaNum;

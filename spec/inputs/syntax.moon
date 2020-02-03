@@ -281,9 +281,14 @@ It's OK.
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
 
 f = ->
-	a,b, \
-	c,d, \
+	a,b,
+	c,d,
 	e,f
+
+f = ->
+	a,b \
+	,c,d \
+	,e,f
 
 with obj
 	invoke \
