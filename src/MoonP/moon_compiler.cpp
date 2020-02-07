@@ -690,7 +690,7 @@ private:
 							break;
 						}
 					}
-					throw std::logic_error(_info.errorMessage("Expression list must appear at the end of body block."sv, expList));
+					throw std::logic_error(_info.errorMessage("Expression list must appear at the end of body or block."sv, expList));
 				}
 				break;
 			}
@@ -1252,26 +1252,31 @@ private:
 				bool oneLined = defs.size() == expList->exprs.objects().size() &&
 					traversal::Stop != action->traverse([&](ast_node* n) {
 					switch (n->getId()) {
-						case "Callable"_id: {
-							auto callable = static_cast<Callable_t*>(n);
-							switch (callable->item->getId()) {
-								case "Variable"_id:
-									for (const auto& def : defs) {
+						case "ChainValue"_id: {
+							auto chainValue = static_cast<ChainValue_t*>(n);
+							const auto& items = chainValue->items.objects();
+							BLOCK_START
+							auto callable = ast_cast<Callable_t>(*items.begin());
+							BREAK_IF(!callable);
+							auto next = items.begin(); ++next;
+							BREAK_IF(next == items.end());
+							BREAK_IF((!ast_is<Invoke_t,InvokeArgs_t>(*next)));
+							for (const auto& def : defs) {
+								switch (callable->item->getId()) {
+									case "Variable"_id:
 										if (def == _parser.toString(callable->item)) {
 											return traversal::Stop;
 										}
-									}
-									return traversal::Return;
-								case "SelfName"_id:
-									for (const auto& def : defs) {
+										return traversal::Return;
+									case "SelfName"_id:
 										if (def == "self"sv) {
 											return traversal::Stop;
 										}
-									}
-									return traversal::Return;
-								default:
-									return traversal::Continue;
+										return traversal::Return;
+								}
 							}
+							BLOCK_END
+							return traversal::Continue;
 						}
 						default:
 							return traversal::Continue;

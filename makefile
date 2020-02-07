@@ -206,7 +206,10 @@ clean:
 .PHONY: test
 test: release
 	@echo "Compiling Moonscript codes..."
+	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -t $(TEST_OUTPUT)
+	@echo -en "Compile time: "
+	@$(END_TIME)
 
 # Main rule, checks the executable and symlinks to the output
 all: $(BIN_PATH)/$(BIN_NAME)
