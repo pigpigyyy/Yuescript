@@ -31,7 +31,11 @@ print(moonp.to_lua[[
 f = ->
   print "hello world"
 f!
-]])
+]],{
+  implicit_return_root = true,
+  reserve_line_number = false,
+  lint_global = false
+})
 ```
 
 ## Changes
