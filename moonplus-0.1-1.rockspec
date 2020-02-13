@@ -6,8 +6,10 @@ source = {
 description = {
 	summary = "MoonPlus is a compiler for Moonscript written in C++.",
 	detailed = [[
-	MoonPlus is a compiler with features from Moonscript language 0.5.0 and more advanced features. could be faster than the original Moonscript compiler. ]],
+	MoonPlus is a compiler with features from Moonscript language 0.5.0 and implementing new features to make Moonscript more up to date. ]],
 	homepage = "https://github.com/pigpigyyy/MoonPlus",
+	maintainer = "Li Jin <dragon-fly@qq.com>",
+	labels = {"moonscript","cpp","transpiler"},
 	license = "MIT"
 }
 dependencies = {

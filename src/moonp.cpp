@@ -182,7 +182,7 @@ extern "C" {
 #include "lauxlib.h"
 
 static const char moonplusCodes[] =
-#include "MoonPlus.h"
+#include "Moonscript.h"
 
 static int init_moonplus(lua_State* L) {
 	MoonP::MoonConfig config;

@@ -1,18 +1,42 @@
 # MoonPlus
 
 ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)  
-MoonPlus is a compiler with features from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and could be faster than the original Moonscript compiler. 
+MoonPlus is a compiler with features from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and implementing new features to make Moonscript more up to date. 
+
+Since original Moonscript has been used to write web framework [lapis](https://github.com/leafo/lapis) and run a few business web sites like [itch.io](https://itch.io) and [streak.club](https://streak.club) with some large code bases. The original language is getting too hard to adopt new language features for those may break the stablility for existing applications.
+
+So MoonPlus is a new code base for pushing the language to go forward and may be a playground to try introducing new language syntax or programing paradigms to make Moonscript language more expressive and productive.
 
 ## Features
 
 * No other dependencies needed except modified **parserlib** library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
 * Written in C++17.
 * Support full Moonscript language features, generate the same Lua codes with original compiler.
-* Reserve line numbers from source Moonscript codes in compiled Lua codes to help with debugging.
+* Reserve line numbers from Moonscript sources in compiled Lua codes to help with debugging.
+
+## Installation
+
+Install [luarocks](https://luarocks.org), a package manager for Lua modules. Then install Lua module with
+```sh
+> luarocks install moonplus
+```
+
+## Usage
+
+```Lua
+require("moonp")("main") -- require `main.moon`
+
+local moonp = require("moonp")
+print(moonp.to_lua[[
+f = ->
+  print "hello world"
+f!
+]])
+```
 
 ## Changes
 
-The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus
+The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus.
 
 * Multi-line comment.
 * Usage for symbol `\` to escape new line. Will compile codes:
@@ -176,6 +200,59 @@ local _list_0 = something
 for _index_0 = 1, #_list_0 do
   local x = _list_0[_index_0]
   print(x)
+end
+```
+
+* Expression list appears at the middle of code block is not allowed. For codes like:
+```Moonscript
+-- Moonscript 0.5.0
+f = (x)->
+  "abc",123 -- valid meaningless codes
+  x + 1
+```
+in original Moonscript compiles to:
+```Lua
+local f
+f = function(x)
+ local _ = "abc", 123 -- report error in MoonPlus
+ return x + 1
+end
+```
+
+This feature may lead to some silenced errors. For example:
+```Moonscript
+-- expected codes
+tree\addChild with Node!
+  \addChild subNode
+  
+-- in original Moonscript, codes will still run after adding a break
+tree\addChild
+with Node!
+   \addChild subNode
+```
+the original Moonscript will compile these codes to:
+```Lua
+-- expected codes
+tree:addChild((function()
+  do
+    local _with_0 = Node()
+    _with_0:addChild(subNode)
+    return _with_0
+  end
+end)())
+
+-- codes added with a break will still run
+local _ -- report error in MoonPlus instead of creating
+do      -- an anonymous function to bind the object method
+  local _base_0 = tree
+  local _fn_0 = _base_0.addChild
+  _ = function(...)
+    return _fn_0(_base_0, ...)
+  end
+end
+do
+  local _with_0 = Node()
+  _with_0:addChild(subNode)
 end
 ```
 
