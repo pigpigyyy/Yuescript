@@ -30,8 +30,14 @@ f = ->
 998 |> func2 "abc", 233 |> func0 |> func1
 998 |> func0("abc", 233) |> func1 |> func2
 
+1 |> f 2, 3, 4, 5
+val(2) |> f 1, _, 3, 4, 5
+arr[3] |> f 1, 2, _, 4, 5
+
+a = {"1","2","3"} |> table.concat("") |> tonumber |> f1(1, 2, 3, _) |> f2(1, _, 3)
+
 do
-	(x)<-map {1,2,3}
+	(x)<- map {1,2,3}
 	x * 2
 
 do

@@ -29,7 +29,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.1.0";
+	return "0.5.0-r0.1.1";
 }
 
 class MoonCompiler {
@@ -1528,10 +1528,26 @@ private:
 						}
 						if (isChainValueCall(chainValue)) {
 							auto last = chainValue->items.back();
+							_ast_list* args = nullptr;
 							if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
-								invoke->args.push_front(arg);
+								args = &invoke->args;
 							} else {
-								ast_to<Invoke_t>(last)->args.push_front(arg);
+								args = &(ast_to<Invoke_t>(last)->args);
+							}
+							bool findPlaceHolder = false;
+							for (auto a : args->objects()) {
+								auto name = singleVariableFrom(a);
+								if (name == "_"sv) {
+									if (!findPlaceHolder) {
+										args->swap(a, arg);
+										findPlaceHolder = true;
+									} else {
+										throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place."sv, a));
+									}
+								}
+							}
+							if (!findPlaceHolder) {
+								args->push_front(arg);
 							}
 						} else {
 							auto invoke = x->new_ptr<Invoke_t>();

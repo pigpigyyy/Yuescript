@@ -399,6 +399,18 @@ public:
 		node->release();
 	}
 
+	bool swap(ast_node* node, ast_node* other) {
+		for (auto it = m_objects.begin(); it != m_objects.end(); ++it) {
+			if (*it == node) {
+				*it = other;
+				other->retain();
+				node->release();
+				return true;
+			}
+		}
+		return false;
+	}
+
 	 const node_container& objects() const {
 		return m_objects;
 	}
