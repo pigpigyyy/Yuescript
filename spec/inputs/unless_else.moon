@@ -1,5 +1,5 @@
 if a
-  unless b
+  unless b or d
     print "hi"
   elseif c
     print "not hi"

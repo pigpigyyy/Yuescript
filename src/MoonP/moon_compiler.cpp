@@ -1283,22 +1283,20 @@ private:
 				break;
 			}
 			case "Assign"_id: {
-				auto defs = getAssignDefs(expList);
-				bool oneLined = defs.size() == expList->exprs.objects().size() &&
-					traversal::Stop != action->traverse([&](ast_node* n) {
-					if (n->getId() == "Callable"_id) {
-						if (auto name = n->getByPath<Variable_t>()) {
-							for (const auto& def : defs) {
-								if (def == toString(name)) {
-									return traversal::Stop;
-								}
+				auto assign = static_cast<Assign_t*>(action);
+				bool oneLined = true;
+				for (auto val : assign->values.objects()) {
+					if (auto value = singleValueFrom(val)) {
+						if (auto spValue = value->item.as<SimpleValue_t>()) {
+							if (spValue->value.is<FunLit_t>()) {
+								oneLined = false;
+								break;
 							}
 						}
 					}
-					return traversal::Continue;
-				});
-				if (oneLined) {
-					auto assign = static_cast<Assign_t*>(action);
+				}
+				auto defs = getAssignDefs(expList);
+				if (oneLined && defs.size() == expList->exprs.objects().size()) {
 					for (auto value : assign->values.objects()) {
 						transformAssignItem(value, temp);
 					}
@@ -1314,8 +1312,7 @@ private:
 					} else {
 						out.push_back(preDefine + s(" = "sv) + join(temp, ", "sv) + nll(assignment));
 					}
-				}
-				else {
+				} else {
 					std::string preDefine = getPredefine(defs);
 					for (const auto& def : defs) {
 						addToScope(def);
@@ -1323,7 +1320,6 @@ private:
 					transformExpList(expList, temp);
 					std::string left = temp.back();
 					temp.pop_back();
-					auto assign = static_cast<Assign_t*>(action);
 					for (auto value : assign->values.objects()) {
 						transformAssignItem(value, temp);
 					}
