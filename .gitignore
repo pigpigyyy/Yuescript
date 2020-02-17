@@ -2,3 +2,5 @@ moonp
 build
 build.luarocks
 spec/outputs
+moonplus-*.rock*
+!moonplus-dev-1.rockspec

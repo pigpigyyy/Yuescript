@@ -314,17 +314,17 @@ private:
 	Value_t* singleValueFrom(ast_node* item) const {
 		Exp_t* exp = nullptr;
 		switch (item->getId()) {
-			case "Exp"_id:
+			case id<Exp_t>():
 				exp = static_cast<Exp_t*>(item);
 				break;
-			case "ExpList"_id: {
+			case id<ExpList_t>(): {
 				auto expList = static_cast<ExpList_t*>(item);
 				if (expList->exprs.size() == 1) {
 					exp = static_cast<Exp_t*>(expList->exprs.front());
 				}
 				break;
 			}
-			case "ExpListLow"_id: {
+			case id<ExpListLow_t>(): {
 				auto expList = static_cast<ExpListLow_t*>(item);
 				if (expList->exprs.size() == 1) {
 					exp = static_cast<Exp_t*>(expList->exprs.front());
@@ -459,18 +459,18 @@ private:
 			 auto firstItem = chainItems.back();
 			 if (auto callable = ast_cast<Callable_t>(firstItem)) {
 				 switch (callable->item->getId()) {
-					 case "Variable"_id:
-					 case "SelfName"_id:
+					 case id<Variable_t>():
+					 case id<SelfName_t>():
 						 return true;
 				 }
-			 } else if (firstItem->getId() == "DotChainItem"_id) {
+			 } else if (firstItem->getId() == id<DotChainItem_t>()) {
 				 return true;
 			 }
 		 } else {
 			auto lastItem = chainItems.back();
 			switch (lastItem->getId()) {
-				case "DotChainItem"_id:
-				case "Exp"_id:
+				case id<DotChainItem_t>():
+				case id<Exp_t>():
 					return true;
 			}
 		}
@@ -481,16 +481,16 @@ private:
 		if (auto value = singleValueFrom(exp)) {
 			auto item = value->item.get();
 			switch (item->getId()) {
-				case "simple_table"_id:
+				case id<simple_table_t>():
 					return true;
-				case "SimpleValue"_id: {
+				case id<SimpleValue_t>(): {
 					auto simpleValue = static_cast<SimpleValue_t*>(item);
 					if (simpleValue->value. is<TableLit_t>()) {
 						return true;
 					}
 					return false;
 				}
-				case "ChainValue"_id: {
+				case id<ChainValue_t>(): {
 					auto chainValue = static_cast<ChainValue_t*>(item);
 					return isAssignable(chainValue->items.objects());
 				}
@@ -539,7 +539,7 @@ private:
 			}
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
-				case "if_else_line"_id: {
+				case id<if_else_line_t>(): {
 					auto if_else_line = appendix->item.to<if_else_line_t>();
 					auto ifNode = x->new_ptr<If_t>();
 
@@ -580,7 +580,7 @@ private:
 					statement->content.set(expListAssign);
 					break;
 				}
-				case "unless_line"_id: {
+				case id<unless_line_t>(): {
 					auto unless_line = appendix->item.to<unless_line_t>();
 					auto unless = x->new_ptr<Unless_t>();
 
@@ -608,7 +608,7 @@ private:
 					statement->content.set(expListAssign);
 					break;
 				}
-				case "CompInner"_id: {
+				case id<CompInner_t>(): {
 					auto compInner = appendix->item.to<CompInner_t>();
 					auto comp = x->new_ptr<Comprehension_t>();
 					comp->forLoop.set(compInner);
@@ -629,7 +629,7 @@ private:
 					statement->appendix.set(nullptr);
 					break;
 				}
-				default: break;
+				default: assert(false); break;
 			}
 		}
 		auto content = statement->content.get();
@@ -638,15 +638,15 @@ private:
 			return;
 		}
 		switch (content->getId()) {
-			case "Import"_id: transformImport(static_cast<Import_t*>(content), out); break;
-			case "While"_id: transformWhile(static_cast<While_t*>(content), out); break;
-			case "For"_id: transformFor(static_cast<For_t*>(content), out); break;
-			case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(content), out); break;
-			case "Return"_id: transformReturn(static_cast<Return_t*>(content), out); break;
-			case "Local"_id: transformLocal(static_cast<Local_t*>(content), out); break;
-			case "Export"_id: transformExport(static_cast<Export_t*>(content), out); break;
-			case "BreakLoop"_id: transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
-			case "ExpListAssign"_id: {
+			case id<Import_t>(): transformImport(static_cast<Import_t*>(content), out); break;
+			case id<While_t>(): transformWhile(static_cast<While_t*>(content), out); break;
+			case id<For_t>(): transformFor(static_cast<For_t*>(content), out); break;
+			case id<ForEach_t>(): transformForEach(static_cast<ForEach_t*>(content), out); break;
+			case id<Return_t>(): transformReturn(static_cast<Return_t*>(content), out); break;
+			case id<Local_t>(): transformLocal(static_cast<Local_t*>(content), out); break;
+			case id<Export_t>(): transformExport(static_cast<Export_t*>(content), out); break;
+			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
+			case id<ExpListAssign_t>(): {
 				auto expListAssign = static_cast<ExpListAssign_t*>(content);
 				if (expListAssign->action) {
 					transformAssignment(expListAssign, out);
@@ -661,16 +661,16 @@ private:
 							auto value = simpleValue->value.get();
 							bool specialSingleValue = true;
 							switch (value->getId()) {
-								case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Common); break;
-								case "ClassDecl"_id: transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Common); break;
-								case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Common); break;
-								case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Common); break;
-								case "With"_id: transformWith(static_cast<With_t*>(value), out); break;
-								case "ForEach"_id: transformForEach(static_cast<ForEach_t*>(value), out); break;
-								case "For"_id: transformFor(static_cast<For_t*>(value), out); break;
-								case "While"_id: transformWhile(static_cast<While_t*>(value), out); break;
-								case "Do"_id: transformDo(static_cast<Do_t*>(value), out, ExpUsage::Common); break;
-								case "Comprehension"_id: transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
+								case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Common); break;
+								case id<ClassDecl_t>(): transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Common); break;
+								case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Common); break;
+								case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Common); break;
+								case id<With_t>(): transformWith(static_cast<With_t*>(value), out); break;
+								case id<ForEach_t>(): transformForEach(static_cast<ForEach_t*>(value), out); break;
+								case id<For_t>(): transformFor(static_cast<For_t*>(value), out); break;
+								case id<While_t>(): transformWhile(static_cast<While_t*>(value), out); break;
+								case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Common); break;
+								case id<Comprehension_t>(): transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
 								default: specialSingleValue = false; break;
 							}
 							if (specialSingleValue) {
@@ -694,7 +694,7 @@ private:
 				}
 				break;
 			}
-			default: break;
+			default: assert(false); break;
 		}
 	}
 
@@ -834,20 +834,20 @@ private:
 			}
 		}
 		switch (value->getId()) {
-			case "If"_id:
-			case "Unless"_id: {
+			case id<If_t>():
+			case id<Unless_t>(): {
 				auto expList = assignment->expList.get();
 				str_list temp;
 				auto defs = transformAssignDefs(expList);
 				if (!defs.empty()) temp.push_back(getPredefine(defs) + nll(expList));
 				switch (value->getId()) {
-					case "If"_id: transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList); break;
-					case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), temp, ExpUsage::Assignment, expList); break;
+					case id<If_t>(): transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList); break;
+					case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), temp, ExpUsage::Assignment, expList); break;
 				}
 				out.push_back(join(temp));
 				return;
 			}
-			case "Switch"_id: {
+			case id<Switch_t>(): {
 				auto switchNode = static_cast<Switch_t*>(value);
 				auto assignList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
@@ -855,7 +855,7 @@ private:
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "With"_id: {
+			case id<With_t>(): {
 				auto withNode = static_cast<With_t*>(value);
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
@@ -863,7 +863,7 @@ private:
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "Do"_id: {
+			case id<Do_t>(): {
 				auto expList = assignment->expList.get();
 				auto doNode = static_cast<Do_t*>(value);
 				std::string preDefine = getPredefine(assignment);
@@ -871,42 +871,42 @@ private:
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "Comprehension"_id: {
+			case id<Comprehension_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Assignment, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "TblComprehension"_id: {
+			case id<TblComprehension_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Assignment, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "For"_id: {
+			case id<For_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformForInPlace(static_cast<For_t*>(value), out, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "ForEach"_id: {
+			case id<ForEach_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformForEachInPlace(static_cast<ForEach_t*>(value), out, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "ClassDecl"_id: {
+			case id<ClassDecl_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Assignment, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
 			}
-			case "While"_id: {
+			case id<While_t>(): {
 				auto expList = assignment->expList.get();
 				std::string preDefine = getPredefine(assignment);
 				transformWhileInPlace(static_cast<While_t*>(value), out, expList);
@@ -1006,12 +1006,12 @@ private:
 
 	void transformAssignItem(ast_node* value, str_list& out) {
 		switch (value->getId()) {
-			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
-			case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
-			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
-			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
-			case "Exp"_id: transformExp(static_cast<Exp_t*>(value), out, ExpUsage::Closure); break;
-			default: break;
+			case id<With_t>(): transformWithClosure(static_cast<With_t*>(value), out); break;
+			case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
+			case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
+			case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
+			case id<Exp_t>(): transformExp(static_cast<Exp_t*>(value), out, ExpUsage::Closure); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -1034,7 +1034,7 @@ private:
 		int index = 0;
 		for (auto pair : *tableItems) {
 			switch (pair->getId()) {
-				case "Exp"_id: {
+				case id<Exp_t>(): {
 					++index;
 					if (!isAssignable(static_cast<Exp_t*>(pair)))  {
 						throw std::logic_error(_info.errorMessage("Can't destructure value."sv, pair));
@@ -1068,7 +1068,7 @@ private:
 					}
 					break;
 				}
-				case "variable_pair"_id: {
+				case id<variable_pair_t>(): {
 					auto vp = static_cast<variable_pair_t*>(pair);
 					auto name = _parser.toString(vp->name);
 					if (Keywords.find(name) != Keywords.end()) {
@@ -1078,7 +1078,7 @@ private:
 					}
 					break;
 				}
-				case "normal_pair"_id: {
+				case id<normal_pair_t>(): {
 					auto np = static_cast<normal_pair_t*>(pair);
 					auto key = np->key->getByPath<Name_t>();
 					if (!key) throw std::logic_error(_info.errorMessage("Invalid key for destructure."sv, np));
@@ -1135,6 +1135,7 @@ private:
 					}
 					break;
 				}
+				default: assert(false); break;
 			}
 		}
 		return pairs;
@@ -1203,7 +1204,7 @@ private:
 		auto expList = assignment->expList.get();
 		auto action = assignment->action.get();
 		switch (action->getId()) {
-			case "Update"_id: {
+			case id<Update_t>(): {
 				if (expList->exprs.size() > 1) throw std::logic_error(_info.errorMessage("Can not apply update to multiple values."sv, expList));
 				auto update = static_cast<Update_t*>(action);
 				auto leftExp = static_cast<Exp_t*>(expList->exprs.objects().front());
@@ -1247,7 +1248,7 @@ private:
 				out.push_back(clearBuf());
 				break;
 			}
-			case "Assign"_id: {
+			case id<Assign_t>(): {
 				bool oneLined = true;
 				auto assign = static_cast<Assign_t*>(action);
 				for (auto val : assign->values.objects()) {
@@ -1292,7 +1293,7 @@ private:
 				}
 				break;
 			}
-			default: break;
+			default: assert(false); break;
 		}
 	}
 
@@ -1344,14 +1345,14 @@ private:
 		ifCondPairs.emplace_back();
 		for (auto node : nodes) {
 			switch (node->getId()) {
-				case "IfCond"_id:
+				case id<IfCond_t>():
 					ifCondPairs.back().first = static_cast<IfCond_t*>(node);
 					break;
-				case "Body"_id:
+				case id<Body_t>():
 					ifCondPairs.back().second = static_cast<Body_t*>(node);
 					ifCondPairs.emplace_back();
 					break;
-				default: break;
+				default: assert(false); break;
 			}
 		}
 		auto assign = ifCondPairs.front().first->assign.get();
@@ -1571,22 +1572,22 @@ private:
 	void transformValue(Value_t* value, str_list& out) {
 		auto item = value->item.get();
 		switch (item->getId()) {
-			case "SimpleValue"_id: transformSimpleValue(static_cast<SimpleValue_t*>(item), out); break;
-			case "simple_table"_id: transform_simple_table(static_cast<simple_table_t*>(item), out); break;
-			case "ChainValue"_id: {
+			case id<SimpleValue_t>(): transformSimpleValue(static_cast<SimpleValue_t*>(item), out); break;
+			case id<simple_table_t>(): transform_simple_table(static_cast<simple_table_t*>(item), out); break;
+			case id<ChainValue_t>(): {
 				auto chainValue = static_cast<ChainValue_t*>(item);
 				transformChainValue(chainValue, out, ExpUsage::Closure);
 				break;
 			}
-			case "String"_id: transformString(static_cast<String_t*>(item), out); break;
-			default: break;
+			case id<String_t>(): transformString(static_cast<String_t*>(item), out); break;
+			default: assert(false); break;
 		}
 	}
 
 	void transformCallable(Callable_t* callable, str_list& out, const ast_sel<false,Invoke_t,InvokeArgs_t>& invoke = {}) {
 		auto item = callable->item.get();
 		switch (item->getId()) {
-			case "Variable"_id: {
+			case id<Variable_t>(): {
 				transformVariable(static_cast<Variable_t*>(item), out);
 				if (_config.lintGlobalVariable && !isDefined(out.back())) {
 					if (_globals.find(out.back()) == _globals.end()) {
@@ -1595,7 +1596,7 @@ private:
 				}
 				break;
 			}
-			case "SelfName"_id: {
+			case id<SelfName_t>(): {
 				transformSelfName(static_cast<SelfName_t*>(item), out, invoke);
 				if (_config.lintGlobalVariable) {
 					std::string self("self"sv);
@@ -1607,9 +1608,9 @@ private:
 				}
 				break;
 			}
-			case "VarArg"_id: out.push_back(s("..."sv)); break;
-			case "Parens"_id: transformParens(static_cast<Parens_t*>(item), out); break;
-			default: break;
+			case id<VarArg_t>(): out.push_back(s("..."sv)); break;
+			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -1622,23 +1623,23 @@ private:
 	void transformSimpleValue(SimpleValue_t* simpleValue, str_list& out) {
 		auto value = simpleValue->value.get();
 		switch (value->getId()) {
-			case "const_value"_id: transform_const_value(static_cast<const_value_t*>(value), out); break;
-			case "If"_id: transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
-			case "Unless"_id: transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Closure); break;
-			case "Switch"_id: transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
-			case "With"_id: transformWithClosure(static_cast<With_t*>(value), out); break;
-			case "ClassDecl"_id: transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
-			case "ForEach"_id: transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
-			case "For"_id: transformForClosure(static_cast<For_t*>(value), out); break;
-			case "While"_id: transformWhileClosure(static_cast<While_t*>(value), out); break;
-			case "Do"_id: transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
-			case "unary_exp"_id: transform_unary_exp(static_cast<unary_exp_t*>(value), out); break;
-			case "TblComprehension"_id: transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
-			case "TableLit"_id: transformTableLit(static_cast<TableLit_t*>(value), out); break;
-			case "Comprehension"_id: transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
-			case "FunLit"_id: transformFunLit(static_cast<FunLit_t*>(value), out); break;
-			case "Num"_id: transformNum(static_cast<Num_t*>(value), out); break;
-			default: break;
+			case id<const_value_t>(): transform_const_value(static_cast<const_value_t*>(value), out); break;
+			case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
+			case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Closure); break;
+			case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
+			case id<With_t>(): transformWithClosure(static_cast<With_t*>(value), out); break;
+			case id<ClassDecl_t>(): transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
+			case id<ForEach_t>(): transformForEachClosure(static_cast<ForEach_t*>(value), out); break;
+			case id<For_t>(): transformForClosure(static_cast<For_t*>(value), out); break;
+			case id<While_t>(): transformWhileClosure(static_cast<While_t*>(value), out); break;
+			case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
+			case id<unary_exp_t>(): transform_unary_exp(static_cast<unary_exp_t*>(value), out); break;
+			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
+			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
+			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
+			case id<FunLit_t>(): transformFunLit(static_cast<FunLit_t*>(value), out); break;
+			case id<Num_t>(): transformNum(static_cast<Num_t*>(value), out); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -1882,8 +1883,7 @@ private:
 				}
 				break;
 			}
-			default:
-				break;
+			default: break;
 		}
 		if (!nodes.empty()) {
 			str_list temp;
@@ -1909,37 +1909,37 @@ private:
 				if (auto simpleValue = singleValue->item.as<SimpleValue_t>()) {
 					auto value = simpleValue->value.get();
 					switch (value->getId()) {
-						case "Comprehension"_id:
+						case id<Comprehension_t>():
 							transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Return);
 							return;
-						case "TblComprehension"_id:
+						case id<TblComprehension_t>():
 							transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Return);
 							return;
-						case "With"_id:
+						case id<With_t>():
 							transformWith(static_cast<With_t*>(value), out, nullptr, true);
 							return;
-						case "ClassDecl"_id:
+						case id<ClassDecl_t>():
 							transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Return);
 							return;
-						case "Do"_id:
+						case id<Do_t>():
 							transformDo(static_cast<Do_t*>(value), out, ExpUsage::Return);
 							return;
-						case "Switch"_id:
+						case id<Switch_t>():
 							transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Return);
 							return;
-						case "While"_id:
+						case id<While_t>():
 							transformWhileInPlace(static_cast<While_t*>(value), out);
 							return;
-						case "For"_id:
+						case id<For_t>():
 							transformForInPlace(static_cast<For_t*>(value), out);
 							return;
-						case "ForEach"_id:
+						case id<ForEach_t>():
 							transformForEachInPlace(static_cast<ForEach_t*>(value), out);
 							return;
-						case "If"_id:
+						case id<If_t>():
 							transformIf(static_cast<If_t*>(value), out, ExpUsage::Return);
 							return;
-						case "Unless"_id:
+						case id<Unless_t>():
 							transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Return);
 							return;
 					}
@@ -1998,34 +1998,35 @@ private:
 			auto def = static_cast<FnArgDef_t*>(_def);
 			auto& arg = argItems.emplace_back();
 			switch (def->name->getId()) {
-				case "Variable"_id: arg.name = _parser.toString(def->name); break;
-				case "SelfName"_id: {
+				case id<Variable_t>(): arg.name = _parser.toString(def->name); break;
+				case id<SelfName_t>(): {
 					assignSelf = true;
 					auto selfName = static_cast<SelfName_t*>(def->name.get());
 					switch (selfName->name->getId()) {
-						case "self_class_name"_id: {
+						case id<self_class_name_t>(): {
 							auto clsName = static_cast<self_class_name_t*>(selfName->name.get());
 							arg.name = _parser.toString(clsName->name);
 							arg.assignSelf = s("self.__class."sv) + arg.name;
 							break;
 						}
-						case "self_class"_id:
+						case id<self_class_t>():
 							arg.name = "self.__class"sv;
 							break;
-						case "self_name"_id: {
+						case id<self_name_t>(): {
 
 							auto sfName = static_cast<self_name_t*>(selfName->name.get());
 							arg.name = _parser.toString(sfName->name);
 							arg.assignSelf = s("self."sv) + arg.name;
 							break;
 						}
-						case "self"_id:
+						case id<self_t>():
 							arg.name = "self"sv;
 							break;
-						default: break;
+						default: assert(false); break;
 					}
 					break;
 				}
+				default: assert(false); break;
 			}
 			forceAddToScope(arg.name);
 			if (def->defaultValue) {
@@ -2075,7 +2076,7 @@ private:
 		auto x = selfName;
 		auto name = selfName->name.get();
 		switch (name->getId()) {
-			case "self_class_name"_id: {
+			case id<self_class_name_t>(): {
 				auto clsName = static_cast<self_class_name_t*>(name);
 				auto nameStr = _parser.toString(clsName->name);
 				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
@@ -2093,10 +2094,10 @@ private:
 				}
 				break;
 			}
-			case "self_class"_id:
+			case id<self_class_t>():
 				out.push_back(s("self.__class"sv));
 				break;
-			case "self_name"_id: {
+			case id<self_name_t>(): {
 				auto sfName = static_cast<self_class_name_t*>(name);
 				auto nameStr = _parser.toString(sfName->name);
 				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
@@ -2114,9 +2115,10 @@ private:
 				}
 				break;
 			}
-			case "self"_id:
+			case id<self_t>():
 				out.push_back(s("self"sv));
 				break;
+			default: assert(false); break;
 		}
 	}
 
@@ -2344,8 +2346,8 @@ private:
 			}
 			auto baseChain = x->new_ptr<ChainValue_t>();
 			switch (chainList.front()->getId()) {
-				case "DotChainItem"_id:
-				case "ColonChainItem"_id:
+				case id<DotChainItem_t>():
+				case id<ColonChainItem_t>():
 					if (_withVars.empty()) {
 						throw std::logic_error(_info.errorMessage("Short dot/colon syntax must be called within a with block."sv, chainList.front()));
 					} else {
@@ -2426,8 +2428,8 @@ private:
 		auto x = chainList.front();
 		str_list temp;
 		switch (x->getId()) {
-			case "DotChainItem"_id:
-			case "ColonChainItem"_id:
+			case id<DotChainItem_t>():
+			case id<ColonChainItem_t>():
 				if (_withVars.empty()) {
 					throw std::logic_error(_info.errorMessage("Short dot/colon syntax must be called within a with block."sv, x));
 				} else {
@@ -2438,13 +2440,13 @@ private:
 		for (auto it = chainList.begin(); it != chainList.end(); ++it) {
 			auto item = *it;
 			switch (item->getId()) {
-				case "Invoke"_id:
+				case id<Invoke_t>():
 					transformInvoke(static_cast<Invoke_t*>(item), temp);
 					break;
-				case "DotChainItem"_id:
+				case id<DotChainItem_t>():
 					transformDotChainItem(static_cast<DotChainItem_t*>(item), temp);
 					break;
-				case "ColonChainItem"_id: {
+				case id<ColonChainItem_t>(): {
 					auto colonItem = static_cast<ColonChainItem_t*>(item);
 					auto current = it;
 					auto next = current; ++next;
@@ -2469,8 +2471,8 @@ private:
 						{
 							auto chainValue = x->new_ptr<ChainValue_t>();
 							switch (chainList.front()->getId()) {
-								case "DotChainItem"_id:
-								case "ColonChainItem"_id:
+								case id<DotChainItem_t>():
+								case id<ColonChainItem_t>():
 								chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), x));
 									break;
 							}
@@ -2559,10 +2561,10 @@ private:
 					transformColonChainItem(colonItem, temp);
 					break;
 				}
-				case "Slice"_id:
+				case id<Slice_t>():
 					transformSlice(static_cast<Slice_t*>(item), temp);
 					break;
-				case "Callable"_id: {
+				case id<Callable_t>(): {
 					auto next = it; ++next;
 					auto followItem = next != chainList.end() ? *next : nullptr;
 					ast_sel<false, Invoke_t, InvokeArgs_t> invoke;
@@ -2572,16 +2574,16 @@ private:
 					transformCallable(static_cast<Callable_t*>(item), temp, invoke);
 					break;
 				}
-				case "String"_id:
+				case id<String_t>():
 					transformString(static_cast<String_t*>(item), temp);
 					temp.back() = s("("sv) + temp.back() + s(")"sv);
 					break;
-				case "Exp"_id:
+				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure);
 					temp.back() = s("["sv) + temp.back() + s("]"sv);
 					break;
-				case "InvokeArgs"_id: transformInvokeArgs(static_cast<InvokeArgs_t*>(item), temp); break;
-				default: break;
+				case id<InvokeArgs_t>(): transformInvokeArgs(static_cast<InvokeArgs_t*>(item), temp); break;
+				default: assert(false); break;
 			}
 		}
 		switch (usage) {
@@ -2637,11 +2639,11 @@ private:
 		str_list temp;
 		for (auto arg : invoke->args.objects()) {
 			switch (arg->getId()) {
-				case "Exp"_id: transformExp(static_cast<Exp_t*>(arg), temp, ExpUsage::Closure); break;
-				case "SingleString"_id: transformSingleString(static_cast<SingleString_t*>(arg), temp); break;
-				case "DoubleString"_id: transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
-				case "LuaString"_id: transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
-				default: break;
+				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(arg), temp, ExpUsage::Closure); break;
+				case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(arg), temp); break;
+				case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
+				case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
+				default: assert(false); break;
 			}
 		}
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
@@ -2672,17 +2674,18 @@ private:
 		auto compInner = comp->forLoop.get();
 		for (auto item : compInner->items.objects()) {
 			switch (item->getId()) {
-				case "CompForEach"_id:
+				case id<CompForEach_t>():
 					transformCompForEach(static_cast<CompForEach_t*>(item), temp);
 					break;
-				case "CompFor"_id:
+				case id<CompFor_t>():
 					transformCompFor(static_cast<CompFor_t*>(item), temp);
 					break;
-				case "Exp"_id:
+				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure);
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
+				default: assert(false); break;
 			}
 		}
 		if (auto stmt = comp->value.as<Statement_t>()) {
@@ -2724,17 +2727,18 @@ private:
 		auto compInner = comp->forLoop.get();
 		for (auto item : compInner->items.objects()) {
 			switch (item->getId()) {
-				case "CompForEach"_id:
+				case id<CompForEach_t>():
 					transformCompForEach(static_cast<CompForEach_t*>(item), temp);
 					break;
-				case "CompFor"_id:
+				case id<CompFor_t>():
 					transformCompFor(static_cast<CompFor_t*>(item), temp);
 					break;
-				case "Exp"_id:
+				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure);
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
+				default: assert(false); break;
 			}
 		}
 		{
@@ -2802,22 +2806,22 @@ private:
 		for (auto _item : nameList->items.objects()) {
 			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
 			switch (item->getId()) {
-				case "Variable"_id:
+				case id<Variable_t>():
 					transformVariable(static_cast<Variable_t*>(item), vars);
 					varAfter.push_back(vars.back());
 					break;
-				case "TableLit"_id: {
+				case id<TableLit_t>(): {
 					auto desVar = getUnusedName("_des_"sv);
 					destructPairs.emplace_back(item, toAst<Exp_t>(desVar, x));
 					vars.push_back(desVar);
 					varAfter.push_back(desVar);
 					break;
 				}
-				default: break;
+				default: assert(false); break;
 			}
 		}
 		switch (loopTarget->getId()) {
-			case "star_exp"_id: {
+			case id<star_exp_t>(): {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
 				auto listVar = singleVariableFrom(star_exp->value);
 				auto indexVar = getUnusedName("_index_");
@@ -2902,17 +2906,17 @@ private:
 				}
 				break;
 			}
-			case "Exp"_id:
+			case id<Exp_t>():
 				transformExp(static_cast<Exp_t*>(loopTarget), temp, ExpUsage::Closure);
 				_buf << indent() << "for "sv << join(vars, ", "sv) << " in "sv << temp.back() << " do"sv << nlr(loopTarget);
 				out.push_back(clearBuf());
 				break;
-			case "ExpList"_id:
+			case id<ExpList_t>():
 				transformExpList(static_cast<ExpList_t*>(loopTarget), temp);
 				_buf << indent() << "for "sv << join(vars, ", "sv) << " in "sv << temp.back() << " do"sv << nlr(loopTarget);
 				out.push_back(clearBuf());
 				break;
-			default: break;
+			default: assert(false); break;
 		}
 		for (auto& var : varBefore) addToScope(var);
 		pushScope();
@@ -2947,9 +2951,9 @@ private:
 		str_list temp;
 		for (auto arg : invokeArgs->args.objects()) {
 			switch (arg->getId()) {
-				case "Exp"_id: transformExp(static_cast<Exp_t*>(arg), temp, ExpUsage::Closure); break;
-				case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(arg), temp); break;
-				default: break;
+				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(arg), temp, ExpUsage::Closure); break;
+				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(arg), temp); break;
+				default: assert(false); break;
 			}
 		}
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
@@ -2979,10 +2983,10 @@ private:
 		str_list temp;
 		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
 			switch (node->getId()) {
-				case "For"_id:
-				case "ForEach"_id:
+				case id<For_t>():
+				case id<ForEach_t>():
 					return traversal::Return;
-				case "BreakLoop"_id: {
+				case id<BreakLoop_t>(): {
 					return _parser.toString(node) == "continue"sv ?
 						traversal::Stop : traversal::Return;
 				}
@@ -3156,31 +3160,31 @@ private:
 		auto key = pair->key.get();
 		str_list temp;
 		switch (key->getId()) {
-			case "KeyName"_id: {
+			case id<KeyName_t>(): {
 				transformKeyName(static_cast<KeyName_t*>(key), temp);
 				if (LuaKeywords.find(temp.back()) != LuaKeywords.end()) {
 					temp.back() = s("[\""sv) + temp.back() + s("\"]");
 				}
 				break;
 			}
-			case "Exp"_id:
+			case id<Exp_t>():
 				transformExp(static_cast<Exp_t*>(key), temp, ExpUsage::Closure);
 				temp.back() = s("["sv) + temp.back() + s("]"sv);
 				break;
-			case "DoubleString"_id:
+			case id<DoubleString_t>():
 				transformDoubleString(static_cast<DoubleString_t*>(key), temp);
 				temp.back() = s("["sv) + temp.back() + s("]"sv);
 				break;
-			case "SingleString"_id: transformSingleString(static_cast<SingleString_t*>(key), temp);
+			case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(key), temp);
 				temp.back() = s("["sv) + temp.back() + s("]"sv);
 				break;
-			default: break;
+			default: assert(false); break;
 		}
 		auto value = pair->value.get();
 		switch (value->getId()) {
-			case "Exp"_id: transformExp(static_cast<Exp_t*>(value), temp, ExpUsage::Closure); break;
-			case "TableBlock"_id: transformTableBlock(static_cast<TableBlock_t*>(value), temp); break;
-			default: break;
+			case id<Exp_t>(): transformExp(static_cast<Exp_t*>(value), temp, ExpUsage::Closure); break;
+			case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(value), temp); break;
+			default: assert(false); break;
 		}
 		out.push_back(temp.front() + s(" = "sv) + temp.back());
 	}
@@ -3188,9 +3192,9 @@ private:
 	void transformKeyName(KeyName_t* keyName, str_list& out) {
 		auto name = keyName->name.get();
 		switch (name->getId()) {
-			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(name), out); break;
-			case "Name"_id: out.push_back(_parser.toString(name)); break;
-			default: break;
+			case id<SelfName_t>(): transformSelfName(static_cast<SelfName_t*>(name), out); break;
+			case id<Name_t>(): out.push_back(_parser.toString(name)); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -3214,18 +3218,18 @@ private:
 			auto seg = static_cast<double_string_content_t*>(_seg);
 			auto content = seg->content.get();
 			switch (content->getId()) {
-				case "double_string_inner"_id: {
+				case id<double_string_inner_t>(): {
 					auto str = _parser.toString(content);
 					Utils::replace(str, "\r"sv, "");
 					Utils::replace(str, "\n"sv, "\\n"sv);
 					temp.push_back(s("\""sv) + str + s("\""sv));
 					break;
 				}
-				case "Exp"_id:
+				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(content), temp, ExpUsage::Closure);
 					temp.back() = s("tostring("sv) + temp.back() + s(")"sv);
 					break;
-				default: break;
+				default: assert(false); break;
 			}
 		}
 		out.push_back(temp.empty() ? s("\"\""sv) : join(temp, " .. "sv));
@@ -3234,10 +3238,10 @@ private:
 	void transformString(String_t* string, str_list& out) {
 		auto str = string->str.get();
 		switch (str->getId()) {
-			case "SingleString"_id: transformSingleString(static_cast<SingleString_t*>(str), out); break;
-			case "DoubleString"_id: transformDoubleString(static_cast<DoubleString_t*>(str), out); break;
-			case "LuaString"_id: transformLuaString(static_cast<LuaString_t*>(str), out); break;
-			default: break;
+			case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(str), out); break;
+			case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(str), out); break;
+			case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(str), out); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -3370,7 +3374,7 @@ private:
 			std::list<ClassMember> members;
 			for (auto content : classDecl->body->contents.objects()) {
 				switch (content->getId()) {
-					case "class_member_list"_id: {
+					case id<class_member_list_t>(): {
 						size_t inc = transform_class_member_list(static_cast<class_member_list_t*>(content), members, classVar);
 						auto it = members.end();
 						for (size_t i = 0; i < inc; ++i, --it);
@@ -3384,10 +3388,10 @@ private:
 						}
 						break;
 					}
-					case "Statement"_id:
+					case id<Statement_t>():
 						transformStatement(static_cast<Statement_t*>(content), statements);
 						break;
-					default: break;
+					default: assert(false); break;
 				}
 			}
 			for (auto& member : members) {
@@ -3530,7 +3534,7 @@ private:
 				}
 			}
 			normal_pair->value->traverse([&](ast_node* node) {
-				if (node->getId() == "ClassDecl"_id) return traversal::Return;
+				if (node->getId() == id<ClassDecl_t>()) return traversal::Return;
 				if (auto chainValue = ast_cast<ChainValue_t>(node)) {
 					if (auto callable = ast_cast<Callable_t>(chainValue->items.front())) {
 						auto var = callable->item.get();
@@ -3538,12 +3542,12 @@ private:
 							auto insertSelfToArguments = [&](ast_node* item) {
 								auto x = item;
 								switch (item->getId()) {
-									case "InvokeArgs"_id: {
+									case id<InvokeArgs_t>(): {
 										auto invoke = static_cast<InvokeArgs_t*>(item);
 										invoke->args.push_front(toAst<Exp_t>("self"sv, x));
 										return true;
 									}
-									case "Invoke"_id: {
+									case id<Invoke_t>(): {
 										auto invoke = static_cast<Invoke_t*>(item);
 										invoke->args.push_front(toAst<Exp_t>("self"sv, x));
 										return true;
@@ -3584,12 +3588,13 @@ private:
 				decIndentOffset();
 			}
 			switch (keyValue->getId()) {
-				case "variable_pair"_id:
+				case id<variable_pair_t>():
 					transform_variable_pair(static_cast<variable_pair_t*>(keyValue), temp);
 					break;
-				case "normal_pair"_id:
+				case id<normal_pair_t>():
 					transform_normal_pair(static_cast<normal_pair_t*>(keyValue), temp);
 					break;
+				default: assert(false); break;
 			}
 			if (type == MemType::Property) {
 				incIndentOffset();
@@ -3605,10 +3610,10 @@ private:
 	void transformAssignable(Assignable_t* assignable, str_list& out) {
 		auto item = assignable->item.get();
 		switch (item->getId()) {
-			case "AssignableChain"_id: transformAssignableChain(static_cast<AssignableChain_t*>(item), out); break;
-			case "Variable"_id: transformVariable(static_cast<Variable_t*>(item), out); break;
-			case "SelfName"_id: transformSelfName(static_cast<SelfName_t*>(item), out); break;
-			default: break;
+			case id<AssignableChain_t>(): transformAssignableChain(static_cast<AssignableChain_t*>(item), out); break;
+			case id<Variable_t>(): transformVariable(static_cast<Variable_t*>(item), out); break;
+			case id<SelfName_t>(): transformSelfName(static_cast<SelfName_t*>(item), out); break;
+			default: assert(false); break;
 		}
 	}
 
@@ -3771,23 +3776,23 @@ private:
 		auto x = exportNode;
 		auto item = exportNode->item.get();
 		switch (item->getId()) {
-			case "ClassDecl"_id: {
+			case id<ClassDecl_t>(): {
 				auto classDecl = static_cast<ClassDecl_t*>(item);
-				if (classDecl->name && classDecl->name->item->getId() == "Variable"_id) {
+				if (classDecl->name && classDecl->name->item->getId() == id<Variable_t>()) {
 					markVarExported(ExportMode::Any, true);
 					addExportedVar(_parser.toString(classDecl->name->item));
 				}
 				transformClassDecl(classDecl, out, ExpUsage::Common);
 				break;
 			}
-			case "export_op"_id:
+			case id<export_op_t>():
 				if (_parser.toString(item) == "*"sv) {
 					markVarExported(ExportMode::Any, false);
 				} else {
 					markVarExported(ExportMode::Capital, false);
 				}
 				break;
-			case "export_values"_id: {
+			case id<export_values_t>(): {
 				markVarExported(ExportMode::Any, true);
 				auto values = exportNode->item.to<export_values_t>();
 				if (values->valueList) {
@@ -3817,8 +3822,7 @@ private:
 				}
 				break;
 			}
-			default:
-				break;
+			default: assert(false); break;
 		}
 	}
 
@@ -3831,9 +3835,10 @@ private:
 		pushScope();
 		for (auto pair : pairs) {
 			switch (pair->getId()) {
-				case "Exp"_id: transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
-				case "variable_pair"_id: transform_variable_pair(static_cast<variable_pair_t*>(pair), temp); break;
-				case "normal_pair"_id: transform_normal_pair(static_cast<normal_pair_t*>(pair), temp); break;
+				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
+				case id<variable_pair_t>(): transform_variable_pair(static_cast<variable_pair_t*>(pair), temp); break;
+				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp); break;
+				default: assert(false); break;
 			}
 			temp.back() = indent() + temp.back() + (pair == pairs.back() ? Empty : s(","sv)) + nll(pair);
 		}
@@ -3863,17 +3868,18 @@ private:
 		auto compInner = comp->forLoop.get();
 		for (auto item : compInner->items.objects()) {
 			switch (item->getId()) {
-				case "CompForEach"_id:
+				case id<CompForEach_t>():
 					transformCompForEach(static_cast<CompForEach_t*>(item), temp);
 					break;
-				case "CompFor"_id:
+				case id<CompFor_t>():
 					transformCompFor(static_cast<CompFor_t*>(item), temp);
 					break;
-				case "Exp"_id:
+				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure);
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
+				default: assert(false); break;
 			}
 		}
 		transformExp(comp->key, kv, ExpUsage::Closure);
@@ -3989,7 +3995,7 @@ private:
 		auto assign = x->new_ptr<Assign_t>();
 		for (auto name : import->names.objects()) {
 			switch (name->getId()) {
-				case "Variable"_id: {
+				case id<Variable_t>(): {
 					auto var = ast_to<Variable_t>(name);
 					{
 						auto callable = toAst<Callable_t>(objVar, x);
@@ -4015,7 +4021,7 @@ private:
 					expList->exprs.push_back(exp);
 					break;
 				}
-				case "colon_import_name"_id: {
+				case id<colon_import_name_t>(): {
 					auto var = static_cast<colon_import_name_t*>(name)->name.get();
 					{
 						auto nameNode = var->name.get();
@@ -4042,6 +4048,7 @@ private:
 					expList->exprs.push_back(exp);
 					break;
 				}
+				default: assert(false); break;
 			}
 		}
 		if (objAssign) {
@@ -4101,14 +4108,13 @@ private:
 	void transformImport(Import_t* import, str_list& out) {
 		auto content = import->content.get();
 		switch (content->getId()) {
-			case "ImportAs"_id:
+			case id<ImportAs_t>():
 				transformImportAs(static_cast<ImportAs_t*>(content), out);
 				break;
-			case "ImportFrom"_id:
+			case id<ImportFrom_t>():
 				transformImportFrom(static_cast<ImportFrom_t*>(content), out);
 				break;
-			default:
-				break;
+			default: assert(false); break;
 		}
 	}
 

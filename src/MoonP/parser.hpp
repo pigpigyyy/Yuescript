@@ -28,17 +28,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 namespace parserlib {
 
-// const str hash helper functions
-inline constexpr size_t hash(char const* input) {
-	return *input ? *input + 33ull * hash(input + 1) : 5381;
-}
-inline size_t hash(const char* input, int size, int index) {
-	return index < size ? input[index] + 33ull * hash(input, size, index + 1) : 5381;
-}
-inline size_t constexpr operator"" _id(const char* s, size_t) {
-	return hash(s);
-}
-
 ///type of the parser's input.
 typedef std::basic_string<wchar_t> input;
 typedef input::iterator input_it;

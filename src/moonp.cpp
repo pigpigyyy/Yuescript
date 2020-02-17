@@ -37,43 +37,37 @@ int main(int narg, const char** args) {
 	std::string resultFile;
 	std::list<std::string> files;
 	for (int i = 1; i < narg; ++i) {
-		switch (hash(args[i])) {
-			case "-l"_id:
-				config.reserveLineNumber = true;
-				break;
-			case "-p"_id:
-				writeToFile = false;
-				break;
-			case "-t"_id:
-				++i;
-				if (i < narg) {
-					targetPath = args[i];
-				} else {
-					std::cout << help;
-					return 1;
-				}
-				break;
-			case "-b"_id:
-				dumpCompileTime = true;
-				break;
-			case "-h"_id:
+		std::string arg = args[i];
+		if (arg == "-l"sv) {
+			config.reserveLineNumber = true;
+		} else if (arg == "-p"sv) {
+			writeToFile = false;
+		} else if (arg == "-t"sv) {
+			++i;
+			if (i < narg) {
+				targetPath = args[i];
+			} else {
 				std::cout << help;
-				return 0;
-			case "-v"_id:
-				std::cout << "Moonscript version: " << MoonP::moonScriptVersion() << '\n';
-				return 0;
-			case "-o"_id:
-				++i;
-				if (i < narg) {
-					resultFile = args[i];
-				} else {
-					std::cout << help;
-					return 1;
-				}
-				break;
-			default:
-				files.push_back(args[i]);
-				break;
+				return 1;
+			}
+		} else if (arg == "-b"sv) {
+			dumpCompileTime = true;
+		} else if (arg == "-h"sv) {
+			std::cout << help;
+			return 0;
+		} else if (arg == "-v"sv) {
+			std::cout << "Moonscript version: " << MoonP::moonScriptVersion() << '\n';
+			return 0;
+		} else if (arg == "-o"sv) {
+			++i;
+			if (i < narg) {
+				resultFile = args[i];
+			} else {
+				std::cout << help;
+				return 1;
+			}
+		} else {
+			files.push_back(arg);
 		}
 	}
 	if (files.empty()) {
