@@ -11,12 +11,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <unordered_map>
 #include <stack>
 #include <vector>
-#include <numeric>
 #include <memory>
+#include <cassert>
+
 #include "MoonP/moon_parser.h"
 #include "MoonP/moon_compiler.h"
 
 namespace MoonP {
+using namespace std::string_view_literals;
+using namespace parserlib;
 
 #define BLOCK_START do {
 #define BLOCK_END } while (false);

@@ -10,12 +10,12 @@ Redistributions in binary form must reproduce the above copyright notice, this l
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
 #include <cassert>
+
 #include "MoonP/ast.hpp"
 
 
 namespace parserlib {
 
-int ast_type_id = 0;
 
 traversal ast_node::traverse(const std::function<traversal (ast_node*)>& func) {
 	return func(this);
@@ -26,9 +26,9 @@ ast_node* ast_node::getByTypeIds(int* begin, int* end) {
 	auto it = begin;
 	while (it != end) {
 		ast_node* findNode = nullptr;
-		int type = *it;
+		int i = *it;
 		current->visitChild([&](ast_node* node) {
-			if (node->get_type() == type) {
+			if (node->getId() == i) {
 				findNode = node;
 				return true;
 			}
@@ -74,15 +74,22 @@ traversal ast_container::traverse(const std::function<traversal (ast_node*)>& fu
 	}
 	const auto& members = this->members();
 	for (auto member : members) {
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			if (ptr->get() && ptr->get()->traverse(func) == traversal::Stop) {
-				return traversal::Stop;
-			}
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			for (auto obj : list->objects()) {
-				if (obj->traverse(func) == traversal::Stop) {
+		switch (member->get_type()) {
+			case ast_holder_type::Pointer: {
+				_ast_ptr* ptr = static_cast<_ast_ptr*>(member);
+				if (ptr->get() && ptr->get()->traverse(func) == traversal::Stop) {
 					return traversal::Stop;
 				}
+				break;
+			}
+			case ast_holder_type::List: {
+				_ast_list* list = static_cast<_ast_list*>(member);
+				for (auto obj : list->objects()) {
+					if (obj->traverse(func) == traversal::Stop) {
+						return traversal::Stop;
+					}
+				}
+				break;
 			}
 		}
 	}
@@ -92,15 +99,22 @@ traversal ast_container::traverse(const std::function<traversal (ast_node*)>& fu
 bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
 	const auto& members = this->members();
 	for (auto member : members) {
-		if (_ast_ptr* ptr = ast_cast<_ast_ptr>(member)) {
-			if (ptr->get()) {
-				if (func(ptr->get())) return true;
-			}
-		} else if (_ast_list* list = ast_cast<_ast_list>(member)) {
-			for (auto obj : list->objects()) {
-				if (obj) {
-					if (func(obj)) return true;
+		switch (member->get_type()) {
+			case ast_holder_type::Pointer: {
+				_ast_ptr* ptr = static_cast<_ast_ptr*>(member);
+				if (ptr->get()) {
+					if (func(ptr->get())) return true;
 				}
+				break;
+			}
+			case ast_holder_type::List: {
+				_ast_list* list = static_cast<_ast_list*>(member);
+				for (auto obj : list->objects()) {
+					if (obj) {
+						if (func(obj)) return true;
+					}
+				}
+				break;
 			}
 		}
 	}

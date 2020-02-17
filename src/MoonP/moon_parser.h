@@ -15,14 +15,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vector>
 #include <sstream>
 #include <string_view>
-using namespace std::string_view_literals;
+
 #include "MoonP/ast.hpp"
 #include "MoonP/moon_ast.h"
 
 namespace MoonP {
+using namespace parserlib;
 
 struct ParseInfo {
-	ast_ptr<false,ast_node> node;
+	ast_ptr<false, ast_node> node;
 	std::string error;
 	std::unique_ptr<input> codes;
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;

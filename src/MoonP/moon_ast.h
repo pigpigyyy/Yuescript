@@ -9,35 +9,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #pragma once
 
 #include "MoonP/ast.hpp"
-using namespace parserlib;
 
-namespace MoonP {
-
-template<size_t NUM> struct Counter { enum { value = Counter<NUM-1>::value }; };
-template<> struct Counter<0> { enum { value = 0 }; };
-
-#define COUNTER_READ Counter<__LINE__>::value
-#define COUNTER_INC template<> struct Counter<__LINE__> { enum { value = Counter<__LINE__-1>::value + 1}; }
-
-template<class T>
-constexpr typename std::enable_if<std::is_base_of<ast_node,T>::value,size_t>::type
-id() { return 0; }
+namespace parserlib {
 
 #define AST_LEAF(type) \
 COUNTER_INC;\
 class type##_t : public ast_node \
 { \
 public: \
-	virtual int get_type() override { return ast_type<type##_t>(); } \
-	virtual size_t getId() const override { return COUNTER_READ; }
+	virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_NODE(type) \
 COUNTER_INC;\
 class type##_t : public ast_container \
 { \
 public: \
-	virtual int get_type() override { return ast_type<type##_t>(); } \
-	virtual size_t getId() const override { return COUNTER_READ; } \
+	virtual int getId() const override { return COUNTER_READ; } \
 
 #define AST_MEMBER(type, ...) \
 	type##_t() { \
@@ -46,7 +33,7 @@ public: \
 
 #define AST_END(type) \
 }; \
-template<> constexpr size_t id<type##_t>() { return COUNTER_READ; }
+template<> constexpr int id<type##_t>() { return COUNTER_READ; }
 
 AST_LEAF(Num)
 AST_END(Num)
@@ -633,5 +620,4 @@ AST_NODE(File)
 	AST_MEMBER(File, &block)
 AST_END(File)
 
-} // namespace MoonP
-
+} // namespace parserlib

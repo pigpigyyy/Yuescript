@@ -16,6 +16,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <list>
 #include <stdexcept>
 #include <type_traits>
+
 #include "MoonP/parser.hpp"
 
 
@@ -33,13 +34,17 @@ template <class T> class ast;
 typedef std::vector<ast_node*> ast_stack;
 typedef std::list<ast_node*> node_container;
 
-extern int ast_type_id;
 
+template<size_t Num> struct Counter { enum { value = Counter<Num-1>::value }; };
+template<> struct Counter<0> { enum { value = 0 }; };
+
+#define COUNTER_READ Counter<__LINE__>::value
+#define COUNTER_INC template<> struct Counter<__LINE__> { enum { value = Counter<__LINE__-1>::value + 1}; }
+
+class ast_node;
 template<class T>
-int ast_type() {
-	static int type = ast_type_id++;
-	return type;
-}
+constexpr typename std::enable_if<std::is_base_of<ast_node,T>::value,int>::type
+id();
 
 enum class traversal {
 	Continue,
@@ -83,15 +88,13 @@ public:
 
 	template <class ...Args>
 	select_last_t<Args...>* getByPath() {
-		int types[] = {ast_type<Args>()...};
+		int types[] = {id<Args>()...};
 		return static_cast<select_last_t<Args...>*>(getByTypeIds(std::begin(types), std::end(types)));
 	}
 
 	virtual bool visitChild(const std::function<bool (ast_node*)>& func);
 
-	virtual size_t getId() const = 0;
-
-	virtual int get_type() = 0;
+	virtual int getId() const = 0;
 
 	template<class T>
 	inline ast_ptr<false, T> new_ptr() {
@@ -106,13 +109,17 @@ private:
 };
 
 template<class T>
+constexpr typename std::enable_if<std::is_base_of<ast_node,T>::value,int>::type
+id() { return 0; }
+
+template<class T>
 T* ast_cast(ast_node* node) {
-	return node && ast_type<T>() == node->get_type() ? static_cast<T*>(node) : nullptr;
+	return node && id<T>() == node->getId() ? static_cast<T*>(node) : nullptr;
 }
 
 template<class T>
 T* ast_to(ast_node* node) {
-	assert(node->get_type() == ast_type<T>());
+	assert(node->getId() == id<T>());
 	return static_cast<T*>(node);
 }
 
@@ -120,9 +127,9 @@ template <class ...Args>
 bool ast_is(ast_node* node) {
 	if (!node) return false;
 	bool result = false;
-	int type = node->get_type();
+	int i = node->getId();
 	using swallow = bool[];
-	(void)swallow{result || (result = ast_type<Args>() == type)...};
+	(void)swallow{result || (result = id<Args>() == i)...};
 	return result;
 }
 
@@ -166,6 +173,10 @@ private:
 	friend class ast_member;
 };
 
+enum class ast_holder_type {
+	Pointer,
+	List
+};
 
 /** Base class for children of ast_container.
 */
@@ -180,13 +191,9 @@ public:
 
 	virtual bool accept(ast_node* node) = 0;
 
-	virtual int get_type() { return ast_type<ast_member>(); }
+	virtual ast_holder_type get_type() const = 0;
 };
 
-template<class T>
-T* ast_cast(ast_member* member) {
-	return member && ast_type<T>() == member->get_type() ? static_cast<T*>(member) : nullptr;
-}
 
 class _ast_ptr : public ast_member {
 public:
@@ -212,13 +219,13 @@ public:
 
 	template <class T>
 	T* to() const {
-		assert(m_ptr && m_ptr->get_type() == ast_type<T>());
+		assert(m_ptr && m_ptr->getId() == id<T>());
 		return static_cast<T*>(m_ptr);
 	}
 
 	template <class T>
 	bool is() const {
-		return m_ptr && m_ptr->get_type() == ast_type<T>();
+		return m_ptr && m_ptr->getId() == id<T>();
 	}
 
 	void set(ast_node* node) {
@@ -235,8 +242,8 @@ public:
 		}
 	}
 
-	virtual int get_type() override {
-		return ast_type<_ast_ptr>();
+	virtual ast_holder_type get_type() const override {
+		return ast_holder_type::Pointer;
 	}
 protected:
 	ast_node* m_ptr;
@@ -305,7 +312,7 @@ public:
 	}
 private:
 	virtual bool accept(ast_node* node) override {
-		return node && (std::is_same<ast_node,T>() || ast_type<T>() == node->get_type());
+		return node && (std::is_same<ast_node,T>() || id<T>() == node->getId());
 	}
 };
 
@@ -348,7 +355,7 @@ private:
 		if (!node) return false;
 		using swallow = bool[];
 		bool result = false;
-		(void)swallow{result || (result = ast_type<Args>() == node->get_type())...};
+		(void)swallow{result || (result = id<Args>() == node->getId())...};
 		return result;
 	}
 };
@@ -429,7 +436,9 @@ public:
 		}
 	}
 
-	virtual int get_type() override { return ast_type<_ast_list>(); }
+	virtual ast_holder_type get_type() const override {
+		return ast_holder_type::List;
+	}
 protected:
 	node_container m_objects;
 };
@@ -479,7 +488,7 @@ public:
 	}
 private:
 	virtual bool accept(ast_node* node) override {
-		return node && (std::is_same<ast_node,T>() || ast_type<T>() == node->get_type());
+		return node && (std::is_same<ast_node,T>() || id<T>() == node->getId());
 	}
 };
 
@@ -519,7 +528,7 @@ private:
 		if (!node) return false;
 		using swallow = bool[];
 		bool result = false;
-		(void)swallow{result || (result = ast_type<Args>() == node->get_type())...};
+		(void)swallow{result || (result = id<Args>() == node->getId())...};
 		return result;
 	}
 };

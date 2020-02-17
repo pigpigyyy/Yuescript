@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace pl = parserlib;
 
 namespace MoonP {
+using namespace std::string_view_literals;
 
 std::unordered_set<std::string> LuaKeywords = {
 	"and", "break", "do", "else", "elseif",

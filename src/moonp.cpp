@@ -38,11 +38,11 @@ int main(int narg, const char** args) {
 	std::list<std::string> files;
 	for (int i = 1; i < narg; ++i) {
 		std::string arg = args[i];
-		if (arg == "-l"sv) {
+		if (arg == "-l") {
 			config.reserveLineNumber = true;
-		} else if (arg == "-p"sv) {
+		} else if (arg == "-p") {
 			writeToFile = false;
-		} else if (arg == "-t"sv) {
+		} else if (arg == "-t") {
 			++i;
 			if (i < narg) {
 				targetPath = args[i];
@@ -50,15 +50,15 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
-		} else if (arg == "-b"sv) {
+		} else if (arg == "-b") {
 			dumpCompileTime = true;
-		} else if (arg == "-h"sv) {
+		} else if (arg == "-h") {
 			std::cout << help;
 			return 0;
-		} else if (arg == "-v"sv) {
+		} else if (arg == "-v") {
 			std::cout << "Moonscript version: " << MoonP::moonScriptVersion() << '\n';
 			return 0;
-		} else if (arg == "-o"sv) {
+		} else if (arg == "-o") {
 			++i;
 			if (i < narg) {
 				resultFile = args[i];
