@@ -170,8 +170,7 @@ public:
 	void do_parse_procs(void* d) const {
 		for(_match_vector::const_iterator it = m_matches.begin();
 			it != m_matches.end();
-			++it)
-		{
+			++it) {
 			const _match &m = *it;
 			parse_proc p = _private::get_parse_proc(*m.m_rule);
 			p(m.m_begin, m.m_end, d);
@@ -266,8 +265,7 @@ private:
 	//parse the string
 	bool _parse(_context& con) const {
 		for(input::const_iterator it = m_string.begin(),
-			end = m_string.end();;)
-		{
+			end = m_string.end();;) {
 			if (it == end) return true;
 			if (con.end()) break;
 			if (con.symbol() != *it) break;
@@ -955,8 +953,7 @@ bool _context::parse_term(rule& r) {
 					r.m_state = old_state;
 					throw _lr_ok(r.this_ptr());
 				}
-			}
-			else {
+			} else {
 				try {
 					ok = _parse_term(r);
 				}
@@ -978,8 +975,7 @@ bool _context::parse_term(rule& r) {
 		case rule::_REJECT:
 			if (lr) {
 				ok = false;
-			}
-			else {
+			} else {
 				r.m_state.m_mode = rule::_PARSE;
 				ok = _parse_term(r);
 				r.m_state.m_mode = rule::_REJECT;
@@ -990,8 +986,7 @@ bool _context::parse_term(rule& r) {
 		case rule::_ACCEPT:
 			if (lr) {
 				ok = true;
-			}
-			else {
+			} else {
 				r.m_state.m_mode = rule::_PARSE;
 				ok = _parse_term(r);
 				r.m_state.m_mode = rule::_ACCEPT;
@@ -1015,8 +1010,7 @@ bool _context::_parse_non_term(rule& r) {
 		if (ok) {
 			m_matches.push_back(_match(r.this_ptr(), b, m_pos));
 		}
-	}
-	else {
+	} else {
 		ok = _private::get_expr(r)->parse_non_term(*this);
 	}
 	return ok;
@@ -1032,8 +1026,7 @@ bool _context::_parse_term(rule& r) {
 		if (ok) {
 			m_matches.push_back(_match(r.this_ptr(), b, m_pos));
 		}
-	}
-	else {
+	} else {
 		ok = _private::get_expr(r)->parse_term(*this);
 	}
 	return ok;
@@ -1404,8 +1397,7 @@ bool parse(input& i, rule& g, error_list& el, void* d, void* ud) {
 	if (!con.end()) {
 		if (con.m_error_pos.m_it < con.m_end) {
 			el.push_back(_syntax_error(con));
-		}
-		else {
+		} else {
 			el.push_back(_eof_error(con));
 		}
 		return false;
