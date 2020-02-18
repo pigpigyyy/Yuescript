@@ -488,7 +488,7 @@ private:
 					return true;
 				case id<SimpleValue_t>(): {
 					auto simpleValue = static_cast<SimpleValue_t*>(item);
-					if (simpleValue->value. is<TableLit_t>()) {
+					if (simpleValue->value.is<TableLit_t>()) {
 						return true;
 					}
 					return false;
@@ -1020,7 +1020,7 @@ private:
 
 	std::list<DestructItem> destructFromExp(ast_node* node) {
 		const node_container* tableItems = nullptr;
-		if (ast_cast<Exp_t>(node)) {
+		if (ast_is<Exp_t>(node)) {
 			auto item = singleValueFrom(node)->item.get();
 			if (!item) throw std::logic_error(_info.errorMessage("Invalid destructure value."sv, node));
 			auto tbA = item->getByPath<TableLit_t>();
@@ -1044,7 +1044,7 @@ private:
 					}
 					auto value = singleValueFrom(pair);
 					auto item = value->item.get();
-					if (ast_cast<simple_table_t>(item) ||
+					if (ast_is<simple_table_t>(item) ||
 						item->getByPath<TableLit_t>()) {
 						auto subPairs = destructFromExp(pair);
 						for (auto& p : subPairs) {
@@ -1088,7 +1088,7 @@ private:
 					if (auto exp = np->value.as<Exp_t>()) {
 						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("Can't destructure value."sv, exp));
 						auto item = singleValueFrom(exp)->item.get();
-						if (ast_cast<simple_table_t>(item) ||
+						if (ast_is<simple_table_t>(item) ||
 							item->getByPath<TableLit_t>()) {
 							auto subPairs = destructFromExp(exp);
 							auto name = _parser.toString(key);
@@ -1129,7 +1129,7 @@ private:
 						}
 						break;
 					}
-					if (np->value.as<TableBlock_t>()) {
+					if (np->value.is<TableBlock_t>()) {
 						auto subPairs = destructFromExp(pair);
 						for (auto& p : subPairs) {
 							pairs.push_back({p.isVariable, p.name,
@@ -1367,7 +1367,7 @@ private:
 			auto var = singleVariableFrom(exp);
 			if (var.empty()) {
 				storingValue = true;
-				auto desVar = getUnusedName("_des_");
+				auto desVar = getUnusedName("_des_"sv);
 				if (assign->values.objects().size() == 1) {
 					auto var = singleVariableFrom(assign->values.objects().front());
 					if (!var.empty()) {
@@ -2016,7 +2016,6 @@ private:
 							arg.name = "self.__class"sv;
 							break;
 						case id<self_name_t>(): {
-
 							auto sfName = static_cast<self_name_t*>(selfName->name.get());
 							arg.name = _parser.toString(sfName->name);
 							arg.assignSelf = s("self."sv) + arg.name;
@@ -2083,7 +2082,7 @@ private:
 				auto clsName = static_cast<self_class_name_t*>(name);
 				auto nameStr = _parser.toString(clsName->name);
 				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
-					out.push_back(s("self.__class[\""sv) + nameStr + s("\"]"));
+					out.push_back(s("self.__class[\""sv) + nameStr + s("\"]"sv));
 					if (invoke) {
 						if (auto invokePtr = invoke.as<Invoke_t>()) {
 							invokePtr->args.push_front(toAst<Exp_t>("self.__class"sv, x));
@@ -2104,7 +2103,7 @@ private:
 				auto sfName = static_cast<self_class_name_t*>(name);
 				auto nameStr = _parser.toString(sfName->name);
 				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
-					out.push_back(s("self[\""sv) + nameStr + s("\"]"));
+					out.push_back(s("self[\""sv) + nameStr + s("\"]"sv));
 					if (invoke) {
 						if (auto invokePtr = invoke.as<Invoke_t>()) {
 							invokePtr->args.push_front(toAst<Exp_t>("self"sv, x));
@@ -2763,7 +2762,7 @@ private:
 		_buf << join(temp);
 		_buf << assignStr;
 		_buf << indent(int(temp.size())) << lenVar << " = "sv << lenVar << " + 1"sv << nll(comp);
-		for (int ind = int(temp.size()) - 1; ind > -1 ; --ind) {
+		for (int ind = int(temp.size()) - 1; ind > -1; --ind) {
 			_buf << indent(ind) << "end"sv << nll(comp);
 		}
 		switch (usage) {
@@ -2827,7 +2826,7 @@ private:
 			case id<star_exp_t>(): {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
 				auto listVar = singleVariableFrom(star_exp->value);
-				auto indexVar = getUnusedName("_index_");
+				auto indexVar = getUnusedName("_index_"sv);
 				varAfter.push_back(indexVar);
 				auto value = singleValueFrom(star_exp->value);
 				if (!value) throw std::logic_error(_info.errorMessage("Invalid star syntax."sv, star_exp));
@@ -2869,14 +2868,14 @@ private:
 					temp.pop_back();
 				}
 				if (listVar.empty()) {
-					listVar = getUnusedName("_list_");
+					listVar = getUnusedName("_list_"sv);
 					varBefore.push_back(listVar);
 					transformChainValue(chain, temp, ExpUsage::Closure);
 					_buf << indent() << "local "sv << listVar << " = "sv << temp.back() << nll(nameList);
 				}
 				std::string maxVar;
 				if (!stopValue.empty()) {
-					maxVar = getUnusedName("_max_");
+					maxVar = getUnusedName("_max_"sv);
 					varBefore.push_back(maxVar);
 					_buf << indent() << "local "sv << maxVar << " = "sv << stopValue << nll(nameList);
 				}
@@ -2885,7 +2884,7 @@ private:
 				if (stopValue.empty()) {
 					_buf << "#"sv << listVar;
 				} else {
-					_buf << maxVar << " < 0 and #"sv << listVar <<" + " << maxVar << " or "sv << maxVar;
+					_buf << maxVar << " < 0 and #"sv << listVar << " + "sv << maxVar << " or "sv << maxVar;
 				}
 				if (!stepValue.empty()) {
 					_buf << ", "sv << stepValue;
@@ -2897,7 +2896,7 @@ private:
 				bool newListVal = false;
 				if (listVar.empty()) {
 					newListVal = true;
-					listVar = getUnusedName("_list_");
+					listVar = getUnusedName("_list_"sv);
 					varBefore.push_back(listVar);
 				}
 				if (!endWithSlice) {
@@ -3355,7 +3354,7 @@ private:
 				}
 			}
 			if (!varDefs.empty()) {
-				temp.push_back(indent() + s("local ") + join(varDefs, ", "sv) + nll(body));
+				temp.push_back(indent() + s("local "sv) + join(varDefs, ", "sv) + nll(body));
 			}
 		}
 		std::string parent, parentVar;
@@ -3431,7 +3430,7 @@ private:
 		if (extend) {
 			_buf << indent() << "setmetatable("sv << baseVar << ", "sv << parentVar << ".__base)"sv << nll(classDecl);
 		}
-		_buf << indent() << classVar << " = setmetatable({" << nll(classDecl);
+		_buf << indent() << classVar << " = setmetatable({"sv << nll(classDecl);
 		if (!builtins.empty()) {
 			_buf << join(builtins) << ","sv << nll(classDecl);
 		} else {
@@ -3472,7 +3471,7 @@ private:
 		pushScope();
 		auto selfVar = getUnusedName("_self_"sv);
 		addToScope(selfVar);
-		_buf << indent(1) << "local " << selfVar << " = setmetatable({}, "sv << baseVar << ")"sv << nll(classDecl);
+		_buf << indent(1) << "local "sv << selfVar << " = setmetatable({}, "sv << baseVar << ")"sv << nll(classDecl);
 		_buf << indent(1) << "cls.__init("sv << selfVar << ", ...)"sv << nll(classDecl);
 		_buf << indent(1) << "return "sv << selfVar << nll(classDecl);
 		popScope();
@@ -4101,7 +4100,7 @@ private:
 		auto assignList = x->new_ptr<ExpList_t>();
 		assignList->exprs.push_back(exp);
 		auto assign = x->new_ptr<Assign_t>();
-		assign->values.push_back(toAst<Exp_t>(s("require ") + _parser.toString(import->literal), x));
+		assign->values.push_back(toAst<Exp_t>(s("require "sv) + _parser.toString(import->literal), x));
 		auto assignment = x->new_ptr<ExpListAssign_t>();
 		assignment->expList.set(assignList);
 		assignment->action.set(assign);

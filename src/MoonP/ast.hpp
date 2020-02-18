@@ -97,7 +97,7 @@ public:
 	virtual int getId() const = 0;
 
 	template<class T>
-	inline ast_ptr<false, T> new_ptr() {
+	inline ast_ptr<false, T> new_ptr() const {
 		auto item = new T;
 		item->m_begin.m_line = m_begin.m_line;
 		item->m_end.m_line = m_begin.m_line;

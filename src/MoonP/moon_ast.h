@@ -13,18 +13,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace parserlib {
 
 #define AST_LEAF(type) \
-COUNTER_INC;\
+COUNTER_INC; \
 class type##_t : public ast_node \
 { \
 public: \
 	virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_NODE(type) \
-COUNTER_INC;\
+COUNTER_INC; \
 class type##_t : public ast_container \
 { \
 public: \
-	virtual int getId() const override { return COUNTER_READ; } \
+	virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_MEMBER(type, ...) \
 	type##_t() { \
