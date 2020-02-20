@@ -32,7 +32,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.1.2";
+	return "0.5.0-r0.1.3";
 }
 
 class MoonCompiler {

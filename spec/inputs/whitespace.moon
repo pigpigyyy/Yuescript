@@ -99,16 +99,41 @@ c(one, two,
 
 --
 
-f = ->
+v = ->
 	a,
 		b,
 			c
 
-a,
-	b,
-		c = 1,
-			2,
-				f
-					:abc
+v1, v2,
+	v3 = ->
+	a;
+		b,
+			c
+
+a, b,
+	c, d,
+e, f = 1,
+	f2
+		:abc;
+		3,
+			4,
+				f5 abc;
+					6
+
+for a,
+		b,
+			c in pairs tb
+	print a,
+			b,
+			c
+
+for i = 1,
+	10,
+	-1
+	print i
+
+local a,
+				b,
+					c
 
 nil
