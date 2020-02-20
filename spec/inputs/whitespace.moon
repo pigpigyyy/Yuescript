@@ -97,6 +97,18 @@ b(
 c(one, two,
 	three, four)
 
--- 
+--
+
+f = ->
+	a,
+		b,
+			c
+
+a,
+	b,
+		c = 1,
+			2,
+				f
+					:abc
 
 nil

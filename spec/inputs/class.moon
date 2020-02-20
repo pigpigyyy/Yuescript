@@ -210,4 +210,20 @@ class Wowha extends Thing
 			super\hello
 	}
 
+do
+	class Test
+		new: => @@if = true
+		@do: => 1
+		test: => @@if and @@do!
+	test = Test!
+	test\test!
+
+do
+	class Test
+		new: => @if = true
+		do: => 1
+		test: => @if and @do!
+	test = Test!
+	test\test!
+
 nil

@@ -241,7 +241,7 @@ MoonParser::MoonParser() {
 	CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 	CompClause = CompFor | CompForEach | key("when") >> Exp;
 
-	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> Exp));
+	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *((sym(',') | sym(';')) >> White >> Exp));
 
 	update_op =
 		expr("..") |
