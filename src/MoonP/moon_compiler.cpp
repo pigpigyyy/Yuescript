@@ -35,9 +35,9 @@ const char* moonScriptVersion() {
 	return "0.5.0-r0.1.3";
 }
 
-class MoonCompiler {
+class MoonCompilerImpl {
 public:
-	std::tuple<std::string,std::string,GlobalVars> compile(const std::string& codes, const MoonConfig& config) {
+	std::tuple<std::string,std::string,GlobalVars> compile(std::string_view codes, const MoonConfig& config) {
 		_config = config;
 		_info = _parser.parse<File_t>(codes);
 		GlobalVars globals;
@@ -4275,10 +4275,17 @@ private:
 	}
 };
 
-const std::string MoonCompiler::Empty;
+const std::string MoonCompilerImpl::Empty;
 
-std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes, const MoonConfig& config) {
-	return MoonCompiler{}.compile(codes, config);
+MoonCompiler::MoonCompiler():
+_compiler(std::make_unique<MoonCompilerImpl>())
+{ }
+
+MoonCompiler::~MoonCompiler()
+{ }
+
+std::tuple<std::string,std::string,GlobalVars> MoonCompiler::compile(std::string_view codes, const MoonConfig& config) {
+	return _compiler->compile(codes, config);
 }
 
 } // namespace MoonP

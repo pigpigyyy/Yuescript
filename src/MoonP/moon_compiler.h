@@ -9,6 +9,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <list>
 #include <memory>
@@ -31,6 +32,15 @@ struct GlobalVar {
 
 using GlobalVars = std::unique_ptr<std::list<GlobalVar>>;
 
-std::tuple<std::string,std::string,GlobalVars> moonCompile(const std::string& codes, const MoonConfig& config = {});
+class MoonCompilerImpl;
+
+class MoonCompiler {
+public:
+	MoonCompiler();
+	virtual ~MoonCompiler();
+	std::tuple<std::string,std::string,GlobalVars> compile(std::string_view codes, const MoonConfig& config = {});
+private:
+	std::unique_ptr<MoonCompilerImpl> _compiler;
+};
 
 } // namespace MoonP

@@ -493,11 +493,11 @@ MoonParser::MoonParser() {
 	File = White >> -Shebang >> Block >> eof();
 }
 
-ParseInfo MoonParser::parse(const std::string& codes, rule& r) {
+ParseInfo MoonParser::parse(std::string_view codes, rule& r) {
 	ParseInfo res;
 	try {
 		res.codes = std::make_unique<input>();
-		*(res.codes) = _converter.from_bytes(codes);
+		*(res.codes) = _converter.from_bytes(codes.begin(), codes.end());
 	} catch (const std::range_error&) {
 		res.error = "Invalid text encoding."sv;
 		return res;
@@ -537,7 +537,7 @@ std::string MoonParser::toString(input::iterator begin, input::iterator end) {
 }
 
 input MoonParser::encode(std::string_view codes) {
-	return _converter.from_bytes(std::string(codes));
+	return _converter.from_bytes(codes.begin(), codes.end());
 }
 
 std::string MoonParser::decode(const input& codes) {

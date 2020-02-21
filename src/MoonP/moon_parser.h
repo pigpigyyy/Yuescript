@@ -45,7 +45,7 @@ public:
 	MoonParser();
 
 	template<class AST>
-	ParseInfo parse(const std::string& codes) {
+	ParseInfo parse(std::string_view codes) {
 		error_list errors;
 		auto res = parse(codes, getRule<AST>());
 		if (res.node.template is<AST>()) {
@@ -55,7 +55,7 @@ public:
 	}
 
 	template <class AST>
-	bool match(const std::string& codes) {
+	bool match(std::string_view codes) {
 		auto rEnd = rule(getRule<AST>() >> eof());
 		return parse(codes, rEnd).node;
 	}
@@ -67,7 +67,7 @@ public:
 	std::string decode(const input& input);
 
 protected:
-	ParseInfo parse(const std::string& codes, rule& r);
+	ParseInfo parse(std::string_view codes, rule& r);
 
 	struct State {
 		State() {

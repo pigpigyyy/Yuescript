@@ -91,7 +91,7 @@ int main(int narg, const char** args) {
 					std::istreambuf_iterator<char>());
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
-					auto result = MoonP::moonCompile(s, config);
+					auto result = MoonP::MoonCompiler{}.compile(s, config);
 					auto end = std::chrono::high_resolution_clock::now();
 					if (!std::get<0>(result).empty()) {
 						std::chrono::duration<double> diff = end - start;
@@ -109,7 +109,7 @@ int main(int narg, const char** args) {
 						return 1;
 					}
 				}
-				auto result = MoonP::moonCompile(s, config);
+				auto result = MoonP::MoonCompiler{}.compile(s, config);
 				if (!std::get<0>(result).empty()) {
 					if (!writeToFile) {
 						std::cout << std::get<0>(result) << '\n';
