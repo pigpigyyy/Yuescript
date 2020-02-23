@@ -41,6 +41,16 @@ do
 	x * 2
 
 do
+	(x)<- map _,{1,2,3}
+	x * 2
+
+do
+	(x)<- filter _, do
+		(x)<- map _,{1,2,3,4}
+		x * 2
+	x > 2
+
+do
 	(data)<- http?.get "ajaxtest"
 	body[".result"]\html data
 	(processed)<- http.post "ajaxprocess", data

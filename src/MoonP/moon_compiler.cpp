@@ -32,7 +32,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.1.3";
+	return "0.5.0-r0.1.4";
 }
 
 class MoonCompilerImpl {
@@ -1516,7 +1516,10 @@ private:
 							}
 							bool findPlaceHolder = false;
 							for (auto a : args->objects()) {
+								bool lintGlobal = _config.lintGlobalVariable;
+								_config.lintGlobalVariable = false;
 								auto name = singleVariableFrom(a);
+								_config.lintGlobalVariable = lintGlobal;
 								if (name == "_"sv) {
 									if (!findPlaceHolder) {
 										args->swap(a, arg);
@@ -1747,10 +1750,29 @@ private:
 				}
 				if (isChainValueCall(backcall->value)) {
 					auto last = backcall->value->items.back();
-					if (auto invoke = ast_cast<Invoke_t>(last)) {
-						invoke->args.push_back(arg);
+					_ast_list* args = nullptr;
+					if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
+						args = &invoke->args;
 					} else {
-						ast_to<InvokeArgs_t>(last)->args.push_back(arg);
+						args = &(ast_to<Invoke_t>(last)->args);
+					}
+					bool findPlaceHolder = false;
+					for (auto a : args->objects()) {
+						bool lintGlobal = _config.lintGlobalVariable;
+						_config.lintGlobalVariable = false;
+						auto name = singleVariableFrom(a);
+						_config.lintGlobalVariable = lintGlobal;
+						if (name == "_"sv) {
+							if (!findPlaceHolder) {
+								args->swap(a, arg);
+								findPlaceHolder = true;
+							} else {
+								throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place."sv, a));
+							}
+						}
+					}
+					if (!findPlaceHolder) {
+						args->push_back(arg);
 					}
 				} else {
 					auto invoke = x->new_ptr<Invoke_t>();
