@@ -90,4 +90,17 @@ do
 		(data)<- loadAsync file
 		addToCache file,data) |> reduce 0,(a,b)-> a+b
 
+propA = do
+	(value)<= property => @_value
+	print "old value: #{@_value}"
+	print "new value: #{value}"
+	@_value = value
+
+propB = do
+	<= property _, (value)=>
+		print "old value: #{@_value}"
+		print "new value: #{value}"
+		@_value = value
+	@_value
+
 alert "hi"

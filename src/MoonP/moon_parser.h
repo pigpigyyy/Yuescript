@@ -191,6 +191,7 @@ private:
 	AST_RULE(ImportFrom)
 	AST_RULE(ImportAs)
 	AST_RULE(Import)
+	AST_RULE(fn_arrow_back)
 	AST_RULE(Backcall)
 	AST_RULE(ExpListLow)
 	AST_RULE(ExpList)

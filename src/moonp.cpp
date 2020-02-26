@@ -247,7 +247,7 @@ static int moontolua(lua_State* L) {
 	} else {
 		lua_pushlstring(L, err.c_str(), err.size());
 	}
-	if (globals && !globals->empty()) {
+	if (globals) {
 		lua_createtable(L, static_cast<int>(globals->size()), 0);
 		int i = 1;
 		for (const auto& var : *globals) {

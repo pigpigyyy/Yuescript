@@ -32,7 +32,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.1.4";
+	return "0.5.0-r0.1.5";
 }
 
 class MoonCompilerImpl {
@@ -1740,7 +1740,8 @@ private:
 					body->content.set(block);
 					auto funLit = x->new_ptr<FunLit_t>();
 					funLit->argsDef.set(backcall->argsDef);
-					funLit->arrow.set(toAst<fn_arrow_t>("->"sv, x));
+					auto arrow = _parser.toString(backcall->arrow);
+					funLit->arrow.set(toAst<fn_arrow_t>(arrow == "<-"sv ? "->"sv : "=>"sv, x));
 					funLit->body.set(body);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(funLit);

@@ -135,12 +135,17 @@ AST_NODE(Import)
 AST_END(Import)
 
 class FnArgsDef_t;
+
+AST_LEAF(fn_arrow_back)
+AST_END(fn_arrow_back)
+
 class ChainValue_t;
 
 AST_NODE(Backcall)
 	ast_ptr<false, FnArgsDef_t> argsDef;
+	ast_ptr<true, fn_arrow_back_t> arrow;
 	ast_ptr<true, ChainValue_t> value;
-	AST_MEMBER(Backcall, &argsDef, &value)
+	AST_MEMBER(Backcall, &argsDef, &arrow, &value)
 AST_END(Backcall)
 
 AST_NODE(ExpListLow)

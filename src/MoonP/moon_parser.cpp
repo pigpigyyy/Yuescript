@@ -434,7 +434,8 @@ MoonParser::MoonParser() {
 	NameOrDestructure = Space >> Variable | TableLit;
 	AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> White >> NameOrDestructure);
 
-	Backcall = -FnArgsDef >> Space >> symx("<-") >> Space >> ChainValue;
+	fn_arrow_back = expr('<') >> set("-=");
+	Backcall = -FnArgsDef >> Space >> fn_arrow_back >> Space >> ChainValue;
 
 	ExpList = Seperator >> Exp >> *(sym(',') >> White >> Exp);
 	ExpListLow = Seperator >> Exp >> *((sym(',') | sym(';')) >> White >> Exp);
