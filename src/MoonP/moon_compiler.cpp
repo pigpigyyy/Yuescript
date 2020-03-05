@@ -32,7 +32,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.1.5";
+	return "0.5.0-r0.2.0";
 }
 
 class MoonCompilerImpl {
@@ -45,7 +45,10 @@ public:
 			try {
 				str_list out;
 				pushScope();
-				transformBlock(_info.node.to<File_t>()->block, out, config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common);
+				enableReturn.push(_info.moduleName.empty());
+				transformBlock(_info.node.to<File_t>()->block, out,
+					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
+					nullptr, true);
 				popScope();
 				if (config.lintGlobalVariable) {
 					globals = std::make_unique<std::list<GlobalVar>>();
@@ -86,6 +89,7 @@ private:
 	MoonParser _parser;
 	ParseInfo _info;
 	int _indentOffset = 0;
+	std::stack<bool> enableReturn;
 	std::list<std::unique_ptr<input>> _codeCache;
 	std::stack<std::string> _withVars;
 	std::stack<std::string> _continueVars;
@@ -98,16 +102,16 @@ private:
 		Capital = 1,
 		Any = 2
 	};
-	enum class ExportMode {
+	enum class GlobalMode {
 		None = 0,
 		Capital = 1,
 		Any = 2
 	};
 	struct Scope {
-		ExportMode mode = ExportMode::None;
+		GlobalMode mode = GlobalMode::None;
 		std::unique_ptr<std::unordered_set<std::string>> vars;
 		std::unique_ptr<std::unordered_set<std::string>> allows;
-		std::unique_ptr<std::unordered_set<std::string>> exports;
+		std::unique_ptr<std::unordered_set<std::string>> globals;
 	};
 	std::list<Scope> _scopes;
 	static const std::string Empty;
@@ -153,11 +157,11 @@ private:
 
 	bool isDefined(const std::string& name) const {
 		bool isDefined = false;
-		int mode = int(std::isupper(name[0]) ? ExportMode::Capital : ExportMode::Any);
+		int mode = int(std::isupper(name[0]) ? GlobalMode::Capital : GlobalMode::Any);
 		const auto& current = _scopes.back();
 		if (int(current.mode) >= mode) {
-			if (current.exports) {
-				if (current.exports->find(name) != current.exports->end()) {
+			if (current.globals) {
+				if (current.globals->find(name) != current.globals->end()) {
 					isDefined = true;
 					current.vars->insert(name);
 				}
@@ -202,17 +206,17 @@ private:
 		scope.allows = std::make_unique<std::unordered_set<std::string>>();
 	}
 
-	void markVarExported(ExportMode mode, bool specified) {
+	void markVarGlobal(GlobalMode mode, bool specified) {
 		auto& scope = _scopes.back();
 		scope.mode = mode;
-		if (specified && !scope.exports) {
-			scope.exports = std::make_unique<std::unordered_set<std::string>>();
+		if (specified && !scope.globals) {
+			scope.globals = std::make_unique<std::unordered_set<std::string>>();
 		}
 	}
 
-	void addExportedVar(const std::string& name) {
+	void addGlobalVar(const std::string& name) {
 		auto& scope = _scopes.back();
-		scope.exports->insert(name);
+		scope.globals->insert(name);
 	}
 
 	void addToAllowList(const std::string& name) {
@@ -457,6 +461,20 @@ private:
 		return Empty;
 	}
 
+	Variable_t* variableFrom(Exp_t* exp) {
+		BLOCK_START
+		auto value = singleValueFrom(exp);
+		BREAK_IF(!value);
+		auto chainValue = value->getByPath<ChainValue_t>();
+		BREAK_IF(!chainValue);
+		BREAK_IF(chainValue->items.size() != 1);
+		auto callable = ast_cast<Callable_t>(chainValue->items.front());
+		BREAK_IF(!callable);
+		return callable->item.as<Variable_t>();
+		BLOCK_END
+		return nullptr;
+	}
+
 	bool isAssignable(const node_container& chainItems) const {
 		if (chainItems.size() == 1) {
 			 auto firstItem = chainItems.back();
@@ -647,6 +665,7 @@ private:
 			case id<ForEach_t>(): transformForEach(static_cast<ForEach_t*>(content), out); break;
 			case id<Return_t>(): transformReturn(static_cast<Return_t*>(content), out); break;
 			case id<Local_t>(): transformLocal(static_cast<Local_t*>(content), out); break;
+			case id<Global_t>(): transformGlobal(static_cast<Global_t*>(content), out); break;
 			case id<Export_t>(): transformExport(static_cast<Export_t*>(content), out); break;
 			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case id<ExpListAssign_t>(): {
@@ -693,7 +712,7 @@ private:
 							break;
 						}
 					}
-					throw std::logic_error(_info.errorMessage("Expression list must appear at the end of body or block."sv, expList));
+					throw std::logic_error(_info.errorMessage("Expression list is not supported here."sv, expList));
 				}
 				break;
 			}
@@ -749,8 +768,8 @@ private:
 		return preDefs;
 	}
 
-	str_list transformAssignDefs(ExpList_t* expList) {
-		str_list preDefs;
+	str_list transformAssignDefs(ExpList_t* expList, bool markDefined = true) {
+		str_list defs;
 		for (auto exp_ : expList->exprs.objects()) {
 			auto exp = static_cast<Exp_t*>(exp_);
 			if (auto value = singleValueFrom(exp)) {
@@ -766,8 +785,8 @@ private:
 						if (self->name.is<self_t>()) name = "self"sv;
 					}
 					BREAK_IF(name.empty());
-					if (addToScope(name)) {
-						preDefs.push_back(name);
+					if (!markDefined || addToScope(name)) {
+						defs.push_back(name);
 					}
 					BLOCK_END
 				}
@@ -775,7 +794,7 @@ private:
 				throw std::logic_error(_info.errorMessage("Left hand expression is not assignable."sv, exp));
 			}
 		}
-		return preDefs;
+		return defs;
 	}
 
 	std::string getPredefine(const str_list& defs) {
@@ -1650,6 +1669,7 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
+		enableReturn.push(true);
 		str_list temp;
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -1698,6 +1718,7 @@ private:
 			}
 		}
 		out.push_back(clearBuf());
+		enableReturn.pop();
 	}
 
 	void transformBody(Body_t* body, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
@@ -1711,7 +1732,7 @@ private:
 		}
 	}
 
-	void transformBlock(Block_t* block, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+	void transformBlock(Block_t* block, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool isRoot = false) {
 		const auto& nodes = block->statements.objects();
 		LocalMode mode = LocalMode::None;
 		Local_t* any = nullptr, *capital = nullptr;
@@ -1768,7 +1789,7 @@ private:
 								args->swap(a, arg);
 								findPlaceHolder = true;
 							} else {
-								throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place."sv, a));
+								throw std::logic_error(_info.errorMessage("Backcall placeholder can be used only in one place."sv, a));
 							}
 						}
 					}
@@ -1792,9 +1813,10 @@ private:
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
 					expListAssign->expList.set(expList);
 					newStmt->content.set(expListAssign);
+					newStmt->appendix.set(stmt->appendix);
 					newBlock->statements.push_back(newStmt);
 				}
-				transformBlock(newBlock, out, usage, assignList);
+				transformBlock(newBlock, out, usage, assignList, isRoot);
 				return;
 			}
 			if (auto local = stmt->content.as<Local_t>()) {
@@ -1838,6 +1860,15 @@ private:
 									}
 								}
 					}
+					if (info.second) {
+						auto defs = transformAssignDefs(info.second->expList, false);
+						for (const auto& def : defs) {
+							if (std::isupper(def[0]) && capital) { capital->decls.push_back(def);
+							} else if (any) {
+								any->decls.push_back(def);
+							}
+						}
+					}
 					BLOCK_START
 					auto assign = assignment->action.as<Assign_t>();
 					BREAK_IF(!assign);
@@ -1865,10 +1896,14 @@ private:
 				}
 			}
 		}
+		if (isRoot && !_info.moduleName.empty()) {
+			block->statements.push_front(toAst<Statement_t>(_info.moduleName + s(_info.exportDefault ? "=nil"sv : "={}"sv), block));
+		}
 		switch (usage) {
 			case ExpUsage::Closure:
 			case ExpUsage::Return: {
 				BLOCK_START
+				BREAK_IF(isRoot && !_info.moduleName.empty());
 				BREAK_IF(nodes.empty());
 				auto last = static_cast<Statement_t*>(nodes.back());
 				auto x = last;
@@ -1920,9 +1955,17 @@ private:
 		} else {
 			out.push_back(Empty);
 		}
+		if (isRoot && !_info.moduleName.empty()) {
+			out.back().append(indent() + s("return "sv) + _info.moduleName + nlr(block));
+		}
 	}
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
+		if (!enableReturn.top()) {
+			ast_node* target = returnNode->valueList.get();
+			if (!target) target = returnNode;
+			throw std::logic_error(_info.errorMessage("Illegal return statement here."sv, target));
+		}
 		if (auto valueList = returnNode->valueList.get()) {
 			if (valueList->exprs.size() == 1) {
 				auto exp = static_cast<Exp_t*>(valueList->exprs.back());
@@ -3797,33 +3840,33 @@ private:
 		out.push_back(_parser.toString(const_value));
 	}
 
-	void transformExport(Export_t* exportNode, str_list& out) {
-		auto x = exportNode;
-		auto item = exportNode->item.get();
+	void transformGlobal(Global_t* global, str_list& out) {
+		auto x = global;
+		auto item = global->item.get();
 		switch (item->getId()) {
 			case id<ClassDecl_t>(): {
 				auto classDecl = static_cast<ClassDecl_t*>(item);
 				if (classDecl->name && classDecl->name->item->getId() == id<Variable_t>()) {
-					markVarExported(ExportMode::Any, true);
-					addExportedVar(_parser.toString(classDecl->name->item));
+					markVarGlobal(GlobalMode::Any, true);
+					addGlobalVar(_parser.toString(classDecl->name->item));
 				}
 				transformClassDecl(classDecl, out, ExpUsage::Common);
 				break;
 			}
-			case id<export_op_t>():
+			case id<global_op_t>():
 				if (_parser.toString(item) == "*"sv) {
-					markVarExported(ExportMode::Any, false);
+					markVarGlobal(GlobalMode::Any, false);
 				} else {
-					markVarExported(ExportMode::Capital, false);
+					markVarGlobal(GlobalMode::Capital, false);
 				}
 				break;
-			case id<export_values_t>(): {
-				markVarExported(ExportMode::Any, true);
-				auto values = exportNode->item.to<export_values_t>();
+			case id<global_values_t>(): {
+				markVarGlobal(GlobalMode::Any, true);
+				auto values = global->item.to<global_values_t>();
 				if (values->valueList) {
 					auto expList = x->new_ptr<ExpList_t>();
 					for (auto name : values->nameList->names.objects()) {
-						addExportedVar(_parser.toString(name));
+						addGlobalVar(_parser.toString(name));
 						auto callable = x->new_ptr<Callable_t>();
 						callable->item.set(name);
 						auto chainValue = x->new_ptr<ChainValue_t>();
@@ -3842,12 +3885,91 @@ private:
 					transformAssignment(assignment, out);
 				} else {
 					for (auto name : values->nameList->names.objects()) {
-						addExportedVar(_parser.toString(name));
+						addGlobalVar(_parser.toString(name));
 					}
 				}
 				break;
 			}
 			default: assert(false); break;
+		}
+	}
+
+	void transformExport(Export_t* exportNode, str_list& out) {
+		auto x = exportNode;
+		if (_scopes.size() > 1) {
+			throw std::logic_error(_info.errorMessage("Can not do module export outside root block."sv, x));
+		}
+		if (exportNode->assign) {
+			auto expList = exportNode->target.to<ExpList_t>();
+			if (expList->exprs.size() != exportNode->assign->values.size()) {
+				throw std::logic_error(_info.errorMessage("Left and right expressions must be matched in export statement."sv, x));
+			}
+			for (auto _exp : expList->exprs.objects()) {
+				auto exp = static_cast<Exp_t*>(_exp);
+				if (!variableFrom(exp) &&
+					!exp->getByPath<Value_t, SimpleValue_t, TableLit_t>() &&
+					!exp->getByPath<Value_t, simple_table_t>()) {
+					throw std::logic_error(_info.errorMessage("Left hand expressions must be variables in export statement."sv, x));
+				}
+			}
+			auto assignment = x->new_ptr<ExpListAssign_t>();
+			assignment->expList.set(expList);
+			assignment->action.set(exportNode->assign);
+			transformAssignment(assignment, out);
+			str_list names = transformAssignDefs(expList, false);
+			auto info = extractDestructureInfo(assignment, true);
+			if (!info.first.empty()) {
+				for (const auto& destruct : info.first)
+					for (const auto& item : destruct.items)
+						if (item.isVariable)
+							names.push_back(item.name);
+			}
+			if (_info.exportDefault) {
+				out.back().append(indent() + _info.moduleName + s(" = "sv) + names.back() + nlr(exportNode));
+			} else {
+				str_list lefts, rights;
+				for (const auto& name : names) {
+					lefts.push_back(_info.moduleName + s("[\""sv) + name + s("\"]"sv));
+					rights.push_back(name);
+				}
+				out.back().append(indent() + join(lefts,", "sv) + s(" = "sv) + join(rights, ", "sv) + nlr(exportNode));
+			}
+		} else {
+			if (_info.exportDefault) {
+				auto exp = exportNode->target.to<Exp_t>();
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				assignment->expList.set(toAst<ExpList_t>(_info.moduleName, x));
+				auto assign = x->new_ptr<Assign_t>();
+				assign->values.push_back(exp);
+				assignment->action.set(assign);
+				transformAssignment(assignment, out);
+			} else {
+				str_list temp;
+				auto expList = exportNode->target.to<ExpList_t>();
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				auto assignList = toAst<ExpList_t>(_info.moduleName + s("[#"sv) + _info.moduleName + s("+1]"sv), x);
+				assignment->expList.set(assignList);
+				for (auto exp : expList->exprs.objects()) {
+					if (auto classDecl = exp->getByPath<Value_t, SimpleValue_t, ClassDecl_t>()) {
+						if (classDecl->name && classDecl->name->item->getId() == id<Variable_t>()) {
+							transformClassDecl(classDecl, temp, ExpUsage::Common);
+							auto name = _parser.toString(classDecl->name->item);
+							assignment->expList.set(toAst<ExpList_t>(_info.moduleName + s("[\""sv) + name + s("\"]"sv), x));
+							auto assign = x->new_ptr<Assign_t>();
+							assign->values.push_back(toAst<Exp_t>(name, x));
+							assignment->action.set(assign);
+							transformAssignment(assignment, temp);
+							assignment->expList.set(assignList);
+							continue;
+						}
+					}
+					auto assign = x->new_ptr<Assign_t>();
+					assign->values.push_back(exp);
+					assignment->action.set(assign);
+					transformAssignment(assignment, temp);
+				}
+				out.push_back(join(temp));
+			}
 		}
 	}
 

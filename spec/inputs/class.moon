@@ -158,7 +158,7 @@ print (class WhatsUp).__name
 
 --
 
-export ^
+global ^
 class Something
 	_ = nil
 

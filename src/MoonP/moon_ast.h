@@ -500,18 +500,28 @@ AST_NODE(ClassDecl)
 	AST_MEMBER(ClassDecl, &name, &extend, &body)
 AST_END(ClassDecl)
 
-AST_NODE(export_values)
+AST_NODE(global_values)
 	ast_ptr<true, NameList_t> nameList;
 	ast_ptr<false, ExpListLow_t> valueList;
-	AST_MEMBER(export_values, &nameList, &valueList)
-AST_END(export_values)
+	AST_MEMBER(global_values, &nameList, &valueList)
+AST_END(global_values)
 
-AST_LEAF(export_op)
-AST_END(export_op)
+AST_LEAF(global_op)
+AST_END(global_op)
+
+AST_NODE(Global)
+	ast_sel<true, ClassDecl_t, global_op_t, global_values_t> item;
+	AST_MEMBER(Global, &item)
+AST_END(Global)
+
+AST_LEAF(export_default)
+AST_END(export_default)
 
 AST_NODE(Export)
-	ast_sel<true, ClassDecl_t, export_op_t, export_values_t> item;
-	AST_MEMBER(Export, &item)
+	ast_ptr<false, export_default_t> def;
+	ast_sel<true, ExpList_t, Exp_t> target;
+	ast_ptr<false, Assign_t> assign;
+	AST_MEMBER(Export, &def, &target, &assign)
 AST_END(Export)
 
 AST_NODE(FnArgDef)
@@ -601,7 +611,7 @@ AST_END(BreakLoop)
 
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, For_t, ForEach_t,
-		Return_t, Local_t, Export_t, BreakLoop_t,
+		Return_t, Local_t, Global_t, Export_t, BreakLoop_t,
 		Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	AST_MEMBER(Statement, &content, &appendix)

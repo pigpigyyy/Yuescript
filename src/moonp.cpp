@@ -81,10 +81,10 @@ int main(int narg, const char** args) {
 	if (!targetPath.empty() && targetPath.back() != '/' && targetPath.back() != '\\') {
 		targetPath.append("/");
 	}
-	std::list<std::future<std::result_of_t<std::decay_t<int()>()>>> results;
+	std::list<std::future<int>> results;
 	for (const auto& file : files) {
 		auto task = std::async(std::launch::async, [=]() {
-			std::ifstream input(file, input.in);
+			std::ifstream input(file, std::ios::in);
 			if (input) {
 				std::string s(
 					(std::istreambuf_iterator<char>(input)),
@@ -135,7 +135,7 @@ int main(int narg, const char** args) {
 						} else {
 							targetFile = resultFile;
 						}
-						std::ofstream output(targetFile, output.trunc | output.out);
+						std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
 						if (output) {
 							const auto& codes = std::get<0>(result);
 							output.write(codes.c_str(), codes.size());

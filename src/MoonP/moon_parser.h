@@ -26,6 +26,8 @@ struct ParseInfo {
 	ast_ptr<false, ast_node> node;
 	std::string error;
 	std::unique_ptr<input> codes;
+	bool exportDefault = false;
+	std::string moduleName;
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;
 };
 
@@ -72,10 +74,13 @@ protected:
 	struct State {
 		State() {
 			indents.push(0);
-			stringOpen = -1;
 		}
+		bool exportDefault = false;
+		int exportCount = 0;
+		int moduleFix = 0;
+		size_t stringOpen = 0;
+		std::string moduleName = "_module_0";
 		std::string buffer;
-		size_t stringOpen;
 		std::stack<int> indents;
 		std::stack<bool> doStack;
 	};
@@ -124,8 +129,8 @@ private:
 	rule ImportNameList;
 	rule import_literal_chain;
 	rule WithExp;
-	rule PopDo;
 	rule DisableDo;
+	rule PopDo;
 	rule SwitchElse;
 	rule SwitchBlock;
 	rule IfElseIf;
@@ -181,9 +186,9 @@ private:
 	AST_RULE(SelfName)
 	AST_RULE(KeyName)
 	AST_RULE(VarArg)
-	AST_RULE(local_flag)
 	AST_RULE(Seperator)
 	AST_RULE(NameList)
+	AST_RULE(local_flag)
 	AST_RULE(Local)
 	AST_RULE(colon_import_name)
 	AST_RULE(import_literal_inner)
@@ -249,8 +254,10 @@ private:
 	AST_RULE(class_member_list)
 	AST_RULE(ClassBlock)
 	AST_RULE(ClassDecl)
-	AST_RULE(export_values)
-	AST_RULE(export_op)
+	AST_RULE(global_values)
+	AST_RULE(global_op)
+	AST_RULE(Global)
+	AST_RULE(export_default)
 	AST_RULE(Export)
 	AST_RULE(variable_pair)
 	AST_RULE(normal_pair)

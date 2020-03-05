@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="src\MoonP">
+      <UniqueIdentifier>{c88639d5-457d-42eb-b852-65682c89c618}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\MoonP\ast.cpp">
+      <Filter>src\MoonP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MoonP\moon_compiler.cpp">
+      <Filter>src\MoonP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MoonP\moon_parser.cpp">
+      <Filter>src\MoonP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MoonP\parser.cpp">
+      <Filter>src\MoonP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\moonp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\MoonP\ast.hpp">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\moon_ast.h">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\moon_compiler.h">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\moon_parser.h">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\parser.hpp">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

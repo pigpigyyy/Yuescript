@@ -58,7 +58,7 @@ do
 	import "lpeg" as {:C, :Ct, :Cmt}
 
 do
-	export *
+	global *
 	import 'module'
 	import 'module_x'
 	import "org.package.module-y"
