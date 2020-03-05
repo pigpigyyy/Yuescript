@@ -183,7 +183,7 @@ static int init_moonplus(lua_State* L) {
 	std::string s(moonplusCodes, sizeof(moonplusCodes) / sizeof(moonplusCodes[0]) - 1);
 	std::string codes, err;
 	MoonP::GlobalVars globals;
-	std::tie(codes, err, globals) = MoonP::moonCompile(s, config);
+	std::tie(codes, err, globals) = MoonP::MoonCompiler{}.compile(s, config);
 	if (codes.empty()) {
 		luaL_error(L, "fail to compile moonplus init codes.\n%s", err.c_str());
 	}
@@ -236,7 +236,7 @@ static int moontolua(lua_State* L) {
 	std::string s(input, size);
 	std::string codes, err;
 	MoonP::GlobalVars globals;
-	std::tie(codes, err, globals) = MoonP::moonCompile(s, config);
+	std::tie(codes, err, globals) = MoonP::MoonCompiler{}.compile(s, config);
 	if (codes.empty()) {
 		lua_pushnil(L);
 	} else {
