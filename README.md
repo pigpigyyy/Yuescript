@@ -42,7 +42,69 @@ f!
 
 The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus.
 
-* Multi-line comment.
+* Move old `export` statement functions to `global` statement to match the `local` statement.
+
+* Change `export` statement behavier to support module management.  Moon codes with `export` statement can not explicit return values in root scope. And codes with `export default` can export only one value as the module content. Use cases:
+```Moonscript
+-- file 'Config.moon'
+export default {flag:1, value:"x"}
+
+-- file 'Utils.moon'
+export map = (items, func)-> [func item for item in *items]
+export filter = (items, func)-> [item for item in *items when func item]
+
+-- file 'main.moon'
+import 'Utils' as {:map, :filter}
+```
+Compiles to:
+```Lua
+-- file 'Config.moon'
+local _module_0 = nil
+_module_0 = {
+  flag = 1,
+  value = "x"
+}
+return _module_0
+
+-- file 'Utils.moon'
+local _module_0 = { }
+local map
+map = function(items, func)
+  local _accum_0 = { }
+  local _len_0 = 1
+  for _index_0 = 1, #items do
+    local item = items[_index_0]
+    _accum_0[_len_0] = func(item)
+    _len_0 = _len_0 + 1
+  end
+  return _accum_0
+end
+_module_0["map"] = map
+local filter
+filter = function(items, func)
+  local _accum_0 = { }
+  local _len_0 = 1
+  for _index_0 = 1, #items do
+    local item = items[_index_0]
+    if func(item) then
+      _accum_0[_len_0] = item
+      _len_0 = _len_0 + 1
+    end
+  end
+  return _accum_0
+end
+_module_0["filter"] = filter
+return _module_0
+
+-- file 'main.moon'
+do
+  local _obj_0 = require('Utils')
+  map, filter = _obj_0.map, _obj_0.filter
+end
+```
+
+* Add multi-line comment support.
+
 * Usage for symbol `\` to escape new line. Will compile codes:
 ```Moonscript
 str = --[[
