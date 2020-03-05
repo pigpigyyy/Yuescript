@@ -97,6 +97,7 @@ _module_0["filter"] = filter
 return _module_0
 
 -- file 'main.moon'
+local map, filter
 do
   local _obj_0 = require('Utils')
   map, filter = _obj_0.map, _obj_0.filter
