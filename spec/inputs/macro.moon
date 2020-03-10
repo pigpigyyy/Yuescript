@@ -61,9 +61,10 @@ macro expr pipe = (...)->
 
 $foreach $filter($map({1,2,3}, _ * 2), _ > 4), print _
 
-print $pipe(
+val = $pipe(
 	{1, 2, 3}
 	$map(_ * 2)
 	$filter(_ > 4)
 	$reduce(0, _1 + _2)
 )
+

@@ -7,7 +7,7 @@ export macro expr showMacro = (name,res)->
 	if debugMacro
 		"do
 		txt = #{res}
-		print '['..#{name}..']'
+		print '[macro '..#{name}..']'
 		print txt
 		txt"
 	else
