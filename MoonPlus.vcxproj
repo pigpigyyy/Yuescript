@@ -93,10 +93,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;LUA_COMPAT_5_2;LUA_COMPAT_5_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\lua-5.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,10 +107,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;LUA_COMPAT_5_2;LUA_COMPAT_5_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\lua-5.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,10 +123,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;LUA_COMPAT_5_2;LUA_COMPAT_5_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\lua-5.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,10 +141,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;LUA_COMPAT_5_2;LUA_COMPAT_5_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\lua-5.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,18 +154,79 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\lua-5.3\lapi.c" />
+    <ClCompile Include="src\lua-5.3\lauxlib.c" />
+    <ClCompile Include="src\lua-5.3\lbaselib.c" />
+    <ClCompile Include="src\lua-5.3\lbitlib.c" />
+    <ClCompile Include="src\lua-5.3\lcode.c" />
+    <ClCompile Include="src\lua-5.3\lcorolib.c" />
+    <ClCompile Include="src\lua-5.3\lctype.c" />
+    <ClCompile Include="src\lua-5.3\ldblib.c" />
+    <ClCompile Include="src\lua-5.3\ldebug.c" />
+    <ClCompile Include="src\lua-5.3\ldo.c" />
+    <ClCompile Include="src\lua-5.3\ldump.c" />
+    <ClCompile Include="src\lua-5.3\lfunc.c" />
+    <ClCompile Include="src\lua-5.3\lgc.c" />
+    <ClCompile Include="src\lua-5.3\linit.c" />
+    <ClCompile Include="src\lua-5.3\liolib.c" />
+    <ClCompile Include="src\lua-5.3\llex.c" />
+    <ClCompile Include="src\lua-5.3\lmathlib.c" />
+    <ClCompile Include="src\lua-5.3\lmem.c" />
+    <ClCompile Include="src\lua-5.3\loadlib.c" />
+    <ClCompile Include="src\lua-5.3\lobject.c" />
+    <ClCompile Include="src\lua-5.3\lopcodes.c" />
+    <ClCompile Include="src\lua-5.3\loslib.c" />
+    <ClCompile Include="src\lua-5.3\lparser.c" />
+    <ClCompile Include="src\lua-5.3\lstate.c" />
+    <ClCompile Include="src\lua-5.3\lstring.c" />
+    <ClCompile Include="src\lua-5.3\lstrlib.c" />
+    <ClCompile Include="src\lua-5.3\ltable.c" />
+    <ClCompile Include="src\lua-5.3\ltablib.c" />
+    <ClCompile Include="src\lua-5.3\ltm.c" />
+    <ClCompile Include="src\lua-5.3\lundump.c" />
+    <ClCompile Include="src\lua-5.3\lutf8lib.c" />
+    <ClCompile Include="src\lua-5.3\lvm.c" />
+    <ClCompile Include="src\lua-5.3\lzio.c" />
     <ClCompile Include="src\moonp.cpp" />
     <ClCompile Include="src\MoonP\ast.cpp" />
+    <ClCompile Include="src\MoonP\moonplus.cpp" />
     <ClCompile Include="src\MoonP\moon_compiler.cpp" />
     <ClCompile Include="src\MoonP\moon_parser.cpp" />
     <ClCompile Include="src\MoonP\parser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\lua-5.3\lapi.h" />
+    <ClInclude Include="src\lua-5.3\lauxlib.h" />
+    <ClInclude Include="src\lua-5.3\lcode.h" />
+    <ClInclude Include="src\lua-5.3\lctype.h" />
+    <ClInclude Include="src\lua-5.3\ldebug.h" />
+    <ClInclude Include="src\lua-5.3\ldo.h" />
+    <ClInclude Include="src\lua-5.3\lfunc.h" />
+    <ClInclude Include="src\lua-5.3\lgc.h" />
+    <ClInclude Include="src\lua-5.3\llex.h" />
+    <ClInclude Include="src\lua-5.3\llimits.h" />
+    <ClInclude Include="src\lua-5.3\lmem.h" />
+    <ClInclude Include="src\lua-5.3\lobject.h" />
+    <ClInclude Include="src\lua-5.3\lopcodes.h" />
+    <ClInclude Include="src\lua-5.3\lparser.h" />
+    <ClInclude Include="src\lua-5.3\lprefix.h" />
+    <ClInclude Include="src\lua-5.3\lstate.h" />
+    <ClInclude Include="src\lua-5.3\lstring.h" />
+    <ClInclude Include="src\lua-5.3\ltable.h" />
+    <ClInclude Include="src\lua-5.3\ltm.h" />
+    <ClInclude Include="src\lua-5.3\lua.h" />
+    <ClInclude Include="src\lua-5.3\luaconf.h" />
+    <ClInclude Include="src\lua-5.3\lualib.h" />
+    <ClInclude Include="src\lua-5.3\lundump.h" />
+    <ClInclude Include="src\lua-5.3\lvm.h" />
+    <ClInclude Include="src\lua-5.3\lzio.h" />
     <ClInclude Include="src\MoonP\ast.hpp" />
+    <ClInclude Include="src\MoonP\moonplus.h" />
     <ClInclude Include="src\MoonP\moon_ast.h" />
     <ClInclude Include="src\MoonP\moon_compiler.h" />
     <ClInclude Include="src\MoonP\moon_parser.h" />
     <ClInclude Include="src\MoonP\parser.hpp" />
+    <ClInclude Include="src\MoonP\stacktraceplus.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

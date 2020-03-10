@@ -92,11 +92,19 @@ AST_NODE(NameList)
 	AST_MEMBER(NameList, &sep, &names)
 AST_END(NameList)
 
+class ExpListLow_t;
+
+AST_NODE(local_values)
+	ast_ptr<true, NameList_t> nameList;
+	ast_ptr<false, ExpListLow_t> valueList;
+	AST_MEMBER(local_values, &nameList, &valueList)
+AST_END(local_values)
+
 AST_NODE(Local)
-	ast_sel<true, local_flag_t, NameList_t> name;
+	ast_sel<true, local_flag_t, local_values_t> item;
 	std::list<std::string> forceDecls;
 	std::list<std::string> decls;
-	AST_MEMBER(Local, &name)
+	AST_MEMBER(Local, &item)
 AST_END(Local)
 
 AST_NODE(colon_import_name)
@@ -116,18 +124,18 @@ AST_NODE(ImportLiteral)
 	AST_MEMBER(ImportLiteral, &sep, &inners)
 AST_END(ImportLiteral)
 
-AST_NODE(ImportAs)
-	ast_ptr<true, ImportLiteral_t> literal;
-	ast_sel<false, Variable_t, TableLit_t> target;
-	AST_MEMBER(ImportAs, &literal, &target)
-AST_END(ImportAs)
-
 AST_NODE(ImportFrom)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<true, colon_import_name_t, Variable_t> names;
 	ast_ptr<true, Exp_t> exp;
 	AST_MEMBER(ImportFrom, &sep, &names, &exp)
 AST_END(ImportFrom)
+
+AST_NODE(ImportAs)
+	ast_ptr<true, ImportLiteral_t> literal;
+	ast_sel<false, Variable_t, TableLit_t> target;
+	AST_MEMBER(ImportAs, &literal, &target)
+AST_END(ImportAs)
 
 AST_NODE(Import)
 	ast_sel<true, ImportAs_t, ImportFrom_t> content;
@@ -333,9 +341,10 @@ AST_NODE(Exp)
 AST_END(Exp)
 
 class Parens_t;
+class MacroName_t;
 
 AST_NODE(Callable)
-	ast_sel<true, Variable_t, SelfName_t, VarArg_t, Parens_t> item;
+	ast_sel<true, Variable_t, SelfName_t, VarArg_t, Parens_t, MacroName_t> item;
 	AST_MEMBER(Callable, &item)
 AST_END(Callable)
 
@@ -469,9 +478,15 @@ AST_END(Value)
 AST_LEAF(default_value)
 AST_END(default_value)
 
+AST_NODE(macro_name_pair)
+	ast_ptr<true, MacroName_t> key;
+	ast_ptr<true, MacroName_t> value;
+	AST_MEMBER(macro_name_pair, &key, &value)
+AST_END(macro_name_pair)
+
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t, MacroName_t, macro_name_pair_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit)
 
@@ -517,9 +532,11 @@ AST_END(Global)
 AST_LEAF(export_default)
 AST_END(export_default)
 
+class Macro_t;
+
 AST_NODE(Export)
 	ast_ptr<false, export_default_t> def;
-	ast_sel<true, ExpList_t, Exp_t> target;
+	ast_sel<true, ExpList_t, Exp_t, Macro_t> target;
 	ast_ptr<false, Assign_t> assign;
 	AST_MEMBER(Export, &def, &target, &assign)
 AST_END(Export)
@@ -557,6 +574,27 @@ AST_NODE(FunLit)
 	ast_ptr<false, Body_t> body;
 	AST_MEMBER(FunLit, &argsDef, &arrow, &body)
 AST_END(FunLit)
+
+AST_LEAF(macro_type)
+AST_END(macro_type)
+
+AST_NODE(MacroName)
+	ast_ptr<true, Name_t> name;
+	AST_MEMBER(MacroName, &name)
+AST_END(MacroName)
+
+AST_NODE(MacroLit)
+	ast_ptr<false, FnArgDefList_t> argsDef;
+	ast_ptr<true, Body_t> body;
+	AST_MEMBER(MacroLit, &argsDef, &body)
+AST_END(MacroLit)
+
+AST_NODE(Macro)
+	ast_ptr<true, macro_type_t> type;
+	ast_ptr<true, Name_t> name;
+	ast_ptr<true, MacroLit_t> macroLit;
+	AST_MEMBER(Macro, &type, &name, &macroLit)
+AST_END(Macro)
 
 AST_NODE(NameOrDestructure)
 	ast_sel<true, Variable_t, TableLit_t> item;
@@ -611,7 +649,7 @@ AST_END(BreakLoop)
 
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, For_t, ForEach_t,
-		Return_t, Local_t, Global_t, Export_t, BreakLoop_t,
+		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
 		Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	AST_MEMBER(Statement, &content, &appendix)

@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <tuple>
 #include <list>
 #include <memory>
+#include <functional>
 
 namespace MoonP {
 
@@ -22,6 +23,7 @@ struct MoonConfig {
 	bool lintGlobalVariable = false;
 	bool implicitReturnRoot = true;
 	bool reserveLineNumber = true;
+	int lineOffset = 0;
 };
 
 struct GlobalVar {
@@ -36,7 +38,9 @@ class MoonCompilerImpl;
 
 class MoonCompiler {
 public:
-	MoonCompiler();
+	MoonCompiler(void* luaState = nullptr,
+		const std::function<void(void*)>& luaOpen = nullptr,
+		bool sameModule = false);
 	virtual ~MoonCompiler();
 	std::tuple<std::string,std::string,GlobalVars> compile(std::string_view codes, const MoonConfig& config = {});
 private:

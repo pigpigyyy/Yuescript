@@ -42,6 +42,48 @@ f!
 
 The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus.
 
+* Add macro functions.
+```Moonscript
+-- file 'macro.moon'
+export macro block config = (debugging = true)->
+  global debugMode = debugging == "true"
+  ""
+
+export macro block asserts = (cond)->
+  debugMode and "assert #{cond}" or ""
+
+export macro expr assert = (cond)->
+  debugMode and "assert #{cond}" or "#{cond}"
+
+$config!
+
+-- file 'main.moon'
+import 'macro' as {:$config, :$assert, :$asserts}
+
+macro expr and = (...)->
+  "#{ table.concat {...}, ' and ' }"
+
+$asserts item ~= nil
+$config false
+value = $assert item
+
+if $and f1!, f2!, f3!
+  print "OK"
+```
+ Compiles to:
+```Lua
+-- file 'macro.moon'
+local _module_0 = { }
+return _module_0
+
+-- file 'main.moon'
+assert(item ~= nil)
+local value = item
+if (f1() and f2() and f3()) then
+  print("OK")
+end
+```
+
 * Move old `export` statement functions to `global` statement to match the `local` statement.
 
 * Change `export` statement behavier to support module management.  Moon codes with `export` statement can not explicit return values in root scope. And codes with `export default` can export only one value as the module content. Use cases:

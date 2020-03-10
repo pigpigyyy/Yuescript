@@ -10,15 +10,15 @@ SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
 LIBS =
 # General compiler flags
-COMPILE_FLAGS = -std=c++17 -Wall -Wextra -g
+COMPILE_FLAGS = -std=c++17 -Wall -Wextra -g -DLUA_COMPAT_5_2 -DLUA_COMPAT_5_1
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
-INCLUDES = -I $(SRC_PATH)
+INCLUDES = -I $(SRC_PATH) -I ./src/lua-5.3
 # General linker settings
-LINK_FLAGS = -lpthread
+LINK_FLAGS = -L ./src/lua-5.3 -lpthread -llua
 # Additional release-specific linker settings
 RLINK_FLAGS =
 # Additional debug-specific linker settings
@@ -153,6 +153,7 @@ ifeq ($(USE_VERSION), true)
 else
 	@echo "Beginning release build"
 endif
+	@$(MAKE) -C ./src/lua-5.3
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
@@ -166,6 +167,7 @@ ifeq ($(USE_VERSION), true)
 else
 	@echo "Beginning debug build"
 endif
+	@$(MAKE) -C ./src/lua-5.3
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
@@ -194,6 +196,7 @@ uninstall:
 # Removes all build files
 .PHONY: clean
 clean:
+	@$(MAKE) clean -C ./src/lua-5.3
 	@echo "Deleting $(BIN_NAME) symlink"
 	@$(RM) $(BIN_NAME)
 	@echo "Deleting directories"

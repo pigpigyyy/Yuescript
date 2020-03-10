@@ -12,7 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <unordered_set>
 #include <stack>
 #include <algorithm>
-#include <vector>
+#include <list>
 #include <sstream>
 #include <string_view>
 
@@ -75,6 +75,7 @@ protected:
 		State() {
 			indents.push(0);
 		}
+		bool macroPairEnabled = false;
 		bool exportDefault = false;
 		int exportCount = 0;
 		int moduleFix = 0;
@@ -131,6 +132,8 @@ private:
 	rule WithExp;
 	rule DisableDo;
 	rule PopDo;
+	rule EnableMacroPair;
+	rule DiableMacroPair;
 	rule SwitchElse;
 	rule SwitchBlock;
 	rule IfElseIf;
@@ -147,6 +150,7 @@ private:
 	rule lua_string_close;
 	rule FnArgsExpList;
 	rule FnArgs;
+	rule macro_args_def;
 	rule chain_call;
 	rule chain_item;
 	rule ChainItems;
@@ -189,6 +193,7 @@ private:
 	AST_RULE(Seperator)
 	AST_RULE(NameList)
 	AST_RULE(local_flag)
+	AST_RULE(local_values)
 	AST_RULE(Local)
 	AST_RULE(colon_import_name)
 	AST_RULE(import_literal_inner)
@@ -261,12 +266,17 @@ private:
 	AST_RULE(Export)
 	AST_RULE(variable_pair)
 	AST_RULE(normal_pair)
+	AST_RULE(macro_name_pair)
 	AST_RULE(FnArgDef)
 	AST_RULE(FnArgDefList)
 	AST_RULE(outer_var_shadow)
 	AST_RULE(FnArgsDef)
 	AST_RULE(fn_arrow)
 	AST_RULE(FunLit)
+	AST_RULE(macro_type)
+	AST_RULE(MacroName)
+	AST_RULE(MacroLit)
+	AST_RULE(Macro)
 	AST_RULE(NameOrDestructure)
 	AST_RULE(AssignableNameList)
 	AST_RULE(InvokeArgs)
@@ -285,6 +295,7 @@ private:
 
 namespace Utils {
 	void replace(std::string& str, std::string_view from, std::string_view to);
+	void trim(std::string& str);
 };
 
 } // namespace MoonP

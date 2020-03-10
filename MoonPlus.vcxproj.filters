@@ -8,6 +8,9 @@
     <Filter Include="src\MoonP">
       <UniqueIdentifier>{c88639d5-457d-42eb-b852-65682c89c618}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\lua-5.3">
+      <UniqueIdentifier>{338bdf98-6a02-4589-a373-c7bca25c746b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\MoonP\ast.cpp">
@@ -25,6 +28,108 @@
     <ClCompile Include="src\moonp.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\MoonP\moonplus.cpp">
+      <Filter>src\MoonP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lapi.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lauxlib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lbaselib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lbitlib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lcode.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lcorolib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lctype.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ldblib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ldebug.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ldo.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ldump.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lfunc.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lgc.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\linit.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\liolib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\llex.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lmathlib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lmem.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\loadlib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lobject.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lopcodes.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\loslib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lparser.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lstate.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lstring.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lstrlib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ltable.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ltablib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\ltm.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lundump.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lutf8lib.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lvm.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua-5.3\lzio.c">
+      <Filter>src\lua-5.3</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\MoonP\ast.hpp">
@@ -41,6 +146,87 @@
     </ClInclude>
     <ClInclude Include="src\MoonP\parser.hpp">
       <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\moonplus.h">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MoonP\stacktraceplus.h">
+      <Filter>src\MoonP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lapi.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lauxlib.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lcode.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lctype.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\ldebug.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\ldo.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lfunc.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lgc.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\llex.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\llimits.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lmem.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lobject.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lopcodes.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lparser.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lprefix.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lstate.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lstring.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\ltable.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\ltm.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lua.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\luaconf.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lualib.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lundump.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lvm.h">
+      <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua-5.3\lzio.h">
+      <Filter>src\lua-5.3</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

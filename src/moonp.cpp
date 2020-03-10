@@ -10,10 +10,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <fstream>
 #include <chrono>
 #include <future>
+#include <sstream>
+#include <tuple>
 #include "MoonP/moon_compiler.h"
 #include "MoonP/moon_parser.h"
 
-#ifndef LIBMOONP
+extern "C" {
+
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+int luaopen_moonp(lua_State* L);
+
+} // extern "C"
+
+static void openlibs(void* state) {
+	lua_State* L = static_cast<lua_State*>(state);
+	luaL_openlibs(L);
+	luaopen_moonp(L);
+}
 
 int main(int narg, const char** args) {
 	const char* help =
@@ -81,7 +96,7 @@ int main(int narg, const char** args) {
 	if (!targetPath.empty() && targetPath.back() != '/' && targetPath.back() != '\\') {
 		targetPath.append("/");
 	}
-	std::list<std::future<int>> results;
+	std::list<std::future<std::pair<int,std::string>>> results;
 	for (const auto& file : files) {
 		auto task = std::async(std::launch::async, [=]() {
 			std::ifstream input(file, std::ios::in);
@@ -91,7 +106,7 @@ int main(int narg, const char** args) {
 					std::istreambuf_iterator<char>());
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
-					auto result = MoonP::MoonCompiler{}.compile(s, config);
+					auto result = MoonP::MoonCompiler{nullptr,openlibs}.compile(s, config);
 					auto end = std::chrono::high_resolution_clock::now();
 					if (!std::get<0>(result).empty()) {
 						std::chrono::duration<double> diff = end - start;
@@ -99,21 +114,22 @@ int main(int narg, const char** args) {
 						MoonP::MoonParser{}.parse<MoonP::File_t>(s);
 						end = std::chrono::high_resolution_clock::now();
 						std::chrono::duration<double> parseDiff = end - start;
-						std::cout << file << " \n";
-						std::cout << "Parse time:     " << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
-						std::cout << "Compile time:   " << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
-						return 0;
+						std::ostringstream buf;
+						buf << file << " \n";
+						buf << "Parse time:     " << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
+						buf << "Compile time:   " << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
+						return std::pair{0, buf.str()};
 					} else {
-						std::cout << "Fail to compile: " << file << ".\n";
-						std::cout << std::get<1>(result) << '\n';
-						return 1;
+						std::ostringstream buf;
+						buf << "Fail to compile: " << file << ".\n";
+						buf << std::get<1>(result) << '\n';
+						return std::pair{1, buf.str()};
 					}
 				}
-				auto result = MoonP::MoonCompiler{}.compile(s, config);
+				auto result = MoonP::MoonCompiler{nullptr,openlibs}.compile(s, config);
 				if (!std::get<0>(result).empty()) {
 					if (!writeToFile) {
-						std::cout << std::get<0>(result) << '\n';
-						return 1;
+						return std::pair{1, std::get<0>(result) + '\n'};
 					} else {
 						std::string targetFile;
 						if (resultFile.empty()) {
@@ -139,149 +155,33 @@ int main(int narg, const char** args) {
 						if (output) {
 							const auto& codes = std::get<0>(result);
 							output.write(codes.c_str(), codes.size());
-							std::cout << "Built " << file << '\n';
-							return 0;
+							return std::pair{0, std::string("Built ") + file + '\n'};
 						} else {
-							std::cout << "Fail to write file: " << targetFile << ".\n";
-							return 1;
+							return std::pair{1, std::string("Fail to write file: ") + targetFile + '\n'};
 						}
 					}
 				} else {
-					std::cout << "Fail to compile: " << file << ".\n";
-					std::cout << std::get<1>(result) << '\n';
-					return 1;
+					std::ostringstream buf;
+					buf << "Fail to compile: " << file << ".\n";
+					buf << std::get<1>(result) << '\n';
+					return std::pair{1, buf.str()};
 				}
 			} else {
-				std::cout << "Fail to read file: " << file << ".\n";
-				return 1;
+				return std::pair{1, std::string("Fail to read file: ") + file + ".\n"};
 			}
 		});
 		results.push_back(std::move(task));
 	}
 	int ret = 0;
+	std::string msg;
 	for (auto& result : results) {
-		int val = result.get();
+		int val = 0;
+		std::tie(val, msg) = result.get();
 		if (val != 0) {
 			ret = val;
 		}
+		std::cout << msg;
 	}
 	return ret;
 }
-
-#else
-
-extern "C" {
-
-#include "lua.h"
-#include "lauxlib.h"
-
-static const char moonplusCodes[] =
-#include "Moonscript.h"
-
-static int init_moonplus(lua_State* L) {
-	MoonP::MoonConfig config;
-	std::string s(moonplusCodes, sizeof(moonplusCodes) / sizeof(moonplusCodes[0]) - 1);
-	std::string codes, err;
-	MoonP::GlobalVars globals;
-	std::tie(codes, err, globals) = MoonP::MoonCompiler{}.compile(s, config);
-	if (codes.empty()) {
-		luaL_error(L, "fail to compile moonplus init codes.\n%s", err.c_str());
-	}
-	int top = lua_gettop(L);
-	if (luaL_loadbuffer(L, codes.c_str(), codes.size(), "=(moonplus)") != 0) {
-		luaL_error(L, "fail to init moonplus module.");
-	} else {
-		lua_call(L, 0, 0);
-	}
-	lua_settop(L, top);
-	return 0;
-}
-
-static const char stpCodes[] =
-#include "StackTracePlus.h"
-
-static int init_stacktraceplus(lua_State* L) {
-	if (luaL_loadbuffer(L, stpCodes, sizeof(stpCodes) / sizeof(stpCodes[0]) - 1, "=(stacktraceplus)") != 0) {
-		luaL_error(L, "fail to init stacktraceplus module.");
-	} else {
-		lua_call(L, 0, 1);
-	}
-	return 1;
-}
-
-static int moontolua(lua_State* L) {
-	size_t size = 0;
-	const char* input = luaL_checklstring(L, 1, &size);
-	MoonP::MoonConfig config;
-	if (lua_gettop(L) == 2) {
-		lua_pushstring(L, "lint_global");
-		lua_gettable(L, -2);
-		if (!lua_isnil(L, -1)) {
-			config.lintGlobalVariable = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushstring(L, "implicit_return_root");
-		lua_gettable(L, -2);
-		if (!lua_isnil(L, -1)) {
-			config.implicitReturnRoot = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushstring(L, "reserve_line_number");
-		lua_gettable(L, -2);
-		if (!lua_isnil(L, -1)) {
-			config.reserveLineNumber = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-	}
-	std::string s(input, size);
-	std::string codes, err;
-	MoonP::GlobalVars globals;
-	std::tie(codes, err, globals) = MoonP::MoonCompiler{}.compile(s, config);
-	if (codes.empty()) {
-		lua_pushnil(L);
-	} else {
-		lua_pushlstring(L, codes.c_str(), codes.size());
-	}
-	if (err.empty()) {
-		lua_pushnil(L);
-	} else {
-		lua_pushlstring(L, err.c_str(), err.size());
-	}
-	if (globals) {
-		lua_createtable(L, static_cast<int>(globals->size()), 0);
-		int i = 1;
-		for (const auto& var : *globals) {
-			lua_createtable(L, 3, 0);
-			lua_pushlstring(L, var.name.c_str(), var.name.size());
-			lua_rawseti(L, -2, 1);
-			lua_pushinteger(L, var.line);
-			lua_rawseti(L, -2, 2);
-			lua_pushinteger(L, var.col);
-			lua_rawseti(L, -2, 3);
-			lua_rawseti(L, -2, i);
-			i++;
-		}
-	} else {
-		lua_pushnil(L);
-	}
-	return 3;
-}
-
-int luaopen_moonp(lua_State* L) {
-	lua_getglobal(L, "package");
-	lua_getfield(L, -1, "loaded");
-	lua_createtable(L, 0, 0);
-	lua_pushcfunction(L, moontolua);
-	lua_setfield(L, -2, "to_lua");
-	lua_pushcfunction(L, init_stacktraceplus);
-	lua_setfield(L, -2, "load_stacktraceplus");
-	lua_setfield(L, -2, "moonp");
-	lua_pop(L, 2);
-	init_moonplus(L);
-	return 0;
-}
-
-} // extern "C"
-
-#endif // LIBMOONP
 
