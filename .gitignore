@@ -1,4 +1,5 @@
 moonp
+!src/MoonP
 build
 build.luarocks
 spec/outputs
