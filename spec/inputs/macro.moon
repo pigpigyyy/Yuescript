@@ -77,7 +77,7 @@ macro expr curry = (...)->
 	len = #args
 	body = args[len]
 	def = table.concat ["(#{args[i]})->" for i = 1, len - 1]
-	"#{def}\n#{body\gsub "^do\n",""}"
+	"#{def}\n#{body\gsub "^do%s*\n",""}"
 
 f = $curry x,y,z,do
 	print x,y,z

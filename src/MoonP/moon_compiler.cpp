@@ -40,7 +40,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.3.0";
+	return "0.5.0-r0.3.2";
 }
 
 // name of table stored in lua registry
@@ -2155,6 +2155,9 @@ private:
 	}
 
 	void transformMacro(Macro_t* macro, str_list& out, bool exporting) {
+		if (_scopes.size() > 1) {
+			throw std::logic_error(_info.errorMessage("can not define macro outside the root block"sv, macro));
+		}
 		auto type = _parser.toString(macro->type);
 		auto macroName = _parser.toString(macro->name);
 		auto argsDef = macro->macroLit->argsDef.get();
@@ -2985,6 +2988,7 @@ private:
 				}
 			} else str = _parser.toString(arg);
 			Utils::trim(str);
+			Utils::replace(str, "\r\n"sv, "\n");
 			lua_pushlstring(L, str.c_str(), str.size());
 		} // cur macro pcall func args...
 		hideStackTrace(true);
@@ -3717,14 +3721,14 @@ private:
 
 	void transformLuaString(LuaString_t* luaString, str_list& out) {
 		auto content = _parser.toString(luaString->content);
-		Utils::replace(content, "\r"sv, "");
+		Utils::replace(content, "\r\n"sv, "\n");
 		if (content[0] == '\n') content.erase(content.begin());
 		out.push_back(_parser.toString(luaString->open) + content + _parser.toString(luaString->close));
 	}
 
 	void transformSingleString(SingleString_t* singleString, str_list& out) {
 		auto str = _parser.toString(singleString);
-		Utils::replace(str, "\r"sv, "");
+		Utils::replace(str, "\r\n"sv, "\n");
 		Utils::replace(str, "\n"sv, "\\n"sv);
 		out.push_back(str);
 	}
@@ -3737,7 +3741,7 @@ private:
 			switch (content->getId()) {
 				case id<double_string_inner_t>(): {
 					auto str = _parser.toString(content);
-					Utils::replace(str, "\r"sv, "");
+					Utils::replace(str, "\r\n"sv, "\n");
 					Utils::replace(str, "\n"sv, "\\n"sv);
 					temp.push_back(s("\""sv) + str + s("\""sv));
 					break;
@@ -4346,7 +4350,7 @@ private:
 	void transformExport(Export_t* exportNode, str_list& out) {
 		auto x = exportNode;
 		if (_scopes.size() > 1) {
-			throw std::logic_error(_info.errorMessage("can not do module export outside root block"sv, x));
+			throw std::logic_error(_info.errorMessage("can not do module export outside the root block"sv, exportNode));
 		}
 		if (exportNode->assign) {
 			auto expList = exportNode->target.to<ExpList_t>();
