@@ -3017,7 +3017,7 @@ private:
 		const auto& chainList = chainValue->items.objects();
 		std::string type, codes;
 		std::tie(type, codes) = expandMacroStr(chainValue);
-		std::string targetType(usage == ExpUsage::Common ? "block"sv : "expr"sv);
+		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
 		if (type != targetType) {
 			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type + '.', x));
 		}
@@ -3026,7 +3026,11 @@ private:
 			if (codes.empty()) {
 				return {x->new_ptr<Block_t>().get(),std::move(info.codes)};
 			}
-			info = _parser.parse<Block_t>(codes);
+			if (type == "expr"sv) {
+				info = _parser.parse<Exp_t>(codes);
+			} else {
+				info = _parser.parse<Block_t>(codes);
+			}
 		} else {
 			info = _parser.parse<Exp_t>(codes);
 		}
@@ -3042,9 +3046,7 @@ private:
 			node->m_end.m_col = col;
 			return traversal::Continue;
 		});
-		if (usage == ExpUsage::Common) {
-			return {info.node,std::move(info.codes)};
-		} else {
+		if (type == "expr"sv) {
 			ast_ptr<false, Exp_t> exp;
 			exp.set(info.node);
 			if (!exp->opValues.empty() || chainList.size() > 2) {
@@ -3064,15 +3066,28 @@ private:
 				exp = x->new_ptr<Exp_t>();
 				exp->value.set(value);
 			}
-			return {exp.get(),std::move(info.codes)};
+			if (usage == ExpUsage::Common) {
+				auto expList = x->new_ptr<ExpList_t>();
+				expList->exprs.push_back(exp);
+				auto exps = x->new_ptr<ExpListAssign_t>();
+				exps->expList.set(expList);
+				auto stmt = x->new_ptr<Statement_t>();
+				stmt->content.set(exps);
+				auto block = x->new_ptr<Block_t>();
+				block->statements.push_back(stmt);
+				info.node.set(block);
+			} else {
+				info.node.set(exp);
+			}
 		}
+		return {info.node,std::move(info.codes)};
 	}
 
 	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		if (isMacroChain(chainValue)) {
 			ast_ptr<false,ast_node> node;
 			std::unique_ptr<input> codes;
-			std::tie(node,codes) = expandMacro(chainValue, usage);
+			std::tie(node, codes) = expandMacro(chainValue, usage);
 			if (usage == ExpUsage::Common) {
 				transformBlock(node.to<Block_t>(), out, usage, assignList);
 			} else {
@@ -4983,3 +4998,4 @@ std::tuple<std::string,std::string,GlobalVars> MoonCompiler::compile(std::string
 }
 
 } // namespace MoonP
+

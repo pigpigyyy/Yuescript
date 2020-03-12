@@ -43,7 +43,7 @@ macro block foreach = (items,action)->
 	#{action}"
 
 macro expr pipe = (...)->
-	switch select "#",...
+	switch select "#", ...
 		when 0 then return ""
 		when 1 then return ...
 	ops = {...}
@@ -53,7 +53,7 @@ macro expr pipe = (...)->
 		last = "_#{i}"
 		stmt
 	res = "do
-#{table.concat stmts,"\n"}
+#{table.concat stmts, "\n"}
 	#{last}"
 	$showMacro "pipe", res
 
@@ -67,4 +67,40 @@ val = $pipe(
 	$filter(_ > 4)
 	$reduce(0, _1 + _2)
 )
+
+macro expr plus = (a, b)-> "#{a} + #{b}"
+
+$plus(1,2)\call 123
+
+macro expr curry = (...)->
+	args = {...}
+	len = #args
+	body = args[len]
+	def = table.concat ["(#{args[i]})->" for i = 1, len - 1]
+	"#{def}\n#{body\gsub "^do\n",""}"
+
+f = $curry x,y,z,do
+	print x,y,z
+
+macro expr get_inner = (var)-> "do
+	a = 1
+	a + 1"
+
+macro expr get_inner_hygienic = (var)-> "(->
+	local a = 1
+	a + 1)!"
+
+do
+	a = 8
+	a = $get_inner!
+	a += $get_inner!
+	print a
+
+do
+	a = 8
+	a = $get_inner_hygienic!
+	a += $get_inner_hygienic!
+	print a
+
+nil
 
