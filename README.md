@@ -60,8 +60,7 @@ $config!
 -- file 'main.moon'
 import 'macro' as {:$config, :$assert, :$asserts}
 
-macro expr and = (...)->
-  "#{ table.concat {...}, ' and ' }"
+macro expr and = (...)-> "#{ table.concat {...}, ' and ' }"
 
 $asserts item ~= nil
 $config false
@@ -96,6 +95,7 @@ export map = (items, func)-> [func item for item in *items]
 export filter = (items, func)-> [item for item in *items when func item]
 
 -- file 'main.moon'
+import 'Config' as {:flag, :value}
 import 'Utils' as {:map, :filter}
 ```
 Compiles to:
@@ -139,6 +139,11 @@ _module_0["filter"] = filter
 return _module_0
 
 -- file 'main.moon'
+local flag, value
+do
+  local _obj_0 = require('Config')
+  flag, value = _obj_0.flag, _obj_0.value
+end
 local map, filter
 do
   local _obj_0 = require('Utils')
