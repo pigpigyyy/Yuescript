@@ -33,6 +33,9 @@ using namespace parserlib;
 #define BLOCK_END } while (false);
 #define BREAK_IF(cond) if (cond) break
 
+#define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
+#define DEFER(code) _DEFER(code,__LINE__)
+
 typedef std::list<std::string> str_list;
 
 inline std::string s(std::string_view sv) {
@@ -40,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.3.2";
+	return "0.5.0-r0.3.3";
 }
 
 // name of table stored in lua registry
@@ -82,6 +85,7 @@ public:
 		_config = config;
 		_info = _parser.parse<File_t>(codes);
 		GlobalVars globals;
+		DEFER(clear());
 		if (_info.node) {
 			try {
 				str_list out;
@@ -99,15 +103,12 @@ public:
 						globals->push_back({var.first, line, col});
 					}
 				}
-				clear();
 				return {std::move(out.back()), Empty, std::move(globals)};
 			} catch (const std::logic_error& error) {
-				clear();
 				return {Empty, error.what(), std::move(globals)};
 			}
 		} else {
-			clear();
-			return {Empty, _info.error, std::move(globals)};
+			return {Empty, std::move(_info.error), std::move(globals)};
 		}
 	}
 
@@ -115,15 +116,14 @@ public:
 		_indentOffset = 0;
 		_scopes.clear();
 		_codeCache.clear();
-		std::stack<std::string> emptyWith;
-		_withVars.swap(emptyWith);
-		std::stack<std::string> emptyContinue;
-		_continueVars.swap(emptyContinue);
 		_buf.str("");
 		_buf.clear();
 		_joinBuf.str("");
 		_joinBuf.clear();
 		_globals.clear();
+		_info = {};
+		_withVars = {};
+		_continueVars = {};
 		if (_useModule) {
 			_useModule = false;
 			if (!_sameModule) {
@@ -626,7 +626,7 @@ private:
 		BREAK_IF(!callable->item.is<MacroName_t>());
 		if (chainList.size() == 1 ||
 			!ast_is<Invoke_t,InvokeArgs_t>(*(++chainList.begin()))) {
-			throw std::logic_error(_info.errorMessage("macro expression must be followed by argument list"sv, callable));
+			throw std::logic_error(_info.errorMessage("macro expression must be followed by arguments list"sv, callable));
 		}
 		return true;
 		BLOCK_END
@@ -2093,19 +2093,6 @@ private:
 		lua_pop(L, 3); // item
 	}
 
-	void hideStackTrace(bool hide) {
-		lua_getglobal(L, "package"); // package
-		lua_getfield(L, -1, "loaded"); // package loaded
-		lua_getfield(L, -1, "moonp"); // package loaded moonp
-		if (hide) {
-			lua_pushboolean(L, 1); // package loaded moonp true
-		} else {
-			lua_pushnil(L); // package loaded moonp nil
-		}
-		lua_setfield(L, -2, "_hide_stacktrace_");
-		lua_pop(L, 3); // empty
-	}
-
 	bool isModuleLoaded(std::string_view name) {
 		int top = lua_gettop(L);
 		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
@@ -2941,10 +2928,10 @@ private:
 
 	std::pair<std::string,std::string> expandMacroStr(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
-		auto callable = ast_cast<Callable_t>(chainList.front());
-		auto macroName = _parser.toString(callable->item.to<MacroName_t>()->name);
+		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
+		auto macroName = _parser.toString(x->name);
 		if (!_useModule) {
-			throw std::logic_error(_info.errorMessage("can not resolve macro", callable->item));
+			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		}
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
@@ -2952,7 +2939,7 @@ private:
 		lua_rawget(L, -2); // cur[macroName], cur macro
 		if (lua_istable(L, -1) == 0) {
 			lua_settop(L, top);
-			throw std::logic_error(_info.errorMessage("can not resolve macro", callable->item));
+			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		}
 		lua_rawgeti(L, -1, 1); // cur macro func
 		pushMoonp("pcall"sv); // cur macro func pcall
@@ -2988,26 +2975,24 @@ private:
 				}
 			} else str = _parser.toString(arg);
 			Utils::trim(str);
-			Utils::replace(str, "\r\n"sv, "\n");
+			Utils::replace(str, "\r\n"sv, "\n"sv);
 			lua_pushlstring(L, str.c_str(), str.size());
 		} // cur macro pcall func args...
-		hideStackTrace(true);
 		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 2, 0) == 0;
 		if (!success) { // cur macro err
 			std::string err = lua_tostring(L, -1);
 			lua_settop(L, top);
-			throw std::logic_error(_info.errorMessage(s("fail to expand macro\n"sv) + err, callable));
+			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
 		} // cur macro success res
-		hideStackTrace(false);
 		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -1);
 			lua_settop(L, top);
-			throw std::logic_error(_info.errorMessage(s("fail to expand macro\n"sv) + err, callable));
+			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
 		}
 		lua_remove(L, -2); // cur macro res
 		if (lua_isstring(L, -1) == 0) {
 			lua_settop(L, top);
-			throw std::logic_error(_info.errorMessage(s("macro function must return string with expanded codes"sv), callable));
+			throw std::logic_error(_info.errorMessage(s("macro function must return string with expanded codes"sv), x));
 		} // cur macro codes
 		lua_rawgeti(L, -2, 2); // cur macro codes type
 		std::string type = lua_tostring(L, -1);
@@ -3017,13 +3002,13 @@ private:
 	}
 
 	std::pair<ast_ptr<false,ast_node>, std::unique_ptr<input>> expandMacro(ChainValue_t* chainValue, ExpUsage usage) {
-		auto x = chainValue;
+		auto x = ast_to<Callable_t>(chainValue->items.front())->item.to<MacroName_t>();
 		const auto& chainList = chainValue->items.objects();
 		std::string type, codes;
 		std::tie(type, codes) = expandMacroStr(chainValue);
 		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
 		if (type != targetType) {
-			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type + '.', x));
+			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
 		}
 		ParseInfo info;
 		if (usage == ExpUsage::Common) {
@@ -3039,7 +3024,8 @@ private:
 			info = _parser.parse<Exp_t>(codes);
 		}
 		if (!info.node) {
-			throw std::logic_error(_info.errorMessage("fail to expand macro: " + info.error, x));
+			info.error = info.error.substr(info.error.find(':') + 2);
+			throw std::logic_error(_info.errorMessage("fail to parse expanded codes: " + info.error, x));
 		}
 		int line = x->m_begin.m_line;
 		int col = x->m_begin.m_col;
@@ -5002,4 +4988,3 @@ std::tuple<std::string,std::string,GlobalVars> MoonCompiler::compile(std::string
 }
 
 } // namespace MoonP
-

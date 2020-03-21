@@ -358,7 +358,7 @@ end
 -- @param message An optional error string or object.
 -- @param level An optional number telling at which level to start the traceback (default is 1)
 --
--- Returns a string with the stack trace and a string with the original error.
+-- Returns a string with the stack trace.
 --
 function _M.stacktrace(thread, message, level)
 	if type(thread) ~= "thread" then
@@ -389,26 +389,16 @@ function _M.stacktrace(thread, message, level)
 		dumper:add("\r\n}")
 	elseif type(message) == "string" then
 		local fname, line, msg = message:match('(.+):(%d+): (.*)$')
-		local nfname, nline, nmsg = fname:match('(.+):(%d+): (.*)$')
-		if nfname then
-			fname = nmsg
+		if fname then
+			local nfname, nline, nmsg = fname:match('(.+):(%d+): (.*)$')
+			if nfname then
+				fname = nmsg
+			end
 		end
 		if fname then
 			fname = fname:gsub("%[string \"", "")
 			fname = fname:gsub("\"%]", "")
 			fname = fname:gsub("^%s*(.-)%s*$", "%1")
-			local extension = fname:match("%.([^%.\\/]*)$")
-			if not extension then
-				local fext = fname .. ".lua"
-				if moonp.file_exist(fext) then
-					fname = fext
-				else
-					fext = fname .. ".moon"
-					if moonp.file_exist(fext) then
-						fname = fext
-					end
-				end
-			end
 			fname, line = getMoonLineNumber(fname, line)
 			if _M.simplified then
 				message = table.concat({
@@ -423,13 +413,6 @@ function _M.stacktrace(thread, message, level)
 			end
 		end
 		dumper:add(message)
-	end
-
-	local moonp = require("moonp")
-	if moonp._hide_stacktrace_ then
-		local msg = dumper:concat_lines()
-		moonp._hide_stacktrace_ = nil
-		return message
 	end
 
 	dumper:add("\r\n")
@@ -448,20 +431,7 @@ Stack Traceback
 		elseif info.what == "main" or info.what == "Lua" then
 			info.source = info.source
 		end
-		local fname = info.source
-		local extension = fname:match("%.([^%.\\/]*)$")
-		if not extension then
-			local fext = fname .. ".lua"
-			if moonp.file_exist(fext) then
-				fname = fext
-			else
-				fext = fname .. ".moon"
-				if moonp.file_exist(fext) then
-					fname = fext
-				end
-			end
-		end
-		info.source, info.currentline = getMoonLineNumber(fname, info.currentline)
+		info.source, info.currentline = getMoonLineNumber(info.source, info.currentline)
 		if info.what == "main" then
 			if _M.simplified then
 				dumper:add_f("(%d) '%s':%d\r\n", level_to_show, info.source, info.currentline)
