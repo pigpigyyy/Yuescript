@@ -102,5 +102,38 @@ do
 	a += $get_inner_hygienic!
 	print a
 
+macro lua lua = (codes)-> "#{codes}"
+
+x = 0
+
+$lua [[
+local function f(a)
+	return a + 1
+end
+x = x + f(3)
+]]
+
+print x
+
+macro lua def = (fname, ...)->
+	args = {...}
+	last = table.remove args
+	$showMacro "def", "local function #{fname}(#{table.concat args, ', '})
+	#{last}
+end"
+
+sel = (a, b, c)-> if a then b else c
+
+$def sel, a, b, c, [[
+	if a then
+		return b
+	else
+		return c
+	end
+]]
+
+$def dummy,[[
+]]
+
 nil
 

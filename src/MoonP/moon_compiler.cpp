@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.3.3";
+	return "0.5.0-r0.3.4";
 }
 
 // name of table stored in lua registry
@@ -58,11 +58,11 @@ public:
 		L(sharedState),
 		_luaOpen(luaOpen),
 		_moduleName(moduleName) {
-		int top = -1;
 		BLOCK_START
 		BREAK_IF(!sameModule);
 		BREAK_IF(!L);
-		top = lua_gettop(L);
+		int top = lua_gettop(L);
+		DEFER(lua_settop(L, top));
 		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
 		lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
 		BREAK_IF(lua_istable(L, -1) == 0);
@@ -71,7 +71,6 @@ public:
 		_useModule = true;
 		_sameModule = true;
 		BLOCK_END
-		if (top != -1) lua_settop(L, top);
 	}
 
 	~MoonCompilerImpl() {
@@ -2095,15 +2094,14 @@ private:
 
 	bool isModuleLoaded(std::string_view name) {
 		int top = lua_gettop(L);
+		DEFER(lua_settop(L, top));
 		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
 		lua_rawget(L, LUA_REGISTRYINDEX); // modules
 		lua_pushlstring(L, &name.front(), name.size());
 		lua_rawget(L, -2); // modules module
 		if (lua_isnil(L, -1) != 0) {
-			lua_settop(L, top);
 			return false;
 		}
-		lua_settop(L, top);
 		return true;
 	}
 
@@ -2153,7 +2151,7 @@ private:
 			for (auto def_ : argsDef->definitions.objects()) {
 				auto def = static_cast<FnArgDef_t*>(def_);
 				if (def->name.is<SelfName_t>()) {
-					throw std::logic_error(_info.errorMessage("self name is not supported here"sv, def->name));
+					throw std::logic_error(_info.errorMessage("self name is not supported for macro function argument"sv, def->name));
 				} else {
 					std::string defVal;
 					if (def->defaultValue) {
@@ -2177,18 +2175,17 @@ private:
 		auto chunkName = clearBuf();
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
+		DEFER(lua_settop(L, top));
 		pushMoonp("loadstring"sv); // cur loadstring
 		lua_pushlstring(L, macroCodes.c_str(), macroCodes.size()); // cur loadstring codes
 		lua_pushlstring(L, chunkName.c_str(), chunkName.size()); // cur loadstring codes chunk
 		pushOptions(macro->m_begin.m_line - 1); // cur loadstring codes chunk options
 		if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), cur f err
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to load macro codes\n"sv) + err, macro->macroLit));
 		} // cur f err
 		if (lua_isnil(L, -2) != 0) { // f == nil, cur f err
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to load macro codes, at (macro "sv) + macroName + s("): "sv) + err, macro->macroLit));
 		}
 		lua_pop(L, 1); // cur f
@@ -2196,12 +2193,10 @@ private:
 		lua_insert(L, -2); // cur pcall f
 		if (lua_pcall(L, 1, 2, 0) != 0) { // f(), cur success macro
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, macro->macroLit));
 		} // cur success res
 		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, macro->macroLit));
 		} // cur true macro
 		lua_remove(L, -2); // cur macro
@@ -2215,7 +2210,6 @@ private:
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro name
 		lua_insert(L, -2); // cur name macro
 		lua_rawset(L, -3); // cur[name] = macro, cur
-		lua_settop(L, top);
 		out.push_back(Empty);
 	}
 
@@ -2935,10 +2929,10 @@ private:
 		}
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
+		DEFER(lua_settop(L, top));
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
 		lua_rawget(L, -2); // cur[macroName], cur macro
 		if (lua_istable(L, -1) == 0) {
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		}
 		lua_rawgeti(L, -1, 1); // cur macro func
@@ -2968,9 +2962,23 @@ private:
 				str = codes;
 				BLOCK_END
 				if (str.empty()) {
-					str = _parser.toString(exp->value);
-					for (auto opVal : exp->opValues.objects()) {
-						str += _parser.toString(opVal);
+					bool multiLineStr = false;
+					BLOCK_START
+					auto value = singleValueFrom(exp);
+					BREAK_IF(!value);
+					auto lstr = value->getByPath<String_t, LuaString_t>();
+					BREAK_IF(!lstr);
+					str = _parser.toString(lstr->content);
+					multiLineStr = true;
+					BLOCK_END
+					if (!multiLineStr) {
+						// convert sub nodes to strings in case exp is assembled
+						// in transform stage, the toString() function won't be able
+						// to convert its whole content
+						str = _parser.toString(exp->value);
+						for (auto opVal : exp->opValues.objects()) {
+							str += _parser.toString(opVal);
+						}
 					}
 				}
 			} else str = _parser.toString(arg);
@@ -2981,39 +2989,48 @@ private:
 		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 2, 0) == 0;
 		if (!success) { // cur macro err
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
 		} // cur macro success res
 		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -1);
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
 		}
 		lua_remove(L, -2); // cur macro res
 		if (lua_isstring(L, -1) == 0) {
-			lua_settop(L, top);
 			throw std::logic_error(_info.errorMessage(s("macro function must return string with expanded codes"sv), x));
 		} // cur macro codes
 		lua_rawgeti(L, -2, 2); // cur macro codes type
 		std::string type = lua_tostring(L, -1);
 		std::string codes = lua_tostring(L, -2);
-		lua_settop(L, top);
 		return {type, codes};
 	}
 
-	std::pair<ast_ptr<false,ast_node>, std::unique_ptr<input>> expandMacro(ChainValue_t* chainValue, ExpUsage usage) {
+	std::tuple<ast_ptr<false,ast_node>, std::unique_ptr<input>, std::string> expandMacro(ChainValue_t* chainValue, ExpUsage usage) {
 		auto x = ast_to<Callable_t>(chainValue->items.front())->item.to<MacroName_t>();
 		const auto& chainList = chainValue->items.objects();
 		std::string type, codes;
 		std::tie(type, codes) = expandMacroStr(chainValue);
 		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
+		if (type == "lua"sv) {
+			if (targetType != "block"sv) {
+				throw std::logic_error(_info.errorMessage("lua macro can only be placed where block macro is allowed"sv, x));
+			}
+			auto macroChunk = s("=(macro "sv) + _parser.toString(x->name) + ')';
+			int top = lua_gettop(L);
+			DEFER(lua_settop(L, top));
+			if (luaL_loadbuffer(L, codes.c_str(), codes.size(), macroChunk.c_str()) != 0) {
+				std::string err = lua_tostring(L, -1);
+				throw std::logic_error(_info.errorMessage(err, x));
+			}
+			return {nullptr, nullptr, std::move(codes)};
+		}
 		if (type != targetType) {
 			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
 		}
 		ParseInfo info;
 		if (usage == ExpUsage::Common) {
 			if (codes.empty()) {
-				return {x->new_ptr<Block_t>().get(),std::move(info.codes)};
+				return {x->new_ptr<Block_t>().get(), std::move(info.codes), Empty};
 			}
 			if (type == "expr"sv) {
 				info = _parser.parse<Exp_t>(codes);
@@ -3070,14 +3087,27 @@ private:
 				info.node.set(exp);
 			}
 		}
-		return {info.node,std::move(info.codes)};
+		return {info.node, std::move(info.codes), Empty};
 	}
 
 	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		if (isMacroChain(chainValue)) {
 			ast_ptr<false,ast_node> node;
 			std::unique_ptr<input> codes;
-			std::tie(node, codes) = expandMacro(chainValue, usage);
+			std::string luaCodes;
+			std::tie(node, codes, luaCodes) = expandMacro(chainValue, usage);
+			Utils::replace(luaCodes, "\r\n"sv, "\n"sv);
+			Utils::trim(luaCodes);
+			if (!node && !codes) {
+				if (!luaCodes.empty()) {
+					if (_config.reserveLineNumber) {
+						luaCodes.insert(0, nll(chainValue).substr(1));
+					}
+					luaCodes.append(nlr(chainValue));
+				}
+				out.push_back(luaCodes);
+				return;
+			}
 			if (usage == ExpUsage::Common) {
 				transformBlock(node.to<Block_t>(), out, usage, assignList);
 			} else {
@@ -4700,15 +4730,14 @@ private:
 				Utils::trim(moduleName);
 				pushCurrentModule(); // cur
 				int top = lua_gettop(L) - 1;
+				DEFER(lua_settop(L, top));
 				pushMoonp("find_modulepath"sv); // cur find_modulepath
 				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
 				if (lua_pcall(L, 1, 1, 0) != 0) {
 					std::string err = lua_tostring(L, -1);
-					lua_settop(L, top);
 					throw std::logic_error(_info.errorMessage(s("fail to resolve module path\n"sv) + err, x));
 				}
 				if (lua_isnil(L, -1) != 0) {
-					lua_settop(L, top);
 					throw std::logic_error(_info.errorMessage(s("fail to find module '"sv) + moduleName + '\'', x));
 				}
 				std::string moduleFullName = lua_tostring(L, -1);
@@ -4718,11 +4747,9 @@ private:
 					lua_pushlstring(L, moduleFullName.c_str(), moduleFullName.size()); // cur load_text moduleFullName
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						std::string err = lua_tostring(L, -1);
-						lua_settop(L, top);
 						throw std::logic_error(_info.errorMessage(s("fail to read module file\n"sv) + err, x));
 					} // cur text
 					if (lua_isnil(L, -1) != 0) {
-						lua_settop(L, top);
 						throw std::logic_error(_info.errorMessage("fail to get module text"sv, x));
 					} // cur text
 					std::string text = lua_tostring(L, -1);
@@ -4736,7 +4763,6 @@ private:
 					GlobalVars globals;
 					std::tie(codes, err, globals) = compiler.compile(text, config);
 					if (codes.empty() && !err.empty()) {
-						lua_settop(L, top);
 						throw std::logic_error(_info.errorMessage(s("fail to compile module '"sv) + moduleName + s("\': "sv) + err, x));
 					}
 					lua_pop(L, 1); // cur
@@ -4746,7 +4772,6 @@ private:
 					lua_getfield(L, -1, pair.first.c_str());
 					lua_setfield(L, -3, pair.second.c_str());
 				}
-				lua_settop(L, top);
 			}
 			if (newTab->values.empty()) {
 				out.push_back(Empty);

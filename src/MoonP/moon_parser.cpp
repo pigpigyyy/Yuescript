@@ -472,7 +472,7 @@ MoonParser::MoonParser() {
 	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
 	MacroName = expr('$') >> Name;
-	macro_type = expr("expr") | expr("block");
+	macro_type = expr("expr") | expr("block") | expr("lua");
 	macro_args_def = sym('(') >> White >> -FnArgDefList >> White >> sym(')');
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
 	Macro = key("macro") >> Space >> macro_type >> Space >> Name >> sym('=') >> MacroLit;
@@ -608,8 +608,8 @@ namespace Utils {
 
 	void trim(std::string& str) {
 		if (str.empty()) return;
-		str.erase(0, str.find_first_not_of(" \t"));
-		str.erase(str.find_last_not_of(" \t") + 1);
+		str.erase(0, str.find_first_not_of(" \t\n"));
+		str.erase(str.find_last_not_of(" \t\n") + 1);
 	}
 }
 

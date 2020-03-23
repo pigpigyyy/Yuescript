@@ -334,16 +334,17 @@ local function getMoonLineNumber(fname, line)
 		end
 	end
 	if source then
-		local i, target = 1, tonumber(line)
+		local current, target = 1, tonumber(line)
+		local findLine = line
 		for lineCode in source:gmatch("([^\n]*)\n") do
-			if i == target then
-				local num = lineCode:match("--%s*(%d*)%s*$")
-				if num then
-					return fname, num
-				end
-				break
+			local num = lineCode:match("--%s*(%d+)%s*$")
+			if num then
+				findLine = num
 			end
-			i = i + 1
+			if current == target then
+				return fname, findLine or line
+			end
+			current = current + 1
 		end
 	end
 	return fname, line
