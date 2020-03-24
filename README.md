@@ -42,6 +42,8 @@ f!
 
 The original Moonscript language 0.5.0 support can be found in the `0.5.0` branch. Moonscript with new features is in the master branch. Here are the new features introduced in MoonPlus.
 
+* Add goto statement support.
+
 * Add macro functions.
 ```Moonscript
 -- file 'macro.moon'

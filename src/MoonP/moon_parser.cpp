@@ -15,18 +15,18 @@ using namespace std::string_view_literals;
 
 std::unordered_set<std::string> LuaKeywords = {
 	"and", "break", "do", "else", "elseif",
-	"end", "false", "for", "function", "if",
-	"in", "local", "nil", "not", "or",
-	"repeat", "return", "then", "true", "until",
-	"while"
+	"end", "false", "for", "function", "goto",
+	"if", "in", "local", "nil", "not",
+	"or", "repeat", "return", "then", "true",
+	"until", "while"
 };
 
 std::unordered_set<std::string> Keywords = {
 	"and", "break", "do", "else", "elseif",
-	"end", "false", "for", "function", "if",
-	"in", "local", "nil", "not", "or",
-	"repeat", "return", "then", "true", "until",
-	"while", // Lua keywords
+	"end", "false", "for", "function", "goto",
+	"if", "in", "local", "nil", "not",
+	"or", "repeat", "return", "then", "true",
+	"until", "while", // Lua keywords
 	"as", "class", "continue", "export", "extends",
 	"from", "global", "import", "macro", "switch",
 	"unless", "using", "when", "with" // Moon keywords
@@ -81,6 +81,14 @@ MoonParser::MoonParser() {
 				st->moduleName = std::string("_module_"sv) + std::to_string(st->moduleFix);
 			}
 		}
+		st->buffer.clear();
+		return isValid;
+	});
+
+	LabelName = pl::user(Name, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		auto isValid = LuaKeywords.find(st->buffer) == LuaKeywords.end();
 		st->buffer.clear();
 		return isValid;
 	});
@@ -191,9 +199,14 @@ MoonParser::MoonParser() {
 
 	Import = key("import") >> (ImportAs | ImportFrom);
 
+	Label = Space >> expr("::") >> LabelName >> expr("::");
+
+	Goto = key("goto") >> Space >> LabelName;
+
 	BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
 
 	Return = key("return") >> -ExpListLow;
+
 	WithExp = ExpList >> -Assign;
 
 	With = key("with") >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
@@ -527,8 +540,8 @@ MoonParser::MoonParser() {
 	Statement = (
 		Import | While | For | ForEach |
 		Return | Local | Global | Export |
-		Macro | Space >> BreakLoop |
-		Backcall | ExpListAssign
+		Macro | Space >> BreakLoop | Label |
+		Goto | Backcall | ExpListAssign
 	) >> Space >>
 	-statement_appendix;
 

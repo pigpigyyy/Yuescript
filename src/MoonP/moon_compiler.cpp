@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.3.4";
+	return "0.5.0-r0.3.5";
 }
 
 // name of table stored in lua registry
@@ -750,6 +750,8 @@ private:
 			case id<Export_t>(): transformExport(static_cast<Export_t*>(content), out); break;
 			case id<Macro_t>(): transformMacro(static_cast<Macro_t*>(content), out, false); break;
 			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
+			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
+			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
 			case id<ExpListAssign_t>(): {
 				auto expListAssign = static_cast<ExpListAssign_t*>(content);
 				if (expListAssign->action) {
@@ -4996,6 +4998,14 @@ private:
 		_buf << indent() << _continueVars.top() << " = true"sv << nll(breakLoop);
 		_buf << indent() << "break"sv << nll(breakLoop);
 		out.push_back(clearBuf());
+	}
+
+	void transformLabel(Label_t* label, str_list& out) {
+		out.push_back(indent() + s("::"sv) + _parser.toString(label->label) + s("::"sv) + nll(label));
+	}
+
+	void transformGoto(Goto_t* gotoNode, str_list& out) {
+		out.push_back(indent() + s("goto "sv) + _parser.toString(gotoNode->label) + nll(gotoNode));
 	}
 };
 

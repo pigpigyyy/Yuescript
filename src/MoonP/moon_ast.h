@@ -46,6 +46,11 @@ AST_NODE(Variable)
 	AST_MEMBER(Variable, &name)
 AST_END(Variable)
 
+AST_NODE(LabelName)
+	ast_ptr<true, Name_t> name;
+	AST_MEMBER(LabelName, &name)
+AST_END(LabelName)
+
 AST_NODE(LuaKeyword)
 	ast_ptr<true, Name_t> name;
 	AST_MEMBER(LuaKeyword, &name)
@@ -141,6 +146,16 @@ AST_NODE(Import)
 	ast_sel<true, ImportAs_t, ImportFrom_t> content;
 	AST_MEMBER(Import, &content)
 AST_END(Import)
+
+AST_NODE(Label)
+	ast_ptr<true, LabelName_t> label;
+	AST_MEMBER(Label, &label)
+AST_END(Label)
+
+AST_NODE(Goto)
+	ast_ptr<true, LabelName_t> label;
+	AST_MEMBER(Goto, &label)
+AST_END(Goto)
 
 class FnArgsDef_t;
 
@@ -650,7 +665,7 @@ AST_END(BreakLoop)
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
-		Backcall_t, ExpListAssign_t> content;
+		Label_t, Goto_t, Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	AST_MEMBER(Statement, &content, &appendix)
 AST_END(Statement)
