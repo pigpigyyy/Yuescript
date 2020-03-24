@@ -210,7 +210,7 @@ clean:
 test: release
 	@echo "Compiling Moonscript codes..."
 	@$(START_TIME)
-	@./$(BIN_NAME) $(TEST_INPUT)/*.moon -t $(TEST_OUTPUT)
+	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT)
 	@echo -en "Compile time: "
 	@$(END_TIME)
 
