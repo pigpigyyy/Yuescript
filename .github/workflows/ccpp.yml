@@ -9,9 +9,5 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: Update g++
-      run: sudo apt -y install g++-9
     - name: Test
-      run: |
-        make clean
-        make test
+      run: make test
