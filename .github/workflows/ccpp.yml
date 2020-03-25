@@ -9,5 +9,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: Update g++
+      run: sudo apt install g++-8
     - name: Test
       run: make test
