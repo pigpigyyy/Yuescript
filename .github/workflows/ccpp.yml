@@ -9,8 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Update g++
-      run: sudo apt -y install g++-8
     - name: Test
-      run: make test
+      run: |
+         sudo apt -y install g++-8
+         make test
 
