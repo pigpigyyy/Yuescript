@@ -1,7 +1,8 @@
 #### PROJECT SETTINGS ####
 # The name of the executable to be created
 BIN_NAME := moonp
-
+# Compiler used
+CXX ?= g++
 # Extension of source files used in the project
 SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
@@ -40,12 +41,9 @@ TEST_OUTPUT = ./spec/outputs
 # Obtains the OS type, either 'Darwin' (OS X) or 'Linux'
 UNAME_S:=$(shell uname -s)
 
-# Select compiler, add platform related linker flag
-ifeq ($(UNAME_S),Darwin)
-	CXX ?= clang
-else
+# Add platform related linker flag
+ifneq ($(UNAME_S),Darwin)
 	LINK_FLAGS += -lstdc++fs
-	CXX ?= clang-9
 endif
 
 # Function used to check variables. Use on the command line:

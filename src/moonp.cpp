@@ -19,8 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string_view>
 #include <memory>
 using namespace std::string_view_literals;
-#include <filesystem>
-namespace fs = std::filesystem;
+#include "ghc/fs_std.hpp"
 
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
