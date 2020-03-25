@@ -45,7 +45,7 @@ ifeq ($(UNAME_S),Darwin)
 	CXX ?= clang
 else
 	LINK_FLAGS += -lstdc++fs
-	CXX ?= g++-8
+	CXX ?= g++-9
 endif
 
 # Function used to check variables. Use on the command line:
