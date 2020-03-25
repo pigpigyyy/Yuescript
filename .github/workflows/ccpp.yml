@@ -12,4 +12,6 @@ jobs:
     - name: Update g++
       run: sudo apt -y install g++-9
     - name: Test
-      run: make test
+      run: |
+        make clean
+        make test
