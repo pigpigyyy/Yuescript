@@ -6,11 +6,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v1
     - name: Test
-      run: |
-         sudo apt -y install g++-8
-         make test
-
+      run: make test
