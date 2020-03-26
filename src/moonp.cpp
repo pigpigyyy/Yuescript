@@ -11,6 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
+#include <limits>
 #include <fstream>
 #include <chrono>
 #include <future>
@@ -49,6 +51,25 @@ void pushMoonp(lua_State* L, std::string_view name) {
 	lua_pop(L, 3); // item
 }
 
+void pushOptions(lua_State* L, int lineOffset) {
+	lua_newtable(L);
+	lua_pushliteral(L, "lint_global");
+	lua_pushboolean(L, 0);
+	lua_rawset(L, -3);
+	lua_pushliteral(L, "implicit_return_root");
+	lua_pushboolean(L, 1);
+	lua_rawset(L, -3);
+	lua_pushliteral(L, "reserve_line_number");
+	lua_pushboolean(L, 1);
+	lua_rawset(L, -3);
+	lua_pushliteral(L, "same_module");
+	lua_pushboolean(L, 1);
+	lua_rawset(L, -3);
+	lua_pushliteral(L, "line_offset");
+	lua_pushinteger(L, lineOffset);
+	lua_rawset(L, -3);
+}
+
 int main(int narg, const char** args) {
 	const char* help =
 "Usage: moonp [options|files|directories] ...\n\n"
@@ -61,9 +82,76 @@ int main(int narg, const char** args) {
 "   -l       Write line numbers from source codes\n"
 "   -v       Print version\n"
 "   --       Read from standard in, print to standard out\n"
-"            (Must be first and only argument)\n";
-	if (narg == 0) {
-		std::cout << help;
+"            (Must be first and only argument)\n\n"
+"   Execute without options to enter REPL, type symbol '$'\n"
+"   in a single line to start/stop multi-line mode\n";
+	if (narg == 1) {
+		lua_State* L = luaL_newstate();
+		openlibs(L);
+		DEFER(lua_close(L));
+		pushMoonp(L, "insert_loader"sv);
+		if (lua_pcall(L, 0, 0, 0) != 0) {
+			std::cout << lua_tostring(L, -1) << '\n';
+			return 1;
+		}
+		int count = 0;
+		while (!std::cin.fail()) {
+			count++;
+			std::cout << "moon> "sv;
+			std::string codes;
+			std::getline(std::cin, codes);
+			MoonP::Utils::trim(codes);
+			if (codes == "$"sv) {
+				codes.clear();
+				for (std::string line; std::getline(std::cin, line);) {
+					auto temp = line;
+					MoonP::Utils::trim(temp);
+					if (temp == "$"sv) {
+						break;
+					}
+					codes += '\n';
+					codes += line;
+				}
+			}
+			codes.insert(0, "global *\n"sv);
+			int top = lua_gettop(L);
+			DEFER(lua_settop(L, top));
+			pushMoonp(L, "loadstring"sv);
+			lua_pushlstring(L, codes.c_str(), codes.size());
+			lua_pushstring(L, (std::string("=(repl:") + std::to_string(count) + ')').c_str());
+			pushOptions(L, -1);
+			const std::string_view Err = "\033[35m"sv, Val = "\033[33m"sv, Stop = "\033[0m\n"sv;
+			if (lua_pcall(L, 3, 2, 0) != 0) {
+				std::cout << Err << lua_tostring(L, -1) << Stop;
+				continue;
+			}
+			if (lua_isnil(L, -2) != 0) {
+				std::cout << Err << lua_tostring(L, -1) << Stop;
+				continue;
+			}
+			lua_pop(L, 1);
+			pushMoonp(L, "pcall"sv);
+			lua_insert(L, -2);
+			int last = lua_gettop(L) - 2;
+			if (lua_pcall(L, 1, LUA_MULTRET, 0) != 0) {
+				std::cout << Err << lua_tostring(L, -1) << Stop;
+				continue;
+			}
+			int cur = lua_gettop(L);
+			int retCount = cur - last;
+			bool success = lua_toboolean(L, -retCount) != 0;
+			if (success) {
+				if (retCount > 1) {
+					for (int i = 1; i < retCount; ++i) {
+						std::cout << Val << luaL_tolstring(L, -retCount + i, nullptr) << Stop;
+						lua_pop(L, 1);
+					}
+				}
+			} else {
+				std::cout << Err << lua_tostring(L, -1) << Stop;
+			}
+		}
+		std::cout << '\n';
 		return 0;
 	}
 	MoonP::MoonConfig config;
@@ -129,10 +217,15 @@ int main(int narg, const char** args) {
 					lua_pushlstring(L, evalStr.c_str(), evalStr.size());
 					lua_pushliteral(L, "=(eval str)");
 				}
-				if (lua_pcall(L, 2, 1, 0) != 0) {
+				if (lua_pcall(L, 2, 2, 0) != 0) {
 					std::cout << lua_tostring(L, -1) << '\n';
 					return 1;
 				}
+				if (lua_isnil(L, -2) != 0) {
+					std::cout << lua_tostring(L, -1) << '\n';
+					return 1;
+				}
+				lua_pop(L, 1);
 				pushMoonp(L, "pcall"sv);
 				lua_insert(L, -2);
 				if (lua_pcall(L, 1, 2, 0) != 0) {

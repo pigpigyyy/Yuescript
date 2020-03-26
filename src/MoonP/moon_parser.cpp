@@ -646,7 +646,7 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 	int oldCol = loc->m_begin.m_col;
 	int col = std::max(0, oldCol - 1);
 	auto it = begin;
-	for (int i = 0; i < oldCol; ++i) {
+	for (int i = 0; i < oldCol && it != end; ++i) {
 		if (*it > ASCII) {
 			++col;
 		}
