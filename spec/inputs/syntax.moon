@@ -122,7 +122,7 @@ print "nutjob"
 
 if hello then _ = 343
 
-print "what" if cool else whack!
+print "what" if cool
 
 arg = {...}
 

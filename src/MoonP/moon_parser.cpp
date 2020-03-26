@@ -533,10 +533,10 @@ MoonParser::MoonParser() {
 
 	ExpListAssign = ExpList >> -(Update | Assign);
 
-	if_else_line = key("if") >> Exp >> -Assign >> (key("else") >> Exp | default_value);
+	if_line = key("if") >> Exp >> -Assign;
 	unless_line = key("unless") >> Exp;
 
-	statement_appendix = (if_else_line | unless_line | CompInner) >> Space;
+	statement_appendix = (if_line | unless_line | CompInner) >> Space;
 	Statement = (
 		Import | While | For | ForEach |
 		Return | Local | Global | Export |

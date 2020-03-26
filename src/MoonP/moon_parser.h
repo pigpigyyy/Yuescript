@@ -286,7 +286,7 @@ private:
 	AST_RULE(const_value)
 	AST_RULE(unary_exp)
 	AST_RULE(ExpListAssign)
-	AST_RULE(if_else_line)
+	AST_RULE(if_line)
 	AST_RULE(unless_line)
 	AST_RULE(statement_appendix)
 	AST_RULE(BreakLoop)

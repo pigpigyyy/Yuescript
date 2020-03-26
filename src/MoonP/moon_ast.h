@@ -642,12 +642,11 @@ AST_NODE(ExpListAssign)
 	AST_MEMBER(ExpListAssign, &expList, &action)
 AST_END(ExpListAssign)
 
-AST_NODE(if_else_line)
+AST_NODE(if_line)
 	ast_ptr<true, Exp_t> condition;
 	ast_ptr<false, Assign_t> assign;
-	ast_sel<false, Exp_t, default_value_t> elseExpr;
-	AST_MEMBER(if_else_line, &condition, &assign, &elseExpr)
-AST_END(if_else_line)
+	AST_MEMBER(if_line, &condition, &assign)
+AST_END(if_line)
 
 AST_NODE(unless_line)
 	ast_ptr<true, Exp_t> condition;
@@ -655,7 +654,7 @@ AST_NODE(unless_line)
 AST_END(unless_line)
 
 AST_NODE(statement_appendix)
-	ast_sel<true, if_else_line_t, unless_line_t, CompInner_t> item;
+	ast_sel<true, if_line_t, unless_line_t, CompInner_t> item;
 	AST_MEMBER(statement_appendix, &item)
 AST_END(statement_appendix)
 

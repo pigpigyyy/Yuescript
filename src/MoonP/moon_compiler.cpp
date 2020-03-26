@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* moonScriptVersion() {
-	return "0.5.0-r0.3.5";
+	return "0.5.0-r0.3.6";
 }
 
 // name of table stored in lua registry
@@ -641,13 +641,13 @@ private:
 			}
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
-				case id<if_else_line_t>(): {
-					auto if_else_line = appendix->item.to<if_else_line_t>();
+				case id<if_line_t>(): {
+					auto if_line = appendix->item.to<if_line_t>();
 					auto ifNode = x->new_ptr<If_t>();
 
 					auto ifCond = x->new_ptr<IfCond_t>();
-					ifCond->condition.set(if_else_line->condition);
-					ifCond->assign.set(if_else_line->assign);
+					ifCond->condition.set(if_line->condition);
+					ifCond->assign.set(if_line->assign);
 					ifNode->nodes.push_back(ifCond);
 
 					auto stmt = x->new_ptr<Statement_t>();
@@ -655,18 +655,6 @@ private:
 					auto body = x->new_ptr<Body_t>();
 					body->content.set(stmt);
 					ifNode->nodes.push_back(body);
-
-					if (!ast_is<default_value_t>(if_else_line->elseExpr)) {
-						auto expList = x->new_ptr<ExpList_t>();
-						expList->exprs.push_back(if_else_line->elseExpr);
-						auto expListAssign = x->new_ptr<ExpListAssign_t>();
-						expListAssign->expList.set(expList);
-						auto stmt = x->new_ptr<Statement_t>();
-						stmt->content.set(expListAssign);
-						auto body = x->new_ptr<Body_t>();
-						body->content.set(stmt);
-						ifNode->nodes.push_back(body);
-					}
 
 					statement->appendix.set(nullptr);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
