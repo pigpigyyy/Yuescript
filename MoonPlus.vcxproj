@@ -199,6 +199,7 @@
     <ClCompile Include="src\MoonP\parser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\linenoise.hpp" />
     <ClInclude Include="src\lua-5.3\lapi.h" />
     <ClInclude Include="src\lua-5.3\lauxlib.h" />
     <ClInclude Include="src\lua-5.3\lcode.h" />

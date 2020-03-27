@@ -5,11 +5,11 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="src\MoonP">
-      <UniqueIdentifier>{c88639d5-457d-42eb-b852-65682c89c618}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\lua-5.3">
       <UniqueIdentifier>{338bdf98-6a02-4589-a373-c7bca25c746b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\MoonP">
+      <UniqueIdentifier>{c88639d5-457d-42eb-b852-65682c89c618}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -227,6 +227,9 @@
     </ClInclude>
     <ClInclude Include="src\lua-5.3\lzio.h">
       <Filter>src\lua-5.3</Filter>
+    </ClInclude>
+    <ClInclude Include="src\linenoise.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

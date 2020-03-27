@@ -22,6 +22,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <memory>
 using namespace std::string_view_literals;
 #include "ghc/fs_std.hpp"
+#include "linenoise.hpp"
 
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
@@ -95,15 +96,17 @@ int main(int narg, const char** args) {
 			return 1;
 		}
 		int count = 0;
-		while (!std::cin.fail()) {
+		bool quit = false;
+		linenoise::SetMultiLine(false);
+		while (!quit) {
 			count++;
-			std::cout << "moon> "sv;
 			std::string codes;
-			std::getline(std::cin, codes);
+			quit = linenoise::Readline("moon> ", codes);
+			linenoise::AddHistory(codes.c_str());
 			MoonP::Utils::trim(codes);
 			if (codes == "$"sv) {
 				codes.clear();
-				for (std::string line; std::getline(std::cin, line);) {
+				for (std::string line; !linenoise::Readline("", line);) {
 					auto temp = line;
 					MoonP::Utils::trim(temp);
 					if (temp == "$"sv) {
@@ -111,6 +114,8 @@ int main(int narg, const char** args) {
 					}
 					codes += '\n';
 					codes += line;
+					linenoise::AddHistory(line.c_str());
+					MoonP::Utils::trim(codes);
 				}
 			}
 			codes.insert(0, "global *\n"sv);
@@ -118,7 +123,7 @@ int main(int narg, const char** args) {
 			DEFER(lua_settop(L, top));
 			pushMoonp(L, "loadstring"sv);
 			lua_pushlstring(L, codes.c_str(), codes.size());
-			lua_pushstring(L, (std::string("=(repl:") + std::to_string(count) + ')').c_str());
+			lua_pushstring(L, (std::string("=(repl ") + std::to_string(count) + ')').c_str());
 			pushOptions(L, -1);
 			const std::string_view Err = "\033[35m"sv, Val = "\033[33m"sv, Stop = "\033[0m\n"sv;
 			if (lua_pcall(L, 3, 2, 0) != 0) {
@@ -126,7 +131,13 @@ int main(int narg, const char** args) {
 				continue;
 			}
 			if (lua_isnil(L, -2) != 0) {
-				std::cout << Err << lua_tostring(L, -1) << Stop;
+				std::string err = lua_tostring(L, -1);
+				auto pos = err.find(':');
+				if (pos != std::string::npos) {
+					int lineNum = std::stoi(err.substr(0, pos));
+					err = std::to_string(lineNum - 1) + err.substr(pos);
+				}
+				std::cout << Err << err << Stop;
 				continue;
 			}
 			lua_pop(L, 1);
@@ -168,16 +179,16 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
-			char ch;
-			std::string s;
-			while ((ch = std::cin.get()) != EOF) {
-				s += ch;
+			std::string codes;
+			linenoise::SetMultiLine(false);
+			for (std::string line; !linenoise::Readline("", line);) {
+				codes += line;
 			}
 			MoonP::MoonConfig conf;
 			conf.implicitReturnRoot = true;
 			conf.lintGlobalVariable = false;
 			conf.reserveLineNumber = false;
-			auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(s, conf);
+			auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(codes, conf);
 			if (std::get<1>(result).empty()) {
 				std::cout << std::get<0>(result);
 				return 0;
