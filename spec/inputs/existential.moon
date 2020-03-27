@@ -39,3 +39,7 @@ if window?
 
 zip = lottery.drawWinner?!.address?.zipcode
 
+len = utf8?.len or string?.len or (o) -> #o
+
+a = tb1?\end? 123 + tb2?\then 456
+

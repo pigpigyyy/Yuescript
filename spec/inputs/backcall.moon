@@ -104,3 +104,6 @@ propB = do
 	@_value
 
 alert "hi"
+
+x = 123 |> a |> b or 456 |> c |> d or a.if\then("abc") or a?.b\c?(123) or x\y
+
