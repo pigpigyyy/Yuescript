@@ -73,21 +73,25 @@
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\build\windows\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)\bin\windows\$(Configuration)\</OutDir>
+    <TargetName>moonp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\windows\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\build\windows\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>moonp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\build\windows\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)\bin\windows\$(Configuration)\</OutDir>
+    <TargetName>moonp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\windows\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\build\windows\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>moonp</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

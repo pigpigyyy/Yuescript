@@ -96,17 +96,66 @@ int main(int narg, const char** args) {
 			return 1;
 		}
 		int count = 0;
-		bool quit = false;
 		linenoise::SetMultiLine(false);
-		while (!quit) {
+		linenoise::SetCompletionCallback([](const char* editBuffer, std::vector<std::string>& completions) {
+			std::string buf = editBuffer;
+			std::string tmp = buf;
+			MoonP::Utils::trim(tmp);
+			if (tmp.empty()) return;
+			std::string pre;
+			auto pos = buf.find_first_not_of(" \t\n");
+			if (pos != std::string::npos) {
+				pre = buf.substr(0, pos);
+			}
+			switch (tmp[0]) {
+				case 'b':
+					completions.push_back(pre + "break");
+					break;
+				case 'c':
+					completions.push_back(pre + "class ");
+					completions.push_back(pre + "continue");
+					break;
+				case 'e':
+					completions.push_back(pre + "else");
+					completions.push_back(pre + "export ");
+					break;
+				case 'i':
+					completions.push_back(pre + "import \"");
+					break;
+				case 'g':
+					completions.push_back(pre + "global ");
+					break;
+				case 'l':
+					completions.push_back(pre + "local ");
+					break;
+				case 'm':
+					completions.push_back(pre + "macro expr ");
+					completions.push_back(pre + "macro block ");
+					completions.push_back(pre + "macro lua ");
+					break;
+				case 's':
+					completions.push_back(pre + "switch ");
+					break;
+				case 'u':
+					completions.push_back(pre + "unless ");
+					break;
+				case 'w':
+					completions.push_back(pre + "with ");
+					completions.push_back(pre + "when ");
+					break;
+			}
+		});
+		std::cout << "Moonscript+ "sv << MoonP::version() << '\n';
+		while (true) {
 			count++;
 			std::string codes;
-			quit = linenoise::Readline("moon> ", codes);
+			bool quit = linenoise::Readline("> ", codes);
+			if (quit) return 0;
 			linenoise::AddHistory(codes.c_str());
 			MoonP::Utils::trim(codes);
 			if (codes == "$"sv) {
 				codes.clear();
-				for (std::string line; !linenoise::Readline("", line);) {
+				for (std::string line; !(quit = linenoise::Readline("", line));) {
 					auto temp = line;
 					MoonP::Utils::trim(temp);
 					if (temp == "$"sv) {
@@ -117,6 +166,7 @@ int main(int narg, const char** args) {
 					linenoise::AddHistory(line.c_str());
 					MoonP::Utils::trim(codes);
 				}
+				if (quit) return 0;
 			}
 			codes.insert(0, "global *\n"sv);
 			int top = lua_gettop(L);
@@ -132,6 +182,10 @@ int main(int narg, const char** args) {
 			}
 			if (lua_isnil(L, -2) != 0) {
 				std::string err = lua_tostring(L, -1);
+				auto modName = std::string("(repl "sv) + std::to_string(count) + "):";
+				if (err.substr(0, modName.size()) == modName) {
+					err = err.substr(modName.size());
+				}
 				auto pos = err.find(':');
 				if (pos != std::string::npos) {
 					int lineNum = std::stoi(err.substr(0, pos));
@@ -271,7 +325,7 @@ int main(int narg, const char** args) {
 			std::cout << help;
 			return 0;
 		} else if (arg == "-v"sv) {
-			std::cout << "Moonscript version: "sv << MoonP::moonScriptVersion() << '\n';
+			std::cout << "Moonscript+ version: "sv << MoonP::version() << '\n';
 			return 0;
 		} else if (arg == "-o"sv) {
 			++i;

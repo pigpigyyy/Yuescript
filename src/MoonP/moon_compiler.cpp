@@ -42,12 +42,12 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const char* moonScriptVersion() {
-	return "0.5.0-r0.3.6";
+const char* version() {
+	return "0.3.6";
 }
 
 // name of table stored in lua registry
-#define MOONP_MODULE "_modules_"
+#define MOONP_MODULE "__moon_modules__"
 
 class MoonCompilerImpl {
 public:
@@ -61,6 +61,7 @@ public:
 		BLOCK_START
 		BREAK_IF(!sameModule);
 		BREAK_IF(!L);
+		_sameModule = true;
 		int top = lua_gettop(L);
 		DEFER(lua_settop(L, top));
 		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
@@ -69,7 +70,6 @@ public:
 		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 		BREAK_IF(idx == 0);
 		_useModule = true;
-		_sameModule = true;
 		BLOCK_END
 	}
 
