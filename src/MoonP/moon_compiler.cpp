@@ -1010,6 +1010,7 @@ private:
 		}
 		auto exp = ast_cast<Exp_t>(value);
 		BREAK_IF(!exp);
+		BREAK_IF(!exp->opValues.empty());
 		if (auto chainValue = exp->value->item.as<ChainValue_t>()) {
 			auto type = specialChainValue(chainValue);
 			auto expList = assignment->expList.get();
