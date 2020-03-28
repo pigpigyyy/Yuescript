@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* version() {
-	return "0.3.6";
+	return "0.3.7";
 }
 
 // name of table stored in lua registry
@@ -3129,13 +3129,13 @@ private:
 			return;
 		}
 		const auto& chainList = chainValue->items.objects();
-		if (transformChainEndWithColonItem(chainList, out, usage, assignList)) {
-			return;
-		}
 		if (transformChainEndWithEOP(chainList, out, usage, assignList)) {
 			return;
 		}
 		if (transformChainWithEOP(chainList, out, usage, assignList)) {
+			return;
+		}
+		if (transformChainEndWithColonItem(chainList, out, usage, assignList)) {
 			return;
 		}
 		transformChainList(chainList, out, usage, assignList);

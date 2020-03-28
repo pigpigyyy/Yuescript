@@ -434,14 +434,20 @@ int main(int narg, const char** args) {
 		results.push_back(std::move(task));
 	}
 	int ret = 0;
-	std::string msg;
+	std::list<std::string> errs;
 	for (auto& result : results) {
 		int val = 0;
+		std::string msg;
 		std::tie(val, msg) = result.get();
 		if (val != 0) {
 			ret = val;
+			errs.push_back(msg);
+		} else {
+			std::cout << msg;
 		}
-		std::cout << msg;
+	}
+	for (const auto& err : errs) {
+		std::cout << err;
 	}
 	return ret;
 }
