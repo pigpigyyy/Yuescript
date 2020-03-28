@@ -233,10 +233,10 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
+			char ch;
 			std::string codes;
-			linenoise::SetMultiLine(false);
-			for (std::string line; !linenoise::Readline("", line);) {
-				codes += line;
+			while ((ch = std::cin.get()) != EOF) {
+				codes += ch;
 			}
 			MoonP::MoonConfig conf;
 			conf.implicitReturnRoot = true;
