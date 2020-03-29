@@ -188,7 +188,7 @@ dirs:
 
 # Installs to the set path
 .PHONY: install
-install:
+install: release
 	@echo "Installing to $(DESTDIR)$(INSTALL_PREFIX)/bin"
 	@$(INSTALL_PROGRAM) $(BIN_PATH)/$(BIN_NAME) $(DESTDIR)$(INSTALL_PREFIX)/bin
 
