@@ -12,5 +12,7 @@ print x\val!
 
 
 -- ... should be bubbled up anon functions
-x = hello(...)\world
+((...)-> x = hello(...)\world)!
+
+nil
 

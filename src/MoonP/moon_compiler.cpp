@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const char* version() {
-	return "0.3.7";
+	return "0.3.8";
 }
 
 // name of table stored in lua registry
@@ -89,7 +89,7 @@ public:
 			try {
 				str_list out;
 				pushScope();
-				enableReturn.push(_info.moduleName.empty());
+				_enableReturn.push(_info.moduleName.empty());
 				transformBlock(_info.node.to<File_t>()->block, out,
 					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
 					nullptr, true);
@@ -121,8 +121,10 @@ public:
 		_joinBuf.clear();
 		_globals.clear();
 		_info = {};
+		_varArgs = {};
 		_withVars = {};
 		_continueVars = {};
+		_enableReturn = {};
 		if (_useModule) {
 			_useModule = false;
 			if (!_sameModule) {
@@ -144,10 +146,11 @@ private:
 	MoonParser _parser;
 	ParseInfo _info;
 	int _indentOffset = 0;
-	std::stack<bool> enableReturn;
-	std::list<std::unique_ptr<input>> _codeCache;
+	std::stack<bool> _varArgs;
+	std::stack<bool> _enableReturn;
 	std::stack<std::string> _withVars;
 	std::stack<std::string> _continueVars;
+	std::list<std::unique_ptr<input>> _codeCache;
 	std::unordered_map<std::string,std::pair<int,int>> _globals;
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
@@ -335,11 +338,19 @@ private:
 	}
 
 	std::string indent() const {
-		return std::string(_scopes.size() - 1 + _indentOffset, '\t');
+		if (_config.useSpaceOverTab) {
+			return std::string((_scopes.size() - 1 + _indentOffset) * 2, ' ');
+		} else {
+			return std::string(_scopes.size() - 1 + _indentOffset, '\t');
+		}
 	}
 
 	std::string indent(int offset) const {
-		return std::string(_scopes.size() - 1 + _indentOffset + offset, '\t');
+		if (_config.useSpaceOverTab) {
+			return std::string((_scopes.size() - 1 + _indentOffset + offset) * 2, ' ');
+		} else {
+			return std::string(_scopes.size() - 1 + _indentOffset + offset, '\t');
+		}
 	}
 
 	std::string clearBuf() {
@@ -1010,6 +1021,11 @@ private:
 		}
 		auto exp = ast_cast<Exp_t>(value);
 		BREAK_IF(!exp);
+		if (isPureBackcall(exp)) {
+			auto expList = assignment->expList.get();
+			transformExp(exp, out, ExpUsage::Assignment, expList);
+			return;
+		}
 		BREAK_IF(!exp->opValues.empty());
 		if (auto chainValue = exp->value->item.as<ChainValue_t>()) {
 			auto type = specialChainValue(chainValue);
@@ -1030,11 +1046,6 @@ private:
 				case ChainType::EndWithEOP:
 					break;
 			}
-		}
-		if (isPureBackcall(exp)) {
-			auto expList = assignment->expList.get();
-			transformExp(exp, out, ExpUsage::Assignment, expList);
-			return;
 		}
 		BLOCK_END
 		auto info = extractDestructureInfo(assignment);
@@ -1707,7 +1718,12 @@ private:
 				}
 				break;
 			}
-			case id<VarArg_t>(): out.push_back(s("..."sv)); break;
+			case id<VarArg_t>():
+				if (_varArgs.empty() || !_varArgs.top()) {
+					throw std::logic_error(_info.errorMessage("cannot use '...' outside a vararg function near '...'"sv, item));
+				}
+				out.push_back(s("..."sv));
+				break;
 			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
 			default: assert(false); break;
 		}
@@ -1743,7 +1759,8 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
-		enableReturn.push(true);
+		_enableReturn.push(true);
+		_varArgs.push(false);
 		str_list temp;
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -1792,7 +1809,8 @@ private:
 			}
 		}
 		out.push_back(clearBuf());
-		enableReturn.pop();
+		_enableReturn.pop();
+		_varArgs.pop();
 	}
 
 	void transformBody(Body_t* body, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
@@ -2205,7 +2223,7 @@ private:
 	}
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
-		if (!enableReturn.top()) {
+		if (!_enableReturn.top()) {
 			ast_node* target = returnNode->valueList.get();
 			if (!target) target = returnNode;
 			throw std::logic_error(_info.errorMessage("illegal return statement here"sv, target));
@@ -2364,6 +2382,7 @@ private:
 			arg.name = "..."sv;
 			if (varNames.empty()) varNames = arg.name;
 			else varNames.append(s(", "sv) + arg.name);
+			_varArgs.top() = true;
 		}
 		std::string initCodes = join(temp);
 		if (assignSelf) {
@@ -4441,7 +4460,7 @@ private:
 			return;
 		}
 		str_list temp;
-		pushScope();
+		incIndentOffset();
 		for (auto pair : pairs) {
 			switch (pair->getId()) {
 				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
@@ -4452,7 +4471,7 @@ private:
 			temp.back() = indent() + temp.back() + (pair == pairs.back() ? Empty : s(","sv)) + nll(pair);
 		}
 		out.push_back(s("{"sv) + nll(table) + join(temp));
-		popScope();
+		decIndentOffset();
 		out.back() += (indent() + s("}"sv));
 	}
 

@@ -15,14 +15,13 @@ j = for i=1,10
 m = (...) ->
 	[x for x in *{...} when f(...) > 4]
 
-x = for i in *{...} do i
-y = [x for x in *{...}]
-z = [x for x in hallo when f(...) > 4]
+_ = (...)->
+	x = for i in *{...} do i
+	y = [x for x in *{...}]
+	z = [x for x in hallo when f(...) > 4]
 
+	a = for i=1,10 do ...
 
-a = for i=1,10 do ...
-
-b = for i=1,10
-	-> print ...
-
+	b = for i=1,10
+		(...)-> print ...
 

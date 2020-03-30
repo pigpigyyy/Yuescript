@@ -124,7 +124,7 @@ if hello then _ = 343
 
 print "what" if cool
 
-arg = {...}
+((...)-> arg = {...})!
 
 x = (...) ->
 	dump {...}

@@ -63,6 +63,9 @@ void pushOptions(lua_State* L, int lineOffset) {
 	lua_pushliteral(L, "reserve_line_number");
 	lua_pushboolean(L, 1);
 	lua_rawset(L, -3);
+	lua_pushliteral(L, "space_over_tab");
+	lua_pushboolean(L, 0);
+	lua_rawset(L, -3);
 	lua_pushliteral(L, "same_module");
 	lua_pushboolean(L, 1);
 	lua_rawset(L, -3);
@@ -78,6 +81,7 @@ int main(int narg, const char** args) {
 "   -e str   Execute a file or raw codes\n"
 "   -t path  Specify where to place compiled files\n"
 "   -o file  Write output to file\n"
+"   -s       Use space in generated codes instead of tabs\n"
 "   -p       Write output to standard out\n"
 "   -b       Dump compile time (doesn't write output)\n"
 "   -l       Write line numbers from source codes\n"
@@ -220,7 +224,10 @@ int main(int narg, const char** args) {
 		return 0;
 	}
 	MoonP::MoonConfig config;
+	config.implicitReturnRoot = true;
+	config.lintGlobalVariable = false;
 	config.reserveLineNumber = false;
+	config.useSpaceOverTab = false;
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
 	std::string targetPath;
@@ -242,6 +249,7 @@ int main(int narg, const char** args) {
 			conf.implicitReturnRoot = true;
 			conf.lintGlobalVariable = false;
 			conf.reserveLineNumber = false;
+			conf.useSpaceOverTab = true;
 			auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(codes, conf);
 			if (std::get<1>(result).empty()) {
 				std::cout << std::get<0>(result);
@@ -307,6 +315,8 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
+		} else if (arg == "-s"sv) {
+			config.useSpaceOverTab = true;
 		} else if (arg == "-l"sv) {
 			config.reserveLineNumber = true;
 		} else if (arg == "-p"sv) {

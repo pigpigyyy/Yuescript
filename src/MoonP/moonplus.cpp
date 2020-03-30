@@ -64,6 +64,12 @@ static int moontolua(lua_State* L) {
 			config.reserveLineNumber = lua_toboolean(L, -1) != 0;
 		}
 		lua_pop(L, 1);
+		lua_pushliteral(L, "space_over_tab");
+		lua_gettable(L, -2);
+		if (lua_isboolean(L, -1) != 0) {
+			config.useSpaceOverTab = lua_toboolean(L, -1) != 0;
+		}
+		lua_pop(L, 1);
 		lua_pushliteral(L, "same_module");
 		lua_gettable(L, -2);
 		if (lua_isboolean(L, -1) != 0) {

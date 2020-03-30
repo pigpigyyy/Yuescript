@@ -23,6 +23,7 @@ struct MoonConfig {
 	bool lintGlobalVariable = false;
 	bool implicitReturnRoot = true;
 	bool reserveLineNumber = true;
+	bool useSpaceOverTab = false;
 	int lineOffset = 0;
 };
 
