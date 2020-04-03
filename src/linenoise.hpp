@@ -1867,11 +1867,14 @@ inline void refreshSingleLine(struct linenoiseState *l) {
     /* Erase to right */
     snprintf(seq,64,"\x1b[0K");
     ab += seq;
-    if (!l->prompt.empty() || len != 0) {
-        /* Move cursor to original position. */
-        snprintf(seq,64,"\r\x1b[%dC", (int)(unicodeColumnPos(buf, pos)+pcolwid));
-        ab += seq;
+    int newPos = unicodeColumnPos(buf, pos) + pcolwid;
+    /* Move cursor to original position. */
+    if (newPos != 0) {
+        snprintf(seq,64,"\r\x1b[%dC", newPos);
+    } else {
+        snprintf(seq,64,"\r");
     }
+    ab += seq;
     if (write(fd,ab.c_str(), static_cast<int>(ab.length())) == -1) {} /* Can't recover from write error. */
 }
 
