@@ -67,6 +67,8 @@ Usage: moonp [options|files|directories] ...
    -e str   Execute a file or raw codes
    -t path  Specify where to place compiled files
    -o file  Write output to file
+   -s       Use space in generated codes instead of tabs
+   -m       Generate minified codes
    -p       Write output to standard out
    -b       Dump compile time (doesn't write output)
    -l       Write line numbers from source codes

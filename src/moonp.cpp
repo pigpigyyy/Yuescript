@@ -74,6 +74,19 @@ void pushOptions(lua_State* L, int lineOffset) {
 	lua_rawset(L, -3);
 }
 
+static const char luaminifyCodes[] =
+#include "LuaMinify.h"
+
+static void pushLuaminify(lua_State* L) {
+	if (luaL_loadbuffer(L, luaminifyCodes, sizeof(luaminifyCodes) / sizeof(luaminifyCodes[0]) - 1, "=(luaminify)") != 0) {
+		std::string err = std::string("fail to load luaminify module.\n") + lua_tostring(L, -1);
+		luaL_error(L, err.c_str());
+	} else if (lua_pcall(L, 0, 1, 0) != 0) {
+		std::string err = std::string("fail to init luaminify module.\n") + lua_tostring(L, -1);
+		luaL_error(L, err.c_str());
+	}
+}
+
 int main(int narg, const char** args) {
 	const char* help =
 "Usage: moonp [options|files|directories] ...\n\n"
@@ -82,6 +95,7 @@ int main(int narg, const char** args) {
 "   -t path  Specify where to place compiled files\n"
 "   -o file  Write output to file\n"
 "   -s       Use space in generated codes instead of tabs\n"
+"   -m       Generate minified codes\n"
 "   -p       Write output to standard out\n"
 "   -b       Dump compile time (doesn't write output)\n"
 "   -l       Write line numbers from source codes\n"
@@ -230,6 +244,7 @@ int main(int narg, const char** args) {
 	config.useSpaceOverTab = false;
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
+	bool minify = false;
 	std::string targetPath;
 	std::string resultFile;
 	std::list<std::pair<std::string,std::string>> files;
@@ -321,6 +336,8 @@ int main(int narg, const char** args) {
 			config.reserveLineNumber = true;
 		} else if (arg == "-p"sv) {
 			writeToFile = false;
+		} else if (arg == "-m"sv) {
+			minify = true;
 		} else if (arg == "-t"sv) {
 			++i;
 			if (i < narg) {
@@ -369,7 +386,7 @@ int main(int narg, const char** args) {
 		std::cout << "Error: -o can not be used with multiple input files.\n"sv;
 		std::cout << help;
 	}
-	std::list<std::future<std::pair<int,std::string>>> results;
+	std::list<std::future<std::tuple<int,std::string,std::string>>> results;
 	for (const auto& file : files) {
 		auto task = std::async(std::launch::async, [=]() {
 			std::ifstream input(file.first, std::ios::in);
@@ -391,18 +408,18 @@ int main(int narg, const char** args) {
 						buf << file.first << " \n"sv;
 						buf << "Parse time:     "sv << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
 						buf << "Compile time:   "sv << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
-						return std::pair{0, buf.str()};
+						return std::tuple{0, file.first, buf.str()};
 					} else {
 						std::ostringstream buf;
 						buf << "Fail to compile: "sv << file.first << ".\n"sv;
 						buf << std::get<1>(result) << '\n';
-						return std::pair{1, buf.str()};
+						return std::tuple{1, file.first, buf.str()};
 					}
 				}
 				auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(s, config);
 				if (!std::get<0>(result).empty()) {
 					if (!writeToFile) {
-						return std::pair{1, std::get<0>(result) + '\n'};
+						return std::tuple{1, file.first, std::get<0>(result) + '\n'};
 					} else {
 						fs::path targetFile;
 						if (!resultFile.empty()) {
@@ -426,34 +443,73 @@ int main(int narg, const char** args) {
 								output.write(head.c_str(), head.size());
 							}
 							output.write(codes.c_str(), codes.size());
-							return std::pair{0, std::string("Built "sv) + file.first + '\n'};
+							return std::tuple{0, targetFile.string(), std::string("Built "sv) + file.first + '\n'};
 						} else {
-							return std::pair{1, std::string("Fail to write file: "sv) + targetFile.string() + '\n'};
+							return std::tuple{1, std::string(), std::string("Fail to write file: "sv) + targetFile.string() + '\n'};
 						}
 					}
 				} else {
 					std::ostringstream buf;
 					buf << "Fail to compile: "sv << file.first << ".\n";
 					buf << std::get<1>(result) << '\n';
-					return std::pair{1, buf.str()};
+					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {
-				return std::pair{1, std::string("Fail to read file: "sv) + file.first + ".\n"};
+				return std::tuple{1, std::string(), std::string("Fail to read file: "sv) + file.first + ".\n"};
 			}
 		});
 		results.push_back(std::move(task));
 	}
 	int ret = 0;
+	lua_State* L = nullptr;
+	DEFER({
+		if (L) lua_close(L);
+	});
+	if (minify) {
+		L = luaL_newstate();
+		luaL_openlibs(L);
+		pushLuaminify(L);
+	}
 	std::list<std::string> errs;
 	for (auto& result : results) {
 		int val = 0;
+		std::string file;
 		std::string msg;
-		std::tie(val, msg) = result.get();
+		std::tie(val, file, msg) = result.get();
 		if (val != 0) {
 			ret = val;
 			errs.push_back(msg);
 		} else {
-			std::cout << msg;
+			if (minify) {
+				std::ifstream input(file, std::ios::in);
+				if (input) {
+					std::string s(
+						(std::istreambuf_iterator<char>(input)),
+						std::istreambuf_iterator<char>());
+					input.close();
+					int top = lua_gettop(L);
+					DEFER(lua_settop(L, top));
+					lua_pushvalue(L, -1);
+					lua_pushlstring(L, s.c_str(), s.size());
+					if (lua_pcall(L, 1, 1, 0) != 0) {
+						ret = 2;
+						std::string err = lua_tostring(L, -1);
+						errs.push_back(std::string("Fail to minify: "sv) + file + '\n' + err + '\n');
+					} else {
+						size_t size = 0;
+						const char* minifiedCodes = lua_tolstring(L, -1, &size);
+						std::ofstream output(file, std::ios::trunc | std::ios::out);
+						output.write(minifiedCodes, size);
+						output.close();
+						std::cout << "Built Minified "sv << file << '\n';
+					}
+				} else {
+					ret = 2;
+					errs.push_back(std::string("Fail to minify: "sv) + file + '\n');
+				}
+			} else {
+				std::cout << msg;
+			}
 		}
 	}
 	for (const auto& err : errs) {

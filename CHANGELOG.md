@@ -4,13 +4,14 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 
 
-## v0.3.7
+## v0.3.8
 
 ### Fixed Issues
 
 * Fix macro type mismatch issue.
 * Fix line break issue in macro, disable macro declaration outside the root scope.
 * Fix existential operator issue when used in operator-value list.
+* Fix assignment with backcall expr not well handled issue.
 
 
 
@@ -18,8 +19,11 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 * Add support for macro system expanding to Lua codes directly.
 * Add goto statement support.
+* Add variadic arguments declaration check.
 * `moonp` now supports recursively traversing any directory and compiling any moon file in the path.
 * `moonp` now supports REPL functions for Moonscript.
+* Add `useSpaceOverTab` function to `moonp`.
+* Add Lua codes minify function to `moonp`.
 
 
 
@@ -183,7 +187,6 @@ Fix issues in original Moonscript compiler:
 ### Added Features
 
 * Multi-line comment support.
-
 * Usage for symbol `\` to escape new line. Will compile codes:
 ```Moonscript
 str = --[[
@@ -373,7 +376,6 @@ end
 ```
 
 * Reusing variables which helps generate reduced Lua codes. 
-
   For example, MoonPlus will generate codes from:
 
 ```Moonscript
