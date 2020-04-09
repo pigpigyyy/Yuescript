@@ -67,7 +67,7 @@ Usage: moonp [options|files|directories] ...
    -e str   Execute a file or raw codes
    -t path  Specify where to place compiled files
    -o file  Write output to file
-   -s       Use space in generated codes instead of tabs
+   -s       Use spaces in generated codes instead of tabs
    -m       Generate minified codes
    -p       Write output to standard out
    -b       Dump compile time (doesn't write output)
@@ -79,6 +79,13 @@ Usage: moonp [options|files|directories] ...
    Execute without options to enter REPL, type symbol '$'
    in a single line to start/stop multi-line mode
 ```
+&emsp;&emsp;Use cases:  
+&emsp;&emsp;Recursively compile every moon file under current path:  `moonp .`
+&emsp;&emsp;Compile and save results to a target path:  `moonp -t /target/path/ .`
+&emsp;&emsp;Compile and reserve debug info:  `moonp -l .`
+&emsp;&emsp;Compile and generate minified codes:  `moonp -m .`
+&emsp;&emsp;Execute raw codes:  `moonp -e 'print 123'`
+&emsp;&emsp;Execute a moon file:  `moonp -e main.moon`
 
 
 

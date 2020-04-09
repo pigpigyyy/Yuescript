@@ -94,7 +94,7 @@ int main(int narg, const char** args) {
 "   -e str   Execute a file or raw codes\n"
 "   -t path  Specify where to place compiled files\n"
 "   -o file  Write output to file\n"
-"   -s       Use space in generated codes instead of tabs\n"
+"   -s       Use spaces in generated codes instead of tabs\n"
 "   -m       Generate minified codes\n"
 "   -p       Write output to standard out\n"
 "   -b       Dump compile time (doesn't write output)\n"
@@ -501,7 +501,7 @@ int main(int narg, const char** args) {
 						std::ofstream output(file, std::ios::trunc | std::ios::out);
 						output.write(minifiedCodes, size);
 						output.close();
-						std::cout << "Built Minified "sv << file << '\n';
+						std::cout << "Minified built "sv << file << '\n';
 					}
 				} else {
 					ret = 2;
