@@ -417,9 +417,9 @@ int main(int narg, const char** args) {
 					}
 				}
 				auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(s, config);
-				if (!std::get<0>(result).empty()) {
+				if (std::get<1>(result).empty()) {
 					if (!writeToFile) {
-						return std::tuple{1, file.first, std::get<0>(result) + '\n'};
+						return std::tuple{0, file.first, std::get<0>(result) + '\n'};
 					} else {
 						fs::path targetFile;
 						if (!resultFile.empty()) {
@@ -483,9 +483,14 @@ int main(int narg, const char** args) {
 			if (minify) {
 				std::ifstream input(file, std::ios::in);
 				if (input) {
-					std::string s(
-						(std::istreambuf_iterator<char>(input)),
-						std::istreambuf_iterator<char>());
+					std::string s;
+					if (writeToFile) {
+						s = std::string(
+							(std::istreambuf_iterator<char>(input)),
+							std::istreambuf_iterator<char>());
+					} else {
+						s = msg;
+					}
 					input.close();
 					int top = lua_gettop(L);
 					DEFER(lua_settop(L, top));
@@ -498,10 +503,14 @@ int main(int narg, const char** args) {
 					} else {
 						size_t size = 0;
 						const char* minifiedCodes = lua_tolstring(L, -1, &size);
-						std::ofstream output(file, std::ios::trunc | std::ios::out);
-						output.write(minifiedCodes, size);
-						output.close();
-						std::cout << "Minified built "sv << file << '\n';
+						if (writeToFile) {
+							std::ofstream output(file, std::ios::trunc | std::ios::out);
+							output.write(minifiedCodes, size);
+							output.close();
+							std::cout << "Minified built "sv << file << '\n';
+						} else {
+							std::cout << minifiedCodes << '\n';
+						}
 					}
 				} else {
 					ret = 2;
