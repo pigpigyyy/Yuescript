@@ -80,11 +80,11 @@ Usage: moonp [options|files|directories] ...
    in a single line to start/stop multi-line mode
 ```
 &emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every moon file under current path:  `moonp .`
-&emsp;&emsp;Compile and save results to a target path:  `moonp -t /target/path/ .`
-&emsp;&emsp;Compile and reserve debug info:  `moonp -l .`
-&emsp;&emsp;Compile and generate minified codes:  `moonp -m .`
-&emsp;&emsp;Execute raw codes:  `moonp -e 'print 123'`
+&emsp;&emsp;Recursively compile every moon file under current path:  `moonp .`  
+&emsp;&emsp;Compile and save results to a target path:  `moonp -t /target/path/ .`  
+&emsp;&emsp;Compile and reserve debug info:  `moonp -l .`  
+&emsp;&emsp;Compile and generate minified codes:  `moonp -m .`  
+&emsp;&emsp;Execute raw codes:  `moonp -e 'print 123'`  
 &emsp;&emsp;Execute a moon file:  `moonp -e main.moon`
 
 
