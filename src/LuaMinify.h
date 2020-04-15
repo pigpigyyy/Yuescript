@@ -303,8 +303,9 @@ local Scope = {
 		end
 	end
 }
+)lua_codes"
 
-
+R"lua_codes(
 --
 -- ParseLua.lua
 --
@@ -950,8 +951,9 @@ local function ParseLua(src)
 		--
 		return true, nodeFunc
 	end
+)lua_codes"
 
-
+R"lua_codes(
 	function ParsePrimaryExpr(scope)
 		local tokenList = {}
 
@@ -1293,8 +1295,9 @@ local function ParseLua(src)
 	ParseExpr = function(scope)
 		return ParseSubExpr(scope, 0)
 	end
+)lua_codes"
 
-
+R"lua_codes(
 	local function ParseStatement(scope)
 		local stat = nil
 		local tokenList = {}
@@ -1706,8 +1709,9 @@ local function ParseLua(src)
 	--print("Last Token: "..PrintTable(tok:Peek()))
 	return st, main
 end
+)lua_codes"
 
-
+R"lua_codes(
 --
 -- FormatMini.lua
 --
