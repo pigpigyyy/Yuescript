@@ -3,11 +3,13 @@ name: build-test
 on: [push]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-    
+  test:
+    name: Build & Test
+    runs-on: ${{ matrix.os }} []
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
     steps:
-    - uses: actions/checkout@v1
-    - name: Test
-      run: make test
+      - uses: actions/checkout@v1
+        name: build-test
+        run: make test
