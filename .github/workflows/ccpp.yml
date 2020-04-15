@@ -11,5 +11,5 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
     steps:
       - uses: actions/checkout@v1
-        name: build-test
+      - name: build-test
         run: make test
