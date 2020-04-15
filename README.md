@@ -1,6 +1,8 @@
 # MoonPlus
 
-**macOS:** ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg) **Linux:** ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg) **Windows:** [![Build status](https://ci.appveyor.com/api/projects/status/4nbkye9mx9b3bf83/branch/master?svg=true)](https://ci.appveyor.com/project/pigpigyyy/moonplus/branch/master)
+|macOS|Linux|Windows|
+|:---:|:---:|:-----:|
+|![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)|![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)|[![Build status](https://ci.appveyor.com/api/projects/status/4nbkye9mx9b3bf83/branch/master?svg=true)](https://ci.appveyor.com/project/pigpigyyy/moonplus/branch/master)|
 
 MoonPlus is a compiler with features from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and adopting new features to make Moonscript more up to date. 
 
