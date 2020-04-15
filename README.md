@@ -1,6 +1,7 @@
 # MoonPlus
 
-![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)  
+**macOS:** ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg) **Linux:** ![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg) **Windows:** [![Build status](https://ci.appveyor.com/api/projects/status/4nbkye9mx9b3bf83/branch/master?svg=true)](https://ci.appveyor.com/project/pigpigyyy/moonplus/branch/master)
+
 MoonPlus is a compiler with features from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and adopting new features to make Moonscript more up to date. 
 
 Since original Moonscript has been used to write web framework [lapis](https://github.com/leafo/lapis) and run a few business web sites like [itch.io](https://itch.io) and [streak.club](https://streak.club) with some large code bases. The original language is getting too hard to adopt new features for those may break the stablility for existing applications.
