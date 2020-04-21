@@ -17,7 +17,7 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 ### Added Features
 
-* Allow implicit return block macro.
+* Allow implicit returning block macro.
 * Add support for macro system expanding to Lua codes directly.
 * Add goto statement support.
 * Add variadic arguments declaration check.
