@@ -27,8 +27,8 @@ local lua = {
 	loadstring = loadstring,
 	load = load
 }
-local dirsep, split, get_options, create_moonpath, moon_loader, load_text, moon_call, loadstring, loadfile, dofile, insert_loader, remove_loader, moon_require, find_modulepath
-dirsep = "/"
+local split, get_options, create_moonpath, moon_loader, load_text, moon_call, loadstring, loadfile, dofile, insert_loader, remove_loader, moon_require, find_modulepath
+moonp.dirsep = "/"
 moonp.moon_compiled = { }
 moonp.file_exist = function(fname)
 	local file = io.open(fname)
@@ -103,7 +103,7 @@ find_modulepath = function(name)
 	if not package.moonpath then
 		package.moonpath = create_moonpath(package.path)
 	end
-	local name_path = name:gsub("%.", dirsep)
+	local name_path = name:gsub("%.", moonp.dirsep)
 	local file_exist, file_path
 	for path in package.moonpath:gmatch("[^;]+") do
 		file_path = path:gsub("?", name_path)

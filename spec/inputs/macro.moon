@@ -135,5 +135,7 @@ $def sel, a, b, c, [[
 $def dummy,[[
 ]]
 
-nil
+macro block implicitReturnblockMacroIsAllowed = -> "123"
+
+$implicitReturnblockMacroIsAllowed!
 

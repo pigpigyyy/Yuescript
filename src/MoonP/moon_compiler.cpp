@@ -42,8 +42,8 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const char* version() {
-	return "0.3.8";
+const std::string_view version() {
+	return "0.3.9"sv;
 }
 
 // name of table stored in lua registry
@@ -2013,6 +2013,7 @@ private:
 				expListLow->exprs.dup(expList->exprs);
 				auto returnNode = x->new_ptr<Return_t>();
 				returnNode->valueList.set(expListLow);
+				returnNode->allowBlockMacroReturn = true;
 				last->content.set(returnNode);
 				BLOCK_END
 				break;
@@ -2274,10 +2275,9 @@ private:
 							transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Return);
 							return;
 					}
-				}
-				if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
+				} else if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
 					if (specialChainValue(chainValue) != ChainType::Common) {
-						transformChainValue(chainValue, out, ExpUsage::Return);
+						transformChainValue(chainValue, out, ExpUsage::Return, nullptr, returnNode->allowBlockMacroReturn);
 						return;
 					}
 				}
@@ -3015,7 +3015,7 @@ private:
 		return {type, codes};
 	}
 
-	std::tuple<ast_ptr<false,ast_node>, std::unique_ptr<input>, std::string> expandMacro(ChainValue_t* chainValue, ExpUsage usage) {
+	std::tuple<ast_ptr<false,ast_node>, std::unique_ptr<input>, std::string> expandMacro(ChainValue_t* chainValue, ExpUsage usage, bool allowBlockMacroReturn) {
 		auto x = ast_to<Callable_t>(chainValue->items.front())->item.to<MacroName_t>();
 		const auto& chainList = chainValue->items.objects();
 		std::string type, codes;
@@ -3033,8 +3033,7 @@ private:
 				throw std::logic_error(_info.errorMessage(err, x));
 			}
 			return {nullptr, nullptr, std::move(codes)};
-		}
-		if (type != targetType) {
+		} else if (!allowBlockMacroReturn && type != targetType) {
 			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
 		}
 		ParseInfo info;
@@ -3042,6 +3041,12 @@ private:
 			if (codes.empty()) {
 				return {x->new_ptr<Block_t>().get(), std::move(info.codes), Empty};
 			}
+			if (type == "expr"sv) {
+				info = _parser.parse<Exp_t>(codes);
+			} else {
+				info = _parser.parse<Block_t>(codes);
+			}
+		} else if (allowBlockMacroReturn) {
 			if (type == "expr"sv) {
 				info = _parser.parse<Exp_t>(codes);
 			} else {
@@ -3100,12 +3105,12 @@ private:
 		return {info.node, std::move(info.codes), Empty};
 	}
 
-	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false) {
 		if (isMacroChain(chainValue)) {
 			ast_ptr<false,ast_node> node;
 			std::unique_ptr<input> codes;
 			std::string luaCodes;
-			std::tie(node, codes, luaCodes) = expandMacro(chainValue, usage);
+			std::tie(node, codes, luaCodes) = expandMacro(chainValue, usage, allowBlockMacroReturn);
 			Utils::replace(luaCodes, "\r\n"sv, "\n"sv);
 			Utils::trim(luaCodes);
 			if (!node && !codes) {
@@ -3118,7 +3123,7 @@ private:
 				out.push_back(luaCodes);
 				return;
 			}
-			if (usage == ExpUsage::Common) {
+			if (usage == ExpUsage::Common || (usage == ExpUsage::Return && node.is<Block_t>())) {
 				transformBlock(node.to<Block_t>(), out, usage, assignList);
 			} else {
 				auto x = chainValue;

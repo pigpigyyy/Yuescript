@@ -184,6 +184,7 @@ AST_NODE(ExpList)
 AST_END(ExpList)
 
 AST_NODE(Return)
+	bool allowBlockMacroReturn = false;
 	ast_ptr<false, ExpListLow_t> valueList;
 	AST_MEMBER(Return, &valueList)
 AST_END(Return)

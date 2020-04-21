@@ -324,8 +324,17 @@ local function getMoonLineNumber(fname, line)
 		source = moonCompiled["@="..fname]
 	end
 	if not source then
-		if moonp.file_exist(fname) then
-			local codes = moonp.read_file(fname)
+		local name_path = fname:gsub("%.", moonp.dirsep)
+		local file_exist, file_path
+		for path in package.path:gmatch("[^;]+") do
+			file_path = path:gsub("?", name_path)
+			file_exist = moonp.file_exist(file_path)
+			if file_exist then
+				break
+			end
+		end
+		if file_exist then
+			local codes = moonp.read_file(file_path)
 			local moonFile = codes:match("^%s*--%s*%[moon%]:%s*([^\n]*)")
 			if moonFile then
 				fname = moonFile:gsub("^%s*(.-)%s*$", "%1")
