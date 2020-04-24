@@ -98,10 +98,11 @@ AST_NODE(NameList)
 AST_END(NameList)
 
 class ExpListLow_t;
+class TableBlock_t;
 
 AST_NODE(local_values)
 	ast_ptr<true, NameList_t> nameList;
-	ast_ptr<false, ExpListLow_t> valueList;
+	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
 	AST_MEMBER(local_values, &nameList, &valueList)
 AST_END(local_values)
 
@@ -533,7 +534,7 @@ AST_END(ClassDecl)
 
 AST_NODE(global_values)
 	ast_ptr<true, NameList_t> nameList;
-	ast_ptr<false, ExpListLow_t> valueList;
+	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
 	AST_MEMBER(global_values, &nameList, &valueList)
 AST_END(global_values)
 

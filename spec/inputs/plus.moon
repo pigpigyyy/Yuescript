@@ -17,3 +17,21 @@ valB = do
 	func = getfunc!
 	func?!
 
+global backpack =
+	something:
+		yeah: 200
+		they: ->
+			print "hello"
+			yor_feet"small"
+		pretty: hair
+		gold: hmm
+	yow: 1000
+
+	eat: goo
+	yeah: dudd
+
+start =
+	something: "cold"
+
+local bathe =
+	on: "fire"

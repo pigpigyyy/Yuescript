@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.3.9"sv;
+	return "0.3.10"sv;
 }
 
 // name of table stored in lua registry
@@ -4364,7 +4364,12 @@ private:
 					auto assignment = x->new_ptr<ExpListAssign_t>();
 					assignment->expList.set(expList);
 					auto assign = x->new_ptr<Assign_t>();
-					assign->values.dup(values->valueList->exprs);
+					if (auto expListLow = values->valueList.as<ExpListLow_t>()) {
+						assign->values.dup(expListLow->exprs);
+					} else {
+						auto tableBlock = values->valueList.to<TableBlock_t>();
+						assign->values.push_back(tableBlock);
+					}
 					assignment->action.set(assign);
 					transformAssignment(assignment, out);
 				} else {
@@ -4993,7 +4998,12 @@ private:
 				auto assignment = x->new_ptr<ExpListAssign_t>();
 				assignment->expList.set(expList);
 				auto assign = x->new_ptr<Assign_t>();
-				assign->values.dup(values->valueList->exprs);
+				if (auto expListLow = values->valueList.as<ExpListLow_t>()) {
+					assign->values.dup(expListLow->exprs);
+				} else {
+					auto tableBlock = values->valueList.to<TableBlock_t>();
+					assign->values.push_back(tableBlock);
+				}
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
 			}

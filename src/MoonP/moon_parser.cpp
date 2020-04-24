@@ -170,7 +170,7 @@ MoonParser::MoonParser() {
 	InBlock = Advance >> ensure(Block, PopIndent);
 
 	local_flag = expr('*') | expr('^');
-	local_values = NameList >> -(sym('=') >> ExpListLow);
+	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
 	Local = key("local") >> (Space >> local_flag | local_values);
 
 	colon_import_name = sym('\\') >> Space >> Variable;
@@ -419,7 +419,7 @@ MoonParser::MoonParser() {
 		-(key("extends")  >> PreventIndent >> ensure(Exp, PopIndent)) >>
 		-ClassBlock;
 
-	global_values = NameList >> -(sym('=') >> ExpListLow);
+	global_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
 	global_op = expr('*') | expr('^');
 	Global = key("global") >> (ClassDecl | (Space >> global_op) | global_values);
 
