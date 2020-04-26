@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.3.10"sv;
+	return "0.3.11"sv;
 }
 
 // name of table stored in lua registry
@@ -741,6 +741,7 @@ private:
 		switch (content->getId()) {
 			case id<Import_t>(): transformImport(static_cast<Import_t*>(content), out); break;
 			case id<While_t>(): transformWhile(static_cast<While_t*>(content), out); break;
+			case id<Repeat_t>(): transformRepeat(static_cast<Repeat_t*>(content), out); break;
 			case id<For_t>(): transformFor(static_cast<For_t*>(content), out); break;
 			case id<ForEach_t>(): transformForEach(static_cast<ForEach_t*>(content), out); break;
 			case id<Return_t>(): transformReturn(static_cast<Return_t*>(content), out); break;
@@ -4251,7 +4252,7 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		}
-		if (!scoped && !returnValue) {
+		if (!with->eop && !scoped && !returnValue) {
 			pushScope();
 			scoped = traversal::Stop == with->body->traverse([&](ast_node* node) {
 				if (auto statement = ast_cast<Statement_t>(node)) {
@@ -4297,7 +4298,14 @@ private:
 			}
 		}
 		_withVars.push(withVar);
-		transformBody(with->body, temp, ExpUsage::Common);
+		if (with->eop) {
+			auto ifNode = x->new_ptr<If_t>();
+			ifNode->nodes.push_back(toAst<IfCond_t>(withVar + s("~=nil"sv), x));
+			ifNode->nodes.push_back(with->body);
+			transformIf(ifNode, temp, ExpUsage::Common);
+		} else {
+			transformBody(with->body, temp, ExpUsage::Common);
+		}
 		_withVars.pop();
 		if (assignList) {
 			auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -4911,6 +4919,18 @@ private:
 		_buf << indent() << "while "sv << temp.front() << " do"sv << nll(whileNode);
 		_buf << temp.back();
 		_buf << indent() << "end"sv << nlr(whileNode);
+		out.push_back(clearBuf());
+	}
+
+	void transformRepeat(Repeat_t* repeat, str_list& out) {
+		str_list temp;
+		pushScope();
+		transformLoopBody(repeat->body, temp, Empty, ExpUsage::Common);
+		transformExp(repeat->condition, temp, ExpUsage::Closure);
+		popScope();
+		_buf << indent() << "repeat"sv << nll(repeat);
+		_buf << temp.front();
+		_buf << indent() << "until "sv << temp.back() << nlr(repeat);
 		out.push_back(clearBuf());
 	}
 

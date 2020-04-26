@@ -190,14 +190,16 @@ AST_NODE(Return)
 	AST_MEMBER(Return, &valueList)
 AST_END(Return)
 
+class existential_op_t;
 class Assign_t;
 class Body_t;
 
 AST_NODE(With)
+	ast_ptr<false, existential_op_t> eop;
 	ast_ptr<true, ExpList_t> valueList;
 	ast_ptr<false, Assign_t> assigns;
 	ast_ptr<true, Body_t> body;
-	AST_MEMBER(With, &valueList, &assigns, &body)
+	AST_MEMBER(With, &eop, &valueList, &assigns, &body)
 AST_END(With)
 
 AST_NODE(SwitchCase)
@@ -237,6 +239,12 @@ AST_NODE(While)
 	ast_ptr<true, Body_t> body;
 	AST_MEMBER(While, &condition, &body)
 AST_END(While)
+
+AST_NODE(Repeat)
+	ast_ptr<true, Body_t> body;
+	ast_ptr<true, Exp_t> condition;
+	AST_MEMBER(Repeat, &body, &condition)
+AST_END(Repeat)
 
 AST_NODE(for_step_value)
 	ast_ptr<true, Exp_t> value;
@@ -664,7 +672,7 @@ AST_LEAF(BreakLoop)
 AST_END(BreakLoop)
 
 AST_NODE(Statement)
-	ast_sel<true, Import_t, While_t, For_t, ForEach_t,
+	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
 		Label_t, Goto_t, Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;

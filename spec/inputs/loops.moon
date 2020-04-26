@@ -91,6 +91,15 @@ while true
 	break if true
 	print "no"
 
+a = 1
+repeat
+	a += 1
+	if a == 5
+		continue
+	if a == 6
+		break
+	print a
+until a == 10
 
 for x=1,10
 	continue if x > 3 and x < 7

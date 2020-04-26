@@ -209,7 +209,7 @@ MoonParser::MoonParser() {
 
 	WithExp = ExpList >> -Assign;
 
-	With = key("with") >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
+	With = key("with") >> -existential_op >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
 	SwitchCase = key("when") >> ExpList >> -key("then") >> Body;
 	SwitchElse = key("else") >> Body;
 
@@ -231,6 +231,7 @@ MoonParser::MoonParser() {
 	Unless = key("unless") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
 
 	While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
+	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> White >> Exp;
 	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> White >> Exp >> -for_step_value;
@@ -538,10 +539,9 @@ MoonParser::MoonParser() {
 
 	statement_appendix = (if_line | unless_line | CompInner) >> Space;
 	Statement = (
-		Import | While | For | ForEach |
-		Return | Local | Global | Export |
-		Macro | Space >> BreakLoop | Label |
-		Goto | Backcall | ExpListAssign
+		Import | While | Repeat | For | ForEach |
+		Return | Local | Global | Export | Macro |
+		Space >> BreakLoop | Label | Goto | Backcall | ExpListAssign
 	) >> Space >>
 	-statement_appendix;
 

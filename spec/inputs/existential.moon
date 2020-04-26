@@ -45,3 +45,7 @@ a = tb1?\end? 123 + tb2?\then 456
 
 b = tb1?\end? or tb2?\then
 
+with? io.open "test.txt", "w"
+	\write "hello"
+	\close!
+

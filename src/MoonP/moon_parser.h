@@ -216,6 +216,7 @@ private:
 	AST_RULE(If)
 	AST_RULE(Unless)
 	AST_RULE(While)
+	AST_RULE(Repeat)
 	AST_RULE(for_step_value)
 	AST_RULE(For)
 	AST_RULE(ForEach)
