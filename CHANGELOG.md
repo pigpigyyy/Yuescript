@@ -4,10 +4,11 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 
 
-## v0.3.9
+## v0.3.11
 
 ### Fixed Issues
 
+* Fix errors when explicitly declaring global or local variable initialized with table block.
 * Fix macro type mismatch issue.
 * Fix line break issue in macro, disable macro declaration outside the root scope.
 * Fix existential operator issue when used in operator-value list.
@@ -17,7 +18,9 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 ### Added Features
 
-* Allow implicit returning block macro.
+* Add existential operator support for `with` statement.
+* Add repeat until statement support.
+* Allow implicitly returning block macro.
 * Add support for macro system expanding to Lua codes directly.
 * Add goto statement support.
 * Add variadic arguments declaration check.
