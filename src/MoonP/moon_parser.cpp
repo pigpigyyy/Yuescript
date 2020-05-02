@@ -538,12 +538,13 @@ MoonParser::MoonParser() {
 	unless_line = key("unless") >> Exp;
 
 	statement_appendix = (if_line | unless_line | CompInner) >> Space;
+	statement_sep = and_(*SpaceBreak >> CheckIndent >> Space >> (set("($'\"") | expr("[[") | expr("[=")));
 	Statement = (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		Space >> BreakLoop | Label | Goto | Backcall | ExpListAssign
 	) >> Space >>
-	-statement_appendix;
+	-statement_appendix >> -statement_sep;
 
 	Body = Space >> Break >> *EmptyLine >> InBlock | Statement;
 

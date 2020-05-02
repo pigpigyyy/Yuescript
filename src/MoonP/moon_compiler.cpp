@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.3.11"sv;
+	return "0.3.12"sv;
 }
 
 // name of table stored in lua registry
@@ -801,6 +801,25 @@ private:
 				break;
 			}
 			default: assert(false); break;
+		}
+		if (statement->needSep && !out.back().empty()) {
+			auto index = std::string::npos;
+			if (_config.reserveLineNumber) {
+				index = out.back().rfind(" -- "sv);
+			} else {
+				index = out.back().find_last_not_of('\n');
+				if (index != std::string::npos) index++;
+			}
+			if (index != std::string::npos) {
+				auto ending = out.back().substr(0, index);
+				auto ind = ending.find_last_of(" \t\n"sv);
+				if (ind != std::string::npos) {
+					ending = ending.substr(ind + 1);
+				}
+				if (Keywords.find(ending) == Keywords.end()) {
+					out.back().insert(index, ";"sv);
+				}
+			}
 		}
 	}
 
@@ -2016,6 +2035,11 @@ private:
 				returnNode->valueList.set(expListLow);
 				returnNode->allowBlockMacroReturn = true;
 				last->content.set(returnNode);
+				last->needSep.set(nullptr);
+				auto bLast = ++nodes.rbegin();
+				if (bLast != nodes.rend()) {
+					static_cast<Statement_t*>(*bLast)->needSep.set(nullptr);
+				}
 				BLOCK_END
 				break;
 			}
@@ -2041,6 +2065,11 @@ private:
 					}
 					newAssignment->action.set(assign);
 					last->content.set(newAssignment);
+					last->needSep.set(nullptr);
+					auto bLast = ++nodes.rbegin();
+					if (bLast != nodes.rend()) {
+						static_cast<Statement_t*>(*bLast)->needSep.set(nullptr);
+					}
 				}
 				break;
 			}
@@ -4029,7 +4058,9 @@ private:
 		_buf << indent(1) << "end"sv << nll(classDecl);
 		_buf << indent() << "})"sv << nll(classDecl);
 		_buf << indent() << baseVar << ".__class = "sv << classVar << nll(classDecl);
-		if (!statements.empty()) _buf << indent() << "local self = "sv << classVar << nll(classDecl);
+		if (!statements.empty()) {
+			_buf << indent() << "local self = "sv << classVar << ';' << nll(classDecl);
+		}
 		_buf << join(statements);
 		if (extend) {
 			_buf << indent() << "if "sv << parentVar << ".__inherited then"sv << nll(classDecl);

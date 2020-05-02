@@ -663,20 +663,24 @@ AST_NODE(unless_line)
 	AST_MEMBER(unless_line, &condition)
 AST_END(unless_line)
 
+AST_LEAF(BreakLoop)
+AST_END(BreakLoop)
+
 AST_NODE(statement_appendix)
 	ast_sel<true, if_line_t, unless_line_t, CompInner_t> item;
 	AST_MEMBER(statement_appendix, &item)
 AST_END(statement_appendix)
 
-AST_LEAF(BreakLoop)
-AST_END(BreakLoop)
+AST_LEAF(statement_sep)
+AST_END(statement_sep)
 
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
 		Label_t, Goto_t, Backcall_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
-	AST_MEMBER(Statement, &content, &appendix)
+	ast_ptr<false, statement_sep_t> needSep;
+	AST_MEMBER(Statement, &content, &appendix, &needSep)
 AST_END(Statement)
 
 class Block_t;
