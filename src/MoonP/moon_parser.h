@@ -112,6 +112,7 @@ private:
 	rule MultiLineComment;
 	rule Indent;
 	rule EscapeNewLine;
+	rule space_one;
 	rule Space;
 	rule SpaceBreak;
 	rule EmptyLine;

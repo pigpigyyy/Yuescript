@@ -44,7 +44,8 @@ MoonParser::MoonParser() {
 	multi_line_content = *(not_(multi_line_close) >> Any);
 	MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
 	EscapeNewLine = expr('\\') >> *(set(" \t") | MultiLineComment) >> -Comment >> Break;
-	Space = *(set(" \t") | and_(set("-\\")) >> (MultiLineComment | EscapeNewLine)) >> -Comment;
+	space_one = set(" \t") | and_(set("-\\")) >> (MultiLineComment | EscapeNewLine);
+	Space = *space_one >> -Comment;
 	SpaceBreak = Space >> Break;
 	White = Space >> *(Break >> Space);
 	EmptyLine = SpaceBreak;
@@ -303,7 +304,7 @@ MoonParser::MoonParser() {
 		expr("<<") |
 		expr(">>") |
 		expr("//") |
-		set("+-*/%^><|&");
+		set("+-*/%^><|&~");
 
 	BackcallOperator = expr("|>");
 
@@ -512,16 +513,16 @@ MoonParser::MoonParser() {
 		);
 
 	InvokeArgs =
-		not_(expr('-')) >> Seperator >>
+		not_(set("-~")) >> Seperator >>
 		(
 			Exp >> *(sym(',') >> Exp) >> -(invoke_args_with_table | TableBlock) |
 			TableBlock
 		);
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
-	minus_exp = expr('-') >> not_(set(" \t")) >> Exp;
+	minus_exp = expr('-') >> not_(space_one) >> Exp;
 	sharp_exp = expr('#') >> Exp;
-	tilde_exp = expr('~') >> Exp;
+	tilde_exp = expr('~') >> not_(space_one) >> Exp;
 	not_exp = expr("not") >> not_(AlphaNum) >> Exp;
 	unary_exp = minus_exp | sharp_exp | tilde_exp | not_exp;
 
