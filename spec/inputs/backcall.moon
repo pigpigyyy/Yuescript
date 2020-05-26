@@ -107,3 +107,7 @@ alert "hi"
 
 x = 123 |> a |> b or 456 |> c |> d or a.if\then("abc") or a?.b\c?(123) or x\y
 
+y = 1 + # 2 |> a ^ c |> b(3,_) ^ 4 * -123 |> f |> f1 or 123
+
+nil
+

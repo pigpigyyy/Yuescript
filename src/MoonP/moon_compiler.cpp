@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.3.13"sv;
+	return "0.3.14"sv;
 }
 
 // name of table stored in lua registry
@@ -1612,79 +1612,123 @@ private:
 		out.push_back(join(temp, ", "sv));
 	}
 
+	ast_ptr<false, Exp_t> transformBackcall(Value_t* first, node_container::const_iterator begin, node_container::const_iterator end) {
+		auto arg = first->new_ptr<Exp_t>();
+		arg->value.set(first);
+		for (auto it = begin; it != end; ++it) {
+			auto opValue = static_cast<exp_op_value_t*>(*it);
+			if (auto chainValue = opValue->value->item.as<ChainValue_t>()) {
+				auto newArg = first->new_ptr<Exp_t>();
+				{
+					if (isChainValueCall(chainValue)) {
+						auto last = chainValue->items.back();
+						_ast_list* args = nullptr;
+						if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
+							args = &invoke->args;
+						} else {
+							args = &(ast_to<Invoke_t>(last)->args);
+						}
+						bool findPlaceHolder = false;
+						for (auto a : args->objects()) {
+							bool lintGlobal = _config.lintGlobalVariable;
+							_config.lintGlobalVariable = false;
+							auto name = singleVariableFrom(a);
+							_config.lintGlobalVariable = lintGlobal;
+							if (name == "_"sv) {
+								if (!findPlaceHolder) {
+									args->swap(a, arg);
+									findPlaceHolder = true;
+								} else {
+									throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place"sv, a));
+								}
+							}
+						}
+						if (!findPlaceHolder) {
+							args->push_front(arg);
+						}
+					} else {
+						auto invoke = first->new_ptr<Invoke_t>();
+						invoke->args.push_front(arg);
+						chainValue->items.push_back(invoke);
+					}
+					auto value = first->new_ptr<Value_t>();
+					value->item.set(chainValue);
+					newArg->value.set(value);
+					arg.set(newArg);
+				}
+			} else {
+				throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, opValue->value));
+			}
+		}
+		return arg;
+	}
+
 	void transformExp(Exp_t* exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		auto x = exp;
 		const auto& opValues = exp->opValues.objects();
 		for (auto it = opValues.begin(); it != opValues.end(); ++it) {
 			auto opValue = static_cast<exp_op_value_t*>(*it);
 			if (opValue->op.is<BackcallOperator_t>()) {
-				if (auto chainValue = opValue->value->item.as<ChainValue_t>()) {
-					auto newExp = x->new_ptr<Exp_t>();
-					{
-						auto arg = x->new_ptr<Exp_t>();
-						arg->value.set(exp->value);
-						for (auto i = opValues.begin(); i != it; ++i) {
-							arg->opValues.push_back(*i);
-						}
-						auto next = it; ++next;
-						for (auto i = next; i != opValues.end(); ++i) {
-							newExp->opValues.push_back(*i);
-						}
-						if (isChainValueCall(chainValue)) {
-							auto last = chainValue->items.back();
-							_ast_list* args = nullptr;
-							if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
-								args = &invoke->args;
-							} else {
-								args = &(ast_to<Invoke_t>(last)->args);
-							}
-							bool findPlaceHolder = false;
-							for (auto a : args->objects()) {
-								bool lintGlobal = _config.lintGlobalVariable;
-								_config.lintGlobalVariable = false;
-								auto name = singleVariableFrom(a);
-								_config.lintGlobalVariable = lintGlobal;
-								if (name == "_"sv) {
-									if (!findPlaceHolder) {
-										args->swap(a, arg);
-										findPlaceHolder = true;
-									} else {
-										throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place"sv, a));
-									}
-								}
-							}
-							if (!findPlaceHolder) {
-								args->push_front(arg);
-							}
-						} else {
-							auto invoke = x->new_ptr<Invoke_t>();
-							invoke->args.push_front(arg);
-							chainValue->items.push_back(invoke);
-						}
-						auto value = x->new_ptr<Value_t>();
-						value->item.set(chainValue);
-						newExp->value.set(value);
+				auto end = std::find_if_not(it, opValues.end(), [](ast_node* node) {
+					return static_cast<exp_op_value_t*>(node)->op.is<BackcallOperator_t>();
+				});
+				ast_ptr<false, Exp_t> backcall;
+				if (it == opValues.begin()) {
+					auto first = exp->value.get();
+					backcall = transformBackcall(first, it, end);
+					for (auto i = end; i != opValues.end(); ++i) {
+						backcall->opValues.push_back(*i);
 					}
-					if (newExp->opValues.size() == 0) {
-						if (usage == ExpUsage::Assignment) {
-							auto assign = x->new_ptr<Assign_t>();
-							assign->values.push_back(newExp);
-							auto assignment = x->new_ptr<ExpListAssign_t>();
-							assignment->expList.set(assignList);
-							assignment->action.set(assign);
-							transformAssignment(assignment, out);
-						} else {
-							transformChainValue(chainValue, out, usage);
-						}
-					} else {
-						transformExp(newExp, out, usage, assignList);
-					}
-					return;
 				} else {
-					throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, opValue->value));
+					auto prev = it; --prev;
+					auto first = static_cast<exp_op_value_t*>(*prev)->value.get();
+					backcall = transformBackcall(first, it, end);
+					for (auto i = opValues.begin(); i != it; ++i) {
+						backcall->opValues.push_back(*i);
+					}
+					static_cast<exp_op_value_t*>(backcall->opValues.back())->value.set(backcall->value);
+					backcall->value.set(exp->value);
+					for (auto i = end; i != opValues.end(); ++i) {
+						backcall->opValues.push_back(*i);
+					}
+				}
+				auto x = exp;
+				switch (usage) {
+					case ExpUsage::Assignment: {
+						auto assignment = x->new_ptr<ExpListAssign_t>();
+						auto assign = x->new_ptr<Assign_t>();
+						assign->values.push_back(backcall);
+						assignment->action.set(assign);
+						assignment->expList.set(assignList);
+						transformAssignment(assignment, out);
+						return;
+					}
+					case ExpUsage::Common: {
+						if (backcall->opValues.empty() && backcall->value->item.is<ChainValue_t>()) {
+							transformChainValue(backcall->value->item.to<ChainValue_t>(), out, ExpUsage::Common);
+						} else {
+							transformExp(backcall, out, ExpUsage::Closure);
+							out.back().insert(0, indent());
+							out.back().append(nlr(x));
+						}
+						return;
+					}
+					case ExpUsage::Return: {
+						auto ret = x->new_ptr<Return_t>();
+						auto expListLow = x->new_ptr<ExpListLow_t>();
+						expListLow->exprs.push_back(backcall);
+						ret->valueList.set(expListLow);
+						transformReturn(ret, out);
+						return;
+					}
+					case ExpUsage::Closure: {
+						transformExp(backcall, out, ExpUsage::Closure);
+						return;
+					}
+					default: assert(false); return;
 				}
 			}
 		}
+		assert(usage == ExpUsage::Closure);
 		str_list temp;
 		transformValue(exp->value, temp);
 		for (auto _opValue : exp->opValues.objects()) {
@@ -2954,6 +2998,7 @@ private:
 			case ExpUsage::Return:
 				out.push_back(indent() + s("return "sv) + join(temp) + nll(chainList.front()));
 				break;
+			case ExpUsage::Assignment: assert(false); break;
 			default:
 				out.push_back(join(temp));
 				break;

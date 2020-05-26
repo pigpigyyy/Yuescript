@@ -212,7 +212,7 @@ clean:
 
 # Test Moonscript compiler
 .PHONY: test
-test: release
+test: debug
 	@echo "Compiling Moonscript codes..."
 	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT)
