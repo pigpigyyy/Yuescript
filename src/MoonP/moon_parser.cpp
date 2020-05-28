@@ -292,6 +292,25 @@ MoonParser::MoonParser() {
 
 	Update = Space >> update_op >> expr("=") >> Exp;
 
+	Assignable = AssignableChain | Space >> Variable | Space >> SelfName;
+
+	unary_value = unary_operator >> *(Space >> unary_operator) >> Value;
+
+	ExponentialOperator = expr('^');
+	expo_value = Space >> ExponentialOperator >> *SpaceBreak >> Value;
+	expo_exp = Value >> *expo_value;
+
+	unary_operator =
+		expr('-') >> not_(expr('>') | space_one) |
+		expr('#') |
+		expr('~') >> not_(space_one) |
+		expr("not") >> not_(AlphaNum);
+	unary_exp = *(Space >> unary_operator) >> expo_exp;
+
+	BackcallOperator = expr("|>");
+	backcall_value = Space >> BackcallOperator >> *SpaceBreak >> unary_exp;
+	backcall_exp = unary_exp >> *backcall_value;
+
 	BinaryOperator =
 		(expr("or") >> not_(AlphaNum)) |
 		(expr("and") >> not_(AlphaNum)) |
@@ -304,14 +323,9 @@ MoonParser::MoonParser() {
 		expr("<<") |
 		expr(">>") |
 		expr("//") |
-		set("+-*/%^><|&~");
-
-	BackcallOperator = expr("|>");
-
-	Assignable = AssignableChain | Space >> Variable | Space >> SelfName;
-
-	exp_op_value = Space >> (BackcallOperator | BinaryOperator) >> *SpaceBreak >> Value;
-	Exp = Value >> *exp_op_value;
+		set("+-*/%><|&~");
+	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> backcall_exp;
+	Exp = Seperator >> backcall_exp >> *exp_op_value;
 
 	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
 
@@ -520,16 +534,11 @@ MoonParser::MoonParser() {
 		);
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
-	minus_exp = expr('-') >> not_(space_one) >> Exp;
-	sharp_exp = expr('#') >> Exp;
-	tilde_exp = expr('~') >> not_(space_one) >> Exp;
-	not_exp = expr("not") >> not_(AlphaNum) >> Exp;
-	unary_exp = minus_exp | sharp_exp | tilde_exp | not_exp;
 
 	SimpleValue =
 		(Space >> const_value) |
 		If | Unless | Switch | With | ClassDecl | ForEach | For | While | Do |
-		(Space >> unary_exp) |
+		(Space >> unary_value) |
 		TblComprehension | TableLit | Comprehension | FunLit |
 		(Space >> Num);
 

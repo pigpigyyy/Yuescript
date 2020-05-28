@@ -112,3 +112,6 @@ do
 	}]
 
 	{:one, :two, :three} = {w,true for w in foo\gmatch("%S+")}
+
+	{:a},b = a\if(123) + t, 123
+

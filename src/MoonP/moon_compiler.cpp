@@ -43,7 +43,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.3.14"sv;
+	return "0.4.0"sv;
 }
 
 // name of table stored in lua registry
@@ -407,12 +407,55 @@ private:
 				}
 				break;
 			}
+			case id<unary_exp_t>(): {
+				auto unary = static_cast<unary_exp_t*>(item);
+				if (unary->ops.empty() && unary->expos.size() == 1) {
+					return static_cast<Value_t*>(unary->expos.back());
+				}
+				return nullptr;
+			}
+			default: break;
 		}
 		if (!exp) return nullptr;
-		if (exp->opValues.empty()) {
-			return exp->value.get();
-		}
+		BLOCK_START
+		BREAK_IF(!exp->opValues.empty());
+		BREAK_IF(exp->backcalls.size() != 1);
+		auto unary = static_cast<unary_exp_t*>(exp->backcalls.back());
+		BREAK_IF(!unary->ops.empty());
+		BREAK_IF(unary->expos.size() != 1);
+		return static_cast<Value_t*>(unary->expos.back());
+		BLOCK_END
 		return nullptr;
+	}
+
+	ast_ptr<false, Exp_t> newExp(Value_t* value, ast_node* x) {
+		auto unary = x->new_ptr<unary_exp_t>();
+		unary->expos.push_back(value);
+		auto exp = x->new_ptr<Exp_t>();
+		exp->backcalls.push_back(unary);
+		return exp;
+	}
+
+	ast_ptr<false, Exp_t> newExp(Value_t* left, BinaryOperator_t* op, Value_t* right, ast_node* x) {
+		auto lunary = x->new_ptr<unary_exp_t>();
+		lunary->expos.push_back(left);
+		auto opValue = x->new_ptr<exp_op_value_t>();
+		{
+			auto runary = x->new_ptr<unary_exp_t>();
+			runary->expos.push_back(right);
+			opValue->op.set(op);
+			opValue->backcalls.push_back(runary);
+		}
+		auto exp = x->new_ptr<Exp_t>();
+		exp->backcalls.push_back(lunary);
+		exp->opValues.push_back(opValue);
+		return exp;
+	}
+
+	ast_ptr<false, Exp_t> newExp(unary_exp_t* unary, ast_node* x) {
+		auto exp = x->new_ptr<Exp_t>();
+		exp->backcalls.push_back(unary);
+		return exp;
 	}
 
 	SimpleValue_t* simpleSingleValueFrom(ast_node* expList) const {
@@ -421,18 +464,6 @@ private:
 			return static_cast<SimpleValue_t*>(value->item.get());
 		}
 		return nullptr;
-	}
-
-	Value_t* firstValueFrom(ast_node* item) const {
-		Exp_t* exp = nullptr;
-		if (auto expList = ast_cast<ExpList_t>(item)) {
-			if (!expList->exprs.empty()) {
-				exp = static_cast<Exp_t*>(expList->exprs.front());
-			}
-		} else {
-			exp = ast_cast<Exp_t>(item);
-		}
-		return exp->value.get();
 	}
 
 	Statement_t* lastStatementFrom(Body_t* body) const {
@@ -526,7 +557,7 @@ private:
 		BLOCK_START
 		auto value = singleValueFrom(expList);
 		BREAK_IF(!value);
-		auto chainValue = value->getByPath<ChainValue_t>();
+		auto chainValue = value->item.as<ChainValue_t>();
 		BREAK_IF(!chainValue);
 		BREAK_IF(chainValue->items.size() != 1);
 		auto callable = ast_cast<Callable_t>(chainValue->items.front());
@@ -542,7 +573,7 @@ private:
 		BLOCK_START
 		auto value = singleValueFrom(exp);
 		BREAK_IF(!value);
-		auto chainValue = value->getByPath<ChainValue_t>();
+		auto chainValue = value->item.as<ChainValue_t>();
 		BREAK_IF(!chainValue);
 		BREAK_IF(chainValue->items.size() != 1);
 		auto callable = ast_cast<Callable_t>(chainValue->items.front());
@@ -614,18 +645,7 @@ private:
 	}
 
 	bool isPureBackcall(Exp_t* exp) const {
-		if (exp->opValues.empty()) {
-			return false;
-		}
-		bool backcall = true;
-		for (auto _opValue : exp->opValues.objects()) {
-			auto opValue = static_cast<exp_op_value_t*>(_opValue);
-			if (!opValue->op.is<BackcallOperator_t>()) {
-				backcall = false;
-				break;
-			}
-		}
-		return backcall;
+		return exp->opValues.empty() && exp->backcalls.size() > 1;
 	}
 
 	bool isMacroChain(ChainValue_t* chainValue) const {
@@ -672,8 +692,7 @@ private:
 					simpleValue->value.set(ifNode);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto expList = x->new_ptr<ExpList_t>();
 					expList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -700,8 +719,7 @@ private:
 					simpleValue->value.set(unless);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto exprList = x->new_ptr<ExpList_t>();
 					exprList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -720,8 +738,7 @@ private:
 					simpleValue->value.set(comp);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto expList = x->new_ptr<ExpList_t>();
 					expList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -951,8 +968,9 @@ private:
 		checkAssignable(assignment->expList);
 		BLOCK_START
 		auto assign = ast_cast<Assign_t>(assignment->action);
-		BREAK_IF(!assign || assign->values.objects().size() != 1);
-		auto value = assign->values.objects().front();
+		BREAK_IF(!assign);
+		BREAK_IF(assign->values.objects().size() != 1);
+		auto value = assign->values.objects().back();
 		if (ast_is<Exp_t>(value)) {
 			if (auto val = simpleSingleValueFrom(value)) {
 				value = val->value.get();
@@ -1046,8 +1064,9 @@ private:
 			transformExp(exp, out, ExpUsage::Assignment, expList);
 			return;
 		}
-		BREAK_IF(!exp->opValues.empty());
-		if (auto chainValue = exp->value->item.as<ChainValue_t>()) {
+		auto singleVal = singleValueFrom(exp);
+		BREAK_IF(!singleVal);
+		if (auto chainValue = singleVal->item.as<ChainValue_t>()) {
 			auto type = specialChainValue(chainValue);
 			auto expList = assignment->expList.get();
 			switch (type) {
@@ -1115,7 +1134,7 @@ private:
 					if (!defs.empty()) _buf << indent() << "local "sv << join(defs,", "sv) << nll(assignment);
 					_buf << indent() << "do"sv << nll(assignment);
 					pushScope();
-					auto objVar = getUnusedName("_obj_");
+					auto objVar = getUnusedName("_obj_"sv);
 					for (auto& v : values) v.insert(0, objVar);
 					_buf << indent() << "local "sv << objVar << " = "sv << destruct.value << nll(assignment);
 					_buf << indent() << join(names, ", "sv) << " = "sv << join(values, ", "sv) << nll(assignment);
@@ -1291,8 +1310,9 @@ private:
 		str_list temp;
 		for (auto i = exprs.begin(), j = values.begin(); i != exprs.end(); ++i, ++j) {
 			auto expr = *i;
-			ast_node* destructNode = expr->getByPath<Value_t, SimpleValue_t, TableLit_t>();
-			if (destructNode || (destructNode = expr->getByPath<Value_t, simple_table_t>())) {
+			auto value = singleValueFrom(expr);
+			ast_node* destructNode = value->getByPath<SimpleValue_t, TableLit_t>();
+			if (destructNode || (destructNode = value->item.as<simple_table_t>())) {
 				destructPairs.push_back({i,j});
 				auto& destruct = destructs.emplace_back();
 				if (!varDefOnly) {
@@ -1304,6 +1324,10 @@ private:
 				}
 				auto pairs = destructFromExp(expr);
 				destruct.items = std::move(pairs);
+				if (destruct.items.size() == 1 && !singleValueFrom(*j)) {
+					destruct.value.insert(0, "("sv);
+					destruct.value.append(")"sv);
+				}
 			}
 		}
 		for (const auto& p : destructPairs) {
@@ -1337,7 +1361,7 @@ private:
 				auto leftExp = static_cast<Exp_t*>(expList->exprs.objects().front());
 				auto leftValue = singleValueFrom(leftExp);
 				if (!leftValue) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftExp));
-				if (auto chain = leftValue->getByPath<ChainValue_t>()) {
+				if (auto chain = leftValue->item.as<ChainValue_t>()) {
 					auto tmpChain = x->new_ptr<ChainValue_t>();
 					for (auto item : chain->items.objects()) {
 						bool itemAdded = false;
@@ -1440,8 +1464,7 @@ private:
 					simpleValue->value.set(newIf);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto expList = x->new_ptr<ExpList_t>();
 					expList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -1612,14 +1635,18 @@ private:
 		out.push_back(join(temp, ", "sv));
 	}
 
-	ast_ptr<false, Exp_t> transformBackcall(Value_t* first, node_container::const_iterator begin, node_container::const_iterator end) {
-		auto arg = first->new_ptr<Exp_t>();
-		arg->value.set(first);
-		for (auto it = begin; it != end; ++it) {
-			auto opValue = static_cast<exp_op_value_t*>(*it);
-			if (auto chainValue = opValue->value->item.as<ChainValue_t>()) {
-				auto newArg = first->new_ptr<Exp_t>();
-				{
+	void transform_backcall_exp(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		if (values.size() == 1 && usage == ExpUsage::Closure) {
+			transform_unary_exp(static_cast<unary_exp_t*>(values.front()), out);
+		} else {
+			auto x = values.front();
+			auto arg = newExp(static_cast<unary_exp_t*>(x), x);
+			auto begin = values.begin(); begin++;
+			for (auto it = begin; it != values.end(); ++it) {
+				auto unary = static_cast<unary_exp_t*>(*it);
+				auto value = singleValueFrom(unary);
+				if (!value) throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, *it));
+				if (auto chainValue = value->item.as<ChainValue_t>()) {
 					if (isChainValueCall(chainValue)) {
 						auto last = chainValue->items.back();
 						_ast_list* args = nullptr;
@@ -1647,98 +1674,65 @@ private:
 							args->push_front(arg);
 						}
 					} else {
-						auto invoke = first->new_ptr<Invoke_t>();
+						auto invoke = x->new_ptr<Invoke_t>();
 						invoke->args.push_front(arg);
 						chainValue->items.push_back(invoke);
 					}
-					auto value = first->new_ptr<Value_t>();
-					value->item.set(chainValue);
-					newArg->value.set(value);
-					arg.set(newArg);
+					arg.set(newExp(unary, x));
+				} else {
+					throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, value));
 				}
-			} else {
-				throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, opValue->value));
+			}
+			switch (usage) {
+				case ExpUsage::Assignment: {
+					auto assignment = x->new_ptr<ExpListAssign_t>();
+					auto assign = x->new_ptr<Assign_t>();
+					assign->values.push_back(arg);
+					assignment->action.set(assign);
+					assignment->expList.set(assignList);
+					transformAssignment(assignment, out);
+					return;
+				}
+				case ExpUsage::Common: {
+					auto value = singleValueFrom(arg);
+					if (value && value->item.is<ChainValue_t>()) {
+						transformChainValue(value->item.to<ChainValue_t>(), out, ExpUsage::Common);
+					} else {
+						transformExp(arg, out, ExpUsage::Closure);
+						out.back().insert(0, indent());
+						out.back().append(nlr(x));
+					}
+					return;
+				}
+				case ExpUsage::Return: {
+					auto ret = x->new_ptr<Return_t>();
+					auto expListLow = x->new_ptr<ExpListLow_t>();
+					expListLow->exprs.push_back(arg);
+					ret->valueList.set(expListLow);
+					transformReturn(ret, out);
+					return;
+				}
+				case ExpUsage::Closure: {
+					transformExp(arg, out, ExpUsage::Closure);
+					return;
+				}
+				default: assert(false); return;
 			}
 		}
-		return arg;
 	}
 
 	void transformExp(Exp_t* exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		const auto& opValues = exp->opValues.objects();
-		for (auto it = opValues.begin(); it != opValues.end(); ++it) {
-			auto opValue = static_cast<exp_op_value_t*>(*it);
-			if (opValue->op.is<BackcallOperator_t>()) {
-				auto end = std::find_if_not(it, opValues.end(), [](ast_node* node) {
-					return static_cast<exp_op_value_t*>(node)->op.is<BackcallOperator_t>();
-				});
-				ast_ptr<false, Exp_t> backcall;
-				if (it == opValues.begin()) {
-					auto first = exp->value.get();
-					backcall = transformBackcall(first, it, end);
-					for (auto i = end; i != opValues.end(); ++i) {
-						backcall->opValues.push_back(*i);
-					}
-				} else {
-					auto prev = it; --prev;
-					auto first = static_cast<exp_op_value_t*>(*prev)->value.get();
-					backcall = transformBackcall(first, it, end);
-					for (auto i = opValues.begin(); i != it; ++i) {
-						backcall->opValues.push_back(*i);
-					}
-					static_cast<exp_op_value_t*>(backcall->opValues.back())->value.set(backcall->value);
-					backcall->value.set(exp->value);
-					for (auto i = end; i != opValues.end(); ++i) {
-						backcall->opValues.push_back(*i);
-					}
-				}
-				auto x = exp;
-				switch (usage) {
-					case ExpUsage::Assignment: {
-						auto assignment = x->new_ptr<ExpListAssign_t>();
-						auto assign = x->new_ptr<Assign_t>();
-						assign->values.push_back(backcall);
-						assignment->action.set(assign);
-						assignment->expList.set(assignList);
-						transformAssignment(assignment, out);
-						return;
-					}
-					case ExpUsage::Common: {
-						if (backcall->opValues.empty() && backcall->value->item.is<ChainValue_t>()) {
-							transformChainValue(backcall->value->item.to<ChainValue_t>(), out, ExpUsage::Common);
-						} else {
-							transformExp(backcall, out, ExpUsage::Closure);
-							out.back().insert(0, indent());
-							out.back().append(nlr(x));
-						}
-						return;
-					}
-					case ExpUsage::Return: {
-						auto ret = x->new_ptr<Return_t>();
-						auto expListLow = x->new_ptr<ExpListLow_t>();
-						expListLow->exprs.push_back(backcall);
-						ret->valueList.set(expListLow);
-						transformReturn(ret, out);
-						return;
-					}
-					case ExpUsage::Closure: {
-						transformExp(backcall, out, ExpUsage::Closure);
-						return;
-					}
-					default: assert(false); return;
-				}
-			}
+		if (exp->opValues.empty()) {
+			transform_backcall_exp(exp->backcalls.objects(), out, usage, assignList);
+			return;
 		}
 		assert(usage == ExpUsage::Closure);
 		str_list temp;
-		transformValue(exp->value, temp);
+			transform_backcall_exp(exp->backcalls.objects(), temp, ExpUsage::Closure);
 		for (auto _opValue : exp->opValues.objects()) {
 			auto opValue = static_cast<exp_op_value_t*>(_opValue);
-			if (auto op = opValue->op.as<BinaryOperator_t>()) {
-				transformBinaryOperator(op, temp);
-			} else {
-				temp.push_back(s("|>"sv));
-			}
-			transformValue(opValue->value, temp);
+			transformBinaryOperator(opValue->op, temp);
+			transform_backcall_exp(opValue->backcalls.objects(), temp, ExpUsage::Closure);
 		}
 		out.push_back(join(temp, " "sv));
 	}
@@ -1748,11 +1742,7 @@ private:
 		switch (item->getId()) {
 			case id<SimpleValue_t>(): transformSimpleValue(static_cast<SimpleValue_t*>(item), out); break;
 			case id<simple_table_t>(): transform_simple_table(static_cast<simple_table_t*>(item), out); break;
-			case id<ChainValue_t>(): {
-				auto chainValue = static_cast<ChainValue_t*>(item);
-				transformChainValue(chainValue, out, ExpUsage::Closure);
-				break;
-			}
+			case id<ChainValue_t>(): transformChainValue(static_cast<ChainValue_t*>(item), out, ExpUsage::Closure); break;
 			case id<String_t>(): transformString(static_cast<String_t*>(item), out); break;
 			default: assert(false); break;
 		}
@@ -1812,7 +1802,7 @@ private:
 			case id<For_t>(): transformForClosure(static_cast<For_t*>(value), out); break;
 			case id<While_t>(): transformWhileClosure(static_cast<While_t*>(value), out); break;
 			case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
-			case id<unary_exp_t>(): transform_unary_exp(static_cast<unary_exp_t*>(value), out); break;
+			case id<unary_value_t>(): transform_unary_value(static_cast<unary_value_t*>(value), out); break;
 			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
@@ -1904,7 +1894,7 @@ private:
 					}
 				}
 				x = backcall;
-				auto arg = x->new_ptr<Exp_t>();
+				ast_ptr<false, Exp_t> arg;
 				{
 					auto block = x->new_ptr<Block_t>();
 					auto next = it; ++next;
@@ -1924,7 +1914,7 @@ private:
 					simpleValue->value.set(funLit);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
-					arg->value.set(value);
+					arg = newExp(value, x);
 				}
 				if (isChainValueCall(backcall->value)) {
 					auto last = backcall->value->items.back();
@@ -1962,8 +1952,7 @@ private:
 					auto chainValue = backcall->value.get();
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(chainValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto expList = x->new_ptr<ExpList_t>();
 					expList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -2103,8 +2092,7 @@ private:
 						simpleValue->value.set(last->content);
 						auto value = x->new_ptr<Value_t>();
 						value->item.set(simpleValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
+						auto exp = newExp(value, x);
 						assign->values.push_back(exp);
 					}
 					newAssignment->action.set(assign);
@@ -2539,12 +2527,7 @@ private:
 				chainValue->items.pop_back();
 				auto value = x->new_ptr<Value_t>();
 				value->item.set(chainValue);
-				auto opValue = x->new_ptr<exp_op_value_t>();
-				opValue->op.set(toAst<BinaryOperator_t>("!="sv, x));
-				opValue->value.set(toAst<Value_t>("nil"sv, x));
-				auto exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
-				exp->opValues.push_back(opValue);
+				auto exp = newExp(value, toAst<BinaryOperator_t>("!="sv, x), toAst<Value_t>("nil"sv, x), x);
 				parens->expr.set(exp);
 			}
 			switch (usage) {
@@ -2555,8 +2538,7 @@ private:
 					chainValue->items.push_back(callable);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(chainValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto assignment = x->new_ptr<ExpListAssign_t>();
 					assignment->expList.set(assignList);
 					auto assign = x->new_ptr<Assign_t>();
@@ -2633,8 +2615,7 @@ private:
 					} else {
 						auto value = x->new_ptr<Value_t>();
 						value->item.set(chainValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
+						auto exp = newExp(value, x);
 						auto assign = x->new_ptr<Assign_t>();
 						assign->values.push_back(exp);
 						auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -2665,8 +2646,7 @@ private:
 				}
 				auto value = x->new_ptr<Value_t>();
 				value->item.set(partOne);
-				auto exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
+				auto exp = newExp(value, x);
 				auto assign = x->new_ptr<Assign_t>();
 				assign->values.push_back(exp);
 				auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -2689,8 +2669,7 @@ private:
 				case ExpUsage::Assignment: {
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(partTwo);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto assign = x->new_ptr<Assign_t>();
 					assign->values.push_back(exp);
 					auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -2703,8 +2682,7 @@ private:
 				case ExpUsage::Closure: {
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(partTwo);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					auto ret = x->new_ptr<Return_t>();
 					auto expListLow = x->new_ptr<ExpListLow_t>();
 					expListLow->exprs.push_back(exp);
@@ -2771,8 +2749,7 @@ private:
 			{
 				auto value = x->new_ptr<Value_t>();
 				value->item.set(baseChain);
-				auto exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
+				auto exp = newExp(value, x);
 				auto assign = x->new_ptr<Assign_t>();
 				assign->values.push_back(exp);
 				auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -2886,8 +2863,7 @@ private:
 							}
 							auto value = x->new_ptr<Value_t>();
 							value->item.set(chainValue);
-							auto exp = x->new_ptr<Exp_t>();
-							exp->value.set(value);
+							auto exp = newExp(value, x);
 							callVar = singleVariableFrom(exp);
 							if (callVar.empty()) {
 								callVar = getUnusedName(s("_call_"sv));
@@ -2901,6 +2877,7 @@ private:
 								block->statements.push_back(stmt);
 							}
 						}
+						ast_ptr<false, Exp_t> nexp;
 						{
 							auto name = _parser.toString(colonItem->name);
 							auto chainValue = x->new_ptr<ChainValue_t>();
@@ -2920,10 +2897,9 @@ private:
 							}
 							auto value = x->new_ptr<Value_t>();
 							value->item.set(chainValue);
-							auto exp = x->new_ptr<Exp_t>();
-							exp->value.set(value);
+							nexp = newExp(value, x);
 							auto expList = x->new_ptr<ExpList_t>();
-							expList->exprs.push_back(exp);
+							expList->exprs.push_back(nexp);
 							auto expListAssign = x->new_ptr<ExpListAssign_t>();
 							expListAssign->expList.set(expList);
 							auto stmt = x->new_ptr<Statement_t>();
@@ -2942,25 +2918,28 @@ private:
 							default:
 								break;
 						}
-						auto body = x->new_ptr<Body_t>();
-						body->content.set(block);
-						auto funLit = toAst<FunLit_t>("->"sv, x);
-						funLit->body.set(body);
-						auto simpleValue = x->new_ptr<SimpleValue_t>();
-						simpleValue->value.set(funLit);
-						auto value = x->new_ptr<Value_t>();
-						value->item.set(simpleValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
-						auto paren = x->new_ptr<Parens_t>();
-						paren->expr.set(exp);
-						auto callable = x->new_ptr<Callable_t>();
-						callable->item.set(paren);
-						auto chainValue = x->new_ptr<ChainValue_t>();
-						chainValue->items.push_back(callable);
-						auto invoke = x->new_ptr<Invoke_t>();
-						chainValue->items.push_back(invoke);
-						transformChainValue(chainValue, out, ExpUsage::Closure);
+						if (block->statements.size() == 1) {
+							transformExp(nexp, out, usage, assignList);
+						} else {
+							auto body = x->new_ptr<Body_t>();
+							body->content.set(block);
+							auto funLit = toAst<FunLit_t>("->"sv, x);
+							funLit->body.set(body);
+							auto simpleValue = x->new_ptr<SimpleValue_t>();
+							simpleValue->value.set(funLit);
+							auto value = x->new_ptr<Value_t>();
+							value->item.set(simpleValue);
+							auto exp = newExp(value, x);
+							auto paren = x->new_ptr<Parens_t>();
+							paren->expr.set(exp);
+							auto callable = x->new_ptr<Callable_t>();
+							callable->item.set(paren);
+							auto chainValue = x->new_ptr<ChainValue_t>();
+							chainValue->items.push_back(callable);
+							auto invoke = x->new_ptr<Invoke_t>();
+							chainValue->items.push_back(invoke);
+							transformChainValue(chainValue, out, ExpUsage::Closure);
+						}
 						return;
 					}
 					transformColonChainItem(colonItem, temp);
@@ -3032,13 +3011,13 @@ private:
 		}
 		for (auto arg : *args) {
 			std::string str;
-			if (auto exp = ast_cast<Exp_t>(arg)) {
-				// patch for backcall operator support
+			// check whether arg is reassembled
+			// do some workaround for backcall expression
+			if (ast_is<Exp_t>(arg) && arg->m_begin.m_it == arg->m_end.m_it) {
+				auto exp = static_cast<Exp_t*>(arg);
 				BLOCK_START
-				BREAK_IF(arg->m_begin.m_line != arg->m_end.m_line ||
-					arg->m_begin.m_col != arg->m_end.m_col);
 				BREAK_IF(!exp->opValues.empty());
-				auto chainValue = exp->getByPath<Value_t, ChainValue_t>();
+				auto chainValue = exp->getByPath<unary_exp_t, Value_t, ChainValue_t>();
 				BREAK_IF(!chainValue);
 				BREAK_IF(!isMacroChain(chainValue));
 				BREAK_IF(chainValue->items.size() != 2);
@@ -3047,26 +3026,27 @@ private:
 				str = codes;
 				BLOCK_END
 				if (str.empty()) {
-					bool multiLineStr = false;
-					BLOCK_START
-					auto value = singleValueFrom(exp);
-					BREAK_IF(!value);
-					auto lstr = value->getByPath<String_t, LuaString_t>();
-					BREAK_IF(!lstr);
-					str = _parser.toString(lstr->content);
-					multiLineStr = true;
-					BLOCK_END
-					if (!multiLineStr) {
-						// convert sub nodes to strings in case exp is assembled
-						// in transform stage, the toString() function won't be able
-						// to convert its whole content
-						str = _parser.toString(exp->value);
-						for (auto opVal : exp->opValues.objects()) {
-							str += _parser.toString(opVal);
-						}
-					}
+					// exp is reassembled due to backcall expressions
+					// in transform stage, toString(exp) won't be able
+					// to convert its whole text content
+					str = _parser.toString(exp->backcalls.front());
 				}
-			} else str = _parser.toString(arg);
+			} else {
+				bool multiLineStr = false;
+				BLOCK_START
+				auto exp = ast_cast<Exp_t>(arg);
+				BREAK_IF(!exp);
+				auto value = singleValueFrom(exp);
+				BREAK_IF(!value);
+				auto lstr = value->getByPath<String_t, LuaString_t>();
+				BREAK_IF(!lstr);
+				str = _parser.toString(lstr->content);
+				multiLineStr = true;
+				BLOCK_END
+				if (!multiLineStr) {
+					str = _parser.toString(arg);
+				}
+			}
 			Utils::trim(str);
 			Utils::replace(str, "\r\n"sv, "\n"sv);
 			lua_pushlstring(L, str.c_str(), str.size());
@@ -3160,8 +3140,7 @@ private:
 				}
 				auto value = x->new_ptr<Value_t>();
 				value->item.set(newChain);
-				exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
+				exp = newExp(value, x);
 			}
 			if (usage == ExpUsage::Common) {
 				auto expList = x->new_ptr<ExpList_t>();
@@ -3276,11 +3255,32 @@ private:
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
 	}
 
-	void transform_unary_exp(unary_exp_t* unary_exp, str_list& out) {
-		std::string op = _parser.toString(unary_exp->m_begin.m_it, unary_exp->item->m_begin.m_it);
-		str_list temp{op + (op == "not"sv ? s(" "sv) : Empty)};
-		transformExp(unary_exp->item, temp, ExpUsage::Closure);
+	void transform_unary_value(unary_value_t* unary_value, str_list& out) {
+		str_list temp;
+		for (auto _op : unary_value->ops.objects()) {
+			std::string op = _parser.toString(_op);
+			temp.push_back(op + (op == "not"sv ? s(" "sv) : Empty));
+		}
+		transformValue(unary_value->value, temp);
 		out.push_back(join(temp));
+	}
+
+	void transform_unary_exp(unary_exp_t* unary_exp, str_list& out) {
+		if (unary_exp->ops.empty() && unary_exp->expos.size() == 1) {
+			transformValue(static_cast<Value_t*>(unary_exp->expos.back()), out);
+			return;
+		}
+		std::string unary_op;
+		for (auto _op : unary_exp->ops.objects()) {
+			std::string op = _parser.toString(_op);
+			unary_op.append(op + (op == "not"sv ? s(" "sv) : Empty));
+		}
+		str_list temp;
+		for (auto _value : unary_exp->expos.objects()) {
+			auto value = static_cast<Value_t*>(_value);
+			transformValue(value, temp);
+		}
+		out.push_back(unary_op + join(temp, " ^ "sv));
 	}
 
 	void transformVariable(Variable_t* name, str_list& out) {
@@ -3555,8 +3555,7 @@ private:
 				sValue->value.set(pair.first);
 				auto value = x->new_ptr<Value_t>();
 				value->item.set(sValue);
-				auto exp = x->new_ptr<Exp_t>();
-				exp->value.set(value);
+				auto exp = newExp(value, x);
 				auto expList = x->new_ptr<ExpList_t>();
 				expList->exprs.push_back(exp);
 				auto assign = x->new_ptr<Assign_t>();
@@ -3916,7 +3915,7 @@ private:
 					if (auto dotChain = ast_cast<DotChainItem_t>(chain->items.back())) {
 						className = s("\""sv) + _parser.toString(dotChain->name) + s("\""sv);
 					} else if (auto index = ast_cast<Exp_t>(chain->items.back())) {
-						if (auto name = index->getByPath<Value_t, String_t>()) {
+						if (auto name = index->getByPath<unary_exp_t, Value_t, String_t>()) {
 							transformString(name, temp);
 							className = temp.back();
 							temp.pop_back();
@@ -4441,8 +4440,7 @@ private:
 						chainValue->items.push_back(callable);
 						auto value = x->new_ptr<Value_t>();
 						value->item.set(chainValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
+						auto exp = newExp(value, x);
 						expList->exprs.push_back(exp);
 					}
 					auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -4480,8 +4478,8 @@ private:
 			for (auto _exp : expList->exprs.objects()) {
 				auto exp = static_cast<Exp_t*>(_exp);
 				if (!variableFrom(exp) &&
-					!exp->getByPath<Value_t, SimpleValue_t, TableLit_t>() &&
-					!exp->getByPath<Value_t, simple_table_t>()) {
+					!exp->getByPath<unary_exp_t, Value_t, SimpleValue_t, TableLit_t>() &&
+					!exp->getByPath<unary_exp_t, Value_t, simple_table_t>()) {
 					throw std::logic_error(_info.errorMessage("left hand expressions must be variables in export statement"sv, x));
 				}
 			}
@@ -4525,7 +4523,7 @@ private:
 				auto assignList = toAst<ExpList_t>(_info.moduleName + s("[#"sv) + _info.moduleName + s("+1]"sv), x);
 				assignment->expList.set(assignList);
 				for (auto exp : expList->exprs.objects()) {
-					if (auto classDecl = exp->getByPath<Value_t, SimpleValue_t, ClassDecl_t>()) {
+					if (auto classDecl = exp->getByPath<unary_exp_t, Value_t, SimpleValue_t, ClassDecl_t>()) {
 						if (classDecl->name && classDecl->name->item->getId() == id<Variable_t>()) {
 							transformClassDecl(classDecl, temp, ExpUsage::Common);
 							auto name = _parser.toString(classDecl->name->item);
@@ -4728,8 +4726,7 @@ private:
 						chainValue->items.push_back(dotChainItem);
 						auto value = x->new_ptr<Value_t>();
 						value->item.set(chainValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
+						auto exp = newExp(value, x);
 						assign->values.push_back(exp);
 					}
 					auto callable = x->new_ptr<Callable_t>();
@@ -4738,8 +4735,7 @@ private:
 					chainValue->items.push_back(callable);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(chainValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					expList->exprs.push_back(exp);
 					break;
 				}
@@ -4755,8 +4751,7 @@ private:
 						chainValue->items.push_back(colonChain);
 						auto value = x->new_ptr<Value_t>();
 						value->item.set(chainValue);
-						auto exp = x->new_ptr<Exp_t>();
-						exp->value.set(value);
+						auto exp = newExp(value, x);
 						assign->values.push_back(exp);
 					}
 					auto callable = x->new_ptr<Callable_t>();
@@ -4765,8 +4760,7 @@ private:
 					chainValue->items.push_back(callable);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(chainValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					expList->exprs.push_back(exp);
 					break;
 				}
@@ -4898,8 +4892,7 @@ private:
 			simpleValue->value.set(tableLit);
 			value->item.set(simpleValue);
 		}
-		auto exp = x->new_ptr<Exp_t>();
-		exp->value.set(value);
+		auto exp = newExp(value, x);
 		auto assignList = x->new_ptr<ExpList_t>();
 		assignList->exprs.push_back(exp);
 		auto assign = x->new_ptr<Assign_t>();
@@ -5087,8 +5080,7 @@ private:
 					chainValue->items.push_back(callable);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(chainValue);
-					auto exp = x->new_ptr<Exp_t>();
-					exp->value.set(value);
+					auto exp = newExp(value, x);
 					expList->exprs.push_back(exp);
 				}
 				auto assignment = x->new_ptr<ExpListAssign_t>();

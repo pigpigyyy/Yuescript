@@ -172,10 +172,12 @@ private:
 	rule ArgLine;
 	rule ArgBlock;
 	rule invoke_args_with_table;
-	rule minus_exp;
-	rule sharp_exp;
-	rule tilde_exp;
-	rule not_exp;
+	rule BackcallOperator;
+	rule ExponentialOperator;
+	rule backcall_value;
+	rule backcall_exp;
+	rule expo_value;
+	rule expo_exp;
 	rule empty_line_stop;
 	rule Line;
 	rule Shebang;
@@ -233,7 +235,7 @@ private:
 	AST_RULE(update_op)
 	AST_RULE(Update)
 	AST_RULE(BinaryOperator)
-	AST_RULE(BackcallOperator)
+	AST_RULE(unary_operator)
 	AST_RULE(Assignable)
 	AST_RULE(AssignableChain)
 	AST_RULE(exp_op_value)
@@ -286,6 +288,7 @@ private:
 	AST_RULE(AssignableNameList)
 	AST_RULE(InvokeArgs)
 	AST_RULE(const_value)
+	AST_RULE(unary_value)
 	AST_RULE(unary_exp)
 	AST_RULE(ExpListAssign)
 	AST_RULE(if_line)

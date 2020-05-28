@@ -341,8 +341,8 @@ AST_END(Update)
 AST_LEAF(BinaryOperator)
 AST_END(BinaryOperator)
 
-AST_LEAF(BackcallOperator)
-AST_END(BackcallOperator)
+AST_LEAF(unary_operator)
+AST_END(unary_operator)
 
 class AssignableChain_t;
 
@@ -351,18 +351,19 @@ AST_NODE(Assignable)
 	AST_MEMBER(Assignable, &item)
 AST_END(Assignable)
 
-class Value_t;
+class unary_exp_t;
 
 AST_NODE(exp_op_value)
-	ast_sel<true, BinaryOperator_t, BackcallOperator_t> op;
-	ast_ptr<true, Value_t> value;
-	AST_MEMBER(exp_op_value, &op, &value)
+	ast_ptr<true, BinaryOperator_t> op;
+	ast_list<true, unary_exp_t> backcalls;
+	AST_MEMBER(exp_op_value, &op, &backcalls)
 AST_END(exp_op_value)
 
 AST_NODE(Exp)
-	ast_ptr<true, Value_t> value;
+	ast_ptr<true, Seperator_t> sep;
+	ast_list<true, unary_exp_t> backcalls;
 	ast_list<false, exp_op_value_t> opValues;
-	AST_MEMBER(Exp, &value, &opValues)
+	AST_MEMBER(Exp, &sep, &backcalls, &opValues)
 AST_END(Exp)
 
 class Parens_t;
@@ -396,14 +397,15 @@ AST_END(simple_table)
 class String_t;
 class const_value_t;
 class ClassDecl_t;
-class unary_exp_t;
+class unary_value_t;
 class TableLit_t;
 class FunLit_t;
 
 AST_NODE(SimpleValue)
 	ast_sel<true, const_value_t,
 	If_t, Unless_t, Switch_t, With_t, ClassDecl_t,
-	ForEach_t, For_t, While_t, Do_t, unary_exp_t,
+	ForEach_t, For_t, While_t, Do_t,
+	unary_value_t,
 	TblComprehension_t, TableLit_t, Comprehension_t,
 	FunLit_t, Num_t> value;
 	AST_MEMBER(SimpleValue, &value)
@@ -641,9 +643,16 @@ AST_END(InvokeArgs)
 AST_LEAF(const_value)
 AST_END(const_value)
 
+AST_NODE(unary_value)
+	ast_list<true, unary_operator_t> ops;
+	ast_ptr<true, Value_t> value;
+	AST_MEMBER(unary_value, &ops, &value)
+AST_END(unary_value)
+
 AST_NODE(unary_exp)
-	ast_ptr<true, Exp_t> item;
-	AST_MEMBER(unary_exp, &item)
+	ast_list<false, unary_operator_t> ops;
+	ast_list<true, Value_t> expos;
+	AST_MEMBER(unary_exp, &ops, &expos)
 AST_END(unary_exp)
 
 AST_NODE(ExpListAssign)

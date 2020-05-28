@@ -1,3 +1,4 @@
+x\do "work"
 
 func a\do!\end("OK")\if "abc",123
 
