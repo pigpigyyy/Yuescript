@@ -46,14 +46,13 @@ CWARNS= $(CWARNSCPP) $(CWARNSC)
 # -DLUA_USE_CTYPE -DLUA_USE_APICHECK
 # ('-ftrapv' for runtime checks of integer overflows)
 # -fsanitize=undefined -ftrapv -fno-inline
-# TESTS= -DLUA_USER_H='"ltests.h"' -O0 -g
 
 
 LOCAL = $(CWARNS)
 
 
 # enable Linux goodies
-MYCFLAGS= $(LOCAL) -std=c99
+MYCFLAGS= $(LOCAL) -std=c99 -DLUA_USE_READLINE
 MYLDFLAGS= $(LOCAL) -Wl
 MYLIBS= -ldl -lreadline
 
@@ -62,6 +61,7 @@ ifeq ($(UNAME_S),Darwin)
 	MYCFLAGS += -DLUA_USE_MACOS
 else
 	MYCFLAGS += -DLUA_USE_LINUX
+	MYLDFLAGS += -E
 endif
 
 CC= gcc
