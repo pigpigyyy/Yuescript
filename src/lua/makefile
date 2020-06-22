@@ -52,8 +52,7 @@ LOCAL = $(CWARNS)
 
 
 # enable Linux goodies
-MYCFLAGS= $(LOCAL) -std=c99 -DLUA_USE_READLINE
-MYLIBS= -ldl -lreadline
+MYCFLAGS= $(LOCAL) -std=c99
 
 UNAME_S:=$(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -123,7 +122,6 @@ echo:
 	@echo "RM = $(RM)"
 	@echo "MYCFLAGS = $(MYCFLAGS)"
 	@echo "MYLDFLAGS = $(MYLDFLAGS)"
-	@echo "MYLIBS = $(MYLIBS)"
 	@echo "DL = $(DL)"
 
 $(ALL_O): makefile
