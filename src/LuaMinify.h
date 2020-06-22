@@ -298,8 +298,12 @@ local Scope = {
 
 	ObfuscateLocals = function(self, recommendedMaxLength, validNameChars)
 		for i, var in pairs(self.Locals) do
-			local id = GetUnique(self)
-			self:RenameLocal(var.Name, id)
+			if var.Name == "_ENV" then
+				self:RenameLocal(var.Name, "_ENV")
+			else
+				local id = GetUnique(self)
+				self:RenameLocal(var.Name, id)
+			end
 		end
 	end
 }
@@ -1502,13 +1506,24 @@ R"lua_codes(
 
 		elseif tok:ConsumeKeyword('local', tokenList) then
 			if tok:Is('Ident') then
-				local varList = { tok:Get(tokenList).Data }
-				while tok:ConsumeSymbol(',', tokenList) do
+				local varList, attrList = {}, {}
+				repeat
 					if not tok:Is('Ident') then
 						return false, GenerateError("local var name expected")
 					end
 					varList[#varList+1] = tok:Get(tokenList).Data
-				end
+					if tok:ConsumeSymbol('<', tokenList) then
+						if not tok:Is('Ident') then
+							return false, GenerateError("attrib name expected")
+						end
+						attrList[#attrList+1] = tok:Get(tokenList).Data
+						if not tok:ConsumeSymbol('>', tokenList) then
+							return false, GenerateError("missing '>' to close attrib name")
+						end
+					else
+						attrList[#attrList+1] = false
+					end
+				until not tok:ConsumeSymbol(',', tokenList)
 
 				local initList = {}
 				if tok:ConsumeSymbol('=', tokenList) then
@@ -1529,6 +1544,7 @@ R"lua_codes(
 				local nodeLocal = {}
 				nodeLocal.AstType   = 'LocalStatement'
 				nodeLocal.LocalList = varList
+				nodeLocal.AttrList  = attrList
 				nodeLocal.InitList  = initList
 				nodeLocal.Tokens    = tokenList
 				--
@@ -1923,8 +1939,11 @@ local function Format_Mini(ast)
 			out = out.."local "
 			for i = 1, #statement.LocalList do
 				out = out..statement.LocalList[i].Name
-				if i ~= #statement.LocalList then
-					out = out..","
+				if statement.AttrList[i] then
+					out = out.."<"..statement.AttrList[i]..">"
+					if i == #statement.LocalList then
+						out = out.." "
+					end
 				end
 			end
 			if #statement.InitList > 0 then

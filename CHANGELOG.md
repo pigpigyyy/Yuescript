@@ -4,19 +4,57 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 
 
-## v0.3.11
+## v0.4.1
+
+### Added Features
+
+* Add support for local variable declared with attribute 'close' and 'const' for Lua 5.4.
+
+  ```moonscript
+  close a = setmetatable {}, __close: =>
+  const b = if var then 123 else 'abc'
+  ```
+
+  Compiles to:
+
+  ```Lua
+  local _var_0 = setmetatable({ }, {
+    __close = function(self)
+    end
+  })
+  local a <close> = _var_0
+  local _var_1
+  if var then
+    _var_1 = 123
+  else
+    _var_1 = 'abc'
+  end
+  local b <const> = _var_1
+  ```
+
+  
+
+## v0.4.0
 
 ### Fixed Issues
+
+* Fix issues of unary and binary operator "~".
+
+* Fix Moonscript issue 416: ambiguous Lua output in some cases.
 
 * Fix errors when explicitly declaring global or local variable initialized with table block.
 * Fix macro type mismatch issue.
 * Fix line break issue in macro, disable macro declaration outside the root scope.
 * Fix existential operator issue when used in operator-value list.
 * Fix assignment with backcall expr not well handled issue.
-
-
+* Fix destructure case assigning one table variable to an operator-value expression.
+* Fix simple chain value with Lua keyword colon chain item.
 
 ### Added Features
+
+* Change operator precedence to 1 ^  2 unary operators (not, #, -, ~)  3 |>  4 *, /, //, %, ...
+
+* Make back call operator use highest priority for operator precedence.
 
 * Add existential operator support for `with` statement.
 * Add repeat until statement support.

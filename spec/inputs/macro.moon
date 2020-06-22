@@ -17,19 +17,26 @@ macro expr and = (...)->
 	values = [value for value in *{...}]
 	$showMacro "and", "#{ table.concat values, " and " }"
 
-if $and f1
+if $and f1!
 	print "OK"
 
-if $and f1,f2,f3
+if $and f1!, f2!, f3!
 	print "OK"
 
-macro expr map = (items,action)->
+macro expr in = (target, ...)->
+	values = [value for value in *{...}]
+	$showMacro "in", "#{ table.concat ["#{target} == #{item}" for item in *values], " or " }"
+
+if x |> $in "Apple", "Pig", "Dog"
+	print "exist"
+
+macro expr map = (items, action)->
 	$showMacro "map", "[#{action} for _ in *#{items}]"
 
-macro expr filter = (items,action)->
+macro expr filter = (items, action)->
 	$showMacro "filter", "[_ for _ in *#{items} when #{action}]"
 
-macro expr reduce = (items,def,action)->
+macro expr reduce = (items, def, action)->
 	$showMacro "reduce", "if ##{items} == 0
 	#{def}
 else
@@ -38,7 +45,7 @@ else
 		_1 = #{action}
 	_1"
 
-macro block foreach = (items,action)->
+macro block foreach = (items, action)->
 	$showMacro "foreach", "for _ in *#{items}
 	#{action}"
 
@@ -71,6 +78,8 @@ val = $pipe(
 macro expr plus = (a, b)-> "#{a} + #{b}"
 
 $plus(1,2)\call 123
+
+res = 1 |> $plus 2
 
 macro expr curry = (...)->
 	args = {...}
@@ -134,6 +143,44 @@ $def sel, a, b, c, [[
 
 $def dummy,[[
 ]]
+
+import 'underscore' as _
+
+macro expr chain = (...)-> $showMacro "chain",table.concat {...}, "\\"
+
+a = $chain(
+	_({1, 2, 3, 4, -2, 3})
+	chain!
+	map(=> @ * 2)
+	filter(=> @ > 3)
+	value!
+)
+
+macro block chainB = (...)->
+	switch select "#", ...
+		when 0 then return ""
+		when 1 then return ...
+	items = {...}
+	last = nil
+	stmts = for i = 1,#items
+		stmt = if i == #items
+			"\t#{last and "#{last}\\" or ""}#{items[i]}"
+		else
+			"\tlocal _#{i} = #{last and "#{last}\\" or ""}#{items[i]}"
+		last = "_#{i}"
+		stmt
+	res = "do
+#{table.concat stmts, "\n"}
+"
+	$showMacro "chainB",res
+
+$chainB(
+	_{1, 2, 3, 4, -2, 3}
+	chain!
+	map => @ * 2
+	filter => @ > 3
+	each => print @
+)
 
 macro block implicitReturnblockMacroIsAllowed = -> "123"
 

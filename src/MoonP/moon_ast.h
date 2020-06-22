@@ -113,6 +113,15 @@ AST_NODE(Local)
 	AST_MEMBER(Local, &item)
 AST_END(Local)
 
+class Assign_t;
+
+AST_NODE(LocalAttrib)
+	ast_ptr<true, Name_t> attrib;
+	ast_ptr<true, NameList_t> nameList;
+	ast_ptr<true, Assign_t> assign;
+	AST_MEMBER(LocalAttrib, &attrib, &nameList, &assign)
+AST_END(LocalAttrib)
+
 AST_NODE(colon_import_name)
 	ast_ptr<true, Variable_t> name;
 	AST_MEMBER(colon_import_name, &name)
@@ -686,7 +695,7 @@ AST_END(statement_sep)
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
-		Label_t, Goto_t, Backcall_t, ExpListAssign_t> content;
+		Label_t, Goto_t, Backcall_t, LocalAttrib_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;
 	AST_MEMBER(Statement, &content, &appendix, &needSep)

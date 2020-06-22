@@ -25,6 +25,12 @@ extern "C" {
 
 } // extern "C"
 
+#if LUA_VERSION_NUM > 501
+	#ifndef LUA_COMPAT_5_1
+		#define lua_objlen lua_rawlen
+	#endif // LUA_COMPAT_5_1
+#endif // LUA_VERSION_NUM
+
 namespace MoonP {
 using namespace std::string_view_literals;
 using namespace parserlib;
@@ -43,7 +49,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.0"sv;
+	return "0.4.1"sv;
 }
 
 // name of table stored in lua registry
@@ -769,6 +775,7 @@ private:
 			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
 			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
+			case id<LocalAttrib_t>(): transformLocalAttrib(static_cast<LocalAttrib_t*>(content), out); break;
 			case id<ExpListAssign_t>(): {
 				auto expListAssign = static_cast<ExpListAssign_t*>(content);
 				if (expListAssign->action) {
@@ -2071,7 +2078,18 @@ private:
 				last->needSep.set(nullptr);
 				auto bLast = ++nodes.rbegin();
 				if (bLast != nodes.rend()) {
-					static_cast<Statement_t*>(*bLast)->needSep.set(nullptr);
+					bool isMacro = false;
+					BLOCK_START
+					BREAK_IF(expListLow->exprs.size() != 1);
+					auto exp = static_cast<Exp_t*>(expListLow->exprs.back());
+					BREAK_IF(!exp->opValues.empty());
+					auto chainValue = exp->getByPath<unary_exp_t, Value_t, ChainValue_t>();
+					BREAK_IF(!chainValue);
+					isMacro = isMacroChain(chainValue);
+					BLOCK_END
+					if (!isMacro) {
+						ast_to<Statement_t>(*bLast)->needSep.set(nullptr);
+					}
 				}
 				BLOCK_END
 				break;
@@ -5096,6 +5114,43 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		}
+		out.push_back(join(temp));
+	}
+
+	void transformLocalAttrib(LocalAttrib_t* localAttrib, str_list& out) {
+		auto x = localAttrib;
+		auto attrib = _parser.toString(localAttrib->attrib);
+		if (attrib != "close"sv && attrib != "const"sv) {
+			throw std::logic_error(_info.errorMessage(s("unknown attribute '"sv) + attrib + '\'', localAttrib->attrib));
+		}
+		auto expList = x->new_ptr<ExpList_t>();
+		str_list tmpVars;
+		str_list vars;
+		for (auto name : localAttrib->nameList->names.objects()) {
+			auto callable = x->new_ptr<Callable_t>();
+			callable->item.set(name);
+			auto chainValue = x->new_ptr<ChainValue_t>();
+			chainValue->items.push_back(callable);
+			auto value = x->new_ptr<Value_t>();
+			value->item.set(chainValue);
+			auto exp = newExp(value, x);
+			expList->exprs.push_back(exp);
+			tmpVars.push_back(getUnusedName("_var_"sv));
+			vars.push_back(_parser.toString(name));
+		}
+		auto tmpVarStr = join(tmpVars, ","sv);
+		auto tmpVarList = toAst<ExpList_t>(tmpVarStr, x);
+		auto assignment = x->new_ptr<ExpListAssign_t>();
+		assignment->expList.set(tmpVarList);
+		assignment->action.set(localAttrib->assign);
+		str_list temp;
+		transformAssignment(assignment, temp);
+		attrib = s(" <"sv) + attrib + '>';
+		for (auto& var : vars) {
+			forceAddToScope(var);
+			var.append(attrib);
+		}
+		temp.push_back(indent() + s("local "sv) + join(vars) + s(" = "sv) + tmpVarStr + nll(x));
 		out.push_back(join(temp));
 	}
 

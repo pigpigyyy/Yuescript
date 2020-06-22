@@ -174,6 +174,14 @@ MoonParser::MoonParser() {
 	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
 	Local = key("local") >> (Space >> local_flag | local_values);
 
+	LocalAttrib = and_(key(pl::user(Name, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		auto it = Keywords.find(st->buffer);
+		st->buffer.clear();
+		return it == Keywords.end();
+	})) >> NameList >> sym('=') >> not_('=')) >> Space >> Name >> NameList >> Assign;
+
 	colon_import_name = sym('\\') >> Space >> Variable;
 	ImportName = colon_import_name | Space >> Variable;
 	ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
@@ -552,7 +560,8 @@ MoonParser::MoonParser() {
 	Statement = (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
-		Space >> BreakLoop | Label | Goto | Backcall | ExpListAssign
+		Space >> BreakLoop | Label | Goto | Backcall |
+		LocalAttrib | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 

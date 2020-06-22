@@ -199,6 +199,7 @@ private:
 	AST_RULE(local_flag)
 	AST_RULE(local_values)
 	AST_RULE(Local)
+	AST_RULE(LocalAttrib);
 	AST_RULE(colon_import_name)
 	AST_RULE(import_literal_inner)
 	AST_RULE(ImportLiteral)

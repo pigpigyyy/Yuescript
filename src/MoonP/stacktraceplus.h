@@ -406,8 +406,8 @@ function _M.stacktrace(thread, message, level)
 			end
 		end
 		if fname then
-			fname = fname:gsub("%[string \"", "")
-			fname = fname:gsub("\"%]", "")
+			local fn = fname:match("%[string \"(.-)\"%]")
+			if fn then fname = fn end
 			fname = fname:gsub("^%s*(.-)%s*$", "%1")
 			fname, line = getMoonLineNumber(fname, line)
 			if _M.simplified then

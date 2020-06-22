@@ -79,7 +79,7 @@ do
 	f7!
 
 do
-	{:result,:msg} = do
+	:result,:msg = do
 		(data)<- receiveAsync "filename.txt"
 		print data
 		(info)<- processAsync data
@@ -106,6 +106,10 @@ propB = do
 alert "hi"
 
 x = 123 |> a |> b or 456 |> c |> d or a.if\then("abc") or a?.b\c?(123) or x\y
+
+x1 = 3 * -4 |> f
+
+x2 = 3 * -2 ^ 2 |> f
 
 y = 1 + not # 2 |> (a ^ c) |> b(3,_) * 4 ^ -123 |> f |> f1 or 123
 
