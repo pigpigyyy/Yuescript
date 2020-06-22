@@ -53,15 +53,15 @@ LOCAL = $(CWARNS)
 
 # enable Linux goodies
 MYCFLAGS= $(LOCAL) -std=c99 -DLUA_USE_READLINE
-MYLDFLAGS= $(LOCAL) -Wl
 MYLIBS= -ldl -lreadline
 
 UNAME_S:=$(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	MYCFLAGS += -DLUA_USE_MACOS
+	MYLDFLAGS= $(LOCAL) -Wl
 else
 	MYCFLAGS += -DLUA_USE_LINUX
-	MYLDFLAGS += -E
+	MYLDFLAGS= $(LOCAL) -Wl,-E
 endif
 
 CC= gcc
@@ -90,7 +90,6 @@ ALL_O= $(CORE_O) $(AUX_O) $(LIB_O)
 ALL_A= $(CORE_T)
 
 all:	$(ALL_T)
-	touch all
 
 o:	$(ALL_O)
 
