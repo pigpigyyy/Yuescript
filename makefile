@@ -18,7 +18,7 @@ DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
 INCLUDES = -I $(SRC_PATH) -I ./src/lua
 # General linker settings
-LINK_FLAGS = -L ./src/lua -lpthread -llua
+LINK_FLAGS = -L ./src/lua -lpthread -llua -ldl -lreadline
 # Additional release-specific linker settings
 RLINK_FLAGS =
 # Additional debug-specific linker settings
