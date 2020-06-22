@@ -6,7 +6,7 @@
 
 # Warnings valid for both C and C++
 CWARNSCPP= \
-	-pedantic \
+	-fmax-errors=5 \
 	-Wextra \
 	-Wshadow \
 	-Wsign-compare \
@@ -14,14 +14,15 @@ CWARNSCPP= \
 	-Wwrite-strings \
 	-Wredundant-decls \
 	-Wdisabled-optimization \
-	-Waggregate-return \
 	-Wdouble-promotion \
-	#-Wno-aggressive-loop-optimizations   # not accepted by clang \
-	#-Wlogical-op   # not accepted by clang \
-	# the next warnings generate too much noise, so they are disabled
-	# -Wconversion  -Wno-sign-conversion \
+	-Wlogical-op \
+	-Wno-aggressive-loop-optimizations \
+        # the next warnings might be useful sometimes,
+	# but usually they generate too much noise
+	# -Werror \
+	# -pedantic   # warns if we use jump tables \
+	# -Wconversion  \
 	# -Wsign-conversion \
-	# -Wconversion \
 	# -Wstrict-overflow=2 \
 	# -Wformat=2 \
 	# -Wcast-qual \
@@ -35,12 +36,20 @@ CWARNSC= -Wdeclaration-after-statement \
 	-Wold-style-definition \
 
 
-CWARNS= $(CWARNSCPP)  $(CWARNSC)
+CWARNS= $(CWARNSCPP) $(CWARNSC)
 
-# -mtune=native -fomit-frame-pointer
-# -fno-stack-protector
-LOCAL = $(TESTS) $(CWARNS) -g
 
+# -DEXTERNMEMCHECK -DHARDSTACKTESTS -DHARDMEMTESTS -DTRACEMEM='"tempmem"'
+# -DMAXINDEXRK=1 -DLUA_COMPAT_5_3
+# -g -DLUA_USER_H='"ltests.h"'
+# -pg -malign-double
+# -DLUA_USE_CTYPE -DLUA_USE_APICHECK
+# ('-ftrapv' for runtime checks of integer overflows)
+# -fsanitize=undefined -ftrapv -fno-inline
+# TESTS= -DLUA_USER_H='"ltests.h"' -O0 -g
+
+
+LOCAL = $(CWARNS)
 
 
 # enable Linux goodies
@@ -48,9 +57,15 @@ MYCFLAGS= $(LOCAL) -std=c99
 MYLDFLAGS= $(LOCAL) -Wl
 MYLIBS= -ldl -lreadline
 
+UNAME_S:=$(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	MYCFLAGS += -DLUA_USE_MACOS
+else
+	MYCFLAGS += -DLUA_USE_LINUX
+endif
 
 CC= gcc
-CFLAGS= -Wall -O2 $(MYCFLAGS)
+CFLAGS= -Wall -O2 $(MYCFLAGS) -fno-stack-protector -fno-common -march=native
 AR= ar rc
 RANLIB= ranlib
 RM= rm -f
@@ -75,6 +90,7 @@ ALL_O= $(CORE_O) $(AUX_O) $(LIB_O)
 ALL_A= $(CORE_T)
 
 all:	$(ALL_T)
+	touch all
 
 o:	$(ALL_O)
 
@@ -84,11 +100,15 @@ $(CORE_T): $(CORE_O) $(AUX_O) $(LIB_O)
 	$(AR) $@ $?
 	$(RANLIB) $@
 
-$(LUA_T): $(LUA_O) $(CORE_T)
-	$(CC) -o $@ $(MYLDFLAGS) $(LUA_O) $(CORE_T) $(LIBS) $(MYLIBS) $(DL)
+llex.o:
+	$(CC) $(CFLAGS) -Os -c llex.c
 
-$(LUAC_T): $(LUAC_O) $(CORE_T)
-	$(CC) -o $@ $(MYLDFLAGS) $(LUAC_O) $(CORE_T) $(LIBS) $(MYLIBS)
+lparser.o:
+	$(CC) $(CFLAGS) -Os -c lparser.c
+
+lcode.o:
+	$(CC) $(CFLAGS) -Os -c lcode.c
+
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
@@ -131,8 +151,8 @@ ldo.o: ldo.c lprefix.h lua.h luaconf.h lapi.h llimits.h lstate.h \
  lparser.h lstring.h ltable.h lundump.h lvm.h
 ldump.o: ldump.c lprefix.h lua.h luaconf.h lobject.h llimits.h lstate.h \
  ltm.h lzio.h lmem.h lundump.h
-lfunc.o: lfunc.c lprefix.h lua.h luaconf.h lfunc.h lobject.h llimits.h \
- lgc.h lstate.h ltm.h lzio.h lmem.h
+lfunc.o: lfunc.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
+ llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h
 lgc.o: lgc.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lstring.h ltable.h
 linit.o: linit.c lprefix.h lua.h luaconf.h lualib.h lauxlib.h
@@ -162,14 +182,14 @@ ltable.o: ltable.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lgc.h lstring.h ltable.h lvm.h
 ltablib.o: ltablib.c lprefix.h lua.h luaconf.h lauxlib.h lualib.h
 ltm.o: ltm.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
- llimits.h ltm.h lzio.h lmem.h ldo.h lstring.h lgc.h ltable.h lvm.h
+ llimits.h ltm.h lzio.h lmem.h ldo.h lgc.h lstring.h ltable.h lvm.h
 lundump.o: lundump.c lprefix.h lua.h luaconf.h ldebug.h lstate.h \
  lobject.h llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lstring.h lgc.h \
  lundump.h
 lutf8lib.o: lutf8lib.c lprefix.h lua.h luaconf.h lauxlib.h lualib.h
 lvm.o: lvm.c lprefix.h lua.h luaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h lstring.h \
- ltable.h lvm.h
+ ltable.h lvm.h ljumptab.h
 lzio.o: lzio.c lprefix.h lua.h luaconf.h llimits.h lmem.h lstate.h \
  lobject.h ltm.h lzio.h
 

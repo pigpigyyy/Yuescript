@@ -7,5 +7,5 @@ moonplus-*.rock*
 !moonplus-dev-1.rockspec
 .vs
 bin
-src/lua-5.3/*.o
-src/lua-5.3/*.a
+src/lua/*.o
+src/lua/*.a
