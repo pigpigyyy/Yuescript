@@ -1,6 +1,9 @@
 do
-	close a = setmetatable {},__close:=> print "closed"
-	const a = 123
+	close a, b = setmetatable {},__close:=> print "closed"
+	const c, d = 123, 'abc'
+
+	close a, b
+	const c, d
 
 do
 	close v = if flag

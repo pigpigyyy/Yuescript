@@ -5126,6 +5126,7 @@ private:
 		auto expList = x->new_ptr<ExpList_t>();
 		str_list tmpVars;
 		str_list vars;
+		pushScope();
 		for (auto name : localAttrib->nameList->names.objects()) {
 			auto callable = x->new_ptr<Callable_t>();
 			callable->item.set(name);
@@ -5136,9 +5137,11 @@ private:
 			auto exp = newExp(value, x);
 			expList->exprs.push_back(exp);
 			tmpVars.push_back(getUnusedName("_var_"sv));
+			addToScope(tmpVars.back());
 			vars.push_back(_parser.toString(name));
 		}
-		auto tmpVarStr = join(tmpVars, ","sv);
+		popScope();
+		auto tmpVarStr = join(tmpVars, ", "sv);
 		auto tmpVarList = toAst<ExpList_t>(tmpVarStr, x);
 		auto assignment = x->new_ptr<ExpListAssign_t>();
 		assignment->expList.set(tmpVarList);
@@ -5150,7 +5153,7 @@ private:
 			forceAddToScope(var);
 			var.append(attrib);
 		}
-		temp.push_back(indent() + s("local "sv) + join(vars) + s(" = "sv) + tmpVarStr + nll(x));
+		temp.push_back(indent() + s("local "sv) + join(vars, ", "sv) + s(" = "sv) + tmpVarStr + nll(x));
 		out.push_back(join(temp));
 	}
 
