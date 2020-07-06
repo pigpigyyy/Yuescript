@@ -49,7 +49,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.1"sv;
+	return "0.4.3"sv;
 }
 
 // name of table stored in lua registry
@@ -134,12 +134,13 @@ public:
 		if (_useModule) {
 			_useModule = false;
 			if (!_sameModule) {
+				int top = lua_gettop(L);
+				DEFER(lua_settop(L, top));
 				lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
 				lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
 				int idx = static_cast<int>(lua_objlen(L, -1));
 				lua_pushnil(L); // tb nil
 				lua_rawseti(L, -2, idx); // tb[idx] = nil, tb
-				lua_pop(L, 1); // empty
 			}
 		}
 	}
@@ -2982,7 +2983,7 @@ private:
 					break;
 				case id<Exp_t>():
 					transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure);
-					temp.back() = s("["sv) + temp.back() + s("]"sv);
+					temp.back() = s(temp.back().front() == '[' ? "[ "sv : "["sv) + temp.back() + s("]"sv);
 					break;
 				case id<InvokeArgs_t>(): transformInvokeArgs(static_cast<InvokeArgs_t*>(item), temp); break;
 				default: assert(false); break;
@@ -3821,6 +3822,9 @@ private:
 				break;
 			case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(key), temp);
 				temp.back() = s("["sv) + temp.back() + s("]"sv);
+				break;
+			case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(key), temp);
+				temp.back() = s("[ "sv) + temp.back() + s("]"sv);
 				break;
 			default: assert(false); break;
 		}

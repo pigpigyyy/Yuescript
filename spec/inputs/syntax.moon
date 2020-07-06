@@ -68,11 +68,13 @@ something"else"
 
 _ = something[[hey]] * 2
 _ = something[======[hey]======] * 2
+_ = something[ [======[hey]======] ] * 2
 
 
 _ = something'else', 2
 _ = something"else", 2
 _ = something[[else]], 2
+_ = something[ [[else]] ], 2
 
 something 'else', 2
 something "else", 2

@@ -475,7 +475,8 @@ MoonParser::MoonParser() {
 		KeyName |
 		sym('[') >> Exp >> sym(']') |
 		Space >> DoubleString |
-		Space >> SingleString
+		Space >> SingleString |
+		Space >> LuaString
 	) >>
 	symx(':') >>
 	(Exp | TableBlock | +(SpaceBreak) >> Exp);

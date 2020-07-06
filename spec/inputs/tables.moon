@@ -98,7 +98,9 @@ t = {
 xam = {
 	hello: 1234
 	"hello": 12354
+	[[hello]]: 12354
 	["hello"]: 12354
+	[ [[hello]] ]: 12354
 }
 
 

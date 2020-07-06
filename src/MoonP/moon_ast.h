@@ -390,9 +390,10 @@ AST_END(variable_pair)
 
 class DoubleString_t;
 class SingleString_t;
+class LuaString_t;
 
 AST_NODE(normal_pair)
-	ast_sel<true, KeyName_t, Exp_t, DoubleString_t, SingleString_t> key;
+	ast_sel<true, KeyName_t, Exp_t, DoubleString_t, SingleString_t, LuaString_t> key;
 	ast_sel<true, Exp_t, TableBlock_t> value;
 	AST_MEMBER(normal_pair, &key, &value)
 AST_END(normal_pair)
