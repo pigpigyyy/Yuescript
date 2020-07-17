@@ -49,7 +49,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.3"sv;
+	return "0.4.4"sv;
 }
 
 // name of table stored in lua registry
@@ -3814,7 +3814,7 @@ private:
 			}
 			case id<Exp_t>():
 				transformExp(static_cast<Exp_t*>(key), temp, ExpUsage::Closure);
-				temp.back() = s("["sv) + temp.back() + s("]"sv);
+				temp.back() = s(temp.back().front() == '[' ? "[ "sv : "["sv) + temp.back() + s("]"sv);
 				break;
 			case id<DoubleString_t>():
 				transformDoubleString(static_cast<DoubleString_t*>(key), temp);
@@ -3873,10 +3873,19 @@ private:
 					temp.push_back(s("\""sv) + str + s("\""sv));
 					break;
 				}
-				case id<Exp_t>():
+				case id<Exp_t>(): {
 					transformExp(static_cast<Exp_t*>(content), temp, ExpUsage::Closure);
-					temp.back() = s("tostring("sv) + temp.back() + s(")"sv);
+					std::string tostr("tostring"sv);
+					temp.back() = tostr + '(' + temp.back() + s(")"sv);
+					if (_config.lintGlobalVariable) {
+						if (!isDefined(tostr)) {
+							if (_globals.find(tostr) == _globals.end()) {
+								_globals[tostr] = {content->m_begin.m_line, content->m_begin.m_col};
+							}
+						}
+					}
 					break;
+				}
 				default: assert(false); break;
 			}
 		}

@@ -4,7 +4,11 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 
 
-## v0.4.1
+## v0.4.4
+
+### Fixed Issues
+
+* Fix issues when declaring table key with Lua multiline string and indexing expressions with Lua multiline string.
 
 ### Added Features
 
@@ -39,9 +43,7 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 ### Fixed Issues
 
 * Fix issues of unary and binary operator "~".
-
 * Fix Moonscript issue 416: ambiguous Lua output in some cases.
-
 * Fix errors when explicitly declaring global or local variable initialized with table block.
 * Fix macro type mismatch issue.
 * Fix line break issue in macro, disable macro declaration outside the root scope.
@@ -52,10 +54,8 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 ### Added Features
 
-* Change operator precedence to 1 ^  2 unary operators (not, #, -, ~)  3 |>  4 *, /, //, %, ...
-
+* Change operator precedence to (1) ^  (2) unary operators (not, #, -, ~)  (3) |>  (4) *, /, //, %, ...
 * Make back call operator use highest priority for operator precedence.
-
 * Add existential operator support for `with` statement.
 * Add repeat until statement support.
 * Allow implicitly returning block macro.
