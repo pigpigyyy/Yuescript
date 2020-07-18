@@ -43,3 +43,34 @@ export Constant = switch value
 	when "better" then 2
 	when "best" then 3
 
+export x
+
+f if a then b
+f do 123
+f switch a
+	when b then c
+f [i for i = 1,10]
+f for i = 1,10 do i
+f {k,v for k,v in pairs tb}
+f for k,v in pairs tb do k,v
+f while a do true
+f with a
+	.b = 123
+f a?.b
+f a\b
+f class A
+
+_ = "#{if a then b}"
+_ = "#{do 123}"
+_ = "#{switch a
+	when b then c}"
+_ = "#{[i for i = 1,10]}"
+_ = "#{for i = 1,10 do i}"
+_ = "#{{k,v for k,v in pairs tb}}"
+_ = "#{for k,v in pairs tb do k,v}"
+_ = "#{while a do true}"
+_ = "#{with a
+	.b = 123}"
+_ = "#{a?.b}"
+_ = "#{a\b}"
+_ = "#{class A}"
