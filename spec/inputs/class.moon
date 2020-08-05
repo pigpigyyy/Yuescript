@@ -226,4 +226,7 @@ do
 	test = Test!
 	test\test!
 
+class extends lapis.Application
+	"/": => json: { status: true }
+
 nil

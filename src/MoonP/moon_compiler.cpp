@@ -49,7 +49,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.5"sv;
+	return "0.4.6"sv;
 }
 
 // name of table stored in lua registry
@@ -4117,7 +4117,7 @@ private:
     	if (!className.empty()) {
     		_buf << ","sv << nll(classDecl) << indent(1) << "__name = "sv << className << (extend ? s(","sv) : Empty) << nll(classDecl);
 		} else {
-			_buf << nll(classDecl);
+			_buf << (extend ? s(","sv) : Empty) << nll(classDecl);
 		}
 		if (extend) {
 			_buf << indent(1) << "__parent = "sv << parentVar << nll(classDecl);
