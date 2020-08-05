@@ -301,6 +301,7 @@ static void preinit_thread (lua_State *L, global_State *g) {
   L->openupval = NULL;
   L->status = LUA_OK;
   L->errfunc = 0;
+  L->oldpc = 0;
 }
 
 
@@ -412,8 +413,8 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->gckind = KGC_INC;
   g->gcemergency = 0;
   g->finobj = g->tobefnz = g->fixedgc = NULL;
-  g->survival = g->old = g->reallyold = NULL;
-  g->finobjsur = g->finobjold = g->finobjrold = NULL;
+  g->firstold1 = g->survival = g->old1 = g->reallyold = NULL;
+  g->finobjsur = g->finobjold1 = g->finobjrold = NULL;
   g->sweepgc = NULL;
   g->gray = g->grayagain = NULL;
   g->weak = g->ephemeron = g->allweak = NULL;
