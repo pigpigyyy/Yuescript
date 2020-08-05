@@ -4115,13 +4115,14 @@ private:
 		}
 		_buf << indent(1) << "__base = "sv << baseVar;
     	if (!className.empty()) {
-    		_buf << ","sv << nll(classDecl) << indent(1) << "__name = "sv << className << (extend ? s(","sv) : Empty) << nll(classDecl);
-		} else {
-			_buf << (extend ? s(","sv) : Empty) << nll(classDecl);
+    		_buf << ","sv << nll(classDecl);
+    		_buf << indent(1) << "__name = "sv << className;
 		}
 		if (extend) {
-			_buf << indent(1) << "__parent = "sv << parentVar << nll(classDecl);
+			_buf << ","sv << nll(classDecl);
+			_buf << indent(1) << "__parent = "sv << parentVar;
 		}
+		_buf << nll(classDecl);
 		_buf << indent() << "}, {"sv << nll(classDecl);
 		if (extend) {
 			_buf << indent(1) << "__index = function(cls, name)"sv << nll(classDecl);
