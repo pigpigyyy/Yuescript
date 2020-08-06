@@ -284,8 +284,8 @@ z = a- b
 str = --[[
 This is a multi line comment.
 It's OK.
-]] strA \ -- comment 1
-	.. strB \ -- comment 2
+]] strA  -- comment 1
+	.. strB  -- comment 2
 	.. strC
 
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
@@ -296,51 +296,54 @@ f = ->
 	e,f
 
 f = ->
-	a,b \
-	,c,d \
+	a,b
+	,c,d
 	,e,f
 
 with obj
-	invoke \
+	invoke(
 		--[[arg1]] \func!,
 		--[[arg2]] 123,
 		--[[arg3]] "abc"
+	)
 
-invokeA \
-	invokeB \
+invokeA(
+	invokeB(
 		invokeC 123
+	)
+)
 
-123 \
-	|> invokeC \
-	|> invokeB \
+123
+	|> invokeC
+	|> invokeB
 	|> invokeA
 
 v = {
 	a -1
-	a\
--1
-	a\
+	a(
+-1)
+	a
 - 1
 	a-1
 	a - 1
 	a -
 1
-	a -\
+	a-
 1
 	a - --[[123]]1
 
 	a ~1
-	a\
-~1
-	a\
+	a(
+~1)
+	a
 ~ 1
 	a~1
 	a ~ 1
 	a ~
 1
-	a ~\
+	a~
 1
-	a ~--[[123]]1
+	a ~ --[[123]]1
 }
 
 nil

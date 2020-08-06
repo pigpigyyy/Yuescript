@@ -1,10 +1,10 @@
 
 {"abc", 123, 998} |> foreach print
 
-{1,2,3} \
-	|> map((x)-> x * 2) \
-	|> filter((x)-> x > 4) \
-	|> reduce(0, (a,b)-> a + b) \
+{1,2,3}
+	|> map((x)-> x * 2)
+	|> filter((x)-> x > 4)
+	|> reduce(0, (a,b)-> a + b)
 	|> print
 
 [i |> tostring for i = 0,10] |> table.concat(",") |> print
