@@ -308,9 +308,9 @@ MoonParser::MoonParser() {
 	expo_exp = Value >> *expo_value;
 
 	unary_operator =
-		expr('-') >> not_(expr('>') | space_one) |
+		expr('-') >> not_(set(">=") | space_one) |
 		expr('#') |
-		expr('~') >> not_(space_one) |
+		expr('~') >> not_(expr('=') | space_one) |
 		expr("not") >> not_(AlphaNum);
 	unary_exp = *(Space >> unary_operator) >> expo_exp;
 
@@ -331,7 +331,7 @@ MoonParser::MoonParser() {
 		expr(">>") |
 		expr("//") |
 		set("+-*/%><|&~");
-	exp_op_value = White >> BinaryOperator >> *SpaceBreak >> backcall_exp;
+	exp_op_value = (White >> not_(unary_operator) | Space) >> BinaryOperator >> *SpaceBreak >> backcall_exp;
 	Exp = Seperator >> backcall_exp >> *exp_op_value;
 
 	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;

@@ -49,7 +49,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.7"sv;
+	return "0.4.8"sv;
 }
 
 // name of table stored in lua registry
