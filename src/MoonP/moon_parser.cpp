@@ -43,7 +43,8 @@ MoonParser::MoonParser() {
 	multi_line_close = expr("]]");
 	multi_line_content = *(not_(multi_line_close) >> Any);
 	MultiLineComment = multi_line_open >> multi_line_content >> multi_line_close;
-	space_one = set(" \t") | MultiLineComment;
+	EscapeNewLine = expr('\\') >> *(set(" \t") | MultiLineComment) >> -Comment >> Break;
+	space_one = set(" \t") | and_(set("-\\")) >> (MultiLineComment | EscapeNewLine);
 	Space = *space_one >> -Comment;
 	SpaceBreak = Space >> Break;
 	White = Space >> *(Break >> Space);
@@ -241,8 +242,8 @@ MoonParser::MoonParser() {
 	While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
 
-	for_step_value = sym(',') >> White >> Exp;
-	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> White >> Exp >> -for_step_value;
+	for_step_value = sym(',') >> Exp;
+	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
 	For = key("for") >> DisableDo >>
 		ensure(for_args, PopDo) >>
@@ -250,7 +251,7 @@ MoonParser::MoonParser() {
 
 	for_in = star_exp | ExpList;
 
-	ForEach = key("for") >> AssignableNameList >> White >> key("in") >>
+	ForEach = key("for") >> AssignableNameList >> key("in") >>
 		DisableDo >> ensure(for_in, PopDo) >>
 		-key("do") >> Body;
 
@@ -278,10 +279,10 @@ MoonParser::MoonParser() {
 	CompInner = Seperator >> (CompForEach | CompFor) >> *CompClause;
 	star_exp = sym('*') >> Exp;
 	CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
-	CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> White >> Exp >> -for_step_value;
+	CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 	CompClause = CompFor | CompForEach | key("when") >> Exp;
 
-	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *(White >> set(",;") >> White >> Exp));
+	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *(Space >> set(",;") >> Exp));
 
 	update_op =
 		expr("..") |
@@ -514,15 +515,15 @@ MoonParser::MoonParser() {
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
 	Macro = key("macro") >> Space >> macro_type >> Space >> Name >> sym('=') >> MacroLit;
 
-	NameList = Seperator >> Space >> Variable >> *(sym(',') >> White >> Variable);
+	NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
 	NameOrDestructure = Space >> Variable | TableLit;
-	AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> White >> NameOrDestructure);
+	AssignableNameList = Seperator >> NameOrDestructure >> *(sym(',') >> NameOrDestructure);
 
 	fn_arrow_back = expr('<') >> set("-=");
 	Backcall = -FnArgsDef >> Space >> fn_arrow_back >> Space >> ChainValue;
 
-	ExpList = Seperator >> Exp >> *(White >> expr(',') >> White >> Exp);
-	ExpListLow = Seperator >> Exp >> *(White >> set(",;") >> White >> Exp);
+	ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
+	ExpListLow = Seperator >> Exp >> *(Space >> set(",;") >> Exp);
 
 	ArgLine = CheckIndent >> Exp >> *(sym(',') >> Exp);
 	ArgBlock = ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
