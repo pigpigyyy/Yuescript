@@ -430,12 +430,14 @@ MoonParser::MoonParser() {
 		Space
 	);
 
-	TableBlockInner = Seperator >> KeyValueLine >> *(+(SpaceBreak) >> KeyValueLine);
-	TableBlock = +(SpaceBreak) >> Advance >> ensure(TableBlockInner, PopIndent);
+	TableBlockInner = Seperator >> KeyValueLine >> *(+SpaceBreak >> KeyValueLine);
+	TableBlock = +SpaceBreak >> Advance >> ensure(TableBlockInner, PopIndent);
+	TableBlockIndent = sym('#') >> Seperator >> KeyValueList >> -sym(',') >>
+		-(+SpaceBreak >> Advance >> ensure(KeyValueList >> -sym(',') >> *(+SpaceBreak >> KeyValueLine), PopIndent));
 
 	class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
 	ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
-	ClassBlock = +(SpaceBreak) >> Advance >>Seperator >> ClassLine >> *(+(SpaceBreak) >> ClassLine) >> PopIndent;
+	ClassBlock = +SpaceBreak >> Advance >> Seperator >> ClassLine >> *(+SpaceBreak >> ClassLine) >> PopIndent;
 
 	ClassDecl =
 		key("class") >> not_(expr(':')) >>
@@ -489,7 +491,7 @@ MoonParser::MoonParser() {
 	});
 
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
-	KeyValueLine = CheckIndent >> KeyValueList >> -sym(',');
+	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent);
 
 	FnArgDef = (Variable | SelfName) >> -(sym('=') >> Space >> Exp);
 

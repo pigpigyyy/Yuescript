@@ -264,6 +264,7 @@ private:
 	AST_RULE(existential_op)
 	AST_RULE(TableLit)
 	AST_RULE(TableBlock)
+	AST_RULE(TableBlockIndent)
 	AST_RULE(class_member_list)
 	AST_RULE(ClassBlock)
 	AST_RULE(ClassDecl)

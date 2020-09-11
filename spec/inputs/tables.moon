@@ -159,5 +159,25 @@ f = { "one", "two": three, "four" }
 
 j = "one", "two": three, "four": five, 6, 7
 
+heroine =
+	name: "Christina"
+	age: 18
+	job: "Princess"
+	likes:
+		# name: "kittens"
+			img: "/image/kittens.png"
+		# name: "flower"
+			img: "/image/flower.png"
+	items:
+		# name: "ring"
+			amount: 2
+		# name: "necklace"
+			amount: 1
+	status:
+		desc: "weak"
+		# attribute: "health"
+			value: 50
+		# attribute: "mana"
+			value: 100
 
 nil
