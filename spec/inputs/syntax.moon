@@ -284,8 +284,8 @@ z = a- b
 str = --[[
 This is a multi line comment.
 It's OK.
-]] strA  -- comment 1
-	.. strB  -- comment 2
+]] strA \ -- comment 1
+	.. strB \ -- comment 2
 	.. strC
 
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
@@ -322,7 +322,7 @@ v = {
 	a -1
 	a(
 -1)
-	a
+	a \
 - 1
 	a-1
 	a - 1
@@ -335,7 +335,7 @@ v = {
 	a ~1
 	a(
 ~1)
-	a
+	a \
 ~ 1
 	a~1
 	a ~ 1
@@ -347,26 +347,26 @@ v = {
 }
 
 do
-	a = 1
-	+ 2
+	a = 1 \
+	+ 2 \
 	* 3 /
 	4
 
-	_1 = f1 -1
-		+ 2
+	_1 = f1 -1 \
+		+ 2 \
 		+ 3
 
-	_2 = f1 - 1
-		+ 2
+	_2 = f1 - 1 \
+		+ 2 \
 		+ 3
 
-	f2 = (x)-> print x
+	f2 = (x)-> print x \
 	+1
 
 	a = f2!
 	-1 |> f2
 
-	a = f2!
+	a = f2! \
 	- 1 |> f2
 
 	_1 \

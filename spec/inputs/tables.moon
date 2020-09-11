@@ -164,20 +164,21 @@ heroine =
 	age: 18
 	job: "Princess"
 	likes:
-		# name: "kittens"
+		* name: "kittens"
 			img: "/image/kittens.png"
-		# name: "flower"
+		* name: "flower"
 			img: "/image/flower.png"
 	items:
-		# name: "ring"
+		* name: "ring"
 			amount: 2
-		# name: "necklace"
+		* name: "necklace"
 			amount: 1
 	status:
 		desc: "weak"
-		# attribute: "health"
+		* attribute: "health"
 			value: 50
-		# attribute: "mana"
+		* attribute: "mana"
 			value: 100
 
 nil
+

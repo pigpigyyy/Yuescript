@@ -332,7 +332,7 @@ MoonParser::MoonParser() {
 		expr(">>") |
 		expr("//") |
 		set("+-*/%><|&~");
-	exp_op_value = (White >> not_(unary_operator) | Space) >> BinaryOperator >> *SpaceBreak >> backcall_exp;
+	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> backcall_exp;
 	Exp = Seperator >> backcall_exp >> *exp_op_value;
 
 	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
@@ -432,7 +432,7 @@ MoonParser::MoonParser() {
 
 	TableBlockInner = Seperator >> KeyValueLine >> *(+SpaceBreak >> KeyValueLine);
 	TableBlock = +SpaceBreak >> Advance >> ensure(TableBlockInner, PopIndent);
-	TableBlockIndent = sym('#') >> Seperator >> KeyValueList >> -sym(',') >>
+	TableBlockIndent = sym('*') >> Seperator >> KeyValueList >> -sym(',') >>
 		-(+SpaceBreak >> Advance >> ensure(KeyValueList >> -sym(',') >> *(+SpaceBreak >> KeyValueLine), PopIndent));
 
 	class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
