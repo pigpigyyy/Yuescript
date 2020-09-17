@@ -246,12 +246,26 @@ another hello, one,
 	okay: yeah
 	fine: alright
 
+another hello, one,
+	two, three, four,
+	yeah: man, okay: yeah
+	* fine: alright,
+		okay: 1
+	* fine: alright,
+		okay: 2
+
 another hello, one, two, three, four,
 	yeah: man
 	okay: yeah
 
 another hello, one, two, three, four, yeah: man
 	okay: yeah
+
+ajax url,
+	(data) ->
+		process data,
+	(error) ->
+		print error
 
 -- 
 a += 3 - 5
