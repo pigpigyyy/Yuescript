@@ -24,8 +24,6 @@ using namespace std::string_view_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
-#define MOONP_COMPILER_ONLY
-
 #ifndef MOONP_NO_MACRO
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
