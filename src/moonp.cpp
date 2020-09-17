@@ -24,16 +24,16 @@ using namespace std::string_view_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
+#define MOONP_COMPILER_ONLY
+
+#ifndef MOONP_NO_MACRO
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
-
 extern "C" {
-
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 int luaopen_moonp(lua_State* L);
-
 } // extern "C"
 
 static void openlibs(void* state) {
@@ -74,6 +74,12 @@ void pushOptions(lua_State* L, int lineOffset) {
 	lua_rawset(L, -3);
 }
 
+#define MOONP_ARGS nullptr,openlibs
+#else
+#define MOONP_ARGS
+#endif // MOONP_NO_MACRO
+
+#ifndef MOONP_COMPILER_ONLY
 static const char luaminifyCodes[] =
 #include "LuaMinify.h"
 
@@ -86,24 +92,31 @@ static void pushLuaminify(lua_State* L) {
 		luaL_error(L, err.c_str());
 	}
 }
+#endif // MOONP_COMPILER_ONLY
 
 int main(int narg, const char** args) {
 	const char* help =
 "Usage: moonp [options|files|directories] ...\n\n"
 "   -h       Print this message\n"
+#ifndef MOONP_COMPILER_ONLY
 "   -e str   Execute a file or raw codes\n"
+"   -m       Generate minified codes\n"
+#endif // MOONP_COMPILER_ONLY
 "   -t path  Specify where to place compiled files\n"
 "   -o file  Write output to file\n"
 "   -s       Use spaces in generated codes instead of tabs\n"
-"   -m       Generate minified codes\n"
 "   -p       Write output to standard out\n"
 "   -b       Dump compile time (doesn't write output)\n"
 "   -l       Write line numbers from source codes\n"
 "   -v       Print version\n"
+#ifndef MOONP_COMPILER_ONLY
 "   --       Read from standard in, print to standard out\n"
 "            (Must be first and only argument)\n\n"
 "   Execute without options to enter REPL, type symbol '$'\n"
-"   in a single line to start/stop multi-line mode\n";
+"   in a single line to start/stop multi-line mode\n"
+#endif // MOONP_COMPILER_ONLY
+;
+#ifndef MOONP_COMPILER_ONLY
 	if (narg == 1) {
 		lua_State* L = luaL_newstate();
 		openlibs(L);
@@ -237,6 +250,8 @@ int main(int narg, const char** args) {
 		std::cout << '\n';
 		return 0;
 	}
+	bool minify = false;
+#endif // MOONP_COMPILER_ONLY
 	MoonP::MoonConfig config;
 	config.implicitReturnRoot = true;
 	config.lintGlobalVariable = false;
@@ -244,7 +259,6 @@ int main(int narg, const char** args) {
 	config.useSpaceOverTab = false;
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
-	bool minify = false;
 	std::string targetPath;
 	std::string resultFile;
 	std::list<std::pair<std::string,std::string>> files;
@@ -265,7 +279,7 @@ int main(int narg, const char** args) {
 			conf.lintGlobalVariable = false;
 			conf.reserveLineNumber = false;
 			conf.useSpaceOverTab = true;
-			auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(codes, conf);
+			auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(codes, conf);
 			if (std::get<1>(result).empty()) {
 				std::cout << std::get<0>(result);
 				return 0;
@@ -274,6 +288,7 @@ int main(int narg, const char** args) {
 				std::cout << std::get<1>(result) << '\n';
 				return 1;
 			}
+#ifndef MOONP_COMPILER_ONLY
 		} else if (arg == "-e"sv) {
 			++i;
 			if (i < narg) {
@@ -330,14 +345,15 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
+		} else if (arg == "-m"sv) {
+			minify = true;
+#endif // MOONP_COMPILER_ONLY
 		} else if (arg == "-s"sv) {
 			config.useSpaceOverTab = true;
 		} else if (arg == "-l"sv) {
 			config.reserveLineNumber = true;
 		} else if (arg == "-p"sv) {
 			writeToFile = false;
-		} else if (arg == "-m"sv) {
-			minify = true;
 		} else if (arg == "-t"sv) {
 			++i;
 			if (i < narg) {
@@ -396,7 +412,7 @@ int main(int narg, const char** args) {
 					std::istreambuf_iterator<char>());
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
-					auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(s, config);
+					auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
 					auto end = std::chrono::high_resolution_clock::now();
 					if (!std::get<0>(result).empty()) {
 						std::chrono::duration<double> diff = end - start;
@@ -416,7 +432,7 @@ int main(int narg, const char** args) {
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
-				auto result = MoonP::MoonCompiler{nullptr, openlibs}.compile(s, config);
+				auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
 				if (std::get<1>(result).empty()) {
 					if (!writeToFile) {
 						return std::tuple{0, file.first, std::get<0>(result) + '\n'};
@@ -461,6 +477,7 @@ int main(int narg, const char** args) {
 		results.push_back(std::move(task));
 	}
 	int ret = 0;
+#ifndef MOONP_COMPILER_ONLY
 	lua_State* L = nullptr;
 	DEFER({
 		if (L) lua_close(L);
@@ -470,6 +487,7 @@ int main(int narg, const char** args) {
 		luaL_openlibs(L);
 		pushLuaminify(L);
 	}
+#endif // MOONP_COMPILER_ONLY
 	std::list<std::string> errs;
 	for (auto& result : results) {
 		int val = 0;
@@ -480,6 +498,7 @@ int main(int narg, const char** args) {
 			ret = val;
 			errs.push_back(msg);
 		} else {
+#ifndef MOONP_COMPILER_ONLY
 			if (minify) {
 				std::ifstream input(file, std::ios::in);
 				if (input) {
@@ -519,6 +538,9 @@ int main(int narg, const char** args) {
 			} else {
 				std::cout << msg;
 			}
+#else
+			std::cout << msg;
+#endif // MOONP_COMPILER_ONLY
 		}
 	}
 	for (const auto& err : errs) {
