@@ -125,7 +125,7 @@ kam = {
 		one_thing =>
 }
 
--- TODO: both of these have undesirable output
+-- both of these have desirable output
 keepit going: true,
 	okay: "yeah",
 	workd: "okay"

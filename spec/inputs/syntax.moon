@@ -240,7 +240,7 @@ hello "comma",
  something: hello_world
  frick: you
 
--- creates two tables
+-- creates one table
 another hello, one,
 	two, three, four, yeah: man
 	okay: yeah
@@ -252,7 +252,7 @@ another hello, one, two, three, four,
 
 another hello, one, two, three, four, yeah: man
 	okay: yeah
- 
+
 -- 
 a += 3 - 5
 a *= 3 + 5
