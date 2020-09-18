@@ -111,6 +111,7 @@ private:
 	rule multi_line_content;
 	rule MultiLineComment;
 	rule Indent;
+	rule EscapeNewLine;
 	rule space_one;
 	rule Space;
 	rule SpaceBreak;
@@ -263,6 +264,7 @@ private:
 	AST_RULE(existential_op)
 	AST_RULE(TableLit)
 	AST_RULE(TableBlock)
+	AST_RULE(TableBlockIndent)
 	AST_RULE(class_member_list)
 	AST_RULE(ClassBlock)
 	AST_RULE(ClassDecl)

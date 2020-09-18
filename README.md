@@ -26,13 +26,21 @@ So MoonPlus is a new code base for pushing the language to go forward and being 
 
 * **Lua Module**
 
-  Install [luarocks](https://luarocks.org), a package manager for Lua modules. Then install it as a Lua module.
+&emsp;&emsp;Build `moonp.so` file with
+
+```sh
+> make shared LUAI=/usr/local/include/lua LUAL=/usr/local/lib/lua
+```
+
+&emsp;&emsp;Then get the binary file from path `bin/shared/moonp.so`.
+
+&emsp;&emsp;Or you can install [luarocks](https://luarocks.org), a package manager for Lua modules. Then install it as a Lua module with
 
 ```sh
 > luarocks install moonplus
 ```
 
-&emsp;&emsp;Require the module in Lua:
+&emsp;&emsp;Then require the module in Lua:
 
 ```Lua
 require("moonp")("main") -- require `main.moon`
@@ -54,7 +62,7 @@ f!
 
 * **Binary Tool**
 
-  Clone this repo, then build and install executable with:
+&emsp;&emsp;Clone this repo, then build and install executable with:
 
 ```sh
 > make install

@@ -240,11 +240,19 @@ hello "comma",
  something: hello_world
  frick: you
 
--- creates two tables
+-- creates one table
 another hello, one,
 	two, three, four, yeah: man
 	okay: yeah
 	fine: alright
+
+another hello, one,
+	two, three, four,
+	yeah: man, okay: yeah
+	* fine: alright,
+		okay: 1
+	* fine: alright,
+		okay: 2
 
 another hello, one, two, three, four,
 	yeah: man
@@ -252,7 +260,13 @@ another hello, one, two, three, four,
 
 another hello, one, two, three, four, yeah: man
 	okay: yeah
- 
+
+ajax url,
+	(data) ->
+		process data,
+	(error) ->
+		print error
+
 -- 
 a += 3 - 5
 a *= 3 + 5
@@ -284,20 +298,20 @@ z = a- b
 str = --[[
 This is a multi line comment.
 It's OK.
-]] strA  -- comment 1
-	.. strB  -- comment 2
+]] strA \ -- comment 1
+	.. strB \ -- comment 2
 	.. strC
 
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
 
 f = ->
-	a,b,
-	c,d,
+	a,b, \
+	c,d, \
 	e,f
 
 f = ->
-	a,b
-	,c,d
+	a,b \
+	,c,d \
 	,e,f
 
 with obj
@@ -322,7 +336,7 @@ v = {
 	a -1
 	a(
 -1)
-	a
+	a \
 - 1
 	a-1
 	a - 1
@@ -335,7 +349,7 @@ v = {
 	a ~1
 	a(
 ~1)
-	a
+	a \
 ~ 1
 	a~1
 	a ~ 1
@@ -347,35 +361,35 @@ v = {
 }
 
 do
-	a = 1
-	+ 2
+	a = 1 \
+	+ 2 \
 	* 3 /
 	4
 
-	_1 = f1 -1
-		+ 2
+	_1 = f1 -1 \
+		+ 2 \
 		+ 3
 
-	_2 = f1 - 1
-		+ 2
+	_2 = f1 - 1 \
+		+ 2 \
 		+ 3
 
-	f2 = (x)-> print x
+	f2 = (x)-> print x \
 	+1
 
 	a = f2!
 	-1 |> f2
 
-	a = f2!
+	a = f2! \
 	- 1 |> f2
 
-	_1
-	,_2
-	,_3
-	,_4 = 1
-		,f 2
-		,3
-		,f 4,
+	_1 \
+	,_2 \
+	,_3 \
+	,_4 = 1 \
+		,f 2 \
+		,3 \
+		,f 4, \
 			4
 
 nil

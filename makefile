@@ -79,12 +79,15 @@ release: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
 release: export LDFLAGS := $(LDFLAGS) $(LINK_FLAGS) $(RLINK_FLAGS)
 debug: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(DCOMPILE_FLAGS)
 debug: export LDFLAGS := $(LDFLAGS) $(LINK_FLAGS) $(DLINK_FLAGS)
+shared: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
 
 # Build and output paths
 release: export BUILD_PATH := build/release
 release: export BIN_PATH := bin/release
 debug: export BUILD_PATH := build/debug
 debug: export BIN_PATH := bin/debug
+shared: export BUILD_PATH := build/shared
+shared: export BIN_PATH := bin/shared
 install: export BIN_PATH := bin/release
 
 # Find all source files in the source directory, sorted by most
@@ -154,7 +157,7 @@ endif
 .PHONY: release
 release: dirs
 ifeq ($(USE_VERSION), true)
-	@echo "Beginning release build v$(VERSION_STRING)"
+	@echo "Beginning release build $(VERSION_STRING)"
 else
 	@echo "Beginning release build"
 endif
@@ -168,7 +171,7 @@ endif
 .PHONY: debug
 debug: dirs
 ifeq ($(USE_VERSION), true)
-	@echo "Beginning debug build v$(VERSION_STRING)"
+	@echo "Beginning debug build $(VERSION_STRING)"
 else
 	@echo "Beginning debug build"
 endif
@@ -177,6 +180,23 @@ endif
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
 	@$(END_TIME)
+
+$(BUILD_PATH)/moonp.so: src/MoonP/ast.cpp src/MoonP/moon_compiler.cpp src/MoonP/moon_parser.cpp src/MoonP/moonplus.cpp src/MoonP/parser.cpp
+	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
+
+# Standard, non-optimized release build
+.PHONY: shared
+shared: dirs
+ifeq ($(USE_VERSION), true)
+	@echo "Beginning release build $(VERSION_STRING)"
+else
+	@echo "Beginning release build"
+endif
+	@$(START_TIME)
+	@$(MAKE) $(BUILD_PATH)/moonp.so --no-print-directory
+	@echo -n "Total build time: "
+	@$(END_TIME)
+	@mv $(BUILD_PATH)/moonp.so $(BIN_PATH)/moonp.so
 
 # Create the directories used in the build
 .PHONY: dirs

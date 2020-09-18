@@ -17,19 +17,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "MoonP/moon_parser.h"
 #include "MoonP/moon_compiler.h"
 
-extern "C" {
+#ifndef MOONP_NO_MACRO
 
+extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-
 } // extern "C"
+
+// name of table stored in lua registry
+#define MOONP_MODULE "__moon_modules__"
 
 #if LUA_VERSION_NUM > 501
 	#ifndef LUA_COMPAT_5_1
 		#define lua_objlen lua_rawlen
 	#endif // LUA_COMPAT_5_1
 #endif // LUA_VERSION_NUM
+
+#endif // MOONP_NO_MACRO
 
 namespace MoonP {
 using namespace std::string_view_literals;
@@ -49,14 +54,12 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.9"sv;
+	return "0.4.15"sv;
 }
-
-// name of table stored in lua registry
-#define MOONP_MODULE "__moon_modules__"
 
 class MoonCompilerImpl {
 public:
+#ifndef MOONP_NO_MACRO
 	MoonCompilerImpl(lua_State* sharedState,
 		const std::function<void(void*)>& luaOpen,
 		bool sameModule,
@@ -85,6 +88,7 @@ public:
 			L = nullptr;
 		}
 	}
+#endif // MOONP_NO_MACRO
 
 	std::tuple<std::string,std::string,GlobalVars> compile(std::string_view codes, const MoonConfig& config) {
 		_config = config;
@@ -131,6 +135,7 @@ public:
 		_withVars = {};
 		_continueVars = {};
 		_enableReturn = {};
+#ifndef MOONP_NO_MACRO
 		if (_useModule) {
 			_useModule = false;
 			if (!_sameModule) {
@@ -143,12 +148,16 @@ public:
 				lua_rawseti(L, -2, idx); // tb[idx] = nil, tb
 			}
 		}
+#endif // MOONP_NO_MACRO
 	}
 private:
+#ifndef MOONP_NO_MACRO
 	bool _stateOwner = false;
 	bool _useModule = false;
 	bool _sameModule = false;
 	lua_State* L = nullptr;
+	std::function<void(void*)> _luaOpen;
+#endif // MOONP_NO_MACRO
 	MoonConfig _config;
 	MoonParser _parser;
 	ParseInfo _info;
@@ -162,7 +171,6 @@ private:
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
 	const std::string _newLine = "\n";
-	std::function<void(void*)> _luaOpen;
 	std::string _moduleName;
 
 	enum class LocalMode {
@@ -2142,6 +2150,7 @@ private:
 		}
 	}
 
+#ifndef MOONP_NO_MACRO
 	void pushCurrentModule() {
 		if (_useModule) {
 			lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
@@ -2305,6 +2314,11 @@ private:
 		lua_rawset(L, -3); // cur[name] = macro, cur
 		out.push_back(Empty);
 	}
+#else
+	void transformMacro(Macro_t* macro, str_list& out, bool exporting) {
+		throw std::logic_error(_info.errorMessage("macro feature not supported"sv, macro));
+	}
+#endif // MOONP_NO_MACRO
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
 		if (!_enableReturn.top()) {
@@ -3009,6 +3023,7 @@ private:
 		}
 	}
 
+#ifndef MOONP_NO_MACRO
 	std::pair<std::string,std::string> expandMacroStr(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
 		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
@@ -3183,9 +3198,11 @@ private:
 		}
 		return {info.node, std::move(info.codes), Empty};
 	}
+#endif // MOONP_NO_MACRO
 
 	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false) {
 		if (isMacroChain(chainValue)) {
+#ifndef MOONP_NO_MACRO
 			ast_ptr<false,ast_node> node;
 			std::unique_ptr<input> codes;
 			std::string luaCodes;
@@ -3230,6 +3247,9 @@ private:
 				}
 			}
 			return;
+#else
+			throw std::logic_error(_info.errorMessage("macro feature not supported"sv, chainValue));
+#endif // MOONP_NO_MACRO
 		}
 		const auto& chainList = chainValue->items.objects();
 		if (transformChainEndWithEOP(chainList, out, usage, assignList)) {
@@ -3603,6 +3623,37 @@ private:
 	}
 
 	void transformInvokeArgs(InvokeArgs_t* invokeArgs, str_list& out) {
+			if (invokeArgs->args.size() > 1) {
+			/* merge all the key-value pairs into one table
+			 from arguments in the end */
+			auto lastArg = invokeArgs->args.back();
+			_ast_list* lastTable = nullptr;
+			if (auto tableBlock = ast_cast<TableBlock_t>(lastArg)) {
+				lastTable = &tableBlock->values;
+			} else if (auto value = singleValueFrom(lastArg)) {
+				if (auto simpleTable = ast_cast<simple_table_t>(value->item)) {
+					lastTable = &simpleTable->pairs;
+				}
+			}
+			if (lastTable) {
+				ast_ptr<false, ast_node> ref(lastArg);
+				invokeArgs->args.pop_back();
+				while (!invokeArgs->args.empty()) {
+					if (Value_t* value = singleValueFrom(invokeArgs->args.back())) {
+						if (auto tb = value->item.as<simple_table_t>()) {
+							const auto& ps = tb->pairs.objects();
+							for (auto it = ps.rbegin(); it != ps.rend(); ++it) {
+								lastTable->push_front(*it);
+							}
+							invokeArgs->args.pop_back();
+							continue;
+						}
+					}
+					break;
+				}
+				invokeArgs->args.push_back(lastArg);
+			}
+		}
 		str_list temp;
 		for (auto arg : invokeArgs->args.objects()) {
 			switch (arg->getId()) {
@@ -4608,6 +4659,7 @@ private:
 				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
 				case id<variable_pair_t>(): transform_variable_pair(static_cast<variable_pair_t*>(pair), temp); break;
 				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp); break;
+				case id<TableBlockIndent_t>(): transformTableBlockIndent(static_cast<TableBlockIndent_t*>(pair), temp); break;
 				default: assert(false); break;
 			}
 			temp.back() = indent() + temp.back() + (pair == pairs.back() ? Empty : s(","sv)) + nll(pair);
@@ -4726,6 +4778,10 @@ private:
 		out.push_back(clearBuf());
 		pushScope();
 		addToScope(varName);
+	}
+
+	void transformTableBlockIndent(TableBlockIndent_t* table, str_list& out) {
+		transformTable(table, table->values.objects(), out);
 	}
 
 	void transformTableBlock(TableBlock_t* table, str_list& out) {
@@ -4858,6 +4914,7 @@ private:
 		}
 		if (auto tableLit = import->target.as<TableLit_t>()) {
 			auto newTab = x->new_ptr<TableLit_t>();
+#ifndef MOONP_NO_MACRO
 			std::list<std::pair<std::string,std::string>> macroPairs;
 			for (auto item : tableLit->values.objects()) {
 				switch (item->getId()) {
@@ -4927,6 +4984,20 @@ private:
 					lua_setfield(L, -3, pair.second.c_str());
 				}
 			}
+#else // MOONP_NO_MACRO
+			for (auto item : tableLit->values.objects()) {
+				switch (item->getId()) {
+					case id<MacroName_t>():
+					case id<macro_name_pair_t>(): {
+						throw std::logic_error(_info.errorMessage("macro feature not supported"sv, item));
+						break;
+					}
+					default:
+						newTab->values.push_back(item);
+						break;
+				}
+			}
+#endif // MOONP_NO_MACRO
 			if (newTab->values.empty()) {
 				out.push_back(Empty);
 				return;
@@ -5225,7 +5296,11 @@ const std::string MoonCompilerImpl::Empty;
 MoonCompiler::MoonCompiler(void* sharedState,
 	const std::function<void(void*)>& luaOpen,
 	bool sameModule):
+#ifndef MOONP_NO_MACRO
 _compiler(std::make_unique<MoonCompilerImpl>(static_cast<lua_State*>(sharedState), luaOpen, sameModule)) {}
+#else
+_compiler(std::make_unique<MoonCompilerImpl>()) {}
+#endif // MOONP_NO_MACRO
 
 MoonCompiler::~MoonCompiler() {}
 

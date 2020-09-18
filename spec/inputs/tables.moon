@@ -125,7 +125,7 @@ kam = {
 		one_thing =>
 }
 
--- TODO: both of these have undesirable output
+-- both of these have desirable output
 keepit going: true,
 	okay: "yeah",
 	workd: "okay"
@@ -159,5 +159,49 @@ f = { "one", "two": three, "four" }
 
 j = "one", "two": three, "four": five, 6, 7
 
+heroine =
+	name: "Christina"
+	age: 18
+	job: "Princess"
+	likes:
+		* name: "kittens"
+			img: "/image/kittens.png"
+		* name: "flower"
+			img: "/image/flower.png"
+	items:
+		* name: "ring"
+			amount: 2
+		* name: "necklace"
+			amount: 1
+	status:
+		desc: "weak"
+		* attribute: "health"
+			value: 50
+		* attribute: "mana"
+			value: 100
+
+inventory =
+	equipment:
+		* "sword"
+		* "shield"
+	items:
+		* name: "potion"
+			count: 10
+		* name: "bread"
+			count: 3
+
+items =
+	* func!
+	* with tb
+		.abc = 123
+	* {1, 2, 3}
+	* f {1, 2, 3}
+	* f
+		* 1
+		* 2
+		* 3
+	* [i for i = 1, 3]
+	* "#{if a then b}"
 
 nil
+

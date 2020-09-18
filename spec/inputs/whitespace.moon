@@ -100,41 +100,41 @@ c(one, two,
 --
 
 v = ->
-	a, -- v1
-		b, -- v2
+	a, \-- v1
+		b, \-- v2
 			c -- v3
 
-v1, v2,
+v1, v2, \
 	v3 = ->
-	a; -- end of function for v1
-		b, -- v2
+	a; \-- end of function for v1
+		b, \-- v2
 			c -- v3
 
-a, b,
-	c, d,
-e, f = 1,
+a, b, \
+	c, d, \
+e, f = 1, \
 	f2
-		:abc; -- arg2
-		3,
-			4,
-				f5 abc; -- arg5
+		:abc; \-- arg2
+		3, \
+			4, \
+				f5 abc; \-- arg5
 					6
 
-for a, -- destruct 1
-		b, -- destruct 2
-		--[[destruct 3]] c 
+for a, \-- destruct 1
+		b, \-- destruct 2
+		--[[destruct 3]] c \
 	in pairs tb
-	print a,
-			b,
+	print a, \
+			b, \
 			c
 
-for i = 1, -- initial
-	10, -- stop
+for i = 1, \-- initial
+	10, \-- stop
 	-1 -- step
 	print i
 
-local a,
-				b,
+local a,\
+				b,\
 					c
 
 nil
