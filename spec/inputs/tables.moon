@@ -180,5 +180,28 @@ heroine =
 		* attribute: "mana"
 			value: 100
 
+inventory =
+	equipment:
+		* "sword"
+		* "shield"
+	items:
+		* name: "potion"
+			count: 10
+		* name: "bread"
+			count: 3
+
+items =
+	* func!
+	* with tb
+		.abc = 123
+	* {1, 2, 3}
+	* f {1, 2, 3}
+	* f
+		* 1
+		* 2
+		* 3
+	* [i for i = 1, 3]
+	* "#{if a then b}"
+
 nil
 

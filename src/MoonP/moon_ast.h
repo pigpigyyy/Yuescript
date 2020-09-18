@@ -535,7 +535,7 @@ AST_END(TableBlockIndent)
 
 AST_NODE(TableBlock)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t> values;
 	AST_MEMBER(TableBlock, &sep, &values)
 AST_END(TableBlock)
 

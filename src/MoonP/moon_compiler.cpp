@@ -54,7 +54,7 @@ inline std::string s(std::string_view sv) {
 }
 
 const std::string_view version() {
-	return "0.4.14"sv;
+	return "0.4.15"sv;
 }
 
 class MoonCompilerImpl {
