@@ -17,7 +17,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace MoonP {
 
-const std::string_view version();
+extern const std::string_view version;
+extern const std::string_view extension;
 
 struct MoonConfig {
 	bool lintGlobalVariable = false;

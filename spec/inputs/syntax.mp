@@ -233,12 +233,12 @@ yeah
 	sure: sir
 
 hello "no comma"
- yeah: dada
- another: world
+	yeah: dada
+	another: world
 
 hello "comma",
- something: hello_world
- frick: you
+	something: hello_world
+	frick: you
 
 -- creates one table
 another hello, one,

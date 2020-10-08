@@ -335,7 +335,7 @@ local function getMoonLineNumber(fname, line)
 		end
 		if file_exist then
 			local codes = moonp.read_file(file_path)
-			local moonFile = codes:match("^%s*--%s*%[moon%]:%s*([^\n]*)")
+			local moonFile = codes:match("^%s*--%s*%[moonp%]:%s*([^\n]*)")
 			if moonFile then
 				fname = moonFile:gsub("^%s*(.-)%s*$", "%1")
 				source = codes

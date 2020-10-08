@@ -174,7 +174,7 @@ int main(int narg, const char** args) {
 					break;
 			}
 		});
-		std::cout << "Moonscript+ "sv << MoonP::version() << '\n';
+		std::cout << "Moonscript+ "sv << MoonP::version << '\n';
 		while (true) {
 			count++;
 			std::string codes;
@@ -366,7 +366,7 @@ int main(int narg, const char** args) {
 			std::cout << help;
 			return 0;
 		} else if (arg == "-v"sv) {
-			std::cout << "Moonscript+ version: "sv << MoonP::version() << '\n';
+			std::cout << "Moonscript+ version: "sv << MoonP::version << '\n';
 			return 0;
 		} else if (arg == "-o"sv) {
 			++i;
@@ -382,7 +382,7 @@ int main(int narg, const char** args) {
 					if (!item.is_directory()) {
 						auto ext = item.path().extension().string();
 						for (char& ch : ext) ch = std::tolower(ch);
-						if (ext == ".moon"sv) {
+						if (!ext.empty() && ext.substr(1) == MoonP::extension) {
 							files.emplace_back(item.path().string(), item.path().lexically_relative(arg).string());
 						}
 					}
@@ -453,7 +453,7 @@ int main(int narg, const char** args) {
 						if (output) {
 							const auto& codes = std::get<0>(result);
 							if (config.reserveLineNumber) {
-								auto head = std::string("-- [moon]: "sv) + file.first + '\n';
+								auto head = std::string("-- [moonp]: "sv) + file.first + '\n';
 								output.write(head.c_str(), head.size());
 							}
 							output.write(codes.c_str(), codes.size());

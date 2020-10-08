@@ -53,9 +53,8 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version() {
-	return "0.4.15"sv;
-}
+const std::string_view version = "0.4.16"sv;
+const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
 public:
@@ -4926,7 +4925,7 @@ private:
 					}
 					case id<macro_name_pair_t>(): {
 						auto pair = static_cast<macro_name_pair_t*>(item);
-					macroPairs.emplace_back(_parser.toString(pair->value->name), _parser.toString(pair->key->name));
+						macroPairs.emplace_back(_parser.toString(pair->value->name), _parser.toString(pair->key->name));
 						break;
 					}
 					default:

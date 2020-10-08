@@ -122,7 +122,11 @@ int luaopen_moonp(lua_State* L) {
 	lua_getfield(L, -1, "loaded"); // package loaded
 	lua_createtable(L, 0, 0); // package loaded moonp
 	lua_pushcfunction(L, moontolua); // package loaded moonp func
-	lua_setfield(L, -2, "to_lua"); // moonp["to_lua"] = func, package loaded tb
+	lua_setfield(L, -2, "to_lua"); // moonp["to_lua"] = func, package loaded moonp
+	lua_pushlstring(L, &MoonP::version.front(), MoonP::version.size()); // package loaded moonp version
+	lua_setfield(L, -2, "version"); // loaded["version"] = version, package loaded moonp
+	lua_pushlstring(L, &MoonP::extension.front(), MoonP::extension.size()); // package loaded moonp ext
+	lua_setfield(L, -2, "extension"); // loaded["extension"] = ext, package loaded moonp
 	lua_pushcfunction(L, init_stacktraceplus); // package loaded moonp func1
 	lua_setfield(L, -2, "load_stacktraceplus"); // moonp["load_stacktraceplus"] = func1, package loaded moonp
 	lua_setfield(L, -2, "moonp"); // loaded["moonp"] = moonp, package loaded
