@@ -40,7 +40,7 @@ So MoonPlus is a new code base for pushing the language to go forward and being 
 > luarocks install moonplus
 ```
 
-&emsp;&emsp;Then require the module in Lua:
+&emsp;&emsp;Then require the MoonPlus module in Lua:
 
 ```Lua
 require("moonp")("main") -- require `main.mp`
@@ -90,7 +90,7 @@ Usage: moonp [options|files|directories] ...
    in a single line to start/stop multi-line mode
 ```
 &emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every moon+ file with extension `.md` under current path:  `moonp .`  
+&emsp;&emsp;Recursively compile every moon+ file with extension `.mp` under current path:  `moonp .`  
 &emsp;&emsp;Compile and save results to a target path:  `moonp -t /target/path/ .`  
 &emsp;&emsp;Compile and reserve debug info:  `moonp -l .`  
 &emsp;&emsp;Compile and generate minified codes:  `moonp -m .`  
