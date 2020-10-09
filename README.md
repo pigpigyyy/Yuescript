@@ -43,7 +43,7 @@ So MoonPlus is a new code base for pushing the language to go forward and being 
 &emsp;&emsp;Then require the module in Lua:
 
 ```Lua
-require("moonp")("main") -- require `main.moon`
+require("moonp")("main") -- require `main.mp`
 
 local moonp = require("moonp")
 local codes, err, globals = moonp.to_lua([[
@@ -56,7 +56,6 @@ f!
   lint_global = true
 })
 ```
-
 
 
 
@@ -91,14 +90,26 @@ Usage: moonp [options|files|directories] ...
    in a single line to start/stop multi-line mode
 ```
 &emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every moon file under current path:  `moonp .`  
+&emsp;&emsp;Recursively compile every moon+ file with extension `.md` under current path:  `moonp .`  
 &emsp;&emsp;Compile and save results to a target path:  `moonp -t /target/path/ .`  
 &emsp;&emsp;Compile and reserve debug info:  `moonp -l .`  
 &emsp;&emsp;Compile and generate minified codes:  `moonp -m .`  
 &emsp;&emsp;Execute raw codes:  `moonp -e 'print 123'`  
-&emsp;&emsp;Execute a moon file:  `moonp -e main.moon`
+&emsp;&emsp;Execute a moon+ file:  `moonp -e main.mp`
+
+
+
+* **Docker Hub**
+  Try moonp in another easy way: https://hub.docker.com/r/moonplus/moonplus
+
+
+
+## Editor Support
+
+* [Vim](https://github.com/pigpigyyy/MoonPlus-vim)
 
 
 
 ## License
+
 MIT

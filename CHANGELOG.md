@@ -4,16 +4,88 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 
 
-## v0.4.7
+## v0.4.16
 
 ### Fixed Issues
 
+* Change MoonPlus file extension to '.mp' because some of the Moonscript syntax are no longer supported and some codes written in MoonPlus syntax won't be accepted by Moonscript compiler.
+
 * Remove support for escape new line symbol, binary operator expressions can now be written multiline without escape new line symbol.
+
 * Fix an issue when extending class without name.
+
 * Fix an issue when using return with export statement.
+
 * Fix issues when declaring table key with Lua multiline string and indexing expressions with Lua multiline string.
 
+* Make simple table and table block appear in the end of function arguments merged into one table.
+
+  ```Moonscript
+  -- function arguments end with simple table followed by table block
+  another hello, one,
+    two, three, four, yeah: man
+    okay: yeah
+    fine: alright
+  ```
+
+  ```Lua
+  -- compiled in original Moonscript compiler
+  -- get two tables as arguments
+  another(hello, one, two, three, four, {
+    yeah = man
+  }, {
+    okay = yeah,
+    fine = alright
+  })
+  -- compiled in fixed MoonPlus compiler
+  -- get one table as argument
+  another(hello, one, two, three, four, {
+    yeah = man,
+    okay = yeah,
+    fine = alright
+  })
+  ```
+
+  
+
 ### Added Features
+
+* Add implicit objects support for table block syntax.
+
+  ```Moonscript
+  inventory =
+    equipment:
+      * "sword"
+      * "shield"
+    items:
+      * name: "potion"
+        count: 10
+      * name: "bread"
+        count: 3
+  ```
+
+  Compiles to:
+
+  ```Lua
+  local inventory = {
+    equipment = {
+      "sword",
+      "shield"
+    },
+    items = {
+      {
+        name = "potion",
+        count = 10
+      },
+      {
+        name = "bread",
+        count = 3
+      }
+    }
+  }
+  ```
+
+  
 
 * Add support for local variable declared with attribute 'close' and 'const' for Lua 5.4.
 
@@ -84,7 +156,7 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 * Add macro functions.
 ```Moonscript
--- file 'macro.moon'
+-- file 'macro.mp'
 export macro block config = (debugging = true)->
   global debugMode = debugging == "true"
   ""
@@ -97,7 +169,7 @@ export macro expr assert = (cond)->
 
 $config!
 
--- file 'main.moon'
+-- file 'main.mp'
 import 'macro' as {:$config, :$assert, :$asserts}
 
 macro expr and = (...)-> "#{ table.concat {...}, ' and ' }"
@@ -111,11 +183,11 @@ if $and f1!, f2!, f3!
 ```
  Compiles to:
 ```Lua
--- file 'macro.moon'
+-- file 'macro.mp'
 local _module_0 = { }
 return _module_0
 
--- file 'main.moon'
+-- file 'main.mp'
 assert(item ~= nil)
 local value = item
 if (f1() and f2() and f3()) then
@@ -150,20 +222,20 @@ From original Moonscript compiler:
 * Move old `export` statement functions to `global` statement to match the `local` statement.
 * Change `export` statement behavier to support module management.  Moon codes with `export` statement can not explicit return values in root scope. And codes with `export default` can export only one value as the module content. Use cases:
 ```Moonscript
--- file 'Config.moon'
+-- file 'Config.mp'
 export default {flag:1, value:"x"}
 
--- file 'Utils.moon'
+-- file 'Utils.mp'
 export map = (items, func)-> [func item for item in *items]
 export filter = (items, func)-> [item for item in *items when func item]
 
--- file 'main.moon'
+-- file 'main.mp'
 import 'Config' as {:flag, :value}
 import 'Utils' as {:map, :filter}
 ```
 Compiles to:
 ```Lua
--- file 'Config.moon'
+-- file 'Config.mp'
 local _module_0 = nil
 _module_0 = {
   flag = 1,
@@ -171,7 +243,7 @@ _module_0 = {
 }
 return _module_0
 
--- file 'Utils.moon'
+-- file 'Utils.mp'
 local _module_0 = { }
 local map
 map = function(items, func)
@@ -201,7 +273,7 @@ end
 _module_0["filter"] = filter
 return _module_0
 
--- file 'main.moon'
+-- file 'main.mp'
 local flag, value
 do
   local _obj_0 = require('Config')
