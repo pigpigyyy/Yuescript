@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.16"sv;
+const std::string_view version = "0.4.17"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -4911,11 +4911,12 @@ private:
 			auto name = moduleNameFrom(import->literal);
 			import->target.set(toAst<Variable_t>(name, x));
 		}
-		if (auto tableLit = import->target.as<TableLit_t>()) {
-			auto newTab = x->new_ptr<TableLit_t>();
+		if (auto tabLit = import->target.as<ImportTabLit_t>()) {
+			auto newTab = x->new_ptr<ImportTabLit_t>();
 #ifndef MOONP_NO_MACRO
+			bool importAllMacro = false;
 			std::list<std::pair<std::string,std::string>> macroPairs;
-			for (auto item : tableLit->values.objects()) {
+			for (auto item : tabLit->items.objects()) {
 				switch (item->getId()) {
 					case id<MacroName_t>(): {
 						auto macroName = static_cast<MacroName_t*>(item);
@@ -4925,21 +4926,27 @@ private:
 					}
 					case id<macro_name_pair_t>(): {
 						auto pair = static_cast<macro_name_pair_t*>(item);
-						macroPairs.emplace_back(_parser.toString(pair->value->name), _parser.toString(pair->key->name));
+						macroPairs.emplace_back(_parser.toString(pair->key->name), _parser.toString(pair->value->name));
 						break;
 					}
-					default:
-						newTab->values.push_back(item);
+					case id<import_all_macro_t>():
+						if (importAllMacro) throw std::logic_error(_info.errorMessage(s("import all macro symbol duplicated"sv), item));
+						importAllMacro = true;
 						break;
+					case id<variable_pair_t>():
+					case id<normal_pair_t>():
+						newTab->items.push_back(item);
+						break;
+					default: assert(false); break;
 				}
 			}
-			if (!macroPairs.empty()) {
+			if (importAllMacro || !macroPairs.empty()) {
 				auto moduleName = _parser.toString(import->literal);
 				Utils::replace(moduleName, "'"sv, ""sv);
 				Utils::replace(moduleName, "\""sv, ""sv);
 				Utils::trim(moduleName);
 				pushCurrentModule(); // cur
-				int top = lua_gettop(L) - 1;
+				int top = lua_gettop(L) - 1; // Lua state may be setup by pushCurrentModule()
 				DEFER(lua_settop(L, top));
 				pushMoonp("find_modulepath"sv); // cur find_modulepath
 				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
@@ -4977,27 +4984,38 @@ private:
 					}
 					lua_pop(L, 1); // cur
 				}
-				pushModuleTable(moduleFullName); // cur module
+				pushModuleTable(moduleFullName); // cur mod
+				if (importAllMacro) {
+					lua_pushnil(L); // cur mod startKey
+					while (lua_next(L, -2) != 0) { // cur mod key value
+						lua_pushvalue(L, -2); // cur mod key value key
+						lua_insert(L, -2); // cur mod key key value
+						lua_rawset(L, -5); // cur[key] = value, cur mod key
+					}
+				}
 				for (const auto& pair : macroPairs) {
-					lua_getfield(L, -1, pair.first.c_str());
-					lua_setfield(L, -3, pair.second.c_str());
+					lua_getfield(L, -1, pair.first.c_str()); // mod[first], cur mod val
+					lua_setfield(L, -3, pair.second.c_str()); // cur[second] = val, cur mod
 				}
 			}
 #else // MOONP_NO_MACRO
-			for (auto item : tableLit->values.objects()) {
+			for (auto item : tabLit->items.objects()) {
 				switch (item->getId()) {
 					case id<MacroName_t>():
-					case id<macro_name_pair_t>(): {
+					case id<macro_name_pair_t>():
+					case id<import_all_macro_t>(): {
 						throw std::logic_error(_info.errorMessage("macro feature not supported"sv, item));
 						break;
 					}
-					default:
-						newTab->values.push_back(item);
+					case id<variable_pair_t>():
+					case id<normal_pair_t>():
+						newTab->items.push_back(item);
 						break;
+					default: assert(false); break;
 				}
 			}
 #endif // MOONP_NO_MACRO
-			if (newTab->values.empty()) {
+			if (newTab->items.empty()) {
 				out.push_back(Empty);
 				return;
 			} else {
@@ -5013,8 +5031,10 @@ private:
 			chainValue->items.push_back(callable);
 			value->item.set(chainValue);
 		} else {
-			auto tableLit = ast_to<TableLit_t>(target);
+			auto tabLit = ast_to<ImportTabLit_t>(target);
 			auto simpleValue = x->new_ptr<SimpleValue_t>();
+			auto tableLit = x->new_ptr<TableLit_t>();
+			tableLit->values.dup(tabLit->items);
 			simpleValue->value.set(tableLit);
 			value->item.set(simpleValue);
 		}

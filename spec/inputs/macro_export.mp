@@ -11,7 +11,7 @@ export macro expr showMacro = (name,res)->
 		print txt
 		txt"
 	else
-		"#{res}"
+		res
 
 export macro block asserts = (cond)->
 	if debugMode

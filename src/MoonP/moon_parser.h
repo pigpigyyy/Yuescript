@@ -75,7 +75,6 @@ protected:
 		State() {
 			indents.push(0);
 		}
-		bool macroPairEnabled = false;
 		bool exportDefault = false;
 		int exportCount = 0;
 		int moduleFix = 0;
@@ -130,11 +129,13 @@ private:
 	rule ImportName;
 	rule ImportNameList;
 	rule import_literal_chain;
+	rule ImportTabItem;
+	rule ImportTabList;
+	rule ImportTabLine;
+	rule import_tab_lines;
 	rule WithExp;
 	rule DisableDo;
 	rule PopDo;
-	rule EnableMacroPair;
-	rule DiableMacroPair;
 	rule SwitchElse;
 	rule SwitchBlock;
 	rule IfElseIf;
@@ -182,6 +183,8 @@ private:
 	rule Line;
 	rule Shebang;
 
+	AST_RULE(Decimal)
+	AST_RULE(Integer)
 	AST_RULE(Num)
 	AST_RULE(Name)
 	AST_RULE(Variable)
@@ -204,6 +207,9 @@ private:
 	AST_RULE(import_literal_inner)
 	AST_RULE(ImportLiteral)
 	AST_RULE(ImportFrom)
+	AST_RULE(macro_name_pair)
+	AST_RULE(import_all_macro)
+	AST_RULE(ImportTabLit)
 	AST_RULE(ImportAs)
 	AST_RULE(Import)
 	AST_RULE(Label)
@@ -275,7 +281,6 @@ private:
 	AST_RULE(Export)
 	AST_RULE(variable_pair)
 	AST_RULE(normal_pair)
-	AST_RULE(macro_name_pair)
 	AST_RULE(FnArgDef)
 	AST_RULE(FnArgDefList)
 	AST_RULE(outer_var_shadow)

@@ -5,7 +5,10 @@ macro block init = ->
 
 $init!
 
-import "macro_export" as {$myconfig:$config, :$showMacro, :$asserts, :$assert}
+import "macro_export" as {
+	$, -- import all macros
+	$config:$myconfig, -- rename macro $config to $myconfig
+}
 
 $asserts item == nil
 

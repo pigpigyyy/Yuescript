@@ -35,7 +35,15 @@ public: \
 }; \
 template<> constexpr int id<type##_t>() { return COUNTER_READ; }
 
-AST_LEAF(Num)
+AST_LEAF(Decimal)
+AST_END(Decimal)
+
+AST_LEAF(Integer)
+AST_END(Integer)
+
+AST_NODE(Num)
+	ast_sel<true, Decimal_t, Integer_t> num;
+	AST_MEMBER(Num, &num)
 AST_END(Num)
 
 AST_LEAF(Name)
@@ -146,9 +154,29 @@ AST_NODE(ImportFrom)
 	AST_MEMBER(ImportFrom, &sep, &names, &exp)
 AST_END(ImportFrom)
 
+class MacroName_t;
+
+AST_NODE(macro_name_pair)
+	ast_ptr<true, MacroName_t> key;
+	ast_ptr<true, MacroName_t> value;
+	AST_MEMBER(macro_name_pair, &key, &value)
+AST_END(macro_name_pair)
+
+AST_LEAF(import_all_macro)
+AST_END(import_all_macro)
+
+class variable_pair_t;
+class normal_pair_t;
+
+AST_NODE(ImportTabLit)
+	ast_ptr<true, Seperator_t> sep;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, MacroName_t, macro_name_pair_t, import_all_macro_t> items;
+	AST_MEMBER(ImportTabLit, &sep, &items)
+AST_END(ImportTabLit)
+
 AST_NODE(ImportAs)
 	ast_ptr<true, ImportLiteral_t> literal;
-	ast_sel<false, Variable_t, TableLit_t> target;
+	ast_sel<false, Variable_t, ImportTabLit_t> target;
 	AST_MEMBER(ImportAs, &literal, &target)
 AST_END(ImportAs)
 
@@ -515,15 +543,9 @@ AST_END(Value)
 AST_LEAF(default_value)
 AST_END(default_value)
 
-AST_NODE(macro_name_pair)
-	ast_ptr<true, MacroName_t> key;
-	ast_ptr<true, MacroName_t> value;
-	AST_MEMBER(macro_name_pair, &key, &value)
-AST_END(macro_name_pair)
-
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t, MacroName_t, macro_name_pair_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit)
 
