@@ -183,8 +183,6 @@ private:
 	rule Line;
 	rule Shebang;
 
-	AST_RULE(Decimal)
-	AST_RULE(Integer)
 	AST_RULE(Num)
 	AST_RULE(Name)
 	AST_RULE(Variable)

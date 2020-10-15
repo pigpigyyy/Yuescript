@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.17"sv;
+const std::string_view version = "0.4.18"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -3070,6 +3070,8 @@ private:
 					// to convert its whole text content
 					str = _parser.toString(exp->backcalls.front());
 				}
+			} else if (auto lstr = ast_cast<LuaString_t>(arg)) {
+				str = _parser.toString(lstr->content);
 			} else {
 				bool multiLineStr = false;
 				BLOCK_START
@@ -3116,7 +3118,7 @@ private:
 		std::tie(type, codes) = expandMacroStr(chainValue);
 		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
 		if (type == "lua"sv) {
-			if (targetType != "block"sv) {
+			if (!allowBlockMacroReturn && targetType != "block"sv) {
 				throw std::logic_error(_info.errorMessage("lua macro can only be placed where block macro is allowed"sv, x));
 			}
 			auto macroChunk = s("=(macro "sv) + _parser.toString(x->name) + ')';
@@ -3125,6 +3127,11 @@ private:
 			if (luaL_loadbuffer(L, codes.c_str(), codes.size(), macroChunk.c_str()) != 0) {
 				std::string err = lua_tostring(L, -1);
 				throw std::logic_error(_info.errorMessage(err, x));
+			}
+			return {nullptr, nullptr, std::move(codes)};
+		} else if (type == "text"sv) {
+			if (!allowBlockMacroReturn && targetType != "block"sv) {
+				throw std::logic_error(_info.errorMessage("text macro can only be placed where block macro is allowed"sv, x));
 			}
 			return {nullptr, nullptr, std::move(codes)};
 		} else if (!allowBlockMacroReturn && type != targetType) {

@@ -51,22 +51,19 @@ MoonParser::MoonParser() {
 	EmptyLine = SpaceBreak;
 	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-	Decimal = (
+	Num = (
+		"0x" >>
+		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
+		-(-set("uU") >> set("lL") >> set("lL"))
+	) | (
+		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
+	) | (
 		(
 			+range('0', '9') >> -('.' >> +range('0', '9'))
 		) | (
 			'.' >> +range('0', '9')
 		)
 	) >> -(set("eE") >> -expr('-') >> +range('0', '9'));
-	Integer =
-	(
-		"0x" >>
-		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
-		-(-set("uU") >> set("lL") >> set("lL"))
-	) | (
-		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
-	);
-	Num = Integer | Decimal;
 
 	Cut = false_();
 	Seperator = true_();
@@ -513,7 +510,7 @@ MoonParser::MoonParser() {
 	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
 	MacroName = expr('$') >> Name;
-	macro_type = expr("expr") | expr("block") | expr("lua");
+	macro_type = expr("expr") | expr("block") | expr("lua") | expr("text");
 	macro_args_def = sym('(') >> White >> -FnArgDefList >> White >> sym(')');
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
 	Macro = key("macro") >> Space >> macro_type >> Space >> Name >> sym('=') >> MacroLit;

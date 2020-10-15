@@ -35,15 +35,7 @@ public: \
 }; \
 template<> constexpr int id<type##_t>() { return COUNTER_READ; }
 
-AST_LEAF(Decimal)
-AST_END(Decimal)
-
-AST_LEAF(Integer)
-AST_END(Integer)
-
-AST_NODE(Num)
-	ast_sel<true, Decimal_t, Integer_t> num;
-	AST_MEMBER(Num, &num)
+AST_LEAF(Num)
 AST_END(Num)
 
 AST_LEAF(Name)
