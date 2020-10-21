@@ -16,9 +16,9 @@ RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
-INCLUDES = -I $(SRC_PATH) -I ./src/lua
+INCLUDES = -I $(SRC_PATH)
 # General linker settings
-LINK_FLAGS = -L ./src/lua -lpthread -llua -ldl
+LINK_FLAGS = -lpthread
 # Additional release-specific linker settings
 RLINK_FLAGS =
 # Additional debug-specific linker settings
@@ -42,12 +42,13 @@ TEST_OUTPUT = ./spec/outputs
 UNAME_S:=$(shell uname -s)
 
 ifeq ($(NO_LUA),true)
-	COMPILE_FLAGS += -DMOONP_NO_MACRO
-	COMPILE_FLAGS += -DMOONP_COMPILER_ONLY
+	COMPILE_FLAGS += -DMOONP_NO_MACRO -DMOONP_COMPILER_ONLY
 else
 ifeq ($(NO_MACRO),true)
 	COMPILE_FLAGS += -DMOONP_NO_MACRO
 endif
+	INCLUDES += -I ./src/lua
+	LINK_FLAGS += -L ./src/lua -llua -ldl
 endif
 
 # Add platform related linker flag
@@ -115,6 +116,10 @@ ifeq ($(SOURCES),)
 	SOURCES := $(call rwildcard, $(SRC_PATH), *.$(SRC_EXT))
 endif
 
+ifeq ($(NO_LUA),true)
+	SOURCES := $(filter-out ./src/MoonP/moonplus.cpp, $(SOURCES))
+endif
+
 # Set the object file names, with the source directory stripped
 # from the path, and the build path prepended in its place
 OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
@@ -170,7 +175,9 @@ ifeq ($(USE_VERSION), true)
 else
 	@echo "Beginning release build"
 endif
+ifneq ($(NO_LUA),true)
 	@$(MAKE) -C ./src/lua
+endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
@@ -184,7 +191,9 @@ ifeq ($(USE_VERSION), true)
 else
 	@echo "Beginning debug build"
 endif
+ifneq ($(NO_LUA),true)
 	@$(MAKE) -C ./src/lua
+endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
