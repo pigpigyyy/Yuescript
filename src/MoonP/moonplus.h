@@ -73,7 +73,7 @@ get_options = function(...)
 	end
 end
 create_moonpath = function(package_path)
-	local extension = moonp.extension
+	local extension = moonp.options.extension
 	local moonpaths
 	do
 		local _accum_0 = { }

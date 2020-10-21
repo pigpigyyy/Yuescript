@@ -26,4 +26,3 @@ export macro expr assert = (cond)->
 		"#{cond}"
 
 $config!
-

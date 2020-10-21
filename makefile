@@ -41,6 +41,15 @@ TEST_OUTPUT = ./spec/outputs
 # Obtains the OS type, either 'Darwin' (OS X) or 'Linux'
 UNAME_S:=$(shell uname -s)
 
+ifeq ($(NO_LUA),true)
+	COMPILE_FLAGS += -DMOONP_NO_MACRO
+	COMPILE_FLAGS += -DMOONP_COMPILER_ONLY
+else
+ifeq ($(NO_MACRO),true)
+	COMPILE_FLAGS += -DMOONP_NO_MACRO
+endif
+endif
+
 # Add platform related linker flag
 ifneq ($(UNAME_S),Darwin)
 	LINK_FLAGS += -lstdc++fs
@@ -235,7 +244,8 @@ clean:
 test: debug
 	@echo "Compiling Moonscript codes..."
 	@$(START_TIME)
-	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT)
+	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) -tl_enabled=true
+	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.mp -o $(TEST_OUTPUT)/teal-lang.lua
 	@echo -en "Compile time: "
 	@$(END_TIME)
 

@@ -636,7 +636,7 @@ AST_LEAF(macro_type)
 AST_END(macro_type)
 
 AST_NODE(MacroName)
-	ast_ptr<true, Name_t> name;
+	ast_ptr<false, Name_t> name;
 	AST_MEMBER(MacroName, &name)
 AST_END(MacroName)
 

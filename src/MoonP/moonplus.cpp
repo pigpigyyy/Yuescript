@@ -84,23 +84,21 @@ static int moontolua(lua_State* L) {
 		lua_pop(L, 1);
 	}
 	std::string s(input, size);
-	std::string codes, err;
-	MoonP::GlobalVars globals;
-	std::tie(codes, err, globals) = MoonP::MoonCompiler(L, nullptr, sameModule).compile(s, config);
-	if (codes.empty() && !err.empty()) {
+	auto result = MoonP::MoonCompiler(L, nullptr, sameModule).compile(s, config);
+	if (result.codes.empty() && !result.error.empty()) {
 		lua_pushnil(L);
 	} else {
-		lua_pushlstring(L, codes.c_str(), codes.size());
+		lua_pushlstring(L, result.codes.c_str(), result.codes.size());
 	}
-	if (err.empty()) {
+	if (result.error.empty()) {
 		lua_pushnil(L);
 	} else {
-		lua_pushlstring(L, err.c_str(), err.size());
+		lua_pushlstring(L, result.error.c_str(), result.error.size());
 	}
-	if (globals) {
-		lua_createtable(L, static_cast<int>(globals->size()), 0);
+	if (result.globals) {
+		lua_createtable(L, static_cast<int>(result.globals->size()), 0);
 		int i = 1;
-		for (const auto& var : *globals) {
+		for (const auto& var : *result.globals) {
 			lua_createtable(L, 3, 0);
 			lua_pushlstring(L, var.name.c_str(), var.name.size());
 			lua_rawseti(L, -2, 1);
@@ -124,9 +122,11 @@ int luaopen_moonp(lua_State* L) {
 	lua_pushcfunction(L, moontolua); // package loaded moonp func
 	lua_setfield(L, -2, "to_lua"); // moonp["to_lua"] = func, package loaded moonp
 	lua_pushlstring(L, &MoonP::version.front(), MoonP::version.size()); // package loaded moonp version
-	lua_setfield(L, -2, "version"); // loaded["version"] = version, package loaded moonp
-	lua_pushlstring(L, &MoonP::extension.front(), MoonP::extension.size()); // package loaded moonp ext
-	lua_setfield(L, -2, "extension"); // loaded["extension"] = ext, package loaded moonp
+	lua_setfield(L, -2, "version"); // moonp["version"] = version, package loaded moonp
+	lua_createtable(L, 0, 0); // package loaded moonp options
+	lua_pushlstring(L, &MoonP::extension.front(), MoonP::extension.size()); // package loaded moonp options ext
+	lua_setfield(L, -2, "extension"); // options["extension"] = ext, package loaded moonp options
+	lua_setfield(L, -2, "options"); // moonp["options"] = options, package loaded moonp
 	lua_pushcfunction(L, init_stacktraceplus); // package loaded moonp func1
 	lua_setfield(L, -2, "load_stacktraceplus"); // moonp["load_stacktraceplus"] = func1, package loaded moonp
 	lua_setfield(L, -2, "moonp"); // loaded["moonp"] = moonp, package loaded

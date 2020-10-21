@@ -1,11 +1,7 @@
-macro block init = ->
-	with require "moonp"
-		package.moonpath = "?.mp;./spec/inputs/?.mp"
-	""
+$ ->
+	package.moonpath = "?.mp;./spec/inputs/?.mp"
 
-$init!
-
-import "macro_export" as {
+import "macro-export" as {
 	$, -- import all macros
 	$config:$myconfig, -- rename macro $config to $myconfig
 }
@@ -125,6 +121,12 @@ end
 x = x + f(3)
 ]]
 
+$lua[[
+function tb:func()
+	print(123)
+end
+]]
+
 print x
 
 macro lua def = (fname, ...)->
@@ -144,8 +146,11 @@ $def sel, a, b, c, [[
 	end
 ]]
 
-$def dummy,[[
-]]
+$def dummy,[[]]
+
+macro lua insertComment = (text)-> "-- #{text\match '[\'"](.*)[\'"]'}"
+
+$insertComment "a comment here"
 
 import 'underscore' as _
 
