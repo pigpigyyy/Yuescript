@@ -51,8 +51,7 @@ MoonParser::MoonParser() {
 	EmptyLine = SpaceBreak;
 	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-	Num =
-	(
+	Num = (
 		"0x" >>
 		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
 		-(-set("uU") >> set("lL") >> set("lL"))
@@ -60,10 +59,12 @@ MoonParser::MoonParser() {
 		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
 	) | (
 		(
-			(+range('0', '9') >> -('.' >> +range('0', '9'))) |
-			('.' >> +range('0', '9'))
-		) >> -(set("eE") >> -expr('-') >> +range('0', '9'))
-	);
+			+range('0', '9') >> -('.' >> +range('0', '9'))
+		) | (
+			'.' >> +range('0', '9')
+		)
+	) >> -(set("eE") >> -expr('-') >> +range('0', '9'));
+
 	Cut = false_();
 	Seperator = true_();
 
@@ -185,26 +186,28 @@ MoonParser::MoonParser() {
 	colon_import_name = sym('\\') >> Space >> Variable;
 	ImportName = colon_import_name | Space >> Variable;
 	ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
+	ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
 
 	import_literal_inner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(AlphaNum | '-');
 	import_literal_chain = Seperator >> import_literal_inner >> *(expr('.') >> import_literal_inner);
 	ImportLiteral = sym('\'') >> import_literal_chain >> symx('\'') | sym('"') >> import_literal_chain >> symx('"');
 
-	ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
+	macro_name_pair = Space >> MacroName >> Space >> symx(':') >> Space >> MacroName;
+	import_all_macro = expr('$');
+	ImportTabItem = variable_pair | normal_pair | sym(':') >> MacroName | macro_name_pair | Space >> import_all_macro;
+	ImportTabList = ImportTabItem >> *(sym(',') >> ImportTabItem);
+	ImportTabLine = (
+		PushIndent >> (ImportTabList >> PopIndent | PopIndent)
+	) | Space;
+	import_tab_lines = SpaceBreak >> ImportTabLine >> *(-sym(',') >> SpaceBreak >> ImportTabLine) >> -sym(',');
+	ImportTabLit =
+		sym('{') >> Seperator >>
+		-ImportTabList >>
+		-sym(',') >>
+		-import_tab_lines >>
+		White >> sym('}');
 
-	EnableMacroPair = pl::user(true_(), [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		st->macroPairEnabled = true;
-		return true;
-	});
-
-	DiableMacroPair = pl::user(true_(), [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		st->macroPairEnabled = false;
-		return true;
-	});
-
-	ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | EnableMacroPair >> ensure(TableLit, DiableMacroPair)));
+	ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | ImportTabLit));
 
 	Import = key("import") >> (ImportAs | ImportFrom);
 
@@ -483,12 +486,7 @@ MoonParser::MoonParser() {
 	symx(':') >>
 	(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
-	macro_name_pair = Space >> MacroName >> Space >> symx(':') >> Space >> MacroName;
-
-	KeyValue = variable_pair | normal_pair | pl::user(sym(':') >> MacroName | macro_name_pair, [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		return st->macroPairEnabled;
-	});
+	KeyValue = variable_pair | normal_pair;
 
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> Exp);
@@ -511,8 +509,8 @@ MoonParser::MoonParser() {
 	fn_arrow = expr("->") | expr("=>");
 	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
-	MacroName = expr('$') >> Name;
-	macro_type = expr("expr") | expr("block") | expr("lua");
+	MacroName = expr('$') >> -Name;
+	macro_type = expr("expr") | expr("block") | expr("lua") | expr("text");
 	macro_args_def = sym('(') >> White >> -FnArgDefList >> White >> sym(')');
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
 	Macro = key("macro") >> Space >> macro_type >> Space >> Name >> sym('=') >> MacroLit;

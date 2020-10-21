@@ -1,11 +1,10 @@
-macro block init = ->
-	with require "moonp"
-		package.moonpath = "?.moon;./spec/inputs/?.moon"
-	""
+$ ->
+	package.moonpath = "?.mp;./spec/inputs/?.mp"
 
-$init!
-
-import "macro_export" as {$myconfig:$config, :$showMacro, :$asserts, :$assert}
+import "macro-export" as {
+	$, -- import all macros
+	$config:$myconfig, -- rename macro $config to $myconfig
+}
 
 $asserts item == nil
 
@@ -25,7 +24,7 @@ if $and f1!, f2!, f3!
 
 macro expr in = (target, ...)->
 	values = [value for value in *{...}]
-	$showMacro "in", "#{ table.concat ["#{target} == #{item}" for item in *values], " or " }"
+	$showMacro "in", table.concat ["#{target} == #{item}" for item in *values], " or "
 
 if x |> $in "Apple", "Pig", "Dog"
 	print "exist"
@@ -55,7 +54,7 @@ macro expr pipe = (...)->
 		when 1 then return ...
 	ops = {...}
 	last = ops[1]
-	stmts = for i = 2,#ops
+	stmts = for i = 2, #ops
 		stmt = "\tlocal _#{i} = #{last} |> #{ops[i]}"
 		last = "_#{i}"
 		stmt
@@ -122,6 +121,12 @@ end
 x = x + f(3)
 ]]
 
+$lua[[
+function tb:func()
+	print(123)
+end
+]]
+
 print x
 
 macro lua def = (fname, ...)->
@@ -141,8 +146,11 @@ $def sel, a, b, c, [[
 	end
 ]]
 
-$def dummy,[[
-]]
+$def dummy,[[]]
+
+macro lua insertComment = (text)-> "-- #{text\match '[\'"](.*)[\'"]'}"
+
+$insertComment "a comment here"
 
 import 'underscore' as _
 
@@ -164,15 +172,17 @@ macro block chainB = (...)->
 	last = nil
 	stmts = for i = 1,#items
 		stmt = if i == #items
-			"\t#{last and "#{last}\\" or ""}#{items[i]}"
+			lastStr = last and "#{last}\\" or ""
+			"\t#{lastStr}#{items[i]}"
 		else
-			"\tlocal _#{i} = #{last and "#{last}\\" or ""}#{items[i]}"
+			lastStr = last and "#{last}\\" or ""
+			"\tlocal _#{i} = #{lastStr}#{items[i]}"
 		last = "_#{i}"
 		stmt
 	res = "do
-#{table.concat stmts, "\n"}
+#{table.concat stmts, '\n'}
 "
-	$showMacro "chainB",res
+	$showMacro "chainB", res
 
 $chainB(
 	_{1, 2, 3, 4, -2, 3}

@@ -24,7 +24,7 @@ using namespace std::string_view_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
-#ifndef MOONP_NO_MACRO
+#if not (defined MOONP_NO_MACRO && defined MOONP_COMPILER_ONLY)
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
 extern "C" {
@@ -71,7 +71,9 @@ void pushOptions(lua_State* L, int lineOffset) {
 	lua_pushinteger(L, lineOffset);
 	lua_rawset(L, -3);
 }
+#endif // not (defined MOONP_NO_MACRO && defined MOONP_COMPILER_ONLY)
 
+#ifndef MOONP_NO_MACRO
 #define MOONP_ARGS nullptr,openlibs
 #else
 #define MOONP_ARGS
@@ -174,7 +176,7 @@ int main(int narg, const char** args) {
 					break;
 			}
 		});
-		std::cout << "Moonscript+ "sv << MoonP::version() << '\n';
+		std::cout << "Moonscript+ "sv << MoonP::version << '\n';
 		while (true) {
 			count++;
 			std::string codes;
@@ -278,12 +280,12 @@ int main(int narg, const char** args) {
 			conf.reserveLineNumber = false;
 			conf.useSpaceOverTab = true;
 			auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(codes, conf);
-			if (std::get<1>(result).empty()) {
-				std::cout << std::get<0>(result);
+			if (result.error.empty()) {
+				std::cout << result.codes;
 				return 0;
 			} else {
 				std::ostringstream buf;
-				std::cout << std::get<1>(result) << '\n';
+				std::cout << result.error << '\n';
 				return 1;
 			}
 #ifndef MOONP_COMPILER_ONLY
@@ -366,7 +368,7 @@ int main(int narg, const char** args) {
 			std::cout << help;
 			return 0;
 		} else if (arg == "-v"sv) {
-			std::cout << "Moonscript+ version: "sv << MoonP::version() << '\n';
+			std::cout << "Moonscript+ version: "sv << MoonP::version << '\n';
 			return 0;
 		} else if (arg == "-o"sv) {
 			++i;
@@ -376,13 +378,19 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
+		} else if (arg.substr(0, 1) == "-"sv && arg.find('=') != std::string::npos) {
+			auto argStr = arg.substr(1);
+			size_t idx = argStr.find('=');
+			auto key = argStr.substr(0, idx);
+			auto value = argStr.substr(idx + 1);
+			config.options[key] = value;
 		} else {
 			if (fs::is_directory(arg)) {
 				for (auto item : fs::recursive_directory_iterator(arg)) {
 					if (!item.is_directory()) {
 						auto ext = item.path().extension().string();
 						for (char& ch : ext) ch = std::tolower(ch);
-						if (ext == ".moon"sv) {
+						if (!ext.empty() && ext.substr(1) == MoonP::extension) {
 							files.emplace_back(item.path().string(), item.path().lexically_relative(arg).string());
 						}
 					}
@@ -412,7 +420,7 @@ int main(int narg, const char** args) {
 					auto start = std::chrono::high_resolution_clock::now();
 					auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
 					auto end = std::chrono::high_resolution_clock::now();
-					if (!std::get<0>(result).empty()) {
+					if (!result.codes.empty()) {
 						std::chrono::duration<double> diff = end - start;
 						start = std::chrono::high_resolution_clock::now();
 						MoonP::MoonParser{}.parse<MoonP::File_t>(s);
@@ -426,15 +434,22 @@ int main(int narg, const char** args) {
 					} else {
 						std::ostringstream buf;
 						buf << "Fail to compile: "sv << file.first << ".\n"sv;
-						buf << std::get<1>(result) << '\n';
+						buf << result.error << '\n';
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
 				auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
-				if (std::get<1>(result).empty()) {
+				if (result.error.empty()) {
 					if (!writeToFile) {
-						return std::tuple{0, file.first, std::get<0>(result) + '\n'};
+						return std::tuple{0, file.first, result.codes + '\n'};
 					} else {
+						std::string targetExtension("lua"sv);
+						if (result.options) {
+							auto it = result.options->find("target_extension");
+							if (it != result.options->end()) {
+								targetExtension = it->second;
+							}
+						}
 						fs::path targetFile;
 						if (!resultFile.empty()) {
 							targetFile = resultFile;
@@ -444,16 +459,16 @@ int main(int narg, const char** args) {
 							} else {
 								targetFile = file.first;
 							}
-							targetFile.replace_extension(".lua"sv);
+							targetFile.replace_extension('.' + targetExtension);
 						}
 						if (!targetPath.empty()) {
 							fs::create_directories(targetFile.parent_path());
 						}
 						std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
 						if (output) {
-							const auto& codes = std::get<0>(result);
+							const auto& codes = result.codes;
 							if (config.reserveLineNumber) {
-								auto head = std::string("-- [moon]: "sv) + file.first + '\n';
+								auto head = std::string("-- [moonp]: "sv) + file.first + '\n';
 								output.write(head.c_str(), head.size());
 							}
 							output.write(codes.c_str(), codes.size());
@@ -465,7 +480,7 @@ int main(int narg, const char** args) {
 				} else {
 					std::ostringstream buf;
 					buf << "Fail to compile: "sv << file.first << ".\n";
-					buf << std::get<1>(result) << '\n';
+					buf << result.error << '\n';
 					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {

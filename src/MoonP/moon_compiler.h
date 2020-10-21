@@ -13,11 +13,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <tuple>
 #include <list>
 #include <memory>
+#include <unordered_map>
 #include <functional>
 
 namespace MoonP {
 
-const std::string_view version();
+extern const std::string_view version;
+extern const std::string_view extension;
+
+using Options = std::unordered_map<std::string,std::string>;
 
 struct MoonConfig {
 	bool lintGlobalVariable = false;
@@ -25,6 +29,7 @@ struct MoonConfig {
 	bool reserveLineNumber = true;
 	bool useSpaceOverTab = false;
 	int lineOffset = 0;
+	Options options;
 };
 
 struct GlobalVar {
@@ -33,7 +38,14 @@ struct GlobalVar {
 	int col;
 };
 
-using GlobalVars = std::unique_ptr<std::list<GlobalVar>>;
+using GlobalVars = std::list<GlobalVar>;
+
+struct CompileInfo {
+	std::string codes;
+	std::string error;
+	std::unique_ptr<GlobalVars> globals;
+	std::unique_ptr<Options> options;
+};
 
 class MoonCompilerImpl;
 
@@ -43,7 +55,7 @@ public:
 		const std::function<void(void*)>& luaOpen = nullptr,
 		bool sameModule = false);
 	virtual ~MoonCompiler();
-	std::tuple<std::string,std::string,GlobalVars> compile(std::string_view codes, const MoonConfig& config = {});
+	CompileInfo compile(std::string_view codes, const MoonConfig& config = {});
 private:
 	std::unique_ptr<MoonCompilerImpl> _compiler;
 };

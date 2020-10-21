@@ -1,4 +1,4 @@
-R"moonscript_codes(
+R"moonplus_codes(
 --[[
 Copyright (C) 2020 by Leaf Corcoran, modified by Li Jin
 
@@ -73,6 +73,7 @@ get_options = function(...)
 	end
 end
 create_moonpath = function(package_path)
+	local extension = moonp.options.extension
 	local moonpaths
 	do
 		local _accum_0 = { }
@@ -87,7 +88,7 @@ create_moonpath = function(package_path)
 					_continue_0 = true
 					break
 				end
-				_accum_0[_len_0] = prefix .. ".moon"
+				_accum_0[_len_0] = prefix .. "." .. extension
 				_len_0 = _len_0 + 1
 				_continue_0 = true
 			until true
@@ -134,7 +135,7 @@ moon_loader = function(name)
 		end
 		return res
 	end
-	return nil, "Could not find moon file"
+	return nil, "Could not find moonp file"
 end
 moon_call = function(f, ...)
 	local args = {
@@ -148,7 +149,7 @@ moon_call = function(f, ...)
 end
 loadstring = function(...)
 	local options, str, chunk_name, mode, env = get_options(...)
-	chunk_name = chunk_name or "=(moonscript.loadstring)"
+	chunk_name = chunk_name or "=(moonplus.loadstring)"
 	local code, err = moonp.to_lua(str, options)
 	if not code then
 		return nil, err
@@ -247,4 +248,4 @@ for k, v in pairs({
 }) do
 	moonp[k] = v
 end
-)moonscript_codes";
+)moonplus_codes";

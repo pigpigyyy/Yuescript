@@ -56,6 +56,7 @@ do
 do
 	import "player" as Player
 	import "lpeg" as {:C, :Ct, :Cmt}
+	import "export" as {Something:{umm:{ch}}}
 
 do
 	global *
@@ -64,4 +65,4 @@ do
 	import "org.package.module-y"
 
 do
-	import "org.package.module" as {function:func,if:ifVar}
+	import "org.package.module" as {function:func, if:ifVar}
