@@ -16,3 +16,5 @@ RUN luarocks install moonplus
 RUN cd /tmp && git clone https://github.com/pigpigyyy/MoonPlus \
     && cd MoonPlus && make install \
     && cd /tmp ; rm -rf MoonPlus/
+
+CMD ["moonp"]
