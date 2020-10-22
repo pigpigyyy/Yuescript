@@ -6,7 +6,6 @@
 
 # Warnings valid for both C and C++
 CWARNSCPP= \
-	-fmax-errors=5 \
 	-Wextra \
 	-Wshadow \
 	-Wsign-compare \
@@ -15,8 +14,6 @@ CWARNSCPP= \
 	-Wredundant-decls \
 	-Wdisabled-optimization \
 	-Wdouble-promotion \
-	-Wlogical-op \
-	-Wno-aggressive-loop-optimizations \
         # the next warnings might be useful sometimes,
 	# but usually they generate too much noise
 	# -Werror \

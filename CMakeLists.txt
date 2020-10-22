@@ -33,4 +33,10 @@ add_library( moonp MODULE src/MoonP/ast.cpp src/MoonP/parser.cpp src/MoonP/moon_
 set_target_properties( moonp PROPERTIES PREFIX "")
 target_link_libraries( moonp ${LUA_LIBRARIES} )
 
-install(CODE "")
+add_custom_command(TARGET moonp
+	POST_BUILD
+	COMMAND make release
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+install(PROGRAMS bin/release/moonp DESTINATION bin)
+
