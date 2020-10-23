@@ -129,17 +129,46 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 ### Added Features
 
-* Change operator precedence to (1) ^  (2) unary operators (not, #, -, ~)  (3) |>  (4) *, /, //, %, ...
-* Make back call operator use highest priority for operator precedence.
+* Change operator precedence to
+  * [1] ^
+  * [2] unary operators (not, #, -, ~)
+  * [3] |>
+  * [4] *, /, //, %, ...
+  
 * Add existential operator support for `with` statement.
+
+  ```Moonscript
+  with? io.open "test.txt", "w"
+  	\write "hello"
+  	\close!
+  ```
+
+  Compiles to:
+
+  ```Lua
+  local _with_0 = io.open("test.txt", "w")
+  if _with_0 ~= nil then
+    _with_0:write("hello")
+    _with_0:close()
+  end
+  ```
+
 * Add repeat until statement support.
+
 * Allow implicitly returning block macro.
+
 * Add support for macro system expanding to Lua codes directly.
+
 * Add goto statement support.
+
 * Add variadic arguments declaration check.
+
 * `moonp` now supports recursively traversing any directory and compiling any moon file in the path.
+
 * `moonp` now supports REPL functions for Moonscript.
+
 * Add `useSpaceOverTab` function to `moonp`.
+
 * Add Lua codes minify function to `moonp`.
 
 
