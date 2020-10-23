@@ -139,8 +139,8 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
   ```Moonscript
   with? io.open "test.txt", "w"
-  	\write "hello"
-  	\close!
+    \write "hello"
+    \close!
   ```
 
   Compiles to:
