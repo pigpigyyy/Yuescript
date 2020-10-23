@@ -11,10 +11,9 @@ $function "add(a:number, b:number):number", -> a + b
 s = add(a.value, b)
 print(s)
 
-$record Point, [[
+$record Point,
 	x: number
 	y: number
-]]
 
 $method "Point.new(x:number, y:number):Point", ->
 	$local "point:Point", setmetatable {}, __index: Point
