@@ -203,5 +203,21 @@ items =
 	* [i for i = 1, 3]
 	* "#{if a then b}"
 
+pairs =
+	*
+		* "king"
+		* "queen"
+	*
+		* "hero"
+		* "princess"
+
+items =
+	*
+		name: "ring"
+		amount: 2
+	*
+		name: "necklace"
+		amount: 1
+
 nil
 

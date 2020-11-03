@@ -489,7 +489,7 @@ MoonParser::MoonParser() {
 	KeyValue = variable_pair | normal_pair;
 
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
-	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> Exp);
+	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (Exp | TableBlock));
 
 	FnArgDef = (Variable | SelfName) >> -(sym('=') >> Space >> Exp);
 
