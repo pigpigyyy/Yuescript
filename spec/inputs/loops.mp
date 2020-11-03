@@ -91,6 +91,12 @@ while true
 	break if true
 	print "no"
 
+for i = 1, 10
+	while true
+		if not true
+			continue
+		break
+
 a = 1
 repeat
 	a += 1

@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.19"sv;
+const std::string_view version = "0.4.20"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -3814,17 +3814,16 @@ private:
 	void transformLoopBody(Body_t* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
 		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
-			switch (node->getId()) {
-				case id<For_t>():
-				case id<ForEach_t>():
-					return traversal::Return;
-				case id<BreakLoop_t>(): {
-					return _parser.toString(node) == "continue"sv ?
-						traversal::Stop : traversal::Return;
-				}
-				default:
+			if (auto stmt = ast_cast<Statement_t>(node)) {
+				if (stmt->content.is<BreakLoop_t>()) {
+					return _parser.toString(stmt->content) == "continue"sv ?
+					traversal::Stop : traversal::Return;
+				} else if (expListFrom(stmt)) {
 					return traversal::Continue;
+				}
+				return traversal::Return;
 			}
+			return traversal::Continue;
 		});
 		if (withContinue) {
 			auto continueVar = getUnusedName("_continue_"sv);
