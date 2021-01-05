@@ -3,7 +3,7 @@ cmake_minimum_required ( VERSION 3.1 )
 
 MESSAGE(STATUS "Lua: using information from luarocks")
 
-MESSAGE(STATUS "LUA_LIBDIR: " ${LUA_INCDIR}/../../lib)
+MESSAGE(STATUS "LUA_LIBDIR: " ${LUA_INCDIR}/../lib " " ${LUA_INCDIR}/../../lib )
 MESSAGE(STATUS "LUA_INCDIR: " ${LUA_INCDIR})
 MESSAGE(STATUS "LUA: " ${LUA})
 
@@ -14,12 +14,12 @@ GET_FILENAME_COMPONENT(LUA_EXEC_NAME ${LUA} NAME_WE)
 IF(LUA_EXEC_NAME STREQUAL "luajit")
 	FIND_LIBRARY(LUA_LIBRARIES
 		NAMES luajit libluajit
-		PATHS ${LUA_INCDIR}/../../lib
+		PATHS ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib
 		NO_DEFAULT_PATH)
 ELSEIF(LUA_EXEC_NAME MATCHES "lua.*")
 	FIND_LIBRARY(LUA_LIBRARIES
 		NAMES lua lua53 lua52 lua51 liblua liblua53 liblua52 liblua51
-		PATHS ${LUA_INCDIR}/../../lib
+		PATHS ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib
 		NO_DEFAULT_PATH)
 ENDIF()
 MESSAGE(STATUS "Lua library: ${LUA_LIBRARIES}")
