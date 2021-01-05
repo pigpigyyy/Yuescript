@@ -2322,22 +2322,22 @@ private:
 		pushOptions(macro->m_begin.m_line - 1); // cur loadstring codes chunk options
 		if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), cur f err
 			std::string err = lua_tostring(L, -1);
-			throw std::logic_error(_info.errorMessage(s("fail to load macro codes\n"sv) + err, macro->macroLit));
+			throw std::logic_error(_info.errorMessage(s("failed to load macro codes\n"sv) + err, macro->macroLit));
 		} // cur f err
 		if (lua_isnil(L, -2) != 0) { // f == nil, cur f err
 			std::string err = lua_tostring(L, -1);
-			throw std::logic_error(_info.errorMessage(s("fail to load macro codes, at (macro "sv) + macroName + s("): "sv) + err, macro->macroLit));
+			throw std::logic_error(_info.errorMessage(s("failed to load macro codes, at (macro "sv) + macroName + s("): "sv) + err, macro->macroLit));
 		}
 		lua_pop(L, 1); // cur f
 		pushMoonp("pcall"sv); // cur f pcall
 		lua_insert(L, -2); // cur pcall f
 		if (lua_pcall(L, 1, 2, 0) != 0) { // f(), cur success macro
 			std::string err = lua_tostring(L, -1);
-			throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, macro->macroLit));
+			throw std::logic_error(_info.errorMessage(s("failed to generate macro function\n"sv) + err, macro->macroLit));
 		} // cur success res
 		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -1);
-			throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, macro->macroLit));
+			throw std::logic_error(_info.errorMessage(s("failed to generate macro function\n"sv) + err, macro->macroLit));
 		} // cur true macro
 		lua_remove(L, -2); // cur macro
 		if (exporting && !_moduleName.empty()) {
@@ -3092,22 +3092,22 @@ private:
 			pushOptions(args->back()->m_begin.m_line - 1); // loadstring codes chunk options
 			if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), f err
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to load macro codes\n"sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to load macro codes\n"sv) + err, x));
 			} // f err
 			if (lua_isnil(L, -2) != 0) { // f == nil, f err
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to load macro codes, at (macro in-place): "sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to load macro codes, at (macro in-place): "sv) + err, x));
 			}
 			lua_pop(L, 1); // f
 			pushMoonp("pcall"sv); // f pcall
 			lua_insert(L, -2); // pcall f
 			if (lua_pcall(L, 1, 2, 0) != 0) { // f(), success macroFunc
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to generate macro function\n"sv) + err, x));
 			} // success res
 			if (lua_toboolean(L, -2) == 0) {
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to generate macro function\n"sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to generate macro function\n"sv) + err, x));
 			} // true macroFunc
 			lua_remove(L, -2); // macroFunc
 			pushMoonp("pcall"sv); // macroFunc pcall
@@ -3115,11 +3115,11 @@ private:
 			bool success = lua_pcall(L, 1, 2, 0) == 0;
 			if (!success) { // err
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 			} // success err
 			if (lua_toboolean(L, -2) == 0) {
 				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
+				throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 			}
 			return {s("block"sv), Empty, {}};
 		}
@@ -3183,11 +3183,11 @@ private:
 		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 3, 0) == 0;
 		if (!success) { // cur macro err
 			std::string err = lua_tostring(L, -1);
-			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
+			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 		} // cur macro success res option
 		if (lua_toboolean(L, -3) == 0) {
 			std::string err = lua_tostring(L, -2);
-			throw std::logic_error(_info.errorMessage(s("fail to expand macro: "sv) + err, x));
+			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 		}
 		lua_remove(L, -3); // cur macro res option
 		if (lua_isstring(L, -2) == 0) {
@@ -3271,7 +3271,7 @@ private:
 		}
 		if (!info.node) {
 			info.error = info.error.substr(info.error.find(':') + 2);
-			throw std::logic_error(_info.errorMessage("fail to parse expanded codes: " + info.error, x));
+			throw std::logic_error(_info.errorMessage("failed to parse expanded codes: " + info.error, x));
 		}
 		int line = x->m_begin.m_line;
 		int col = x->m_begin.m_col;
@@ -5079,10 +5079,10 @@ private:
 				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
 				if (lua_pcall(L, 1, 1, 0) != 0) {
 					std::string err = lua_tostring(L, -1);
-					throw std::logic_error(_info.errorMessage(s("fail to resolve module path\n"sv) + err, x));
+					throw std::logic_error(_info.errorMessage(s("failed to resolve module path\n"sv) + err, x));
 				}
 				if (lua_isnil(L, -1) != 0) {
-					throw std::logic_error(_info.errorMessage(s("fail to find module '"sv) + moduleName + '\'', x));
+					throw std::logic_error(_info.errorMessage(s("failed to find module '"sv) + moduleName + '\'', x));
 				}
 				std::string moduleFullName = lua_tostring(L, -1);
 				lua_pop(L, 1); // cur
@@ -5091,10 +5091,10 @@ private:
 					lua_pushlstring(L, moduleFullName.c_str(), moduleFullName.size()); // cur load_text moduleFullName
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						std::string err = lua_tostring(L, -1);
-						throw std::logic_error(_info.errorMessage(s("fail to read module file\n"sv) + err, x));
+						throw std::logic_error(_info.errorMessage(s("failed to read module file\n"sv) + err, x));
 					} // cur text
 					if (lua_isnil(L, -1) != 0) {
-						throw std::logic_error(_info.errorMessage("fail to get module text"sv, x));
+						throw std::logic_error(_info.errorMessage("failed to get module text"sv, x));
 					} // cur text
 					std::string text = lua_tostring(L, -1);
 					auto compiler = MoonCompilerImpl(L, _luaOpen, false, moduleFullName);
@@ -5105,7 +5105,7 @@ private:
 					config.implicitReturnRoot = _config.implicitReturnRoot;
 					auto result = compiler.compile(text, config);
 					if (result.codes.empty() && !result.error.empty()) {
-						throw std::logic_error(_info.errorMessage(s("fail to compile module '"sv) + moduleName + s("\': "sv) + result.error, x));
+						throw std::logic_error(_info.errorMessage(s("failed to compile module '"sv) + moduleName + s("\': "sv) + result.error, x));
 					}
 					lua_pop(L, 1); // cur
 				}

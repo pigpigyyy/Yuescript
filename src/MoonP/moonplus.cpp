@@ -17,10 +17,10 @@ static const char moonplusCodes[] =
 
 static void init_moonplus(lua_State* L) {
 	if (luaL_loadbuffer(L, moonplusCodes, sizeof(moonplusCodes) / sizeof(moonplusCodes[0]) - 1, "=(moonplus)") != 0) {
-		std::string err = std::string("fail to load moonplus module.\n") + lua_tostring(L, -1);
+		std::string err = std::string("failed to load moonplus module.\n") + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	} else if (lua_pcall(L, 0, 0, 0) != 0) {
-		std::string err = std::string("fail to init moonplus module.\n") + lua_tostring(L, -1);
+		std::string err = std::string("failed to init moonplus module.\n") + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	}
 }
@@ -30,10 +30,10 @@ static const char stpCodes[] =
 
 static int init_stacktraceplus(lua_State* L) {
 	if (luaL_loadbuffer(L, stpCodes, sizeof(stpCodes) / sizeof(stpCodes[0]) - 1, "=(stacktraceplus)") != 0) {
-		std::string err = std::string("fail to load stacktraceplus module.\n") + lua_tostring(L, -1);
+		std::string err = std::string("failed to load stacktraceplus module.\n") + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	} else if (lua_pcall(L, 0, 1, 0) != 0) {
-		std::string err = std::string("fail to init stacktraceplus module.\n") + lua_tostring(L, -1);
+		std::string err = std::string("failed to init stacktraceplus module.\n") + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	}
 	return 1;
