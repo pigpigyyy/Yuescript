@@ -109,9 +109,16 @@ Usage: moonp [options|files|directories] ...
 
 
 * **Docker Hub**
-  Try moonp in another easy way: https://hub.docker.com/r/moonplus/moonplus
+  Try moonp in another easy way: https://hub.docker.com/r/moonplus/moonplus.
+  ```bash
+  docker run -it moonplus/moonplus:0.4.19
+  ```
 
-
+  The REPL console should be ready,
+  ```bash
+  Moonscript+ 0.4.19
+  > 
+  ```
 
 ## Editor Support
 
