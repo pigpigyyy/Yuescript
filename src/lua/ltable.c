@@ -166,17 +166,24 @@ static Node *mainpositionTV (const Table *t, const TValue *key) {
 
 
 /*
-** Check whether key 'k1' is equal to the key in node 'n2'.
-** This equality is raw, so there are no metamethods. Floats
-** with integer values have been normalized, so integers cannot
-** be equal to floats. It is assumed that 'eqshrstr' is simply
-** pointer equality, so that short strings are handled in the
-** default case.
+** Check whether key 'k1' is equal to the key in node 'n2'. This
+** equality is raw, so there are no metamethods. Floats with integer
+** values have been normalized, so integers cannot be equal to
+** floats. It is assumed that 'eqshrstr' is simply pointer equality, so
+** that short strings are handled in the default case.
 ** A true 'deadok' means to accept dead keys as equal to their original
-** values, which can only happen if the original key was collectable.
-** All dead values are compared in the default case, by pointer
-** identity.  (Note that dead long strings are also compared by
-** identity).
+** values. All dead keys are compared in the default case, by pointer
+** identity. (Only collectable objects can produce dead keys.) Note that
+** dead long strings are also compared by identity.
+** Once a key is dead, its corresponding value may be collected, and
+** then another value can be created with the same address. If this
+** other value is given to 'next', 'equalkey' will signal a false
+** positive. In a regular traversal, this situation should never happen,
+** as all keys given to 'next' came from the table itself, and therefore
+** could not have been collected. Outside a regular traversal, we
+** have garbage in, garbage out. What is relevant is that this false
+** positive does not break anything.  (In particular, 'next' will return
+** some other valid item on the table or nil.)
 */
 static int equalkey (const TValue *k1, const Node *n2, int deadok) {
   if ((rawtt(k1) != keytt(n2)) &&  /* not the same variants? */
@@ -478,7 +485,7 @@ static void reinsert (lua_State *L, Table *ot, Table *t) {
          already present in the table */
       TValue k;
       getnodekey(L, &k, old);
-      setobjt2t(L, luaH_set(L, t, &k), gval(old));
+      luaH_set(L, t, &k, gval(old));
     }
   }
 }
@@ -625,7 +632,7 @@ static Node *getfreepos (Table *t) {
 ** put new key in its main position; otherwise (colliding node is in its main
 ** position), new key goes to an empty position.
 */
-TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
+void luaH_newkey (lua_State *L, Table *t, const TValue *key, TValue *value) {
   Node *mp;
   TValue aux;
   if (unlikely(ttisnil(key)))
@@ -647,7 +654,8 @@ TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
     if (f == NULL) {  /* cannot find a free place? */
       rehash(L, t, key);  /* grow table */
       /* whatever called 'newkey' takes care of TM cache */
-      return luaH_set(L, t, key);  /* insert key into grown table */
+      luaH_set(L, t, key, value);  /* insert key into grown table */
+      return;
     }
     lua_assert(!isdummy(t));
     othern = mainposition(t, keytt(mp), &keyval(mp));
@@ -675,7 +683,7 @@ TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
   setnodekey(L, mp, key);
   luaC_barrierback(L, obj2gco(t), key);
   lua_assert(isempty(gval(mp)));
-  return gval(mp);
+  setobj2t(L, gval(mp), value);
 }
 
 
@@ -763,28 +771,39 @@ const TValue *luaH_get (Table *t, const TValue *key) {
 
 
 /*
+** Finish a raw "set table" operation, where 'slot' is where the value
+** should have been (the result of a previous "get table").
+** Beware: when using this function you probably need to check a GC
+** barrier and invalidate the TM cache.
+*/
+void luaH_finishset (lua_State *L, Table *t, const TValue *key,
+                                   const TValue *slot, TValue *value) {
+  if (isabstkey(slot))
+    luaH_newkey(L, t, key, value);
+  else
+    setobj2t(L, cast(TValue *, slot), value);
+}
+
+
+/*
 ** beware: when using this function you probably need to check a GC
 ** barrier and invalidate the TM cache.
 */
-TValue *luaH_set (lua_State *L, Table *t, const TValue *key) {
-  const TValue *p = luaH_get(t, key);
-  if (!isabstkey(p))
-    return cast(TValue *, p);
-  else return luaH_newkey(L, t, key);
+void luaH_set (lua_State *L, Table *t, const TValue *key, TValue *value) {
+  const TValue *slot = luaH_get(t, key);
+  luaH_finishset(L, t, key, slot, value);
 }
 
 
 void luaH_setint (lua_State *L, Table *t, lua_Integer key, TValue *value) {
   const TValue *p = luaH_getint(t, key);
-  TValue *cell;
-  if (!isabstkey(p))
-    cell = cast(TValue *, p);
-  else {
+  if (isabstkey(p)) {
     TValue k;
     setivalue(&k, key);
-    cell = luaH_newkey(L, t, &k);
+    luaH_newkey(L, t, &k, value);
   }
-  setobj2t(L, cell, value);
+  else
+    setobj2t(L, cast(TValue *, p), value);
 }
 
 
