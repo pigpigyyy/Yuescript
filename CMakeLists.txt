@@ -25,7 +25,6 @@ ENDIF()
 MESSAGE(STATUS "Lua library: ${LUA_LIBRARIES}")
 
 enable_language( CXX )
-find_package( Lua REQUIRED )
 include_directories( src ${LUA_INCLUDE_DIR} )
 add_definitions( -std=c++17 -O3 )
 
