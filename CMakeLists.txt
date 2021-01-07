@@ -26,7 +26,7 @@ MESSAGE(STATUS "Lua library: ${LUA_LIBRARIES}")
 
 enable_language( CXX )
 include_directories( src ${LUA_INCLUDE_DIR} )
-add_definitions( -std=c++17 -O3 )
+add_definitions( -std=c++17 -O3 -fPIC )
 
 add_library( moonp MODULE src/MoonP/ast.cpp src/MoonP/parser.cpp src/MoonP/moon_parser.cpp src/MoonP/moon_compiler.cpp src/MoonP/moonplus.cpp)
 set_target_properties( moonp PROPERTIES PREFIX "")
