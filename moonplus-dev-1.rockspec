@@ -25,6 +25,9 @@ build = {
 	install = {
 		lib = {
 			"build.luarocks/moonp.so"
+		},
+		bin = {
+			"bin/release/moonp"
 		}
 	}
 }

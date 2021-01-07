@@ -37,5 +37,5 @@ add_custom_command(TARGET moonp
 	COMMAND make release
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-install(PROGRAMS bin/release/moonp DESTINATION bin)
+install(CODE "")
 
