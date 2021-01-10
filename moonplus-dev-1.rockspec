@@ -27,7 +27,7 @@ build = {
 			"build.luarocks/moonp.so"
 		},
 		bin = {
-			"bin/release/moonp"
+			"build.luarocks/moonp"
 		}
 	}
 }

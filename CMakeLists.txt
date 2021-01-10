@@ -28,14 +28,13 @@ enable_language( CXX )
 include_directories( src ${LUA_INCLUDE_DIR} )
 add_definitions( -std=c++17 -O3 -fPIC )
 
-add_library( moonp MODULE src/MoonP/ast.cpp src/MoonP/parser.cpp src/MoonP/moon_parser.cpp src/MoonP/moon_compiler.cpp src/MoonP/moonplus.cpp)
-set_target_properties( moonp PROPERTIES PREFIX "")
-target_link_libraries( moonp ${LUA_LIBRARIES} )
+add_library( libmoonp MODULE src/MoonP/ast.cpp src/MoonP/parser.cpp src/MoonP/moon_parser.cpp src/MoonP/moon_compiler.cpp src/MoonP/moonplus.cpp)
+set_target_properties( libmoonp PROPERTIES PREFIX "" )
+set_target_properties( libmoonp PROPERTIES OUTPUT_NAME "moonp" )
+target_link_libraries( libmoonp ${LUA_LIBRARIES} )
 
-add_custom_command(TARGET moonp
-	POST_BUILD
-	COMMAND make release
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable( moonp src/MoonP/ast.cpp src/MoonP/moon_compiler.cpp src/MoonP/moon_parser.cpp src/MoonP/moonplus.cpp src/MoonP/parser.cpp src/moonp.cpp )
+target_link_libraries( moonp ${LUA_LIBRARIES} )
 
 install(CODE "")
 

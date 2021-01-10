@@ -53,7 +53,7 @@ MYCFLAGS= $(LOCAL) -std=c99
 
 UNAME_S:=$(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-	MYCFLAGS += -DLUA_USE_MACOS
+	MYCFLAGS += -DLUA_USE_MACOSX
 	MYLDFLAGS= $(LOCAL) -Wl
 else
 	MYCFLAGS += -DLUA_USE_LINUX
