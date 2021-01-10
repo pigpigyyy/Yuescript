@@ -268,7 +268,7 @@ all: $(BIN_PATH)/$(BIN_NAME)
 $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 	@echo "Linking: $@"
 	@$(START_TIME)
-	$(CMD_PREFIX)$(CXX) $(OBJECTS) $(LDFLAGS) -o $@
+	$(CMD_PREFIX)$(CXX) $(OBJECTS) $(LDFLAGS) -o $@ -Wl,-E
 	@echo -en "\t Link time: "
 	@$(END_TIME)
 
