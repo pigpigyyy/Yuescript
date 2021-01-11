@@ -53,7 +53,7 @@ endif
 
 # Add platform related linker flag
 ifneq ($(UNAME_S),Darwin)
-	LINK_FLAGS += -lstdc++fs
+	LINK_FLAGS += -lstdc++fs -Wl,-E
 endif
 
 # Function used to check variables. Use on the command line:
@@ -268,7 +268,7 @@ all: $(BIN_PATH)/$(BIN_NAME)
 $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 	@echo "Linking: $@"
 	@$(START_TIME)
-	$(CMD_PREFIX)$(CXX) $(OBJECTS) $(LDFLAGS) -o $@ -Wl,-E
+	$(CMD_PREFIX)$(CXX) $(OBJECTS) $(LDFLAGS) -o $@
 	@echo -en "\t Link time: "
 	@$(END_TIME)
 
