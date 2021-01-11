@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.21"sv;
+const std::string_view version = "0.4.22"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -106,6 +106,7 @@ public:
 				str_list out;
 				pushScope();
 				_enableReturn.push(_info.moduleName.empty());
+				_varArgs.push(true);
 				transformBlock(_info.node.to<File_t>()->block, out,
 					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
 					nullptr, true);

@@ -331,7 +331,14 @@ int main(int narg, const char** args) {
 				lua_pop(L, 1);
 				pushMoonp(L, "pcall"sv);
 				lua_insert(L, -2);
-				if (lua_pcall(L, 1, 2, 0) != 0) {
+				int argCount = 0;
+				i++;
+				while (i < narg) {
+					argCount++;
+					lua_pushstring(L, args[i]);
+					i++;
+				}
+				if (lua_pcall(L, 1 + argCount, 2, 0) != 0) {
 					std::cout << lua_tostring(L, -1) << '\n';
 					return 1;
 				}
