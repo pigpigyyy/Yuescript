@@ -268,7 +268,7 @@ static void preinit_thread (lua_State *L, global_State *g) {
 
 static void close_state (lua_State *L) {
   global_State *g = G(L);
-  luaF_close(L, L->stack, CLOSEPROTECT);  /* close all upvalues */
+  luaD_closeprotected(L, 0, LUA_OK);  /* close all upvalues */
   luaC_freeallobjects(L);  /* collect all objects */
   if (ttisnil(&g->nilvalue))  /* closing a fully built state? */
     luai_userstateclose(L);
@@ -313,7 +313,7 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
 
 void luaE_freethread (lua_State *L, lua_State *L1) {
   LX *l = fromstate(L1);
-  luaF_close(L1, L1->stack, NOCLOSINGMETH);  /* close all upvalues */
+  luaF_close(L1, L1->stack, NOCLOSINGMETH, 0);  /* close all upvalues */
   lua_assert(L1->openupval == NULL);
   luai_userstatefree(L, L1);
   freestack(L1);
@@ -321,23 +321,29 @@ void luaE_freethread (lua_State *L, lua_State *L1) {
 }
 
 
-int lua_resetthread (lua_State *L) {
-  CallInfo *ci;
-  int status;
-  lua_lock(L);
-  L->ci = ci = &L->base_ci;  /* unwind CallInfo list */
+int luaE_resetthread (lua_State *L, int status) {
+  CallInfo *ci = L->ci = &L->base_ci;  /* unwind CallInfo list */
   setnilvalue(s2v(L->stack));  /* 'function' entry for basic 'ci' */
   ci->func = L->stack;
   ci->callstatus = CIST_C;
-  status = luaF_close(L, L->stack, CLOSEPROTECT);
-  if (status != CLOSEPROTECT)  /* real errors? */
-    luaD_seterrorobj(L, status, L->stack + 1);
-  else {
+  if (status == LUA_YIELD)
     status = LUA_OK;
+  status = luaD_closeprotected(L, 0, status);
+  if (status != LUA_OK)  /* errors? */
+    luaD_seterrorobj(L, status, L->stack + 1);
+  else
     L->top = L->stack + 1;
-  }
   ci->top = L->top + LUA_MINSTACK;
-  L->status = status;
+  L->status = cast_byte(status);
+  luaD_reallocstack(L, cast_int(ci->top - L->stack), 0);
+  return status;
+}
+
+
+LUA_API int lua_resetthread (lua_State *L) {
+  int status;
+  lua_lock(L);
+  status = luaE_resetthread(L, L->status);
   lua_unlock(L);
   return status;
 }

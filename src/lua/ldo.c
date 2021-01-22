@@ -98,11 +98,12 @@ void luaD_seterrorobj (lua_State *L, int errcode, StkId oldtop) {
       setsvalue2s(L, oldtop, luaS_newliteral(L, "error in error handling"));
       break;
     }
-    case CLOSEPROTECT: {
+    case LUA_OK: {  /* special case only for closing upvalues */
       setnilvalue(s2v(oldtop));  /* no error message */
       break;
     }
     default: {
+      lua_assert(errorstatus(errcode));  /* real error */
       setobjs2s(L, oldtop, L->top - 1);  /* error message on current top */
       break;
     }
@@ -118,17 +119,13 @@ l_noret luaD_throw (lua_State *L, int errcode) {
   }
   else {  /* thread has no error handler */
     global_State *g = G(L);
-    errcode = luaF_close(L, L->stack, errcode);  /* close all upvalues */
-    L->status = cast_byte(errcode);  /* mark it as dead */
+    errcode = luaE_resetthread(L, errcode);  /* close all upvalues */
     if (g->mainthread->errorJmp) {  /* main thread has a handler? */
       setobjs2s(L, g->mainthread->top++, L->top - 1);  /* copy error obj. */
       luaD_throw(g->mainthread, errcode);  /* re-throw in main thread */
     }
     else {  /* no handler at all; abort */
       if (g->panic) {  /* panic function? */
-        luaD_seterrorobj(L, errcode, L->top);  /* assume EXTRA_STACK */
-        if (L->ci->top < L->top)
-          L->ci->top = L->top;  /* pushing msg. can break this invariant */
         lua_unlock(L);
         g->panic(L);  /* call panic function (last chance to jump out) */
       }
@@ -375,7 +372,7 @@ void luaD_tryfuncTM (lua_State *L, StkId func) {
   const TValue *tm = luaT_gettmbyobj(L, s2v(func), TM_CALL);
   StkId p;
   if (unlikely(ttisnil(tm)))
-    luaG_typeerror(L, s2v(func), "call");  /* nothing to call */
+    luaG_callerror(L, s2v(func));  /* nothing to call */
   for (p = L->top; p > func; p--)  /* open space for metamethod */
     setobjs2s(L, p, p-1);
   L->top++;  /* stack space pre-allocated by the caller */
@@ -409,7 +406,7 @@ static void moveresults (lua_State *L, StkId res, int nres, int wanted) {
     default:  /* multiple results (or to-be-closed variables) */
       if (hastocloseCfunc(wanted)) {  /* to-be-closed variables? */
         ptrdiff_t savedres = savestack(L, res);
-        luaF_close(L, res, LUA_OK);  /* may change the stack */
+        luaF_close(L, res, CLOSEKTOP, 0);  /* may change the stack */
         res = restorestack(L, savedres);
         wanted = codeNresults(wanted);  /* correct value */
         if (wanted == LUA_MULTRET)
@@ -596,15 +593,11 @@ static void finishCcall (lua_State *L, int status) {
 /*
 ** Executes "full continuation" (everything in the stack) of a
 ** previously interrupted coroutine until the stack is empty (or another
-** interruption long-jumps out of the loop). If the coroutine is
-** recovering from an error, 'ud' points to the error status, which must
-** be passed to the first continuation function (otherwise the default
-** status is LUA_YIELD).
+** interruption long-jumps out of the loop).
 */
 static void unroll (lua_State *L, void *ud) {
   CallInfo *ci;
-  if (ud != NULL)  /* error status? */
-    finishCcall(L, *(int *)ud);  /* finish 'lua_pcallk' callee */
+  UNUSED(ud);
   while ((ci = L->ci) != &L->base_ci) {  /* something in the stack */
     if (!isLua(ci))  /* C function? */
       finishCcall(L, LUA_YIELD);  /* complete its execution */
@@ -631,24 +624,36 @@ static CallInfo *findpcall (lua_State *L) {
 
 
 /*
-** Recovers from an error in a coroutine. Finds a recover point (if
-** there is one) and completes the execution of the interrupted
-** 'luaD_pcall'. If there is no recover point, returns zero.
+** Auxiliary structure to call 'recover' in protected mode.
 */
-static int recover (lua_State *L, int status) {
-  StkId oldtop;
-  CallInfo *ci = findpcall(L);
-  if (ci == NULL) return 0;  /* no recovery point */
+struct RecoverS {
+  int status;
+  CallInfo *ci;
+};
+
+
+/*
+** Recovers from an error in a coroutine: completes the execution of the
+** interrupted 'luaD_pcall', completes the interrupted C function which
+** called 'lua_pcallk', and continues running the coroutine. If there is
+** an error in 'luaF_close', this function will be called again and the
+** coroutine will continue from where it left.
+*/
+static void recover (lua_State *L, void *ud) {
+  struct RecoverS *r = cast(struct RecoverS *, ud);
+  int status = r->status;
+  CallInfo *ci = r->ci;  /* recover point */
+  StkId func = restorestack(L, ci->u2.funcidx);
   /* "finish" luaD_pcall */
-  oldtop = restorestack(L, ci->u2.funcidx);
   L->ci = ci;
   L->allowhook = getoah(ci->callstatus);  /* restore original 'allowhook' */
-  status = luaF_close(L, oldtop, status);  /* may change the stack */
-  oldtop = restorestack(L, ci->u2.funcidx);
-  luaD_seterrorobj(L, status, oldtop);
+  luaF_close(L, func, status, 0);  /* may change the stack */
+  func = restorestack(L, ci->u2.funcidx);
+  luaD_seterrorobj(L, status, func);
   luaD_shrinkstack(L);   /* restore stack size in case of overflow */
   L->errfunc = ci->u.c.old_errfunc;
-  return 1;  /* continue running the coroutine */
+  finishCcall(L, status);  /* finish 'lua_pcallk' callee */
+  unroll(L, NULL);  /* continue running the coroutine */
 }
 
 
@@ -698,6 +703,24 @@ static void resume (lua_State *L, void *ud) {
   }
 }
 
+
+/*
+** Calls 'recover' in protected mode, repeating while there are
+** recoverable errors, that is, errors inside a protected call. (Any
+** error interrupts 'recover', and this loop protects it again so it
+** can continue.) Stops with a normal end (status == LUA_OK), an yield
+** (status == LUA_YIELD), or an unprotected error ('findpcall' doesn't
+** find a recover point).
+*/
+static int p_recover (lua_State *L, int status) {
+  struct RecoverS r;
+  r.status = status;
+  while (errorstatus(status) && (r.ci = findpcall(L)) != NULL)
+    r.status = luaD_rawrunprotected(L, recover, &r);
+  return r.status;
+}
+
+
 LUA_API int lua_resume (lua_State *L, lua_State *from, int nargs,
                                       int *nresults) {
   int status;
@@ -715,10 +738,7 @@ LUA_API int lua_resume (lua_State *L, lua_State *from, int nargs,
   api_checknelems(L, (L->status == LUA_OK) ? nargs + 1 : nargs);
   status = luaD_rawrunprotected(L, resume, &nargs);
    /* continue running after recoverable errors */
-  while (errorstatus(status) && recover(L, status)) {
-    /* unroll continuation */
-    status = luaD_rawrunprotected(L, unroll, &status);
-  }
+  status = p_recover(L, status);
   if (likely(!errorstatus(status)))
     lua_assert(status == L->status);  /* normal end or yield */
   else {  /* unrecoverable error */
@@ -770,6 +790,45 @@ LUA_API int lua_yieldk (lua_State *L, int nresults, lua_KContext ctx,
 
 
 /*
+** Auxiliary structure to call 'luaF_close' in protected mode.
+*/
+struct CloseP {
+  StkId level;
+  int status;
+};
+
+
+/*
+** Auxiliary function to call 'luaF_close' in protected mode.
+*/
+static void closepaux (lua_State *L, void *ud) {
+  struct CloseP *pcl = cast(struct CloseP *, ud);
+  luaF_close(L, pcl->level, pcl->status, 0);
+}
+
+
+/*
+** Calls 'luaF_close' in protected mode. Return the original status
+** or, in case of errors, the new status.
+*/
+int luaD_closeprotected (lua_State *L, ptrdiff_t level, int status) {
+  CallInfo *old_ci = L->ci;
+  lu_byte old_allowhooks = L->allowhook;
+  for (;;) {  /* keep closing upvalues until no more errors */
+    struct CloseP pcl;
+    pcl.level = restorestack(L, level); pcl.status = status;
+    status = luaD_rawrunprotected(L, &closepaux, &pcl);
+    if (likely(status == LUA_OK))  /* no more errors? */
+      return pcl.status;
+    else {  /* an error occurred; restore saved state and repeat */
+      L->ci = old_ci;
+      L->allowhook = old_allowhooks;
+    }
+  }
+}
+
+
+/*
 ** Call the C function 'func' in protected mode, restoring basic
 ** thread information ('allowhook', etc.) and in particular
 ** its stack level in case of errors.
@@ -783,12 +842,10 @@ int luaD_pcall (lua_State *L, Pfunc func, void *u,
   L->errfunc = ef;
   status = luaD_rawrunprotected(L, func, u);
   if (unlikely(status != LUA_OK)) {  /* an error occurred? */
-    StkId oldtop = restorestack(L, old_top);
     L->ci = old_ci;
     L->allowhook = old_allowhooks;
-    status = luaF_close(L, oldtop, status);
-    oldtop = restorestack(L, old_top);  /* previous call may change stack */
-    luaD_seterrorobj(L, status, oldtop);
+    status = luaD_closeprotected(L, old_top, status);
+    luaD_seterrorobj(L, status, restorestack(L, old_top));
     luaD_shrinkstack(L);   /* restore stack size in case of overflow */
   }
   L->errfunc = old_errfunc;
