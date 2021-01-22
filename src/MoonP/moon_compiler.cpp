@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.22"sv;
+const std::string_view version = "0.4.23"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -1877,9 +1877,12 @@ private:
 			auto& args = *it;
 			auto& initArgs = *(++it);
 			auto& bodyCodes = *(++it);
-			_buf << "function("sv <<
-				(isFatArrow ? s("self, "sv) : Empty) <<
-				args << ')';
+			_buf << "function("sv;
+			if (isFatArrow) {
+				_buf << "self"sv;
+				if (!args.empty()) _buf << ", "sv;
+			}
+			_buf << args << ')';
 			if (!initArgs.empty() || !bodyCodes.empty()) {
 				_buf << nlr(argsDef) << initArgs << bodyCodes;
 				popScope();

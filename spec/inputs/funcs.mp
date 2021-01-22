@@ -46,6 +46,7 @@ _ = (x = if something then yeah else no) ->
 something = (hello=100, world=(x=[[yeah cool]])-> print "eat rice") ->
 	print hello
 
+_ = () =>
 _ = (x, y) =>
 _ = (@x, @y) =>
 _ = (x=1) =>

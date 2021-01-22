@@ -110,7 +110,7 @@ do
 	a += $get_inner_hygienic!
 	print a
 
-macro lua lua = (codes)-> "#{codes}"
+macro lua lua = (codes)-> codes
 
 x = 0
 
