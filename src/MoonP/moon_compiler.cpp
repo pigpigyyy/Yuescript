@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.23"sv;
+const std::string_view version = "0.4.24"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {

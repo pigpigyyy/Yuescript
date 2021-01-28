@@ -31,7 +31,7 @@ namespace parserlib {
 ///type of the parser's input.
 typedef std::basic_string<wchar_t> input;
 typedef input::iterator input_it;
-typedef std::wstring_convert<std::codecvt_utf8<input::value_type>> Converter;
+typedef std::wstring_convert<std::codecvt_utf8_utf16<input::value_type>> Converter;
 
 class _private;
 class _expr;
