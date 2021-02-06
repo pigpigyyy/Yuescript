@@ -48,12 +48,7 @@ public:
 
 	template<class AST>
 	ParseInfo parse(std::string_view codes) {
-		error_list errors;
-		auto res = parse(codes, getRule<AST>());
-		if (res.node.template is<AST>()) {
-			return res;
-		}
-		return res;
+		return parse(codes, getRule<AST>());
 	}
 
 	template <class AST>

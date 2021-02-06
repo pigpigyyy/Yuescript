@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.24"sv;
+const std::string_view version = "0.4.26"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -1555,7 +1555,10 @@ private:
 		if (assign) {
 			auto exp = ifCondPairs.front().first->condition.get();
 			auto x = exp;
+			bool lintGlobal = _config.lintGlobalVariable;
+			_config.lintGlobalVariable = false;
 			auto var = singleVariableFrom(exp);
+			_config.lintGlobalVariable = lintGlobal;
 			if (var.empty()) {
 				storingValue = true;
 				auto desVar = getUnusedName("_des_"sv);
@@ -3234,6 +3237,7 @@ private:
 		str_list localVars;
 		std::tie(type, codes, localVars) = expandMacroStr(chainValue);
 		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
+		ParseInfo info;
 		if (type == "lua"sv) {
 			if (!allowBlockMacroReturn && targetType != "block"sv) {
 				throw std::logic_error(_info.errorMessage("lua macro can only be placed where block macro is allowed"sv, x));
@@ -3252,9 +3256,14 @@ private:
 			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else if (!allowBlockMacroReturn && type != targetType) {
-			throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
+			if (!codes.empty() && targetType == "block") {
+				info = _parser.parse<Block_t>(codes);
+			}
+			if (info.node) type = "block";
+			else throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
 		}
-		ParseInfo info;
+		BLOCK_START
+		BREAK_IF(info.node);
 		if (usage == ExpUsage::Common) {
 			if (codes.empty()) {
 				return {x->new_ptr<Block_t>().get(), std::move(info.codes), Empty, std::move(localVars)};
@@ -3273,6 +3282,7 @@ private:
 		} else {
 			info = _parser.parse<Exp_t>(codes);
 		}
+		BLOCK_END
 		if (!info.node) {
 			info.error = info.error.substr(info.error.find(':') + 2);
 			throw std::logic_error(_info.errorMessage("failed to parse expanded codes: " + info.error, x));

@@ -154,14 +154,36 @@ $insertComment "a comment here"
 
 import 'underscore' as _
 
-macro expr chain = (...)-> $showMacro "chain",table.concat {...}, "\\"
+macro expr chain = (...)->
+	callable = nil
+	for item in *{...}
+		callable = callable? and "(#{callable})\\#{item}" or item
+	$showMacro "chain", callable
 
 a = $chain(
-	_({1, 2, 3, 4, -2, 3})
+	_{1, 2, 3, 4, -2, 3}
 	chain!
-	map(=> @ * 2)
-	filter(=> @ > 3)
+	map => @ * 2
+	filter => @ > 3
 	value!
+)
+
+$chain(
+	_{1, 2, 3, 4, -2, 3}
+	chain!
+	map => @ * 2
+	filter => @ > 3
+	each => print @
+)
+
+result = $chain(
+	origin.transform.root.gameObject\Parents!
+	Descendants!
+	SelectEnable!
+	SelectVisible!
+	TagEqual "fx"
+	Where (x) -> x.name\EndsWith "(Clone)"
+	Destroy!
 )
 
 macro block chainB = (...)->
@@ -185,11 +207,13 @@ macro block chainB = (...)->
 	$showMacro "chainB", res
 
 $chainB(
-	_{1, 2, 3, 4, -2, 3}
-	chain!
-	map => @ * 2
-	filter => @ > 3
-	each => print @
+	origin.transform.root.gameObject\Parents!
+	Descendants!
+	SelectEnable!
+	SelectVisible!
+	TagEqual "fx"
+	Where (x) -> x.name\EndsWith "(Clone)"
+	Destroy!
 )
 
 macro block implicitReturnblockMacroIsAllowed = -> "123"
