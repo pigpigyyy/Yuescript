@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.5.0"sv;
+const std::string_view version = "0.5.1"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -3249,7 +3249,7 @@ private:
 		bool isBlock = (usage == ExpUsage::Common) && (chainList.size() <= 2);
 		ParseInfo info;
 		if (type == "lua"sv) {
-			if (!allowBlockMacroReturn && !isBlock) {
+			if (!isBlock) {
 				throw std::logic_error(_info.errorMessage("lua macro can only be placed where block macro is allowed"sv, x));
 			}
 			auto macroChunk = s("=(macro "sv) + _parser.toString(x->name) + ')';
@@ -3261,6 +3261,9 @@ private:
 			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else if (type == "text"sv) {
+			if (!isBlock) {
+				throw std::logic_error(_info.errorMessage("text macro can only be placed where block macro is allowed"sv, x));
+			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else {
 			if (!codes.empty()) {
@@ -3347,9 +3350,6 @@ private:
 			Utils::trim(luaCodes);
 			if (!node) {
 				if (!luaCodes.empty()) {
-					if (usage == ExpUsage::Return) {
-						luaCodes.insert(0, "return "sv);
-					}
 					if (_config.reserveLineNumber) {
 						luaCodes.insert(0, nll(chainValue).substr(1));
 					}
