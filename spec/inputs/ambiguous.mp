@@ -10,7 +10,7 @@ import c from d
 a, b = c, d
 (d a) c
 
-macro block f = (func,arg)-> "(#{func}) #{arg}"
+macro f = (func,arg)-> "(#{func}) #{arg}"
 for i = 1, 10
 	a = ->
 	$f print, 1

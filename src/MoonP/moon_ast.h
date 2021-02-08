@@ -632,9 +632,6 @@ AST_NODE(FunLit)
 	AST_MEMBER(FunLit, &argsDef, &arrow, &body)
 AST_END(FunLit)
 
-AST_LEAF(macro_type)
-AST_END(macro_type)
-
 AST_NODE(MacroName)
 	ast_ptr<false, Name_t> name;
 	AST_MEMBER(MacroName, &name)
@@ -647,10 +644,9 @@ AST_NODE(MacroLit)
 AST_END(MacroLit)
 
 AST_NODE(Macro)
-	ast_ptr<true, macro_type_t> type;
 	ast_ptr<true, Name_t> name;
 	ast_ptr<true, MacroLit_t> macroLit;
-	AST_MEMBER(Macro, &type, &name, &macroLit)
+	AST_MEMBER(Macro, &name, &macroLit)
 AST_END(Macro)
 
 AST_NODE(NameOrDestructure)

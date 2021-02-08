@@ -4,24 +4,29 @@ $ ->
 		options.target_extension = "tl"
 	package.path ..= "?.lua;./spec/lib/?.lua"
 
-macro expr to_lua = (codes)->
+macro to_lua = (codes)->
 	"require('moonp').to_lua(#{codes}, reserve_line_number:false, same_module:true)"
 
-macro expr trim = (name)->
+macro trim = (name)->
 	"if result = #{name}\\match '[\\'\"](.*)[\\'\"]' then result else #{name}"
 
-export macro text local = (decl, value = nil)->
+export macro local = (decl, value = nil)->
 	import "moonp" as {options:{:tl_enabled}}
 	name, type = ($trim decl)\match "(.-):(.*)"
 	if not (name and type)
 		error "invalid local varaible declaration for \"#{decl}\""
 	value = $to_lua(value)\gsub "^return ", ""
-	if tl_enabled
-		"local #{name}:#{$trim type} = #{value}", {name}
+	codes = if tl_enabled
+		"local #{name}:#{$trim type} = #{value}"
 	else
-		"local #{name} = #{value}", {name}
+		"local #{name} = #{value}"
+	{
+		:codes
+		type: "text"
+		locals: {name}
+	}
 
-export macro text function = (decl, value)->
+export macro function = (decl, value)->
 	import "moonp" as {options:{:tl_enabled}}
 	import "tl"
 	decl = $trim decl
@@ -32,23 +37,33 @@ export macro text function = (decl, value)->
 	_, node = tl.parse_program tokens,{},"macro-function"
 	args = table.concat [arg.tk for arg in *node[1].args],", "
 	value = "(#{args})#{value}"
-	if tl_enabled
+	codes = if tl_enabled
 		value = $to_lua(value)\match "function%([^\n]*%)(.*)end"
-		"local function #{name}#{type}\n#{value}\nend", {name}
+		"local function #{name}#{type}\n#{value}\nend"
 	else
 		value = $to_lua(value)\gsub "^return ", ""
-		"local #{name} = #{value}", {name}
+		"local #{name} = #{value}"
+	{
+		:codes
+		type: "text"
+		locals: {name}
+	}
 
-export macro text record = (name, decl)->
+export macro record = (name, decl)->
 	import "moonp" as {options:{:tl_enabled}}
-	if tl_enabled
+	codes = if tl_enabled
 		"local record #{name}
 	#{decl}
-end", {name}
+end"
 	else
-		"local #{name} = {}", {name}
+		"local #{name} = {}"
+	{
+		:codes
+		type: "text"
+		locals: {name}
+	}
 
-export macro text method = (decl, value)->
+export macro method = (decl, value)->
 	import "moonp" as {options:{:tl_enabled}}
 	import "tl"
 	decl = $trim decl
@@ -59,10 +74,14 @@ export macro text method = (decl, value)->
 	_, node = tl.parse_program tokens,{},"macro-function"
 	args = table.concat [arg.tk for arg in *node[1].args],", "
 	value = "(#{args})->#{value\match "[%-=]>(.*)"}"
-	if tl_enabled
+	codes = if tl_enabled
 		value = $to_lua(value)\match "^return function%(.-%)\n(.*)end"
 		"function #{tab}#{sym}#{func}#{type}\n#{value}\nend"
 	else
 		value = $to_lua(value)\gsub "^return ", ""
 		"#{tab}.#{func} = #{value}"
+	{
+		:codes
+		type: "text"
+	}
 

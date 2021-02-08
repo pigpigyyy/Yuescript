@@ -12,7 +12,7 @@ $myconfig false
 
 v = $assert item == nil
 
-macro expr and = (...)->
+macro and = (...)->
 	values = [value for value in *{...}]
 	$showMacro "and", "#{ table.concat values, " and " }"
 
@@ -22,20 +22,20 @@ if $and f1!
 if $and f1!, f2!, f3!
 	print "OK"
 
-macro expr in = (target, ...)->
+macro in = (target, ...)->
 	values = [value for value in *{...}]
 	$showMacro "in", table.concat ["#{target} == #{item}" for item in *values], " or "
 
 if x |> $in "Apple", "Pig", "Dog"
 	print "exist"
 
-macro expr map = (items, action)->
+macro map = (items, action)->
 	$showMacro "map", "[#{action} for _ in *#{items}]"
 
-macro expr filter = (items, action)->
+macro filter = (items, action)->
 	$showMacro "filter", "[_ for _ in *#{items} when #{action}]"
 
-macro expr reduce = (items, def, action)->
+macro reduce = (items, def, action)->
 	$showMacro "reduce", "if ##{items} == 0
 	#{def}
 else
@@ -44,11 +44,11 @@ else
 		_1 = #{action}
 	_1"
 
-macro block foreach = (items, action)->
+macro foreach = (items, action)->
 	$showMacro "foreach", "for _ in *#{items}
 	#{action}"
 
-macro expr pipe = (...)->
+macro pipe = (...)->
 	switch select "#", ...
 		when 0 then return ""
 		when 1 then return ...
@@ -74,13 +74,13 @@ val = $pipe(
 	$reduce(0, _1 + _2)
 )
 
-macro expr plus = (a, b)-> "#{a} + #{b}"
+macro plus = (a, b)-> "#{a} + #{b}"
 
 $plus(1,2)\call 123
 
 res = 1 |> $plus 2
 
-macro expr curry = (...)->
+macro curry = (...)->
 	args = {...}
 	len = #args
 	body = args[len]
@@ -90,11 +90,11 @@ macro expr curry = (...)->
 f = $curry x,y,z,do
 	print x,y,z
 
-macro expr get_inner = (var)-> "do
+macro get_inner = (var)-> "do
 	a = 1
 	a + 1"
 
-macro expr get_inner_hygienic = (var)-> "(->
+macro get_inner_hygienic = (var)-> "(->
 	local a = 1
 	a + 1)!"
 
@@ -110,7 +110,10 @@ do
 	a += $get_inner_hygienic!
 	print a
 
-macro lua lua = (codes)-> codes
+macro lua = (codes)-> {
+	:codes
+	type: "lua"
+}
 
 x = 0
 
@@ -129,12 +132,15 @@ end
 
 print x
 
-macro lua def = (fname, ...)->
+macro def = (fname, ...)->
 	args = {...}
 	last = table.remove args
-	$showMacro "def", "local function #{fname}(#{table.concat args, ', '})
+	{
+		codes: $showMacro "def", "local function #{fname}(#{table.concat args, ', '})
 	#{last}
 end"
+		type: "lua"
+	}
 
 sel = (a, b, c)-> if a then b else c
 
@@ -148,13 +154,16 @@ $def sel, a, b, c, [[
 
 $def dummy,[[]]
 
-macro lua insertComment = (text)-> "-- #{text\match '[\'"](.*)[\'"]'}"
+macro insertComment = (text)-> {
+	codes: "-- #{text\match '[\'"](.*)[\'"]'}"
+	type: "lua"
+}
 
 $insertComment "a comment here"
 
 import 'underscore' as _
 
-macro expr chain = (...)->
+macro chain = (...)->
 	callable = nil
 	for item in *{...}
 		callable = callable? and "(#{callable})\\#{item}" or item
@@ -186,7 +195,7 @@ result = $chain(
 	Destroy!
 )
 
-macro block chainB = (...)->
+macro chainB = (...)->
 	switch select "#", ...
 		when 0 then return ""
 		when 1 then return ...
@@ -216,7 +225,34 @@ $chainB(
 	Destroy!
 )
 
-macro block implicitReturnblockMacroIsAllowed = -> "123"
+macro chainC = (...)->
+	import "moonp" as {:to_lua}
+	callable = nil
+	config = {
+		implicit_return_root: false
+		reserve_line_number: false
+	}
+	for item in *{...}
+		if callable?
+			callable = "#{callable}:#{to_lua(item,config)\gsub '%s*$',''}"
+		else
+			callable = to_lua(item,config)\gsub '%s*$',''
+	{
+		codes: $showMacro "chainC", callable
+		type: "lua"
+	}
 
-$implicitReturnblockMacroIsAllowed!
+$chainC(
+	origin.transform.root.gameObject\Parents!
+	Descendants!
+	SelectEnable!
+	SelectVisible!
+	TagEqual "fx"
+	Where (x) -> x.name\EndsWith "(Clone)"
+	Destroy!
+)
+
+macro implicitReturnMacroIsAllowed = -> "print 'abc'\n123"
+
+$implicitReturnMacroIsAllowed!
 

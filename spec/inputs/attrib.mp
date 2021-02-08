@@ -14,8 +14,8 @@ do
 	close f = with io.open "file.txt"
 		\write "Hello"
 
-macro block defer = (item)-> "close _ = #{item}"
-macro block defer_f = (func)-> "close _ = setmetatable {},__close:#{func}"
+macro defer = (item)-> "close _ = #{item}"
+macro defer_f = (func)-> "close _ = setmetatable {},__close:#{func}"
 
 do
 	$defer with io.open "file.txt"
@@ -29,7 +29,7 @@ _defers = setmetatable {},__close:=>
 	@[#@]!
 	@[#@] = nil
 
-macro block defer_i = (item)-> "
+macro defer_i = (item)-> "
 _defers[#_defers + 1] = #{item}
 close _ = _defers"
 

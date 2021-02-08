@@ -280,7 +280,6 @@ private:
 	AST_RULE(FnArgsDef)
 	AST_RULE(fn_arrow)
 	AST_RULE(FunLit)
-	AST_RULE(macro_type)
 	AST_RULE(MacroName)
 	AST_RULE(MacroLit)
 	AST_RULE(Macro)

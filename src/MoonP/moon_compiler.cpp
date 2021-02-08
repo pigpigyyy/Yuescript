@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.4.26"sv;
+const std::string_view version = "0.5.0"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -2290,7 +2290,6 @@ private:
 		if (_scopes.size() > 1) {
 			throw std::logic_error(_info.errorMessage("can not define macro outside the root block"sv, macro));
 		}
-		auto type = _parser.toString(macro->type);
 		auto macroName = _parser.toString(macro->name);
 		auto argsDef = macro->macroLit->argsDef.get();
 		str_list newArgs;
@@ -2314,9 +2313,8 @@ private:
 				newArgs.emplace_back(_parser.toString(argsDef->varArg));
 			}
 		}
-		_buf << "fmacro = ("sv << join(newArgs, ","sv) << ")->"sv;
-		_buf << _parser.toString(macro->macroLit->body) << '\n';
-		_buf << "{fmacro, \"" << type << "\"}"sv;
+		_buf << "("sv << join(newArgs, ","sv) << ")->"sv;
+		_buf << _parser.toString(macro->macroLit->body);
 		auto macroCodes = clearBuf();
 		_buf << "=(macro "sv << macroName << ")";
 		auto chunkName = clearBuf();
@@ -3128,16 +3126,15 @@ private:
 				std::string err = lua_tostring(L, -1);
 				throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 			}
-			return {s("block"sv), Empty, {}};
+			return {Empty, Empty, {}};
 		}
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
-		lua_rawget(L, -2); // cur[macroName], cur macro
-		if (lua_istable(L, -1) == 0) {
+		lua_rawget(L, -2); // cur[macroName], cur macroFunc
+		if (lua_isfunction(L, -1) == 0) {
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
-		}
-		lua_rawgeti(L, -1, 1); // cur macro func
-		pushMoonp("pcall"sv); // cur macro func pcall
-		lua_insert(L, -2); // cur macro pcall func
+		} // cur macroFunc
+		pushMoonp("pcall"sv); // cur macroFunc pcall
+		lua_insert(L, -2); // cur pcall macroFunc
 		auto item = *(++chainList.begin());
 		const node_container* args = nullptr;
 		if (auto invoke = ast_cast<Invoke_t>(item)) {
@@ -3186,47 +3183,60 @@ private:
 			Utils::trim(str);
 			Utils::replace(str, "\r\n"sv, "\n"sv);
 			lua_pushlstring(L, str.c_str(), str.size());
-		} // cur macro pcall func args...
-		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 3, 0) == 0;
-		if (!success) { // cur macro err
+		} // cur pcall macroFunc args...
+		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 2, 0) == 0;
+		if (!success) { // cur err
 			std::string err = lua_tostring(L, -1);
 			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
-		} // cur macro success res option
-		if (lua_toboolean(L, -3) == 0) {
+		} // cur success res
+		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -2);
 			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 		}
-		lua_remove(L, -3); // cur macro res option
-		if (lua_isstring(L, -2) == 0) {
-			throw std::logic_error(_info.errorMessage(s("macro function must return string with expanded codes"sv), x));
-		} // cur macro codes option
-		lua_rawgeti(L, -3, 2); // cur macro codes option type
-		std::string type = lua_tostring(L, -1);
-		lua_pop(L, 1); // cur macro codes option
+		lua_remove(L, -2); // cur res
+		if (lua_isstring(L, -1) == 0 && lua_istable(L, -1) == 0) {
+			throw std::logic_error(_info.errorMessage(s("macro function must return string or table"sv), x));
+		} // cur res
+		std::string codes;
+		std::string type;
 		str_list localVars;
-		if (lua_isnil(L, -1) == 0) {
-			if (lua_istable(L, -1) == 0) {
-				throw std::logic_error(_info.errorMessage(s("macro function must return expanded codes followed by a config table"sv), x));
+		if (lua_istable(L, -1) != 0) {
+			lua_getfield(L, -1, "codes"); // cur res codes
+			if (lua_isstring(L, -1) != 0) {
+				codes = lua_tostring(L, -1);
+			} else {
+				throw std::logic_error(_info.errorMessage(s("macro table must contain field \"codes\" of string"sv), x));
 			}
-			if (type == "expr"sv || type == "block"sv) {
-				throw std::logic_error(_info.errorMessage(s("expr or block macro is not accepting config table"sv), x));
+			lua_pop(L, 1); // cur res
+			lua_getfield(L, -1, "type"); // cur res type
+			if (lua_isstring(L, -1) != 0) {
+				type = lua_tostring(L, -1);
 			}
-			for (int i = 0; i < static_cast<int>(lua_objlen(L, -1)); i++) {
-				lua_rawgeti(L, -1, i + 1); // cur macro codes option item
-				size_t len = 0;
-				if (lua_isstring(L, -1) == 0) {
-					throw std::logic_error(_info.errorMessage(s("macro config table must contains strings"sv), x));
+			if (type != "lua"sv && type != "text"sv) {
+				throw std::logic_error(_info.errorMessage(s("macro table must contain field \"type\" of value \"lua\" or \"text\""sv), x));
+			}
+			lua_pop(L, 1); // cur res
+			lua_getfield(L, -1, "locals"); // cur res locals
+			if (lua_istable(L, -1) != 0) {
+				for (int i = 0; i < static_cast<int>(lua_objlen(L, -1)); i++) {
+					lua_rawgeti(L, -1, i + 1); // cur res locals item
+					size_t len = 0;
+					if (lua_isstring(L, -1) == 0) {
+						throw std::logic_error(_info.errorMessage(s("macro table field \"locals\" must be a table of strings"sv), x));
+					}
+					auto name = lua_tolstring(L, -1, &len);
+					if (_parser.match<Variable_t>({name, len})) {
+						localVars.push_back(std::string(name, len));
+					} else {
+						throw std::logic_error(_info.errorMessage(s("macro table field \"locals\" must contain names for local variables, got \""sv) + std::string(name, len) + '"', x));
+					}
+					lua_pop(L, 1);
 				}
-				auto name = lua_tolstring(L, -1, &len);
-				if (_parser.match<Variable_t>({name, len})) {
-					localVars.push_back(std::string(name, len));
-				} else {
-					throw std::logic_error(_info.errorMessage(s("macro config table must contains names for local variables, got \""sv) + std::string(name, len) + '"', x));
-				}
-				lua_pop(L, 1);
 			}
-		} // cur macro codes option
-		std::string codes = lua_tostring(L, -2);
+			lua_pop(L, 1); // cur res
+		} else {
+			codes = lua_tostring(L, -1);
+		}
 		return {type, codes, std::move(localVars)};
 	}
 
@@ -3236,10 +3246,10 @@ private:
 		std::string type, codes;
 		str_list localVars;
 		std::tie(type, codes, localVars) = expandMacroStr(chainValue);
-		std::string targetType(usage != ExpUsage::Common || chainList.size() > 2 ? "expr"sv : "block"sv);
+		bool isBlock = (usage == ExpUsage::Common) && (chainList.size() <= 2);
 		ParseInfo info;
 		if (type == "lua"sv) {
-			if (!allowBlockMacroReturn && targetType != "block"sv) {
+			if (!allowBlockMacroReturn && !isBlock) {
 				throw std::logic_error(_info.errorMessage("lua macro can only be placed where block macro is allowed"sv, x));
 			}
 			auto macroChunk = s("=(macro "sv) + _parser.toString(x->name) + ')';
@@ -3251,85 +3261,77 @@ private:
 			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else if (type == "text"sv) {
-			if (!allowBlockMacroReturn && targetType != "block"sv) {
-				throw std::logic_error(_info.errorMessage("text macro can only be placed where block macro is allowed"sv, x));
-			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
-		} else if (!allowBlockMacroReturn && type != targetType) {
-			if (!codes.empty() && targetType == "block") {
-				info = _parser.parse<Block_t>(codes);
-			}
-			if (info.node) type = "block";
-			else throw std::logic_error(_info.errorMessage(s("macro type mismatch, "sv) + targetType + s(" expected, got "sv) + type, x));
-		}
-		BLOCK_START
-		BREAK_IF(info.node);
-		if (usage == ExpUsage::Common) {
-			if (codes.empty()) {
+		} else {
+			if (!codes.empty()) {
+				if (isBlock) {
+					info = _parser.parse<Block_t>(codes);
+					if (!info.node) {
+						info.error = info.error.substr(info.error.find(':') + 2);
+						throw std::logic_error(_info.errorMessage(s("failed to expanded macro as block: "sv) + info.error, x));
+					}
+				} else {
+					info = _parser.parse<Exp_t>(codes);
+					if (!info.node && allowBlockMacroReturn) {
+						info = _parser.parse<Block_t>(codes);
+						if (!info.node) {
+							info.error = info.error.substr(info.error.find(':') + 2);
+							throw std::logic_error(_info.errorMessage(s("failed to expanded macro as expr or block: "sv) + info.error, x));
+						}
+						isBlock = true;
+					} else if (!info.node) {
+						info.error = info.error.substr(info.error.find(':') + 2);
+						throw std::logic_error(_info.errorMessage(s("failed to expanded macro as expr: "sv) + info.error, x));
+					}
+				}
+				int line = x->m_begin.m_line;
+				int col = x->m_begin.m_col;
+				info.node->traverse([&](ast_node* node) {
+					node->m_begin.m_line = line;
+					node->m_end.m_line = line;
+					node->m_begin.m_col = col;
+					node->m_end.m_col = col;
+					return traversal::Continue;
+				});
+				if (!isBlock) {
+					ast_ptr<false, Exp_t> exp;
+					exp.set(info.node);
+					if (!exp->opValues.empty() || chainList.size() > 2) {
+						auto paren = x->new_ptr<Parens_t>();
+						paren->expr.set(exp);
+						auto callable = x->new_ptr<Callable_t>();
+						callable->item.set(paren);
+						auto newChain = x->new_ptr<ChainValue_t>();
+						newChain->items.push_back(callable);
+						auto it = chainList.begin();
+						it++; it++;
+						for (; it != chainList.end(); ++it) {
+							newChain->items.push_back(*it);
+						}
+						auto value = x->new_ptr<Value_t>();
+						value->item.set(newChain);
+						exp = newExp(value, x);
+					}
+					if (usage == ExpUsage::Common) {
+						auto expList = x->new_ptr<ExpList_t>();
+						expList->exprs.push_back(exp);
+						auto exps = x->new_ptr<ExpListAssign_t>();
+						exps->expList.set(expList);
+						auto stmt = x->new_ptr<Statement_t>();
+						stmt->content.set(exps);
+						auto block = x->new_ptr<Block_t>();
+						block->statements.push_back(stmt);
+						info.node.set(block);
+					} else {
+						info.node.set(exp);
+					}
+				}
+				return {info.node, std::move(info.codes), Empty, std::move(localVars)};
+			} else {
+				if (!isBlock) throw std::logic_error(_info.errorMessage(s("failed to expanded empty macro as expr"sv), x));
 				return {x->new_ptr<Block_t>().get(), std::move(info.codes), Empty, std::move(localVars)};
 			}
-			if (type == "expr"sv) {
-				info = _parser.parse<Exp_t>(codes);
-			} else {
-				info = _parser.parse<Block_t>(codes);
-			}
-		} else if (allowBlockMacroReturn) {
-			if (type == "expr"sv) {
-				info = _parser.parse<Exp_t>(codes);
-			} else {
-				info = _parser.parse<Block_t>(codes);
-			}
-		} else {
-			info = _parser.parse<Exp_t>(codes);
 		}
-		BLOCK_END
-		if (!info.node) {
-			info.error = info.error.substr(info.error.find(':') + 2);
-			throw std::logic_error(_info.errorMessage("failed to parse expanded codes: " + info.error, x));
-		}
-		int line = x->m_begin.m_line;
-		int col = x->m_begin.m_col;
-		info.node->traverse([&](ast_node* node) {
-			node->m_begin.m_line = line;
-			node->m_end.m_line = line;
-			node->m_begin.m_col = col;
-			node->m_end.m_col = col;
-			return traversal::Continue;
-		});
-		if (type == "expr"sv) {
-			ast_ptr<false, Exp_t> exp;
-			exp.set(info.node);
-			if (!exp->opValues.empty() || chainList.size() > 2) {
-				auto paren = x->new_ptr<Parens_t>();
-				paren->expr.set(exp);
-				auto callable = x->new_ptr<Callable_t>();
-				callable->item.set(paren);
-				auto newChain = x->new_ptr<ChainValue_t>();
-				newChain->items.push_back(callable);
-				auto it = chainList.begin();
-				it++; it++;
-				for (; it != chainList.end(); ++it) {
-					newChain->items.push_back(*it);
-				}
-				auto value = x->new_ptr<Value_t>();
-				value->item.set(newChain);
-				exp = newExp(value, x);
-			}
-			if (usage == ExpUsage::Common) {
-				auto expList = x->new_ptr<ExpList_t>();
-				expList->exprs.push_back(exp);
-				auto exps = x->new_ptr<ExpListAssign_t>();
-				exps->expList.set(expList);
-				auto stmt = x->new_ptr<Statement_t>();
-				stmt->content.set(exps);
-				auto block = x->new_ptr<Block_t>();
-				block->statements.push_back(stmt);
-				info.node.set(block);
-			} else {
-				info.node.set(exp);
-			}
-		}
-		return {info.node, std::move(info.codes), Empty, std::move(localVars)};
 	}
 #endif // MOONP_NO_MACRO
 
@@ -3345,6 +3347,9 @@ private:
 			Utils::trim(luaCodes);
 			if (!node) {
 				if (!luaCodes.empty()) {
+					if (usage == ExpUsage::Return) {
+						luaCodes.insert(0, "return "sv);
+					}
 					if (_config.reserveLineNumber) {
 						luaCodes.insert(0, nll(chainValue).substr(1));
 					}

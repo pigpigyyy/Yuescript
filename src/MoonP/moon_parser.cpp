@@ -510,10 +510,9 @@ MoonParser::MoonParser() {
 	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
 	MacroName = expr('$') >> -Name;
-	macro_type = expr("expr") | expr("block") | expr("lua") | expr("text");
 	macro_args_def = sym('(') >> White >> -FnArgDefList >> White >> sym(')');
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
-	Macro = key("macro") >> Space >> macro_type >> Space >> Name >> sym('=') >> MacroLit;
+	Macro = key("macro") >> Space >> Name >> sym('=') >> MacroLit;
 
 	NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
 	NameOrDestructure = Space >> Variable | TableLit;
