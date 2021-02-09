@@ -412,7 +412,8 @@ MoonParser::MoonParser() {
 		FnArgs |
 		SingleString |
 		DoubleString |
-		and_(expr('[')) >> LuaString);
+		and_(expr('[')) >> LuaString |
+		and_(expr('{')) >> TableLit);
 
 	TableValue = KeyValue | Exp;
 

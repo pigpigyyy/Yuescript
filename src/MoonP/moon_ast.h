@@ -506,7 +506,7 @@ AST_END(Parens)
 
 AST_NODE(Invoke)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, Exp_t, SingleString_t, DoubleString_t, LuaString_t> args;
+	ast_sel_list<false, Exp_t, SingleString_t, DoubleString_t, LuaString_t, TableLit_t> args;
 	AST_MEMBER(Invoke, &sep, &args)
 AST_END(Invoke)
 

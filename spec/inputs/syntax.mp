@@ -82,6 +82,22 @@ something [[else]], 2
 
 _ = here(we)"go"[12123]
 
+split"abc xyz 123"\map"#"\printAll!
+
+_ = f""[a]
+_ = f""\b!
+_ = f"".c!
+
+f ""[a]
+f ""\b!
+f "".c!
+
+list{"abc", "xyz", "123"}\map"#"\printAll!
+
+_ = f{}[a]
+_ = f{}\b!
+_ = f{}.c!
+
 -- this runs
 something =
 	test: 12323

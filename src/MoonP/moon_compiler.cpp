@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.5.1"sv;
+const std::string_view version = "0.5.2"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -3439,6 +3439,7 @@ private:
 				case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(arg), temp); break;
 				case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
 				case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
+				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp); break;
 				default: assert(false); break;
 			}
 		}
