@@ -219,7 +219,7 @@ MoonParser::MoonParser() {
 
 	Return = key("return") >> -ExpListLow;
 
-	WithExp = ExpList >> -Assign;
+	WithExp = DisableChainBlock >> ensure(ExpList >> -Assign, PopChainBlock);
 
 	With = key("with") >> -existential_op >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
 	SwitchCase = key("when") >> ExpList >> -key("then") >> Body;
@@ -338,7 +338,25 @@ MoonParser::MoonParser() {
 	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> backcall_exp;
 	Exp = Seperator >> backcall_exp >> *exp_op_value;
 
-	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -InvokeArgs;
+	DisableChainBlock = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->chainBlockStack.push(false);
+		return true;
+	});
+
+	PopChainBlock = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->chainBlockStack.pop();
+		return true;
+	});
+
+	chain_line = CheckIndent >> (chain_item | Space >> (chain_dot_chain | ColonChain)) >> -InvokeArgs;
+	chain_block = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->chainBlockStack.empty() || st->chainBlockStack.top();
+	}) >> +SpaceBreak >> Advance >> ensure(
+		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
+	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> (chain_block | -InvokeArgs);
 
 	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
 	Value = SimpleValue | simple_table | ChainValue | String;

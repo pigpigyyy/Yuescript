@@ -111,6 +111,11 @@ do
 		with hi
 			return .a, .b
 
+do
+	with tb
+		.x = item
+			.field
+			\func 123
 
 do
 	with dad

@@ -78,6 +78,7 @@ protected:
 		std::string buffer;
 		std::stack<int> indents;
 		std::stack<bool> doStack;
+		std::stack<bool> chainBlockStack;
 	};
 
 	template <class T>
@@ -155,6 +156,10 @@ private:
 	rule ColonChain;
 	rule chain_with_colon;
 	rule ChainItem;
+	rule chain_line;
+	rule chain_block;
+	rule DisableChainBlock;
+	rule PopChainBlock;
 	rule Index;
 	rule invoke_chain;
 	rule TableValue;

@@ -43,6 +43,9 @@ export Constant = switch value
 	when "better" then 2
 	when "best" then 3
 
+export item = 123
+	|> func
+
 export x
 
 f if a then b

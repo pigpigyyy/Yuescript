@@ -123,6 +123,21 @@ argon\world().something()
 
 argon\somethin"200".world(1,2)
 
+origin
+	.transform
+	.root
+	.gameObject
+	\Parents!
+	\Descendants!
+	\SelectEnable!
+	\SelectVisible!
+	\TagEqual "fx"
+	\Where (x) ->
+		if x\IsTargeted!
+			return false
+		x.name\EndsWith "(Clone)"
+	\Destroy!
+
 x = -434
 
 x = -hello world one two
@@ -163,6 +178,9 @@ something\hello(what) a,b
 something\hello what
 something.hello\world a,b
 something.hello\world(1,2,3) a,b
+something
+	.hello
+	\world(1,2,3) a,b
 
 
 x = 1232
@@ -295,6 +313,9 @@ a /= func "cool"
 
 x.then = "hello"
 x.while.true = "hello"
+x
+	.while
+	.true = "hello"
 
 --
 
