@@ -110,6 +110,8 @@ AST_NODE(Local)
 	ast_sel<true, local_flag_t, local_values_t> item;
 	std::list<std::string> forceDecls;
 	std::list<std::string> decls;
+	bool collected = false;
+	bool defined = false;
 	AST_MEMBER(Local, &item)
 AST_END(Local)
 

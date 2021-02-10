@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.1"sv;
+const std::string_view version = "0.6.2"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -516,18 +516,29 @@ private:
 		return nullptr;
 	}
 
+	Statement_t* lastStatementFrom(const node_container& stmts) const {
+		if (!stmts.empty()) {
+			auto it = stmts.end(); --it;
+			while (!static_cast<Statement_t*>(*it)->content && it != stmts.begin()) {
+				--it;
+			}
+			return static_cast<Statement_t*>(*it);
+		}
+		return nullptr;
+	}
+
 	Statement_t* lastStatementFrom(Body_t* body) const {
 		if (auto stmt = body->content.as<Statement_t>()) {
 			return stmt;
 		} else {
 			const auto& stmts = body->content.to<Block_t>()->statements.objects();
-			return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
+			return lastStatementFrom(stmts);
 		}
 	}
 
 	Statement_t* lastStatementFrom(Block_t* block) const {
 		const auto& stmts = block->statements.objects();
-		return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
+		return lastStatementFrom(stmts);
 	}
 
 	Exp_t* lastExpFromAssign(ast_node* action) {
@@ -773,6 +784,11 @@ private:
 			if (auto assignment = assignmentFrom(statement)) {
 				auto preDefine = getPredefine(assignment);
 				if (!preDefine.empty()) out.push_back(preDefine + nll(statement));
+			} else if (auto local = statement->content.as<Local_t>()) {
+				if (!local->defined) {
+					local->defined = true;
+					transformLocalDef(local, out);
+				}
 			}
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
@@ -2009,6 +2025,13 @@ private:
 				BREAK_IF(it == nodes.begin());
 				auto last = it; --last;
 				auto lst = static_cast<Statement_t*>(*last);
+				if (lst->appendix) {
+					throw std::logic_error(_info.errorMessage("statement decorator must be placed at the end of backcall chain"sv, lst->appendix.get()));
+				}
+				lst->appendix.set(stmt->appendix);
+				stmt->appendix.set(nullptr);
+				lst->needSep.set(stmt->needSep);
+				stmt->needSep.set(nullptr);
 				auto exp = lastExpFromStatement(lst);
 				BREAK_IF(!exp);
 				for (auto val : backcallBody->values.objects()) {
@@ -2104,27 +2127,30 @@ private:
 				return;
 			}
 			if (auto local = stmt->content.as<Local_t>()) {
-				switch (local->item->getId()) {
-					case id<local_flag_t>(): {
-						auto flag = local->item.to<local_flag_t>();
-						LocalMode newMode = _parser.toString(flag) == "*"sv ? LocalMode::Any : LocalMode::Capital;
-						if (int(newMode) > int(mode)) {
-							mode = newMode;
+				if (!local->collected) {
+					local->collected = true;
+					switch (local->item->getId()) {
+						case id<local_flag_t>(): {
+							auto flag = local->item.to<local_flag_t>();
+							LocalMode newMode = _parser.toString(flag) == "*"sv ? LocalMode::Any : LocalMode::Capital;
+							if (int(newMode) > int(mode)) {
+								mode = newMode;
+							}
+							if (mode == LocalMode::Any) {
+								if (!any) any = local;
+								if (!capital) capital = local;
+							} else {
+								if (!capital) capital = local;
+							}
+							break;
 						}
-						if (mode == LocalMode::Any) {
-							if (!any) any = local;
-							if (!capital) capital = local;
-						} else {
-							if (!capital) capital = local;
+						case id<local_values_t>(): {
+							auto values = local->item.to<local_values_t>();
+							for (auto name : values->nameList->names.objects()) {
+								local->forceDecls.push_back(_parser.toString(name));
+							}
+							break;
 						}
-						break;
-					}
-					case id<local_values_t>(): {
-						auto values = local->item.to<local_values_t>();
-						for (auto name : values->nameList->names.objects()) {
-							local->forceDecls.push_back(_parser.toString(name));
-						}
-						break;
 					}
 				}
 			} else if (mode != LocalMode::None) {
@@ -2194,8 +2220,8 @@ private:
 			case ExpUsage::Return: {
 				BLOCK_START
 				BREAK_IF(isRoot && !_info.moduleName.empty());
-				BREAK_IF(nodes.empty());
-				auto last = static_cast<Statement_t*>(nodes.back());
+				auto last = lastStatementFrom(nodes);
+				BREAK_IF(!last);
 				auto x = last;
 				auto expList = expListFrom(last);
 				BREAK_IF(!expList ||
@@ -5434,8 +5460,7 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformLocal(Local_t* local, str_list& out) {
-		str_list temp;
+	void transformLocalDef(Local_t* local, str_list& out) {
 		if (!local->forceDecls.empty() || !local->decls.empty()) {
 			str_list defs;
 			for (const auto& decl : local->forceDecls) {
@@ -5449,8 +5474,16 @@ private:
 			}
 			auto preDefine = getPredefine(defs);
 			if (!preDefine.empty()) {
-				temp.push_back(preDefine + nll(local));
+				out.push_back(preDefine + nll(local));
 			}
+		}
+	}
+
+	void transformLocal(Local_t* local, str_list& out) {
+		str_list temp;
+		if (!local->defined) {
+			local->defined = true;
+			transformLocalDef(local, temp);
 		}
 		if (auto values = local->item.as<local_values_t>()) {
 			if (values->valueList) {

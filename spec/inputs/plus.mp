@@ -14,6 +14,8 @@ message = message\gsub "<%->", fcolor if fcolor = message\match "<%w*>"
 
 valA = func! if func = getfunc!
 
+local valA = func! if func = getfunc!
+
 valB = do
 	func = getfunc!
 	func?!
