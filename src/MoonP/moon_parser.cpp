@@ -319,7 +319,7 @@ MoonParser::MoonParser() {
 	unary_exp = *(Space >> unary_operator) >> expo_exp;
 
 	BackcallOperator = expr("|>");
-	backcall_value = White >> BackcallOperator >> *SpaceBreak >> unary_exp;
+	backcall_value = Space >> BackcallOperator >> *SpaceBreak >> unary_exp;
 	backcall_exp = unary_exp >> *backcall_value;
 
 	BinaryOperator =
@@ -522,6 +522,8 @@ MoonParser::MoonParser() {
 	fn_arrow_back = expr('<') >> set("-=");
 	Backcall = -FnArgsDef >> Space >> fn_arrow_back >> Space >> ChainValue;
 
+	BackcallBody = Seperator >> Space >> BackcallOperator >> unary_exp >> *(+SpaceBreak >> CheckIndent >> Space >> BackcallOperator >> unary_exp);
+
 	ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
 	ExpListLow = Seperator >> Exp >> *(Space >> set(",;") >> Exp);
 
@@ -562,14 +564,14 @@ MoonParser::MoonParser() {
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		Space >> BreakLoop | Label | Goto | Backcall |
-		LocalAttrib | ExpListAssign
+		LocalAttrib | BackcallBody | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
 	Body = Space >> Break >> *EmptyLine >> InBlock | Statement;
 
 	empty_line_stop = Space >> and_(Stop);
-	Line = CheckIndent >> Statement | empty_line_stop;
+	Line = CheckIndent >> Statement | and_(Space >> BackcallOperator) >> Advance >> ensure(Statement, PopIndent) | empty_line_stop;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);

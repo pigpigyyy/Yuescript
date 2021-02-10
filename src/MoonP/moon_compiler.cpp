@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.5.2"sv;
+const std::string_view version = "0.6.0"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -429,7 +429,7 @@ private:
 		return result;
 	}
 
-	Value_t* singleValueFrom(ast_node* item) const {
+	unary_exp_t* singleUnaryExpFrom(ast_node* item) const {
 		Exp_t* exp = nullptr;
 		switch (item->getId()) {
 			case id<Exp_t>():
@@ -451,8 +451,8 @@ private:
 			}
 			case id<unary_exp_t>(): {
 				auto unary = static_cast<unary_exp_t*>(item);
-				if (unary->ops.empty() && unary->expos.size() == 1) {
-					return static_cast<Value_t*>(unary->expos.back());
+				if (unary->expos.size() == 1) {
+					return unary;
 				}
 				return nullptr;
 			}
@@ -463,10 +463,18 @@ private:
 		BREAK_IF(!exp->opValues.empty());
 		BREAK_IF(exp->backcalls.size() != 1);
 		auto unary = static_cast<unary_exp_t*>(exp->backcalls.back());
-		BREAK_IF(!unary->ops.empty());
 		BREAK_IF(unary->expos.size() != 1);
-		return static_cast<Value_t*>(unary->expos.back());
+		return unary;
 		BLOCK_END
+		return nullptr;
+	}
+
+	Value_t* singleValueFrom(ast_node* item) const {
+		if (auto unary = singleUnaryExpFrom(item)) {
+			if (unary->ops.empty()) {
+				return static_cast<Value_t*>(unary->expos.back());
+			}
+		}
 		return nullptr;
 	}
 
@@ -520,6 +528,60 @@ private:
 	Statement_t* lastStatementFrom(Block_t* block) const {
 		const auto& stmts = block->statements.objects();
 		return stmts.empty() ? nullptr : static_cast<Statement_t*>(stmts.back());
+	}
+
+	Exp_t* lastExpFromAssign(ast_node* action) {
+		switch (action->getId()) {
+			case id<Update_t>(): {
+				auto update = static_cast<Update_t*>(action);
+				return update->value;
+			}
+			case id<Assign_t>(): {
+				auto assign = static_cast<Assign_t*>(action);
+				return ast_cast<Exp_t>(assign->values.back());
+			}
+		}
+		return nullptr;
+	}
+
+	Exp_t* lastExpFromStatement(Statement_t* stmt) {
+		if (!stmt->content) return nullptr;
+		switch (stmt->content->getId()) {
+			case id<ExpListAssign_t>(): {
+				auto expListAssign = static_cast<ExpListAssign_t*>(stmt->content.get());
+				if (auto action = expListAssign->action.get()) {
+					return lastExpFromAssign(action);
+				} else {
+					return static_cast<Exp_t*>(expListAssign->expList->exprs.back());
+				}
+			}
+			case id<Export_t>(): {
+				auto exportNode = static_cast<Export_t*>(stmt->content.get());
+				if (auto action = exportNode->assign.get()) {
+					return lastExpFromAssign(action);
+				} else {
+					switch (exportNode->target->getId()) {
+						case id<Exp_t>(): return exportNode->target.to<Exp_t>();
+						case id<ExpList_t>(): return static_cast<Exp_t*>(exportNode->target.to<ExpList_t>()->exprs.back());
+					}
+				}
+			}
+			case id<Local_t>(): {
+				if (auto localValues = static_cast<Local_t*>(stmt->content.get())->item.as<local_values_t>()) {
+					if (auto expList = localValues->valueList.as<ExpListLow_t>()) {
+						return static_cast<Exp_t*>(expList->exprs.back());
+					}
+				}
+			}
+			case id<Global_t>(): {
+				if (auto globalValues = static_cast<Global_t*>(stmt->content.get())->item.as<global_values_t>()) {
+					if (auto expList = globalValues->valueList.as<ExpListLow_t>()) {
+						return static_cast<Exp_t*>(expList->exprs.back());
+					}
+				}
+			}
+		}
+		return nullptr;
 	}
 
 	template <class T>
@@ -812,6 +874,7 @@ private:
 			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
 			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
 			case id<LocalAttrib_t>(): transformLocalAttrib(static_cast<LocalAttrib_t*>(content), out); break;
+			case id<BackcallBody_t>(): throw std::logic_error(_info.errorMessage("backcall chain must be following a value"sv, x)); break;
 			case id<ExpListAssign_t>(): {
 				auto expListAssign = static_cast<ExpListAssign_t*>(content);
 				if (expListAssign->action) {
@@ -1692,7 +1755,10 @@ private:
 			auto begin = values.begin(); begin++;
 			for (auto it = begin; it != values.end(); ++it) {
 				auto unary = static_cast<unary_exp_t*>(*it);
-				auto value = singleValueFrom(unary);
+				auto value = static_cast<Value_t*>(singleUnaryExpFrom(unary) ? unary->expos.back() : nullptr);
+				if (values.back() == *it && !unary->ops.empty() && usage == ExpUsage::Common) {
+					throw std::logic_error(_info.errorMessage("expression list is not supported here"sv, x));
+				}
 				if (!value) throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, *it));
 				if (auto chainValue = value->item.as<ChainValue_t>()) {
 					if (isChainValueCall(chainValue)) {
@@ -1936,7 +2002,29 @@ private:
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {
 			auto node = *it;
 			auto stmt = static_cast<Statement_t*>(node);
-			if (auto backcall = stmt->content.as<Backcall_t>()) {
+			if (auto backcallBody = stmt->content.as<BackcallBody_t>()) {
+				auto x = stmt;
+				bool cond = false;
+				BLOCK_START
+				BREAK_IF(it == nodes.begin());
+				auto last = it; --last;
+				auto lst = static_cast<Statement_t*>(*last);
+				auto exp = lastExpFromStatement(lst);
+				BREAK_IF(!exp);
+				for (auto val : backcallBody->values.objects()) {
+					exp->backcalls.push_back(val);
+				}
+				cond = true;
+				BLOCK_END
+				if (!cond) throw std::logic_error(_info.errorMessage("backcall chain must be following a value"sv, x));
+				stmt->content.set(nullptr);
+				auto next = it; ++next;
+				BLOCK_START
+				BREAK_IF(next == nodes.end());
+				BREAK_IF(!static_cast<Statement_t*>(*next)->content.as<BackcallBody_t>());
+				throw std::logic_error(_info.errorMessage("indent mismatch in backcall chain"sv, *next));
+				BLOCK_END
+			} else if (auto backcall = stmt->content.as<Backcall_t>()) {
 				auto x = *nodes.begin();
 				auto newBlock = x->new_ptr<Block_t>();
 				if (it != nodes.begin()) {

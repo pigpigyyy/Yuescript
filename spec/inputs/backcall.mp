@@ -2,9 +2,9 @@
 {"abc", 123, 998} |> foreach print
 
 {1,2,3}
-	|> map((x)-> x * 2)
-	|> filter((x)-> x > 4)
-	|> reduce(0, (a,b)-> a + b)
+	|> map (x)-> x * 2
+	|> filter (x)-> x > 4
+	|> reduce 0, (a,b)-> a + b
 	|> print
 
 [i |> tostring for i = 0,10] |> table.concat(",") |> print
@@ -35,6 +35,28 @@ val(2) |> f 1, _, 3, 4, 5
 arr[3] |> f 1, 2, _, 4, 5
 
 a = {"1","2","3"} |> table.concat("") |> tonumber |> f1(1, 2, 3, _) |> f2(1, _, 3)
+
+readFile "example.txt"
+	|> extract _, language, {}
+	|> parse _, language
+	|> emit
+	|> render
+	|> print
+
+123 |> not func! |> f
+
+do
+	_1 = list{"abc","xyz","123"}\map"#"\value!
+		|> -func!
+		|> abc 123, _, "x"
+
+	global _2,_3,_4 = 1,2,3
+		|> f
+
+	local _5 = v |> f1 1
+					|> f2 2
+					|> f3 3
+					|> f4 4
 
 do
 	(x)<- map {1,2,3}
