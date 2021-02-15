@@ -53,7 +53,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.2"sv;
+const std::string_view version = "0.6.3"sv;
 const std::string_view extension = "mp"sv;
 
 class MoonCompilerImpl {
@@ -516,6 +516,18 @@ private:
 		return nullptr;
 	}
 
+	Statement_t* lastStatementFrom(ast_node* body) const {
+		switch (body->getId()) {
+			case id<Block_t>():
+				return lastStatementFrom(static_cast<Block_t*>(body));
+			case id<Statement_t>(): {
+				return static_cast<Statement_t*>(body);
+			}
+			default: assert(false); break;
+		}
+		return nullptr;
+	}
+
 	Statement_t* lastStatementFrom(const node_container& stmts) const {
 		if (!stmts.empty()) {
 			auto it = stmts.end(); --it;
@@ -803,9 +815,7 @@ private:
 
 					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(statement->content);
-					auto body = x->new_ptr<Body_t>();
-					body->content.set(stmt);
-					ifNode->nodes.push_back(body);
+					ifNode->nodes.push_back(stmt);
 
 					statement->appendix.set(nullptr);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -830,9 +840,7 @@ private:
 
 					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(statement->content);
-					auto body = x->new_ptr<Body_t>();
-					body->content.set(stmt);
-					unless->nodes.push_back(body);
+					unless->nodes.push_back(stmt);
 
 					statement->appendix.set(nullptr);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -1593,9 +1601,7 @@ private:
 					expListAssign->expList.set(expList);
 					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(expListAssign);
-					auto body = x->new_ptr<Body_t>();
-					body->content.set(stmt);
-					ns.push_back(body.get());
+					ns.push_back(stmt.get());
 				}
 			}
 		}
@@ -1614,15 +1620,16 @@ private:
 			pushScope();
 			_enableReturn.push(true);
 		}
-		std::list<std::pair<IfCond_t*, Body_t*>> ifCondPairs;
+		std::list<std::pair<IfCond_t*, ast_node*>> ifCondPairs;
 		ifCondPairs.emplace_back();
 		for (auto node : nodes) {
 			switch (node->getId()) {
 				case id<IfCond_t>():
 					ifCondPairs.back().first = static_cast<IfCond_t*>(node);
 					break;
-				case id<Body_t>():
-					ifCondPairs.back().second = static_cast<Body_t*>(node);
+				case id<Block_t>():
+				case id<Statement_t>():
+					ifCondPairs.back().second = node;
 					ifCondPairs.emplace_back();
 					break;
 				default: assert(false); break;
@@ -1718,7 +1725,7 @@ private:
 				if (pair == ifCondPairs.front() && extraAssignment) {
 					transformAssignment(extraAssignment, temp);
 				}
-				transformBody(pair.second, temp, usage, assignList);
+				transform_plain_body(pair.second, temp, usage, assignList);
 				popScope();
 			}
 			if (!pair.first) {
@@ -3945,7 +3952,22 @@ private:
 		out.push_back(clearBuf());
 	}
 
-	void transformLoopBody(Body_t* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
+	void transform_plain_body(ast_node* body, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		switch (body->getId()) {
+			case id<Block_t>():
+				transformBlock(static_cast<Block_t*>(body), out, usage, assignList);
+				break;
+			case id<Statement_t>(): {
+				auto newBlock = body->new_ptr<Block_t>();
+				newBlock->statements.push_back(body);
+				transformBlock(newBlock, out, usage, assignList);
+				break;
+			}
+			default: assert(false); break;
+		}
+	}
+
+	void transformLoopBody(ast_node* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
 		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
 			if (auto stmt = ast_cast<Statement_t>(node)) {
@@ -3968,7 +3990,7 @@ private:
 			_continueVars.push(continueVar);
 			pushScope();
 		}
-		transformBody(body, temp, usage, assignList);
+		transform_plain_body(body, temp, usage, assignList);
 		if (withContinue) {
 			if (!appendContent.empty()) {
 				_buf << indent() << appendContent;
@@ -4739,7 +4761,7 @@ private:
 			ifNode->nodes.push_back(with->body);
 			transformIf(ifNode, temp, ExpUsage::Common);
 		} else {
-			transformBody(with->body, temp, ExpUsage::Common);
+			transform_plain_body(with->body, temp, ExpUsage::Common);
 		}
 		_withVars.pop();
 		if (assignList) {
@@ -5401,7 +5423,7 @@ private:
 	void transformRepeat(Repeat_t* repeat, str_list& out) {
 		str_list temp;
 		pushScope();
-		transformLoopBody(repeat->body, temp, Empty, ExpUsage::Common);
+		transformLoopBody(repeat->body->content, temp, Empty, ExpUsage::Common);
 		transformExp(repeat->condition, temp, ExpUsage::Closure);
 		popScope();
 		_buf << indent() << "repeat"sv << nll(repeat);
@@ -5442,13 +5464,13 @@ private:
 			}
 			temp.back().append(s(" then"sv) + nll(branch));
 			pushScope();
-			transformBody(branch->body, temp, usage, assignList);
+			transform_plain_body(branch->body, temp, usage, assignList);
 			popScope();
 		}
 		if (switchNode->lastBranch) {
 			temp.push_back(indent() + s("else"sv) + nll(switchNode->lastBranch));
 			pushScope();
-			transformBody(switchNode->lastBranch, temp, usage, assignList);
+			transform_plain_body(switchNode->lastBranch, temp, usage, assignList);
 			popScope();
 		}
 		temp.push_back(indent() + s("end"sv) + nlr(switchNode));

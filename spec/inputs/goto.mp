@@ -7,7 +7,7 @@ do
 	::done::
 
 do
-	for z = 1, 10 for y = 1, 10 for x = 1, 10
+	for z = 1, 10 do for y = 1, 10 do for x = 1, 10
 		if x^2 + y^2 == z^2
 			print 'found a Pythagorean triple:', x, y, z
 			goto done
@@ -15,7 +15,7 @@ do
 
 do
 	for z = 1, 10
-		for y = 1, 10 for x = 1, 10
+		for y = 1, 10 do for x = 1, 10
 				if x^2 + y^2 == z^2
 					print 'found a Pythagorean triple:', x, y, z
 					print 'now trying next z...'
@@ -24,7 +24,7 @@ do
 
 do
 	::redo::
-	for x = 1, 10 for y = 1, 10
+	for x = 1, 10 do for y = 1, 10
 		if not f x, y then goto continue
 		if not g x, y then goto skip
 		if not h x, y then goto redo

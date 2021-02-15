@@ -131,7 +131,11 @@ private:
 	rule import_tab_lines;
 	rule WithExp;
 	rule DisableDo;
-	rule PopDo;
+	rule EnableDo;
+	rule DisableChain;
+	rule EnableChain;
+	rule DisableDoChain;
+	rule EnableDoChain;
 	rule SwitchElse;
 	rule SwitchBlock;
 	rule IfElseIf;
@@ -158,8 +162,6 @@ private:
 	rule ChainItem;
 	rule chain_line;
 	rule chain_block;
-	rule DisableChainBlock;
-	rule PopChainBlock;
 	rule Index;
 	rule invoke_chain;
 	rule TableValue;

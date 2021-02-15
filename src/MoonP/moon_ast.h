@@ -223,19 +223,20 @@ AST_END(Return)
 
 class existential_op_t;
 class Assign_t;
-class Body_t;
+class Block_t;
+class Statement_t;
 
 AST_NODE(With)
 	ast_ptr<false, existential_op_t> eop;
 	ast_ptr<true, ExpList_t> valueList;
 	ast_ptr<false, Assign_t> assigns;
-	ast_ptr<true, Body_t> body;
+	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(With, &eop, &valueList, &assigns, &body)
 AST_END(With)
 
 AST_NODE(SwitchCase)
 	ast_ptr<true, ExpList_t> valueList;
-	ast_ptr<true, Body_t> body;
+	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(SwitchCase, &valueList, &body)
 AST_END(SwitchCase)
 
@@ -243,7 +244,7 @@ AST_NODE(Switch)
 	ast_ptr<true, Exp_t> target;
 	ast_ptr<true, Seperator_t> sep;
 	ast_list<true, SwitchCase_t> branches;
-	ast_ptr<false, Body_t> lastBranch;
+	ast_sel<false, Block_t, Statement_t> lastBranch;
 	AST_MEMBER(Switch, &target, &sep, &branches, &lastBranch)
 AST_END(Switch)
 
@@ -255,21 +256,23 @@ AST_END(IfCond)
 
 AST_NODE(If)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, IfCond_t, Body_t> nodes;
+	ast_sel_list<true, IfCond_t, Block_t, Statement_t> nodes;
 	AST_MEMBER(If, &sep, &nodes)
 AST_END(If)
 
 AST_NODE(Unless)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, IfCond_t, Body_t> nodes;
+	ast_sel_list<true, IfCond_t, Block_t, Statement_t> nodes;
 	AST_MEMBER(Unless, &sep, &nodes)
 AST_END(Unless)
 
 AST_NODE(While)
 	ast_ptr<true, Exp_t> condition;
-	ast_ptr<true, Body_t> body;
+	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(While, &condition, &body)
 AST_END(While)
+
+class Body_t;
 
 AST_NODE(Repeat)
 	ast_ptr<true, Body_t> body;
@@ -287,7 +290,7 @@ AST_NODE(For)
 	ast_ptr<true, Exp_t> startValue;
 	ast_ptr<true, Exp_t> stopValue;
 	ast_ptr<false, for_step_value_t> stepValue;
-	ast_ptr<true, Body_t> body;
+	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(For, &varName, &startValue, &stopValue, &stepValue, &body)
 AST_END(For)
 
@@ -297,7 +300,7 @@ class star_exp_t;
 AST_NODE(ForEach)
 	ast_ptr<true, AssignableNameList_t> nameList;
 	ast_sel<true, star_exp_t, ExpList_t> loopValue;
-	ast_ptr<true, Body_t> body;
+	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(ForEach, &nameList, &loopValue, &body)
 AST_END(ForEach)
 

@@ -70,8 +70,13 @@ MoonParser::MoonParser() {
 
 	#define sym(str) (Space >> str)
 	#define symx(str) expr(str)
-	#define ensure(patt, finally) (((patt) >> (finally)) | ((finally) >> (Cut)))
+	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> Cut)
 	#define key(str) (Space >> str >> not_(AlphaNum))
+	#define disable_do(patt) (DisableDo >> ((patt) >> EnableDo | EnableDo >> Cut))
+	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
+	#define disable_do_chain(patt) (DisableDoChain >> ((patt) >> EnableDoChain | EnableDoChain >> Cut))
+	#define plain_body_with(str) (-key(str) >> InBlock | key(str) >> Statement)
+	#define plain_body (InBlock | Statement)
 
 	Variable = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -169,7 +174,7 @@ MoonParser::MoonParser() {
 		return true;
 	});
 
-	InBlock = Advance >> ensure(Block, PopIndent);
+	InBlock = +SpaceBreak >> Advance >> ensure(Block, PopIndent);
 
 	local_flag = expr('*') | expr('^');
 	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
@@ -219,11 +224,11 @@ MoonParser::MoonParser() {
 
 	Return = key("return") >> -ExpListLow;
 
-	WithExp = DisableChainBlock >> ensure(ExpList >> -Assign, PopChainBlock);
+	WithExp = ExpList >> -Assign;
 
-	With = key("with") >> -existential_op >> DisableDo >> ensure(WithExp, PopDo) >> -key("do") >> Body;
-	SwitchCase = key("when") >> ExpList >> -key("then") >> Body;
-	SwitchElse = key("else") >> Body;
+	With = key("with") >> -existential_op >> disable_do_chain(WithExp) >> plain_body_with("do");
+	SwitchCase = key("when") >> disable_chain(ExpList) >> plain_body_with("then");
+	SwitchElse = key("else") >> plain_body;
 
 	SwitchBlock = *EmptyLine >>
 		Advance >> Seperator >>
@@ -232,31 +237,27 @@ MoonParser::MoonParser() {
 		-(+SpaceBreak >> SwitchElse) >>
 		PopIndent;
 
-	Switch = key("switch") >>
-		DisableDo >> ensure(Exp, PopDo) >>
-		-key("do") >> -Space >> Break >> SwitchBlock;
+	Switch = key("switch") >> disable_do(Exp) >> -key("do")
+		>> -Space >> Break >> SwitchBlock;
 
-	IfCond = Exp >> -Assign;
-	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> -key("then") >> Body;
-	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> Body;
-	If = key("if") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
-	Unless = key("unless") >> Seperator >> IfCond >> -key("then") >> Body >> *IfElseIf >> -IfElse;
-
-	While = key("while") >> DisableDo >> ensure(Exp, PopDo) >> -key("do") >> Body;
+	IfCond = disable_chain(Exp >> -Assign);
+	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> plain_body_with("then");
+	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> plain_body;
+	If = key("if") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
+	Unless = key("unless") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
+	
+	While = key("while") >> disable_do_chain(Exp) >> plain_body_with("do");
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> Exp;
 	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
-	For = key("for") >> DisableDo >>
-		ensure(for_args, PopDo) >>
-		-key("do") >> Body;
+	For = key("for") >> disable_do_chain(for_args) >> plain_body_with("do");
 
 	for_in = star_exp | ExpList;
 
 	ForEach = key("for") >> AssignableNameList >> key("in") >>
-		DisableDo >> ensure(for_in, PopDo) >>
-		-key("do") >> Body;
+		disable_do_chain(for_in) >> plain_body_with("do");
 
 	Do = pl::user(key("do"), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -269,9 +270,23 @@ MoonParser::MoonParser() {
 		return true;
 	});
 
-	PopDo = pl::user(true_(), [](const item_t& item) {
+	EnableDo = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->doStack.pop();
+		return true;
+	});
+
+	DisableDoChain = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->doStack.push(false);
+		st->chainBlockStack.push(false);
+		return true;
+	});
+
+	EnableDoChain = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->doStack.pop();
+		st->chainBlockStack.pop();
 		return true;
 	});
 
@@ -338,13 +353,13 @@ MoonParser::MoonParser() {
 	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> backcall_exp;
 	Exp = Seperator >> backcall_exp >> *exp_op_value;
 
-	DisableChainBlock = pl::user(true_(), [](const item_t& item) {
+	DisableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->chainBlockStack.push(false);
 		return true;
 	});
 
-	PopChainBlock = pl::user(true_(), [](const item_t& item) {
+	EnableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->chainBlockStack.pop();
 		return true;
@@ -356,7 +371,7 @@ MoonParser::MoonParser() {
 		return st->chainBlockStack.empty() || st->chainBlockStack.top();
 	}) >> +SpaceBreak >> Advance >> ensure(
 		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
-	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> (chain_block | -InvokeArgs);
+	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block);
 
 	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
 	Value = SimpleValue | simple_table | ChainValue | String;
@@ -586,10 +601,10 @@ MoonParser::MoonParser() {
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
-	Body = Space >> Break >> *EmptyLine >> InBlock | Statement;
+	Body = InBlock | Statement;
 
 	empty_line_stop = Space >> and_(Stop);
-	Line = CheckIndent >> Statement | and_(Space >> BackcallOperator) >> Advance >> ensure(Statement, PopIndent) | empty_line_stop;
+	Line = and_(check_indent >> Space >> not_(BackcallOperator)) >> Statement | Advance >> ensure(and_(Space >> BackcallOperator) >> Statement, PopIndent) | empty_line_stop;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
