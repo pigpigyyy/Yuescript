@@ -58,7 +58,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.5"sv;
+const std::string_view version = "0.6.6"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -593,6 +593,7 @@ private:
 						case id<ExpList_t>(): return static_cast<Exp_t*>(exportNode->target.to<ExpList_t>()->exprs.back());
 					}
 				}
+				return nullptr;
 			}
 			case id<Local_t>(): {
 				if (auto localValues = static_cast<Local_t*>(stmt->content.get())->item.as<local_values_t>()) {
@@ -600,6 +601,7 @@ private:
 						return static_cast<Exp_t*>(expList->exprs.back());
 					}
 				}
+				return nullptr;
 			}
 			case id<Global_t>(): {
 				if (auto globalValues = static_cast<Global_t*>(stmt->content.get())->item.as<global_values_t>()) {
@@ -607,6 +609,7 @@ private:
 						return static_cast<Exp_t*>(expList->exprs.back());
 					}
 				}
+				return nullptr;
 			}
 		}
 		return nullptr;
@@ -3318,7 +3321,7 @@ private:
 			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 		} // cur success res
 		if (lua_toboolean(L, -2) == 0) {
-			std::string err = lua_tostring(L, -2);
+			std::string err = lua_tostring(L, -1);
 			throw std::logic_error(_info.errorMessage(s("failed to expand macro: "sv) + err, x));
 		}
 		lua_remove(L, -2); // cur res

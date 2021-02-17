@@ -226,17 +226,18 @@ $chainB(
 )
 
 macro chainC = (...)->
-	import "moonp" as {:to_lua}
+	import "yue" as {:to_lua}
 	callable = nil
 	config = {
 		implicit_return_root: false
 		reserve_line_number: false
 	}
 	for item in *{...}
+		itemCodes = to_lua(item,config)\gsub '%s*$',''
 		if callable?
-			callable = "#{callable}:#{to_lua(item,config)\gsub '%s*$',''}"
+			callable = "#{callable}:#{itemCodes}"
 		else
-			callable = to_lua(item,config)\gsub '%s*$',''
+			callable = itemCodes
 	{
 		codes: $showMacro "chainC", callable
 		type: "lua"
