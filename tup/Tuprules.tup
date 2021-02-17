@@ -1,1 +1,1 @@
-: foreach *.mp |> moonp %f |> %B.lua
+: foreach *.yue |> yue %f |> %B.lua

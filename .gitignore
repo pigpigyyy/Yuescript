@@ -7,5 +7,8 @@ yuescript-*.rock*
 !yuescript-dev-1.rockspec
 .vs
 bin
+.tup
+tup/*.lua
+tup/t/*.lua
 src/lua/*.o
 src/lua/*.a
