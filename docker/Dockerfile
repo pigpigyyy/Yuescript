@@ -11,10 +11,6 @@ RUN cd /tmp && wget https://luarocks.org/releases/luarocks-3.3.1.tar.gz \
     && make && make install \
     && cd /tmp ; rm -rf luarocks-3.3.1 luarocks-3.3.1.tar.gz
 
-RUN luarocks install moonplus
+RUN luarocks install yuescript
 
-RUN cd /tmp && git clone https://github.com/pigpigyyy/MoonPlus \
-    && cd MoonPlus && make install \
-    && cd /tmp ; rm -rf MoonPlus/
-
-CMD ["moonp"]
+CMD ["yue"]

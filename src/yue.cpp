@@ -6,8 +6,8 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#include "MoonP/moon_compiler.h"
-#include "MoonP/moon_parser.h"
+#include "yuescript/yue_compiler.h"
+#include "yuescript/yue_parser.h"
 
 #include <iostream>
 #include <iomanip>
@@ -24,29 +24,29 @@ using namespace std::string_view_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
-#if not (defined MOONP_NO_MACRO && defined MOONP_COMPILER_ONLY)
+#if not (defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-int luaopen_moonp(lua_State* L);
+int luaopen_yue(lua_State* L);
 } // extern "C"
 
 static void openlibs(void* state) {
 	lua_State* L = static_cast<lua_State*>(state);
 	luaL_openlibs(L);
-	luaopen_moonp(L);
+	luaopen_yue(L);
 }
 
-void pushMoonp(lua_State* L, std::string_view name) {
+void pushYue(lua_State* L, std::string_view name) {
 	lua_getglobal(L, "package"); // package
 	lua_getfield(L, -1, "loaded"); // package loaded
-	lua_getfield(L, -1, "moonp"); // package loaded moonp
-	lua_pushlstring(L, &name.front(), name.size()); // package loaded moonp name
-	lua_gettable(L, -2); // loaded[name], package loaded moonp item
-	lua_insert(L, -4); // item package loaded moonp
+	lua_getfield(L, -1, "yue"); // package loaded yue
+	lua_pushlstring(L, &name.front(), name.size()); // package loaded yue name
+	lua_gettable(L, -2); // loaded[name], package loaded yue item
+	lua_insert(L, -4); // item package loaded yue
 	lua_pop(L, 3); // item
 }
 
@@ -71,15 +71,15 @@ void pushOptions(lua_State* L, int lineOffset) {
 	lua_pushinteger(L, lineOffset);
 	lua_rawset(L, -3);
 }
-#endif // not (defined MOONP_NO_MACRO && defined MOONP_COMPILER_ONLY)
+#endif // not (defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
 
-#ifndef MOONP_NO_MACRO
-#define MOONP_ARGS nullptr,openlibs
+#ifndef YUE_NO_MACRO
+#define YUE_ARGS nullptr,openlibs
 #else
-#define MOONP_ARGS
-#endif // MOONP_NO_MACRO
+#define YUE_ARGS
+#endif // YUE_NO_MACRO
 
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 static const char luaminifyCodes[] =
 #include "LuaMinify.h"
 
@@ -92,16 +92,16 @@ static void pushLuaminify(lua_State* L) {
 		luaL_error(L, err.c_str());
 	}
 }
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 
 int main(int narg, const char** args) {
 	const char* help =
-"Usage: moonp [options|files|directories] ...\n\n"
+"Usage: yue [options|files|directories] ...\n\n"
 "   -h       Print this message\n"
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 "   -e str   Execute a file or raw codes\n"
 "   -m       Generate minified codes\n"
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 "   -t path  Specify where to place compiled files\n"
 "   -o file  Write output to file\n"
 "   -s       Use spaces in generated codes instead of tabs\n"
@@ -109,19 +109,19 @@ int main(int narg, const char** args) {
 "   -b       Dump compile time (doesn't write output)\n"
 "   -l       Write line numbers from source codes\n"
 "   -v       Print version\n"
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 "   --       Read from standard in, print to standard out\n"
 "            (Must be first and only argument)\n\n"
 "   Execute without options to enter REPL, type symbol '$'\n"
 "   in a single line to start/stop multi-line mode\n"
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 ;
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 	if (narg == 1) {
 		lua_State* L = luaL_newstate();
 		openlibs(L);
 		DEFER(lua_close(L));
-		pushMoonp(L, "insert_loader"sv);
+		pushYue(L, "insert_loader"sv);
 		if (lua_pcall(L, 0, 0, 0) != 0) {
 			std::cout << lua_tostring(L, -1) << '\n';
 			return 1;
@@ -131,7 +131,7 @@ int main(int narg, const char** args) {
 		linenoise::SetCompletionCallback([](const char* editBuffer, std::vector<std::string>& completions) {
 			std::string buf = editBuffer;
 			std::string tmp = buf;
-			MoonP::Utils::trim(tmp);
+			yue::Utils::trim(tmp);
 			if (tmp.empty()) return;
 			std::string pre;
 			auto pos = buf.find_first_not_of(" \t\n");
@@ -176,33 +176,33 @@ int main(int narg, const char** args) {
 					break;
 			}
 		});
-		std::cout << "Moonscript+ "sv << MoonP::version << '\n';
+		std::cout << "Yuescript "sv << yue::version << '\n';
 		while (true) {
 			count++;
 			std::string codes;
 			bool quit = linenoise::Readline("> ", codes);
 			if (quit) return 0;
 			linenoise::AddHistory(codes.c_str());
-			MoonP::Utils::trim(codes);
+			yue::Utils::trim(codes);
 			if (codes == "$"sv) {
 				codes.clear();
 				for (std::string line; !(quit = linenoise::Readline("", line));) {
 					auto temp = line;
-					MoonP::Utils::trim(temp);
+					yue::Utils::trim(temp);
 					if (temp == "$"sv) {
 						break;
 					}
 					codes += '\n';
 					codes += line;
 					linenoise::AddHistory(line.c_str());
-					MoonP::Utils::trim(codes);
+					yue::Utils::trim(codes);
 				}
 				if (quit) return 0;
 			}
 			codes.insert(0, "global *\n"sv);
 			int top = lua_gettop(L);
 			DEFER(lua_settop(L, top));
-			pushMoonp(L, "loadstring"sv);
+			pushYue(L, "loadstring"sv);
 			lua_pushlstring(L, codes.c_str(), codes.size());
 			lua_pushstring(L, (std::string("=(repl ") + std::to_string(count) + ')').c_str());
 			pushOptions(L, -1);
@@ -226,7 +226,7 @@ int main(int narg, const char** args) {
 				continue;
 			}
 			lua_pop(L, 1);
-			pushMoonp(L, "pcall"sv);
+			pushYue(L, "pcall"sv);
 			lua_insert(L, -2);
 			int last = lua_gettop(L) - 2;
 			if (lua_pcall(L, 1, LUA_MULTRET, 0) != 0) {
@@ -251,8 +251,8 @@ int main(int narg, const char** args) {
 		return 0;
 	}
 	bool minify = false;
-#endif // MOONP_COMPILER_ONLY
-	MoonP::MoonConfig config;
+#endif // YUE_COMPILER_ONLY
+	yue::YueConfig config;
 	config.implicitReturnRoot = true;
 	config.lintGlobalVariable = false;
 	config.reserveLineNumber = false;
@@ -274,12 +274,12 @@ int main(int narg, const char** args) {
 			while ((ch = std::cin.get()) != EOF) {
 				codes += ch;
 			}
-			MoonP::MoonConfig conf;
+			yue::YueConfig conf;
 			conf.implicitReturnRoot = true;
 			conf.lintGlobalVariable = false;
 			conf.reserveLineNumber = false;
 			conf.useSpaceOverTab = true;
-			auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(codes, conf);
+			auto result = yue::YueCompiler{YUE_ARGS}.compile(codes, conf);
 			if (result.error.empty()) {
 				std::cout << result.codes;
 				return 0;
@@ -288,14 +288,14 @@ int main(int narg, const char** args) {
 				std::cout << result.error << '\n';
 				return 1;
 			}
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 		} else if (arg == "-e"sv) {
 			++i;
 			if (i < narg) {
 				lua_State* L = luaL_newstate();
 				openlibs(L);
 				DEFER(lua_close(L));
-				pushMoonp(L, "insert_loader"sv);
+				pushYue(L, "insert_loader"sv);
 				if (lua_pcall(L, 0, 0, 0) != 0) {
 					std::cout << lua_tostring(L, -1) << '\n';
 					return 1;
@@ -308,7 +308,7 @@ int main(int narg, const char** args) {
 					if (ext == ".lua") {
 						lua_getglobal(L, "load");
 					} else {
-						pushMoonp(L, "loadstring"sv);
+						pushYue(L, "loadstring"sv);
 					}
 					std::string s(
 						(std::istreambuf_iterator<char>(input)),
@@ -316,7 +316,7 @@ int main(int narg, const char** args) {
 					lua_pushlstring(L, s.c_str(), s.size());
 					lua_pushlstring(L, evalStr.c_str(), evalStr.size());
 				} else {
-					pushMoonp(L, "loadstring"sv);
+					pushYue(L, "loadstring"sv);
 					lua_pushlstring(L, evalStr.c_str(), evalStr.size());
 					lua_pushliteral(L, "=(eval str)");
 				}
@@ -329,7 +329,7 @@ int main(int narg, const char** args) {
 					return 1;
 				}
 				lua_pop(L, 1);
-				pushMoonp(L, "pcall"sv);
+				pushYue(L, "pcall"sv);
 				lua_insert(L, -2);
 				int argCount = 0;
 				i++;
@@ -354,7 +354,7 @@ int main(int narg, const char** args) {
 			}
 		} else if (arg == "-m"sv) {
 			minify = true;
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 		} else if (arg == "-s"sv) {
 			config.useSpaceOverTab = true;
 		} else if (arg == "-l"sv) {
@@ -375,7 +375,7 @@ int main(int narg, const char** args) {
 			std::cout << help;
 			return 0;
 		} else if (arg == "-v"sv) {
-			std::cout << "Moonscript+ version: "sv << MoonP::version << '\n';
+			std::cout << "Yuescript version: "sv << yue::version << '\n';
 			return 0;
 		} else if (arg == "-o"sv) {
 			++i;
@@ -397,7 +397,7 @@ int main(int narg, const char** args) {
 					if (!item.is_directory()) {
 						auto ext = item.path().extension().string();
 						for (char& ch : ext) ch = std::tolower(ch);
-						if (!ext.empty() && ext.substr(1) == MoonP::extension) {
+						if (!ext.empty() && ext.substr(1) == yue::extension) {
 							files.emplace_back(item.path().string(), item.path().lexically_relative(arg).string());
 						}
 					}
@@ -425,12 +425,12 @@ int main(int narg, const char** args) {
 					std::istreambuf_iterator<char>());
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
-					auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
+					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, config);
 					auto end = std::chrono::high_resolution_clock::now();
 					if (!result.codes.empty()) {
 						std::chrono::duration<double> diff = end - start;
 						start = std::chrono::high_resolution_clock::now();
-						MoonP::MoonParser{}.parse<MoonP::File_t>(s);
+						yue::YueParser{}.parse<yue::File_t>(s);
 						end = std::chrono::high_resolution_clock::now();
 						std::chrono::duration<double> parseDiff = end - start;
 						std::ostringstream buf;
@@ -445,7 +445,7 @@ int main(int narg, const char** args) {
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
-				auto result = MoonP::MoonCompiler{MOONP_ARGS}.compile(s, config);
+				auto result = yue::YueCompiler{YUE_ARGS}.compile(s, config);
 				if (result.error.empty()) {
 					if (!writeToFile) {
 						return std::tuple{0, file.first, result.codes + '\n'};
@@ -475,7 +475,7 @@ int main(int narg, const char** args) {
 						if (output) {
 							const auto& codes = result.codes;
 							if (config.reserveLineNumber) {
-								auto head = std::string("-- [moonp]: "sv) + file.first + '\n';
+								auto head = std::string("-- [yue]: "sv) + file.first + '\n';
 								output.write(head.c_str(), head.size());
 							}
 							output.write(codes.c_str(), codes.size());
@@ -497,7 +497,7 @@ int main(int narg, const char** args) {
 		results.push_back(std::move(task));
 	}
 	int ret = 0;
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 	lua_State* L = nullptr;
 	DEFER({
 		if (L) lua_close(L);
@@ -507,7 +507,7 @@ int main(int narg, const char** args) {
 		luaL_openlibs(L);
 		pushLuaminify(L);
 	}
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 	std::list<std::string> errs;
 	for (auto& result : results) {
 		int val = 0;
@@ -518,7 +518,7 @@ int main(int narg, const char** args) {
 			ret = val;
 			errs.push_back(msg);
 		} else {
-#ifndef MOONP_COMPILER_ONLY
+#ifndef YUE_COMPILER_ONLY
 			if (minify) {
 				std::ifstream input(file, std::ios::in);
 				if (input) {
@@ -560,7 +560,7 @@ int main(int narg, const char** args) {
 			}
 #else
 			std::cout << msg;
-#endif // MOONP_COMPILER_ONLY
+#endif // YUE_COMPILER_ONLY
 		}
 	}
 	for (const auto& err : errs) {

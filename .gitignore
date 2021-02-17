@@ -1,10 +1,10 @@
-moonp
-!src/MoonP
+yue
+!src/yuescript/
 build
 build.luarocks
 spec/outputs
-moonplus-*.rock*
-!moonplus-dev-1.rockspec
+yuescript-*.rock*
+!yuescript-dev-1.rockspec
 .vs
 bin
 src/lua/*.o

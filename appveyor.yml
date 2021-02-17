@@ -8,7 +8,7 @@ configuration:
 - Release
 platform: x86
 build:
-  project: MoonPlus.sln
+  project: Yuescript.sln
   parallel: true
   verbosity: normal
 test: off

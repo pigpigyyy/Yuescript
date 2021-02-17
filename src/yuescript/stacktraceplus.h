@@ -36,7 +36,7 @@ local string_gmatch = string.gmatch
 local string_sub = string.sub
 local table_concat = table.concat
 
-local moonp = require("moonp")
+local yue = require("yue")
 
 local _M = {
 	max_tb_output_len = 70,	-- controls the maximum length of the 'stringified' table before cutting with ' (more...)'
@@ -161,8 +161,8 @@ local function GuessFunctionName(info)
 	if type(info.source) == "string" and info.source:sub(1,1) == "@" then
 		local fname = info.source:sub(2)
 		local text
-		if moonp.file_exist(fname) then
-			text = moonp.read_file(fname)
+		if yue.file_exist(fname) then
+			text = yue.read_file(fname)
 		end
 		if not text then
 			-- print("file not found: "..tostring(err))	-- whoops!
@@ -317,27 +317,27 @@ function Dumper:DumpLocals (level)
 	end
 end
 
-local function getMoonLineNumber(fname, line)
-	local moonCompiled = require("moonp").moon_compiled
-	local source = moonCompiled["@"..fname]
+local function getYueLineNumber(fname, line)
+	local yueCompiled = require("yue").yue_compiled
+	local source = yueCompiled["@"..fname]
 	if not source then
-		source = moonCompiled["@="..fname]
+		source = yueCompiled["@="..fname]
 	end
 	if not source then
-		local name_path = fname:gsub("%.", moonp.dirsep)
+		local name_path = fname:gsub("%.", yue.dirsep)
 		local file_exist, file_path
 		for path in package.path:gmatch("[^;]+") do
 			file_path = path:gsub("?", name_path)
-			file_exist = moonp.file_exist(file_path)
+			file_exist = yue.file_exist(file_path)
 			if file_exist then
 				break
 			end
 		end
 		if file_exist then
-			local codes = moonp.read_file(file_path)
-			local moonFile = codes:match("^%s*--%s*%[moonp%]:%s*([^\n]*)")
-			if moonFile then
-				fname = moonFile:gsub("^%s*(.-)%s*$", "%1")
+			local codes = yue.read_file(file_path)
+			local yueFile = codes:match("^%s*--%s*%[yue%]:%s*([^\n]*)")
+			if yueFile then
+				fname = yueFile:gsub("^%s*(.-)%s*$", "%1")
 				source = codes
 			end
 		end
@@ -409,12 +409,12 @@ function _M.stacktrace(thread, message, level)
 			local fn = fname:match("%[string \"(.-)\"%]")
 			if fn then fname = fn end
 			fname = fname:gsub("^%s*(.-)%s*$", "%1")
-			fname, line = getMoonLineNumber(fname, line)
+			fname, line = getYueLineNumber(fname, line)
 			if _M.simplified then
 				message = table.concat({
 					"", fname, ":",
 					line, ": ", msg})
-				message = message:gsub("^%(moonplus%):%s*%d+:%s*", "")
+				message = message:gsub("^%(yuescript%):%s*%d+:%s*", "")
 				message = message:gsub("%s(%d+):", "%1:")
 			else
 				message = table.concat({
@@ -441,7 +441,7 @@ Stack Traceback
 		elseif info.what == "main" or info.what == "Lua" then
 			info.source = info.source
 		end
-		info.source, info.currentline = getMoonLineNumber(info.source, info.currentline)
+		info.source, info.currentline = getYueLineNumber(info.source, info.currentline)
 		if info.what == "main" then
 			if _M.simplified then
 				dumper:add_f("(%d) '%s':%d\r\n", level_to_show, info.source, info.currentline)

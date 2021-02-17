@@ -1,5 +1,5 @@
 $ ->
-	package.moonpath = "?.mp;./spec/inputs/?.mp"
+	package.yuepath = "?.yue;./spec/inputs/?.yue"
 
 import "macro-export" as {
 	$, -- import all macros

@@ -5,32 +5,14 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="src\MoonP">
-      <UniqueIdentifier>{c88639d5-457d-42eb-b852-65682c89c618}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\lua">
       <UniqueIdentifier>{338bdf98-6a02-4589-a373-c7bca25c746b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\yuescript">
+      <UniqueIdentifier>{af398a57-cb37-4862-a5e8-5ec539259611}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\MoonP\ast.cpp">
-      <Filter>src\MoonP</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MoonP\moon_compiler.cpp">
-      <Filter>src\MoonP</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MoonP\moon_parser.cpp">
-      <Filter>src\MoonP</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MoonP\parser.cpp">
-      <Filter>src\MoonP</Filter>
-    </ClCompile>
-    <ClCompile Include="src\moonp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MoonP\moonplus.cpp">
-      <Filter>src\MoonP</Filter>
-    </ClCompile>
     <ClCompile Include="src\lua\lapi.c">
       <Filter>src\lua</Filter>
     </ClCompile>
@@ -127,29 +109,26 @@
     <ClCompile Include="src\lua\lzio.c">
       <Filter>src\lua</Filter>
     </ClCompile>
+    <ClCompile Include="src\yuescript\ast.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
+    <ClCompile Include="src\yuescript\parser.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
+    <ClCompile Include="src\yuescript\yue_compiler.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
+    <ClCompile Include="src\yuescript\yue_parser.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
+    <ClCompile Include="src\yuescript\yuescript.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
+    <ClCompile Include="src\yue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\MoonP\ast.hpp">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\moon_ast.h">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\moon_compiler.h">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\moon_parser.h">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\parser.hpp">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\moonplus.h">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
-    <ClInclude Include="src\MoonP\stacktraceplus.h">
-      <Filter>src\MoonP</Filter>
-    </ClInclude>
     <ClInclude Include="src\linenoise.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -233,6 +212,27 @@
     </ClInclude>
     <ClInclude Include="src\lua\lzio.h">
       <Filter>src\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\ast.hpp">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\parser.hpp">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\stacktraceplus.h">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\yue_ast.h">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\yue_compiler.h">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\yue_parser.h">
+      <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="src\yuescript\yuescript.h">
+      <Filter>src\yuescript</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

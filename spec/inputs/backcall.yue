@@ -36,6 +36,20 @@ arr[3] |> f 1, 2, _, 4, 5
 
 a = {"1","2","3"} |> table.concat("") |> tonumber |> f1(1, 2, 3, _) |> f2(1, _, 3)
 
+readFile("example.txt") |>
+	extract(_, language, {}) |>
+	parse(_, language) |>
+	emit |>
+	render |>
+	print
+
+readFile("example.txt") \
+	|> extract(_, language, {}) \
+	|> parse(_, language) \
+	|> emit \
+	|> render \
+	|> print
+
 readFile "example.txt"
 	|> extract _, language, {}
 	|> parse _, language

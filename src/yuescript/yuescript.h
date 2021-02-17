@@ -1,6 +1,6 @@
-R"moonplus_codes(
+R"yuescript_codes(
 --[[
-Copyright (C) 2020 by Leaf Corcoran, modified by Li Jin
+Copyright (C) 2020 by Leaf Corcoran, modified by Li Jin, 2021
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.]]
 
-local moonp = require("moonp")
+local yue = require("yue")
 local concat, insert, remove = table.concat, table.insert, table.remove
 local unpack = unpack or table.unpack
 local lua = {
 	loadstring = loadstring,
 	load = load
 }
-local split, get_options, create_moonpath, moon_loader, load_text, moon_call, loadstring, loadfile, dofile, insert_loader, remove_loader, moon_require, find_modulepath
-moonp.dirsep = "/"
-moonp.moon_compiled = { }
-moonp.file_exist = function(fname)
+local split, get_options, create_yuepath, yue_loader, load_text, yue_call, loadstring, loadfile, dofile, insert_loader, remove_loader, yue_require, find_modulepath
+yue.dirsep = "/"
+yue.yue_compiled = { }
+yue.file_exist = function(fname)
 	local file = io.open(fname)
 	if file then
 		file:close()
@@ -39,7 +39,7 @@ moonp.file_exist = function(fname)
 		return false
 	end
 end
-moonp.read_file = function(fname)
+yue.read_file = function(fname)
 	local file, err = io.open(fname)
 	if not file then
 		return nil, err
@@ -72,9 +72,9 @@ get_options = function(...)
 		return { }, ...
 	end
 end
-create_moonpath = function(package_path)
-	local extension = moonp.options.extension
-	local moonpaths
+create_yuepath = function(package_path)
+	local extension = yue.options.extension
+	local yuepaths
 	do
 		local _accum_0 = { }
 		local _len_0 = 1
@@ -96,19 +96,19 @@ create_moonpath = function(package_path)
 				break
 			end
 		end
-		moonpaths = _accum_0
+		yuepaths = _accum_0
 	end
-	return concat(moonpaths, ";")
+	return concat(yuepaths, ";")
 end
 find_modulepath = function(name)
-	if not package.moonpath then
-		package.moonpath = create_moonpath(package.path)
+	if not package.yuepath then
+		package.yuepath = create_yuepath(package.path)
 	end
-	local name_path = name:gsub("%.", moonp.dirsep)
+	local name_path = name:match("[\\/]") and name or name:gsub("%.", yue.dirsep)
 	local file_exist, file_path
-	for path in package.moonpath:gmatch("[^;]+") do
+	for path in package.yuepath:gmatch("[^;]+") do
 		file_path = path:gsub("?", name_path)
-		file_exist = moonp.file_exist(file_path)
+		file_exist = yue.file_exist(file_path)
 		if file_exist then
 			break
 		end
@@ -122,11 +122,11 @@ end
 load_text = function(name)
 	local file_path = find_modulepath(name)
 	if file_path then
-		return moonp.read_file(file_path), file_path
+		return yue.read_file(file_path), file_path
 	end
 	return nil, nil
 end
-moon_loader = function(name)
+yue_loader = function(name)
 	local text, file_path = load_text(name)
 	if text then
 		local res, err = loadstring(text, file_path)
@@ -135,27 +135,27 @@ moon_loader = function(name)
 		end
 		return res
 	end
-	return nil, "Could not find moonp file"
+	return nil, "Could not find yue file"
 end
-moon_call = function(f, ...)
+yue_call = function(f, ...)
 	local args = {
 		...
 	}
 	return xpcall((function()
 		return f(unpack(args))
 	end), function(err)
-		return moonp.stp.stacktrace(err, 1)
+		return yue.stp.stacktrace(err, 1)
 	end)
 end
 loadstring = function(...)
 	local options, str, chunk_name, mode, env = get_options(...)
-	chunk_name = chunk_name or "=(moonplus.loadstring)"
-	local code, err = moonp.to_lua(str, options)
+	chunk_name = chunk_name or "=(yuescript.loadstring)"
+	local code, err = yue.to_lua(str, options)
 	if not code then
 		return nil, err
 	end
 	if chunk_name then
-		moonp.moon_compiled["@" .. chunk_name] = code
+		yue.yue_compiled["@" .. chunk_name] = code
 	end
 	return (lua.loadstring or lua.load)(code, chunk_name, unpack({
 		mode,
@@ -163,7 +163,7 @@ loadstring = function(...)
 	}))
 end
 loadfile = function(fname, ...)
-	local text = moonp.read_file(fname)
+	local text = yue.read_file(fname)
 	return loadstring(text, tostring(fname), ...)
 end
 dofile = function(...)
@@ -174,35 +174,35 @@ insert_loader = function(pos)
 	if pos == nil then
 		pos = 2
 	end
-	if not package.moonpath then
-		package.moonpath = create_moonpath(package.path)
+	if not package.yuepath then
+		package.yuepath = create_yuepath(package.path)
 	end
 	local loaders = package.loaders or package.searchers
 	for _index_0 = 1, #loaders do
 		local loader = loaders[_index_0]
-		if loader == moon_loader then
+		if loader == yue_loader then
 			return false
 		end
 	end
-	insert(loaders, pos, moon_loader)
+	insert(loaders, pos, yue_loader)
 	return true
 end
 remove_loader = function()
 	local loaders = package.loaders or package.searchers
 	for i, loader in ipairs(loaders) do
-		if loader == moon_loader then
+		if loader == yue_loader then
 			remove(loaders, i)
 			return true
 		end
 	end
 	return false
 end
-moon_require = function(name)
+yue_require = function(name)
 	insert_loader()
 	local success, res = xpcall((function()
 		return require(name)
 	end), function(err)
-		local msg = moonp.stp.stacktrace(err, 1)
+		local msg = yue.stp.stacktrace(err, 1)
 		print(msg)
 		return msg
 	end)
@@ -212,21 +212,21 @@ moon_require = function(name)
 		return nil
 	end
 end
-setmetatable(moonp, {
+setmetatable(yue, {
 	__index = function(self, key)
 		if not (key == "stp") then
 			return nil
 		end
-		local stp = rawget(moonp, "stp")
+		local stp = rawget(yue, "stp")
 		if not stp then
 			do
-				local _with_0 = moonp.load_stacktraceplus()
+				local _with_0 = yue.load_stacktraceplus()
 				_with_0.dump_locals = false
 				_with_0.simplified = true
 				stp = _with_0
 			end
-			rawset(moonp, "stp", stp)
-			rawset(moonp, "load_stacktraceplus", nil)
+			rawset(yue, "stp", stp)
+			rawset(yue, "load_stacktraceplus", nil)
 		end
 		return stp
 	end,
@@ -237,15 +237,15 @@ setmetatable(moonp, {
 for k, v in pairs({
 	insert_loader = insert_loader,
 	remove_loader = remove_loader,
-	loader = moon_loader,
+	loader = yue_loader,
 	dofile = dofile,
 	loadfile = loadfile,
 	loadstring = loadstring,
-	create_moonpath = create_moonpath,
+	create_yuepath = create_yuepath,
 	find_modulepath = find_modulepath,
-	pcall = moon_call,
-	require = moon_require
+	pcall = yue_call,
+	require = yue_require
 }) do
-	moonp[k] = v
+	yue[k] = v
 end
-)moonplus_codes";
+)yuescript_codes";

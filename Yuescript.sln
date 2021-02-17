@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MoonPlus", "MoonPlus.vcxproj", "{CF4F54DB-61FE-48E0-BA2E-4168BA27ECBD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Yuescript", "Yuescript.vcxproj", "{CF4F54DB-61FE-48E0-BA2E-4168BA27ECBD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

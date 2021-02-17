@@ -1,6 +1,6 @@
 #### PROJECT SETTINGS ####
 # The name of the executable to be created
-BIN_NAME := moonp
+BIN_NAME := yue
 # Compiler used
 CXX ?= g++
 # Extension of source files used in the project
@@ -42,10 +42,10 @@ TEST_OUTPUT = ./spec/outputs
 UNAME_S:=$(shell uname -s)
 
 ifeq ($(NO_LUA),true)
-	COMPILE_FLAGS += -DMOONP_NO_MACRO -DMOONP_COMPILER_ONLY
+	COMPILE_FLAGS += -DYUE_NO_MACRO -DYUE_COMPILER_ONLY
 else
 ifeq ($(NO_MACRO),true)
-	COMPILE_FLAGS += -DMOONP_NO_MACRO
+	COMPILE_FLAGS += -DYUE_NO_MACRO
 endif
 	INCLUDES += -I ./src/lua
 	LINK_FLAGS += -L ./src/lua -llua -ldl
@@ -117,7 +117,7 @@ ifeq ($(SOURCES),)
 endif
 
 ifeq ($(NO_LUA),true)
-	SOURCES := $(filter-out ./src/MoonP/moonplus.cpp, $(SOURCES))
+	SOURCES := $(filter-out ./src/yuescript/yue.cpp, $(SOURCES))
 endif
 
 # Set the object file names, with the source directory stripped
@@ -199,7 +199,7 @@ endif
 	@echo -n "Total build time: "
 	@$(END_TIME)
 
-$(BUILD_PATH)/moonp.so: src/MoonP/ast.cpp src/MoonP/moon_compiler.cpp src/MoonP/moon_parser.cpp src/MoonP/moonplus.cpp src/MoonP/parser.cpp
+$(BUILD_PATH)/yue.so: src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yue.cpp src/yuescript/parser.cpp
 	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
 
 # Standard, non-optimized release build
@@ -211,10 +211,10 @@ else
 	@echo "Beginning release build"
 endif
 	@$(START_TIME)
-	@$(MAKE) $(BUILD_PATH)/moonp.so --no-print-directory
+	@$(MAKE) $(BUILD_PATH)/yue.so --no-print-directory
 	@echo -n "Total build time: "
 	@$(END_TIME)
-	@mv $(BUILD_PATH)/moonp.so $(BIN_PATH)/moonp.so
+	@mv $(BUILD_PATH)/yue.so $(BIN_PATH)/yue.so
 
 # Create the directories used in the build
 .PHONY: dirs
@@ -248,13 +248,13 @@ clean:
 	@echo "Deleting generated Lua codes"
 	@$(RM) -r $(TEST_OUTPUT)
 
-# Test Moonscript compiler
+# Test Yuescript compiler
 .PHONY: test
-test: debug
-	@echo "Compiling Moonscript codes..."
+test: release
+	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) -tl_enabled=true
-	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.mp -o $(TEST_OUTPUT)/teal-lang.lua
+	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(TEST_OUTPUT)/teal-lang.lua
 	@echo -en "Compile time: "
 	@$(END_TIME)
 

@@ -1,4 +1,4 @@
-project ( moonp CXX )
+project ( yue CXX )
 cmake_minimum_required ( VERSION 3.1 )
 
 MESSAGE(STATUS "Lua: using information from luarocks")
@@ -28,15 +28,15 @@ enable_language( CXX )
 include_directories( src ${LUA_INCLUDE_DIR} )
 add_definitions( -std=c++17 -O3 -fPIC )
 
-add_library( libmoonp MODULE src/MoonP/ast.cpp src/MoonP/parser.cpp src/MoonP/moon_parser.cpp src/MoonP/moon_compiler.cpp src/MoonP/moonplus.cpp)
-set_target_properties( libmoonp PROPERTIES PREFIX "" )
-set_target_properties( libmoonp PROPERTIES OUTPUT_NAME "moonp" )
-target_link_libraries( libmoonp ${LUA_LIBRARIES} )
+add_library( libyue MODULE src/yuescript/ast.cpp src/yuescript/parser.cpp src/yuescript/yue_parser.cpp src/yuescript/yue_compiler.cpp src/yuescript/yuescript.cpp)
+set_target_properties( libyue PROPERTIES PREFIX "" )
+set_target_properties( libyue PROPERTIES OUTPUT_NAME "yue" )
+target_link_libraries( libyue ${LUA_LIBRARIES} )
 
-add_executable( moonp src/MoonP/ast.cpp src/MoonP/moon_compiler.cpp src/MoonP/moon_parser.cpp src/MoonP/moonplus.cpp src/MoonP/parser.cpp src/moonp.cpp )
-target_link_libraries( moonp ${LUA_LIBRARIES} )
+add_executable( yue src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/yuescript/parser.cpp src/yue.cpp )
+target_link_libraries( yue ${LUA_LIBRARIES} )
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_link_options( moonp PRIVATE -ldl -lpthread -lstdc++fs )
+	target_link_options( yue PRIVATE -ldl -lpthread -lstdc++fs )
 endif()
 
 install(CODE "")

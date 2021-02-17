@@ -6,11 +6,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#include "MoonP/moon_parser.h"
+#include "yuescript/yue_parser.h"
 
 namespace pl = parserlib;
 
-namespace MoonP {
+namespace yue {
 using namespace std::string_view_literals;
 
 std::unordered_set<std::string> LuaKeywords = {
@@ -29,10 +29,10 @@ std::unordered_set<std::string> Keywords = {
 	"until", "while", // Lua keywords
 	"as", "class", "continue", "export", "extends",
 	"from", "global", "import", "macro", "switch",
-	"unless", "using", "when", "with" // Moon keywords
+	"unless", "using", "when", "with" // Yue keywords
 };
 
-MoonParser::MoonParser() {
+YueParser::YueParser() {
 	plain_space = *set(" \t");
 	Break = nl(-expr('\r') >> '\n');
 	Any = Break | any();
@@ -245,7 +245,7 @@ MoonParser::MoonParser() {
 	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> plain_body;
 	If = key("if") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
 	Unless = key("unless") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
-	
+
 	While = key("while") >> disable_do_chain(Exp) >> plain_body_with("do");
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
 
@@ -611,7 +611,7 @@ MoonParser::MoonParser() {
 	File = White >> -Shebang >> Block >> eof();
 }
 
-ParseInfo MoonParser::parse(std::string_view codes, rule& r) {
+ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	ParseInfo res;
 	try {
 		res.codes = std::make_unique<input>();
@@ -650,19 +650,19 @@ ParseInfo MoonParser::parse(std::string_view codes, rule& r) {
 	return res;
 }
 
-std::string MoonParser::toString(ast_node* node) {
+std::string YueParser::toString(ast_node* node) {
 	return _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
 }
 
-std::string MoonParser::toString(input::iterator begin, input::iterator end) {
+std::string YueParser::toString(input::iterator begin, input::iterator end) {
 	return _converter.to_bytes(std::wstring(begin, end));
 }
 
-input MoonParser::encode(std::string_view codes) {
+input YueParser::encode(std::string_view codes) {
 	return _converter.from_bytes(&codes.front(), &codes.back() + 1);
 }
 
-std::string MoonParser::decode(const input& codes) {
+std::string YueParser::decode(const input& codes) {
 	return _converter.to_bytes(codes);
 }
 
@@ -716,4 +716,4 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 	return buf.str();
 }
 
-} // namespace MoonP
+} // namespace yue

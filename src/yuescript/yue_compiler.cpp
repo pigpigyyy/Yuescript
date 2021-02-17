@@ -12,12 +12,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <stack>
 #include <vector>
 #include <memory>
-#include <cassert>
 
-#include "MoonP/moon_parser.h"
-#include "MoonP/moon_compiler.h"
+#include "yuescript/yue_parser.h"
+#include "yuescript/yue_compiler.h"
 
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 
 extern "C" {
 #include "lua.h"
@@ -26,7 +25,7 @@ extern "C" {
 } // extern "C"
 
 // name of table stored in lua registry
-#define MOONP_MODULE "__moon_modules__"
+#define YUE_MODULE "__yue_modules__"
 
 #if LUA_VERSION_NUM > 501
 	#ifndef LUA_COMPAT_5_1
@@ -34,9 +33,9 @@ extern "C" {
 	#endif // LUA_COMPAT_5_1
 #endif // LUA_VERSION_NUM
 
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 
-namespace MoonP {
+namespace yue {
 using namespace std::string_view_literals;
 using namespace parserlib;
 
@@ -46,6 +45,12 @@ using namespace parserlib;
 
 #define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
 #define DEFER(code) _DEFER(code,__LINE__)
+#define YUEE(msg,node) throw std::logic_error( \
+	_info.errorMessage( \
+		std::string("[File] ") + __FILE__ \
+		+ ", [Func] " + __FUNCTION__ \
+		+ ", [Line] " + std::to_string(__LINE__) \
+		+ ", [Error] " + msg, node))
 
 typedef std::list<std::string> str_list;
 
@@ -53,13 +58,13 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.3"sv;
-const std::string_view extension = "mp"sv;
+const std::string_view version = "0.6.5"sv;
+const std::string_view extension = "yue"sv;
 
-class MoonCompilerImpl {
+class YueCompilerImpl {
 public:
-#ifndef MOONP_NO_MACRO
-	MoonCompilerImpl(lua_State* sharedState,
+#ifndef YUE_NO_MACRO
+	YueCompilerImpl(lua_State* sharedState,
 		const std::function<void(void*)>& luaOpen,
 		bool sameModule,
 		std::string_view moduleName = {}):
@@ -72,8 +77,8 @@ public:
 		_sameModule = true;
 		int top = lua_gettop(L);
 		DEFER(lua_settop(L, top));
-		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
-		lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
+		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
 		BREAK_IF(lua_istable(L, -1) == 0);
 		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 		BREAK_IF(idx == 0);
@@ -81,19 +86,19 @@ public:
 		BLOCK_END
 	}
 
-	~MoonCompilerImpl() {
+	~YueCompilerImpl() {
 		if (L && _stateOwner) {
 			lua_close(L);
 			L = nullptr;
 		}
 	}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 
-	CompileInfo compile(std::string_view codes, const MoonConfig& config) {
+	CompileInfo compile(std::string_view codes, const YueConfig& config) {
 		_config = config;
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 		if (L) passOptions();
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 		_info = _parser.parse<File_t>(codes);
 		std::unique_ptr<GlobalVars> globals;
 		std::unique_ptr<Options> options;
@@ -119,14 +124,14 @@ public:
 						globals->push_back({var.first, line, col});
 					}
 				}
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 				if (L) {
 					int top = lua_gettop(L);
 					DEFER(lua_settop(L, top));
 					if (!options) {
 						options = std::make_unique<Options>();
 					}
-					pushMoonp("options"sv);
+					pushYue("options"sv);
 					lua_pushnil(L); // options startKey
 					while (lua_next(L, -2) != 0) { // options key value
 						size_t len = 0;
@@ -138,7 +143,7 @@ public:
 						lua_pop(L, 1); // options key
 					}
 				}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 				return {std::move(out.back()), Empty, std::move(globals), std::move(options)};
 			} catch (const std::logic_error& error) {
 				return {Empty, error.what(), std::move(globals), std::move(options)};
@@ -162,31 +167,31 @@ public:
 		_withVars = {};
 		_continueVars = {};
 		_enableReturn = {};
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 		if (_useModule) {
 			_useModule = false;
 			if (!_sameModule) {
 				int top = lua_gettop(L);
 				DEFER(lua_settop(L, top));
-				lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
-				lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
+				lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+				lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
 				int idx = static_cast<int>(lua_objlen(L, -1));
 				lua_pushnil(L); // tb nil
 				lua_rawseti(L, -2, idx); // tb[idx] = nil, tb
 			}
 		}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 	}
 private:
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 	bool _stateOwner = false;
 	bool _useModule = false;
 	bool _sameModule = false;
 	lua_State* L = nullptr;
 	std::function<void(void*)> _luaOpen;
-#endif // MOONP_NO_MACRO
-	MoonConfig _config;
-	MoonParser _parser;
+#endif // YUE_NO_MACRO
+	YueConfig _config;
+	YueParser _parser;
 	ParseInfo _info;
 	int _indentOffset = 0;
 	std::stack<bool> _varArgs;
@@ -523,7 +528,7 @@ private:
 			case id<Statement_t>(): {
 				return static_cast<Statement_t*>(body);
 			}
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", body); break;
 		}
 		return nullptr;
 	}
@@ -875,7 +880,7 @@ private:
 					statement->appendix.set(nullptr);
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", appendix->item.get()); break;
 			}
 		}
 		auto content = statement->content.get();
@@ -947,7 +952,7 @@ private:
 				}
 				break;
 			}
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", content); break;
 		}
 		if (statement->needSep && !out.back().empty()) {
 			auto index = std::string::npos;
@@ -1287,7 +1292,7 @@ private:
 			case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
 			case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(value), out); break;
 			case id<Exp_t>(): transformExp(static_cast<Exp_t*>(value), out, ExpUsage::Closure); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", value); break;
 		}
 	}
 
@@ -1411,7 +1416,7 @@ private:
 					}
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", pair); break;
 			}
 		}
 		return pairs;
@@ -1574,7 +1579,7 @@ private:
 				}
 				break;
 			}
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", action); break;
 		}
 	}
 
@@ -1632,7 +1637,7 @@ private:
 					ifCondPairs.back().second = node;
 					ifCondPairs.emplace_back();
 					break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", node); break;
 			}
 		}
 		auto assign = ifCondPairs.front().first->assign.get();
@@ -1853,7 +1858,7 @@ private:
 					transformExp(arg, out, ExpUsage::Closure);
 					return;
 				}
-				default: assert(false); return;
+				default: YUEE("invalid expression usage", x); return;
 			}
 		}
 	}
@@ -1863,7 +1868,9 @@ private:
 			transform_backcall_exp(exp->backcalls.objects(), out, usage, assignList);
 			return;
 		}
-		assert(usage == ExpUsage::Closure);
+		if (usage != ExpUsage::Closure) {
+			YUEE("invalid expression usage", exp);
+		}
 		str_list temp;
 			transform_backcall_exp(exp->backcalls.objects(), temp, ExpUsage::Closure);
 		for (auto _opValue : exp->opValues.objects()) {
@@ -1881,7 +1888,7 @@ private:
 			case id<simple_table_t>(): transform_simple_table(static_cast<simple_table_t*>(item), out); break;
 			case id<ChainValue_t>(): transformChainValue(static_cast<ChainValue_t*>(item), out, ExpUsage::Closure); break;
 			case id<String_t>(): transformString(static_cast<String_t*>(item), out); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", value); break;
 		}
 	}
 
@@ -1916,7 +1923,7 @@ private:
 				out.push_back(s("..."sv));
 				break;
 			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", item); break;
 		}
 	}
 
@@ -1945,7 +1952,7 @@ private:
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<FunLit_t>(): transformFunLit(static_cast<FunLit_t*>(value), out); break;
 			case id<Num_t>(): transformNum(static_cast<Num_t*>(value), out); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", value); break;
 		}
 	}
 
@@ -2304,10 +2311,10 @@ private:
 		}
 	}
 
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 	void passOptions() {
 		if (!_config.options.empty()) {
-			pushMoonp("options"sv); // options
+			pushYue("options"sv); // options
 			for (const auto& option : _config.options) {
 				lua_pushlstring(L, option.second.c_str(), option.second.size());
 				lua_setfield(L, -2, option.first.c_str());
@@ -2318,8 +2325,8 @@ private:
 
 	void pushCurrentModule() {
 		if (_useModule) {
-			lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
-			lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
+			lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+			lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
 			int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 			lua_rawgeti(L, -1, idx); // tb[idx], tb cur
 			lua_remove(L, -2); // cur
@@ -2334,14 +2341,14 @@ private:
 			passOptions();
 			_stateOwner = true;
 		}
-		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
-		lua_rawget(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE], tb
+		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
 		if (lua_isnil(L, -1) != 0) { // tb == nil
 			lua_pop(L, 1);
 			lua_newtable(L); // tb
-			lua_pushliteral(L, MOONP_MODULE); // tb MOONP_MODULE
-			lua_pushvalue(L, -2); // tb MOONP_MODULE tb
-			lua_rawset(L, LUA_REGISTRYINDEX); // reg[MOONP_MODULE] = tb, tb
+			lua_pushliteral(L, YUE_MODULE); // tb YUE_MODULE
+			lua_pushvalue(L, -2); // tb YUE_MODULE tb
+			lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE] = tb, tb
 		} // tb
 		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 		lua_newtable(L); // tb cur
@@ -2350,20 +2357,20 @@ private:
 		lua_remove(L, -2); // cur
 	}
 
-	void pushMoonp(std::string_view name) {
+	void pushYue(std::string_view name) {
 		lua_getglobal(L, "package"); // package
 		lua_getfield(L, -1, "loaded"); // package loaded
-		lua_getfield(L, -1, "moonp"); // package loaded moonp
-		lua_pushlstring(L, &name.front(), name.size()); // package loaded moonp name
-		lua_gettable(L, -2); // loaded[name], package loaded moonp item
-		lua_insert(L, -4); // item package loaded moonp
+		lua_getfield(L, -1, "yue"); // package loaded yue
+		lua_pushlstring(L, &name.front(), name.size()); // package loaded yue name
+		lua_gettable(L, -2); // loaded[name], package loaded yue item
+		lua_insert(L, -4); // item package loaded yue
 		lua_pop(L, 3); // item
 	}
 
 	bool isModuleLoaded(std::string_view name) {
 		int top = lua_gettop(L);
 		DEFER(lua_settop(L, top));
-		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
+		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
 		lua_rawget(L, LUA_REGISTRYINDEX); // modules
 		lua_pushlstring(L, &name.front(), name.size());
 		lua_rawget(L, -2); // modules module
@@ -2374,7 +2381,7 @@ private:
 	}
 
 	void pushModuleTable(std::string_view name) {
-		lua_pushliteral(L, MOONP_MODULE); // MOONP_MODULE
+		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
 		lua_rawget(L, LUA_REGISTRYINDEX); // modules
 		lua_pushlstring(L, &name.front(), name.size());
 		lua_rawget(L, -2); // modules module
@@ -2442,7 +2449,7 @@ private:
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
 		DEFER(lua_settop(L, top));
-		pushMoonp("loadstring"sv); // cur loadstring
+		pushYue("loadstring"sv); // cur loadstring
 		lua_pushlstring(L, macroCodes.c_str(), macroCodes.size()); // cur loadstring codes
 		lua_pushlstring(L, chunkName.c_str(), chunkName.size()); // cur loadstring codes chunk
 		pushOptions(macro->m_begin.m_line - 1); // cur loadstring codes chunk options
@@ -2455,7 +2462,7 @@ private:
 			throw std::logic_error(_info.errorMessage(s("failed to load macro codes, at (macro "sv) + macroName + s("): "sv) + err, macro->macroLit));
 		}
 		lua_pop(L, 1); // cur f
-		pushMoonp("pcall"sv); // cur f pcall
+		pushYue("pcall"sv); // cur f pcall
 		lua_insert(L, -2); // cur pcall f
 		if (lua_pcall(L, 1, 2, 0) != 0) { // f(), cur success macro
 			std::string err = lua_tostring(L, -1);
@@ -2482,7 +2489,7 @@ private:
 	void transformMacro(Macro_t* macro, str_list&, bool) {
 		throw std::logic_error(_info.errorMessage("macro feature not supported"sv, macro));
 	}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
 		if (!_enableReturn.top()) {
@@ -2613,11 +2620,11 @@ private:
 						case id<self_t>():
 							arg.name = "self"sv;
 							break;
-						default: assert(false); break;
+						default: YUEE("AST node mismatch", selfName->name.get()); break;
 					}
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", def->name.get()); break;
 			}
 			forceAddToScope(arg.name);
 			if (def->defaultValue) {
@@ -2710,7 +2717,7 @@ private:
 			case id<self_t>():
 				out.push_back(s("self"sv));
 				break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", name); break;
 		}
 	}
 
@@ -3170,24 +3177,24 @@ private:
 					temp.back() = s(temp.back().front() == '[' ? "[ "sv : "["sv) + temp.back() + s("]"sv);
 					break;
 				case id<InvokeArgs_t>(): transformInvokeArgs(static_cast<InvokeArgs_t*>(item), temp); break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", item); break;
 			}
 		}
 		switch (usage) {
 			case ExpUsage::Common:
-				out.push_back(indent() + join(temp) + nll(chainList.front()));
+				out.push_back(indent() + join(temp) + nll(x));
 				break;
 			case ExpUsage::Return:
-				out.push_back(indent() + s("return "sv) + join(temp) + nll(chainList.front()));
+				out.push_back(indent() + s("return "sv) + join(temp) + nll(x));
 				break;
-			case ExpUsage::Assignment: assert(false); break;
+			case ExpUsage::Assignment: YUEE("invalid expression usage", x); break;
 			default:
 				out.push_back(join(temp));
 				break;
 		}
 	}
 
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 	std::tuple<std::string,std::string,str_list> expandMacroStr(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
 		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
@@ -3212,7 +3219,7 @@ private:
 			}
 			auto fcodes = _parser.toString(args->back());
 			Utils::trim(fcodes);
-			pushMoonp("loadstring"sv); // loadstring
+			pushYue("loadstring"sv); // loadstring
 			lua_pushlstring(L, fcodes.c_str(), fcodes.size()); // loadstring codes
 			lua_pushliteral(L, "=(macro in-place)"); // loadstring codes chunk
 			pushOptions(args->back()->m_begin.m_line - 1); // loadstring codes chunk options
@@ -3225,7 +3232,7 @@ private:
 				throw std::logic_error(_info.errorMessage(s("failed to load macro codes, at (macro in-place): "sv) + err, x));
 			}
 			lua_pop(L, 1); // f
-			pushMoonp("pcall"sv); // f pcall
+			pushYue("pcall"sv); // f pcall
 			lua_insert(L, -2); // pcall f
 			if (lua_pcall(L, 1, 2, 0) != 0) { // f(), success macroFunc
 				std::string err = lua_tostring(L, -1);
@@ -3236,7 +3243,7 @@ private:
 				throw std::logic_error(_info.errorMessage(s("failed to generate macro function\n"sv) + err, x));
 			} // true macroFunc
 			lua_remove(L, -2); // macroFunc
-			pushMoonp("pcall"sv); // macroFunc pcall
+			pushYue("pcall"sv); // macroFunc pcall
 			lua_insert(L, -2); // pcall macroFunc
 			bool success = lua_pcall(L, 1, 2, 0) == 0;
 			if (!success) { // err
@@ -3254,7 +3261,7 @@ private:
 		if (lua_isfunction(L, -1) == 0) {
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		} // cur macroFunc
-		pushMoonp("pcall"sv); // cur macroFunc pcall
+		pushYue("pcall"sv); // cur macroFunc pcall
 		lua_insert(L, -2); // cur pcall macroFunc
 		auto item = *(++chainList.begin());
 		const node_container* args = nullptr;
@@ -3457,11 +3464,11 @@ private:
 			}
 		}
 	}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 
 	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false) {
 		if (isMacroChain(chainValue)) {
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 			ast_ptr<false,ast_node> node;
 			std::unique_ptr<input> codes;
 			std::string luaCodes;
@@ -3515,7 +3522,7 @@ private:
 #else
 			(void)allowBlockMacroReturn;
 			throw std::logic_error(_info.errorMessage("macro feature not supported"sv, chainValue));
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 		}
 		const auto& chainList = chainValue->items.objects();
 		if (transformChainEndWithEOP(chainList, out, usage, assignList)) {
@@ -3561,7 +3568,7 @@ private:
 				case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
 				case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
 				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp); break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", arg); break;
 			}
 		}
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
@@ -3624,7 +3631,7 @@ private:
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", item); break;
 			}
 		}
 		if (auto stmt = comp->value.as<Statement_t>()) {
@@ -3680,7 +3687,7 @@ private:
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", item); break;
 			}
 		}
 		{
@@ -3760,13 +3767,13 @@ private:
 					varAfter.push_back(desVar);
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", item); break;
 			}
 		}
 		switch (loopTarget->getId()) {
 			case id<star_exp_t>(): {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
-				auto listVar = singleVariableFrom(star_exp->value);
+				std::string listVar;
 				auto indexVar = getUnusedName("_index_"sv);
 				varAfter.push_back(indexVar);
 				auto value = singleValueFrom(star_exp->value);
@@ -3779,12 +3786,6 @@ private:
 				auto slice = ast_cast<Slice_t>(chainList.back());
 				BREAK_IF(!slice);
 				endWithSlice = true;
-				if (listVar.empty() && chainList.size() == 2 &&
-					ast_is<Callable_t>(chainList.front())) {
-					transformCallable(static_cast<Callable_t*>(chainList.front()), temp);
-					listVar = temp.back();
-					temp.pop_back();
-				}
 				chainList.pop_back();
 				auto chain = x->new_ptr<ChainValue_t>();
 				for (auto item : chainList) {
@@ -3808,12 +3809,10 @@ private:
 					stepValue = temp.back();
 					temp.pop_back();
 				}
-				if (listVar.empty()) {
-					listVar = getUnusedName("_list_"sv);
-					varBefore.push_back(listVar);
-					transformChainValue(chain, temp, ExpUsage::Closure);
-					_buf << indent() << "local "sv << listVar << " = "sv << temp.back() << nll(nameList);
-				}
+				listVar = getUnusedName("_list_"sv);
+				varBefore.push_back(listVar);
+				transformChainValue(chain, temp, ExpUsage::Closure);
+				_buf << indent() << "local "sv << listVar << " = "sv << temp.back() << nll(nameList);
 				std::string maxVar;
 				if (!stopValue.empty()) {
 					maxVar = getUnusedName("_max_"sv);
@@ -3859,7 +3858,7 @@ private:
 				_buf << indent() << "for "sv << join(vars, ", "sv) << " in "sv << temp.back() << " do"sv << nlr(loopTarget);
 				out.push_back(clearBuf());
 				break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", loopTarget); break;
 		}
 		for (auto& var : varBefore) addToScope(var);
 		pushScope();
@@ -3926,7 +3925,7 @@ private:
 			switch (arg->getId()) {
 				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(arg), temp, ExpUsage::Closure); break;
 				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(arg), temp); break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", arg); break;
 			}
 		}
 		out.push_back(s("("sv) + join(temp, ", "sv) + s(")"sv));
@@ -3963,7 +3962,7 @@ private:
 				transformBlock(newBlock, out, usage, assignList);
 				break;
 			}
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", body); break;
 		}
 	}
 
@@ -4172,13 +4171,13 @@ private:
 			case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(key), temp);
 				temp.back() = s("[ "sv) + temp.back() + s("]"sv);
 				break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", key); break;
 		}
 		auto value = pair->value.get();
 		switch (value->getId()) {
 			case id<Exp_t>(): transformExp(static_cast<Exp_t*>(value), temp, ExpUsage::Closure); break;
 			case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(value), temp); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", value); break;
 		}
 		out.push_back(temp.front() + s(" = "sv) + temp.back());
 	}
@@ -4188,7 +4187,7 @@ private:
 		switch (name->getId()) {
 			case id<SelfName_t>(): transformSelfName(static_cast<SelfName_t*>(name), out); break;
 			case id<Name_t>(): out.push_back(_parser.toString(name)); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", name); break;
 		}
 	}
 
@@ -4232,7 +4231,7 @@ private:
 					}
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", content); break;
 			}
 		}
 		out.push_back(temp.empty() ? s("\"\""sv) : join(temp, " .. "sv));
@@ -4244,7 +4243,7 @@ private:
 			case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(str), out); break;
 			case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(str), out); break;
 			case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(str), out); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", str); break;
 		}
 	}
 
@@ -4396,7 +4395,7 @@ private:
 					case id<Statement_t>():
 						transformStatement(static_cast<Statement_t*>(content), statements);
 						break;
-					default: assert(false); break;
+					default:YUEE("AST node mismatch", content); break;
 				}
 			}
 			for (auto& member : members) {
@@ -4602,7 +4601,7 @@ private:
 				case id<normal_pair_t>():
 					transform_normal_pair(static_cast<normal_pair_t*>(keyValue), temp);
 					break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", keyValue); break;
 			}
 			if (type == MemType::Property) {
 				incIndentOffset();
@@ -4621,7 +4620,7 @@ private:
 			case id<AssignableChain_t>(): transformAssignableChain(static_cast<AssignableChain_t*>(item), out); break;
 			case id<Variable_t>(): transformVariable(static_cast<Variable_t*>(item), out); break;
 			case id<SelfName_t>(): transformSelfName(static_cast<SelfName_t*>(item), out); break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", item); break;
 		}
 	}
 
@@ -4646,14 +4645,8 @@ private:
 			checkAssignable(with->valueList);
 			auto vars = getAssignVars(with);
 			if (vars.front().empty()) {
-				if (with->assigns->values.objects().size() == 1) {
-					auto var = singleVariableFrom(with->assigns->values.objects().front());
-					if (!var.empty()) {
-						withVar = var;
-					}
-				}
-				if (withVar.empty()) {
-					withVar = getUnusedName("_with_"sv);
+				withVar = getUnusedName("_with_"sv);
+				{
 					auto assignment = x->new_ptr<ExpListAssign_t>();
 					assignment->expList.set(toAst<ExpList_t>(withVar, x));
 					auto assign = x->new_ptr<Assign_t>();
@@ -4693,21 +4686,18 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		} else {
-			withVar = singleVariableFrom(with->valueList);
-			if (withVar.empty()) {
-				withVar = getUnusedName("_with_"sv);
-				auto assignment = x->new_ptr<ExpListAssign_t>();
-				assignment->expList.set(toAst<ExpList_t>(withVar, x));
-				auto assign = x->new_ptr<Assign_t>();
-				assign->values.dup(with->valueList->exprs);
-				assignment->action.set(assign);
-				if (!returnValue) {
-					scoped = true;
-					temp.push_back(indent() + s("do"sv) + nll(with));
-					pushScope();
-				}
-				transformAssignment(assignment, temp);
+			withVar = getUnusedName("_with_"sv);
+			auto assignment = x->new_ptr<ExpListAssign_t>();
+			assignment->expList.set(toAst<ExpList_t>(withVar, x));
+			auto assign = x->new_ptr<Assign_t>();
+			assign->values.dup(with->valueList->exprs);
+			assignment->action.set(assign);
+			if (!returnValue) {
+				scoped = true;
+				temp.push_back(indent() + s("do"sv) + nll(with));
+				pushScope();
 			}
+			transformAssignment(assignment, temp);
 		}
 		if (!with->eop && !scoped && !returnValue) {
 			pushScope();
@@ -4843,7 +4833,7 @@ private:
 				}
 				break;
 			}
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", item); break;
 		}
 	}
 
@@ -4942,7 +4932,7 @@ private:
 				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp); break;
 				case id<TableBlockIndent_t>(): transformTableBlockIndent(static_cast<TableBlockIndent_t*>(pair), temp); break;
 				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(pair), temp); break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", pair); break;
 			}
 			temp.back() = indent() + temp.back() + (pair == pairs.back() ? Empty : s(","sv)) + nll(pair);
 		}
@@ -4986,7 +4976,7 @@ private:
 					temp.back() = indent() + s("if "sv) + temp.back() + s(" then"sv) + nll(item);
 					pushScope();
 					break;
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", item); break;
 			}
 		}
 		transformExp(comp->key, kv, ExpUsage::Closure);
@@ -5158,7 +5148,7 @@ private:
 					expList->exprs.push_back(exp);
 					break;
 				}
-				default: assert(false); break;
+				default: YUEE("AST node mismatch", name); break;
 			}
 		}
 		if (objAssign) {
@@ -5196,7 +5186,7 @@ private:
 		}
 		if (auto tabLit = import->target.as<ImportTabLit_t>()) {
 			auto newTab = x->new_ptr<ImportTabLit_t>();
-#ifndef MOONP_NO_MACRO
+#ifndef YUE_NO_MACRO
 			bool importAllMacro = false;
 			std::list<std::pair<std::string,std::string>> macroPairs;
 			for (auto item : tabLit->items.objects()) {
@@ -5220,7 +5210,7 @@ private:
 					case id<normal_pair_t>():
 						newTab->items.push_back(item);
 						break;
-					default: assert(false); break;
+					default: YUEE("AST node mismatch", item); break;
 				}
 			}
 			if (importAllMacro || !macroPairs.empty()) {
@@ -5231,7 +5221,7 @@ private:
 				pushCurrentModule(); // cur
 				int top = lua_gettop(L) - 1; // Lua state may be setup by pushCurrentModule()
 				DEFER(lua_settop(L, top));
-				pushMoonp("find_modulepath"sv); // cur find_modulepath
+				pushYue("find_modulepath"sv); // cur find_modulepath
 				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
 				if (lua_pcall(L, 1, 1, 0) != 0) {
 					std::string err = lua_tostring(L, -1);
@@ -5243,7 +5233,7 @@ private:
 				std::string moduleFullName = lua_tostring(L, -1);
 				lua_pop(L, 1); // cur
 				if (!isModuleLoaded(moduleFullName)) {
-					pushMoonp("read_file"sv); // cur read_file
+					pushYue("read_file"sv); // cur read_file
 					lua_pushlstring(L, moduleFullName.c_str(), moduleFullName.size()); // cur load_text moduleFullName
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						std::string err = lua_tostring(L, -1);
@@ -5253,8 +5243,8 @@ private:
 						throw std::logic_error(_info.errorMessage("failed to get module text"sv, x));
 					} // cur text
 					std::string text = lua_tostring(L, -1);
-					auto compiler = MoonCompilerImpl(L, _luaOpen, false, moduleFullName);
-					MoonConfig config;
+					auto compiler = YueCompilerImpl(L, _luaOpen, false, moduleFullName);
+					YueConfig config;
 					config.lineOffset = 0;
 					config.lintGlobalVariable = false;
 					config.reserveLineNumber = false;
@@ -5279,7 +5269,7 @@ private:
 					lua_setfield(L, -3, pair.second.c_str()); // cur[second] = val, cur mod
 				}
 			}
-#else // MOONP_NO_MACRO
+#else // YUE_NO_MACRO
 			for (auto item : tabLit->items.objects()) {
 				switch (item->getId()) {
 					case id<MacroName_t>():
@@ -5292,10 +5282,10 @@ private:
 					case id<normal_pair_t>():
 						newTab->items.push_back(item);
 						break;
-					default: assert(false); break;
+					default: YUEE("AST node mismatch", item); break;
 				}
 			}
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 			if (newTab->items.empty()) {
 				out.push_back(Empty);
 				return;
@@ -5339,7 +5329,7 @@ private:
 			case id<ImportFrom_t>():
 				transformImportFrom(static_cast<ImportFrom_t*>(content), out);
 				break;
-			default: assert(false); break;
+			default: YUEE("AST node mismatch", content); break;
 		}
 	}
 
@@ -5598,25 +5588,25 @@ private:
 	}
 };
 
-const std::string MoonCompilerImpl::Empty;
+const std::string YueCompilerImpl::Empty;
 
-MoonCompiler::MoonCompiler(void* sharedState,
+YueCompiler::YueCompiler(void* sharedState,
 	const std::function<void(void*)>& luaOpen,
 	bool sameModule):
-#ifndef MOONP_NO_MACRO
-_compiler(std::make_unique<MoonCompilerImpl>(static_cast<lua_State*>(sharedState), luaOpen, sameModule)) {}
+#ifndef YUE_NO_MACRO
+_compiler(std::make_unique<YueCompilerImpl>(static_cast<lua_State*>(sharedState), luaOpen, sameModule)) {}
 #else
-_compiler(std::make_unique<MoonCompilerImpl>()) {
+_compiler(std::make_unique<YueCompilerImpl>()) {
 	(void)sharedState;
 	(void)luaOpen;
 	(void)sameModule;
 }
-#endif // MOONP_NO_MACRO
+#endif // YUE_NO_MACRO
 
-MoonCompiler::~MoonCompiler() {}
+YueCompiler::~YueCompiler() {}
 
-CompileInfo MoonCompiler::compile(std::string_view codes, const MoonConfig& config) {
+CompileInfo YueCompiler::compile(std::string_view codes, const YueConfig& config) {
 	return _compiler->compile(codes, config);
 }
 
-} // namespace MoonP
+} // namespace yue

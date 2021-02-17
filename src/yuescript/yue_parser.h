@@ -16,10 +16,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <sstream>
 #include <string_view>
 
-#include "MoonP/ast.hpp"
-#include "MoonP/moon_ast.h"
+#include "yuescript/ast.hpp"
+#include "yuescript/yue_ast.h"
 
-namespace MoonP {
+namespace yue {
 using namespace parserlib;
 
 struct ParseInfo {
@@ -42,9 +42,9 @@ struct identity { typedef T type; };
 extern std::unordered_set<std::string> LuaKeywords;
 extern std::unordered_set<std::string> Keywords;
 
-class MoonParser {
+class YueParser {
 public:
-	MoonParser();
+	YueParser();
 
 	template<class AST>
 	ParseInfo parse(std::string_view codes) {
@@ -314,4 +314,4 @@ namespace Utils {
 	void trim(std::string& str);
 };
 
-} // namespace MoonP
+} // namespace yue

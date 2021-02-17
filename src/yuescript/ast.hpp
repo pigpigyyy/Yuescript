@@ -17,7 +17,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdexcept>
 #include <type_traits>
 
-#include "MoonP/parser.hpp"
+#include "yuescript/parser.hpp"
 
 
 namespace parserlib {

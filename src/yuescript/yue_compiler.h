@@ -16,14 +16,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <unordered_map>
 #include <functional>
 
-namespace MoonP {
+namespace yue {
 
 extern const std::string_view version;
 extern const std::string_view extension;
 
 using Options = std::unordered_map<std::string,std::string>;
 
-struct MoonConfig {
+struct YueConfig {
 	bool lintGlobalVariable = false;
 	bool implicitReturnRoot = true;
 	bool reserveLineNumber = true;
@@ -47,17 +47,17 @@ struct CompileInfo {
 	std::unique_ptr<Options> options;
 };
 
-class MoonCompilerImpl;
+class YueCompilerImpl;
 
-class MoonCompiler {
+class YueCompiler {
 public:
-	MoonCompiler(void* luaState = nullptr,
+	YueCompiler(void* luaState = nullptr,
 		const std::function<void(void*)>& luaOpen = nullptr,
 		bool sameModule = false);
-	virtual ~MoonCompiler();
-	CompileInfo compile(std::string_view codes, const MoonConfig& config = {});
+	virtual ~YueCompiler();
+	CompileInfo compile(std::string_view codes, const YueConfig& config = {});
 private:
-	std::unique_ptr<MoonCompilerImpl> _compiler;
+	std::unique_ptr<YueCompilerImpl> _compiler;
 };
 
-} // namespace MoonP
+} // namespace yue
