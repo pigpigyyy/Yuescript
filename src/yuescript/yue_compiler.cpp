@@ -58,7 +58,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.6"sv;
+const std::string_view version = "0.6.7"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -3458,6 +3458,20 @@ private:
 						info.node.set(block);
 					} else {
 						info.node.set(exp);
+					}
+				}
+				if (auto block = info.node.as<Block_t>()) {
+					for (auto stmt_ : block->statements.objects()) {
+						auto stmt = static_cast<Statement_t*>(stmt_);
+						if (auto global = stmt->content.as<Global_t>()) {
+							if (global->item.is<global_op_t>()) {
+								throw std::logic_error(_info.errorMessage(s("can not insert global statement with wildcard operator from macro"sv), x));
+							}
+						} else if (auto local = stmt->content.as<Local_t>()) {
+							if (local->item.is<local_flag_t>()) {
+								throw std::logic_error(_info.errorMessage(s("can not insert local statement with wildcard operator from macro"sv), x));
+							}
+						}
 					}
 				}
 				return {info.node, std::move(info.codes), Empty, std::move(localVars)};

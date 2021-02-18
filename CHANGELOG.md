@@ -1,14 +1,39 @@
 # Changelog
 
-The implementation for original Moonscript language 0.5.0 can be found in the `0.5.0` branch of MoonPlus. The Moonscript with fixes and new features is in the master branch of MoonPlus. Here are the changelogs for each MoonPlus version.
+The implementation for original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
 
+## v0.6.6
+
+### Fixed Issues
+
+* Simplify macro syntax. Macro function can either return a code string or a config table.
+
+```moonscript
+macro local = (var)-> "global *"
+
+$local x
+x = 1
+y = 2
+z = 3
+
+macro local = (var)->
+  {
+    codes: "local #{var}"
+    type: "lua"
+    locals: {var}
+  }
+
+$local y
+y = 1
+```
+
+* Change Yuescript file extension to '.yue' because some of the Moonscript syntax are no longer supported and some codes written in Yuescript syntax won't be accepted by Moonscript compiler.
+* 
 
 ## v0.4.16
 
 ### Fixed Issues
-
-* Change MoonPlus file extension to '.mp' because some of the Moonscript syntax are no longer supported and some codes written in MoonPlus syntax won't be accepted by Moonscript compiler.
 
 * Remove support for escape new line symbol, binary operator expressions can now be written multiline without escape new line symbol.
 
@@ -37,7 +62,7 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
     okay = yeah,
     fine = alright
   })
-  -- compiled in fixed MoonPlus compiler
+  -- compiled in fixed Yuescript compiler
   -- get one table as argument
   another(hello, one, two, three, four, {
     yeah = man,
@@ -163,13 +188,13 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 
 * Add variadic arguments declaration check.
 
-* `moonp` now supports recursively traversing any directory and compiling any moon file in the path.
+* `yue` now supports recursively traversing any directory and compiling any moon file in the path.
 
-* `moonp` now supports REPL functions for Moonscript.
+* `yue` now supports REPL functions for Moonscript.
 
-* Add `useSpaceOverTab` function to `moonp`.
+* Add `useSpaceOverTab` function to `yue`.
 
-* Add Lua codes minify function to `moonp`.
+* Add Lua codes minify function to `yue`.
 
 
 
@@ -186,14 +211,14 @@ The implementation for original Moonscript language 0.5.0 can be found in the `0
 * Add macro functions.
 ```Moonscript
 -- file 'macro.mp'
-export macro block config = (debugging = true)->
+export macro config = (debugging = true)->
   global debugMode = debugging == "true"
   ""
 
-export macro block asserts = (cond)->
+export macro asserts = (cond)->
   debugMode and "assert #{cond}" or ""
 
-export macro expr assert = (cond)->
+export macro assert = (cond)->
   debugMode and "assert #{cond}" or "#{cond}"
 
 $config!
@@ -201,7 +226,7 @@ $config!
 -- file 'main.mp'
 import 'macro' as {:$config, :$assert, :$asserts}
 
-macro expr and = (...)-> "#{ table.concat {...}, ' and ' }"
+macro and = (...)-> "#{ table.concat {...}, ' and ' }"
 
 $asserts item ~= nil
 $config false
@@ -243,11 +268,11 @@ From original Moonscript compiler:
 ### Added Features
 
 * Allow value lists in for and local statement to be multiline.
-* `moonp` now compiles source files in multiple threads to speed up compilation.
+* `yue` now compiles source files in multiple threads to speed up compilation.
 * Add placeholder support for backcall operator.
 * Add placeholder support for backcall statement.
 * Add fat arrow support for backcall statement.
-* Add option to compile MoonPlus as a Lua C lib. Got MoonPlus released to `Luarocks`.
+* Add option to compile Yuescript as a Lua C lib. Got Yuescript released to `Luarocks`.
 * Move old `export` statement functions to `global` statement to match the `local` statement.
 * Change `export` statement behavier to support module management.  Moon codes with `export` statement can not explicit return values in root scope. And codes with `export default` can export only one value as the module content. Use cases:
 ```Moonscript
@@ -459,7 +484,7 @@ in original Moonscript compiles to:
 ```Lua
 local f
 f = function(x)
- local _ = "abc", 123 -- report error in MoonPlus
+ local _ = "abc", 123 -- report error in Yuescript
  return x + 1
 end
 ```
@@ -491,7 +516,7 @@ tree:addChild((function()
 end)())
 
 -- codes added with a break will still run
-local _ -- report error in MoonPlus instead of creating
+local _ -- report error in Yuescript instead of creating
 do      -- an anonymous function to bind the object method
   local _base_0 = tree
   local _fn_0 = _base_0.addChild
@@ -506,7 +531,7 @@ end
 ```
 
 * Reusing variables which helps generate reduced Lua codes. 
-  For example, MoonPlus will generate codes from:
+  For example, Yuescript will generate codes from:
 
 ```Moonscript
 with leaf
