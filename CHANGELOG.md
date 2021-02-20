@@ -3,33 +3,98 @@
 The implementation for original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
 
-## v0.6.6
+## v0.6.7
 
 ### Fixed Issues
 
-* Simplify macro syntax. Macro function can either return a code string or a config table.
+* Simplify macro syntax. Macro function can either return a Yuescript string or a config table containing Lua codes.
 
 ```moonscript
-macro local = (var)-> "global *"
+macro localFunc = (var)-> "local #{var} = ->"
+$localFunc f1
+f1 = -> "another function"
 
-$local x
-x = 1
-y = 2
-z = 3
+-- or
 
-macro local = (var)->
+macro localFunc = (var)->
   {
-    codes: "local #{var}"
+    codes: "local function #{var}() end"
     type: "lua"
     locals: {var}
   }
-
-$local y
-y = 1
+$localFunc f2
+f2 = -> "another function"
+```
+Compiles to:
+```Lua
+local f1
+f1 = function() end
+f1 = function()
+  return "another function"
+end
+local function f2() end
+f2 = function()
+  return "another function"
+end
 ```
 
 * Change Yuescript file extension to '.yue' because some of the Moonscript syntax are no longer supported and some codes written in Yuescript syntax won't be accepted by Moonscript compiler.
-* 
+* Disable the use of local and global statement with wildcard operators.
+* Change backcall operator syntax, extra parentheses for multiline chains are no longer needed.
+```moonscript
+readFile "example.txt"
+  |> extract language, {}
+  |> parse language
+  |> emit
+  |> render
+  |> print
+```
+Compiles to:
+```Lua
+return print(render(emit(parse(extract(readFile("example.txt"), language, { }), language))))
+```
+
+
+### Added Features
+
+* Supporting multiline chaining function call syntax.
+```Moonscript
+result = origin
+  .transform.root
+  .gameObject
+  \Parents!
+  \Descendants!
+  \SelectEnable!
+  \SelectVisible!
+  \TagEqual "fx"
+  \Where (x)->
+    if x\IsTargeted!
+      return false
+    x.name\EndsWith "(Clone)"
+  \Destroy!
+
+origin.transform.root.gameObject
+  \Parents!\Descendants!
+  \SelectEnable!
+  \SelectVisible!
+  \TagEqual "fx"
+  \Where (x)-> x.name\EndsWith "(Clone)"
+  \Destroy!
+```
+Compiles to:
+```Lua
+local result = origin.transform.root.gameObject:Parents():Descendants():SelectEnable():SelectVisible():TagEqual("fx"):Where(function(x)
+  if x:IsTargeted() then
+    return false
+  end
+  return x.name:EndsWith("(Clone)")
+end):Destroy()
+return origin.transform.root.gameObject:Parents():Descendants():SelectEnable():SelectVisible():TagEqual("fx"):Where(function(x)
+  return x.name:EndsWith("(Clone)")
+end):Destroy()
+```
+
+
 
 ## v0.4.16
 

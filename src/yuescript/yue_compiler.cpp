@@ -58,7 +58,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.7"sv;
+const std::string_view version = "0.6.8"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1237,7 +1237,7 @@ private:
 					if (pair.isVariable && !isDefined(pair.name)) {
 						_buf << s("local "sv);
 					}
-					_buf << pair.name << " = "sv << info.first.front().value << pair.structure << nll(assignment);
+					_buf << pair.name << " = "sv << destruct.value << pair.structure << nll(assignment);
 					addToScope(pair.name);
 					temp.push_back(clearBuf());
 				} else if (_parser.match<Name_t>(destruct.value)) {
@@ -1451,6 +1451,13 @@ private:
 			auto value = singleValueFrom(expr);
 			ast_node* destructNode = value->getByPath<SimpleValue_t, TableLit_t>();
 			if (destructNode || (destructNode = value->item.as<simple_table_t>())) {
+				if (*j != nullNode) {
+					if (auto ssVal = simpleSingleValueFrom(*j)) {
+						if (ssVal->value.is<const_value_t>()) {
+							throw std::logic_error(_info.errorMessage("can not destruct a const value"sv, ssVal->value));
+						}
+					}
+				}
 				destructPairs.push_back({i,j});
 				auto& destruct = destructs.emplace_back();
 				if (!varDefOnly) {
@@ -1462,7 +1469,11 @@ private:
 				}
 				auto pairs = destructFromExp(expr);
 				destruct.items = std::move(pairs);
-				if (destruct.items.size() == 1 && !singleValueFrom(*j)) {
+				if (*j == nullNode) {
+					for (auto& item : destruct.items) {
+						item.structure.clear();
+					}
+				} else if (destruct.items.size() == 1 && !singleValueFrom(*j)) {
 					destruct.value.insert(0, "("sv);
 					destruct.value.append(")"sv);
 				}

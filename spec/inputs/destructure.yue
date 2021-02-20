@@ -22,6 +22,12 @@ do
 
 	{a, :b, c, :d, e, :f, g} = tbl
 
+	do :a, :b, c = tbl
+
+	do :a, b, :c = tbl
+
+	do a, :b, :c = tbl
+
 --- 
 
 do
