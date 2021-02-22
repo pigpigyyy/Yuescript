@@ -194,6 +194,10 @@ hello =
 	function: "okay"
 	good: 230203
 
+tb = {
+	do: b
+	do :b
+}
 
 div class: "cool"
 

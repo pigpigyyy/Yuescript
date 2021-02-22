@@ -164,7 +164,7 @@ class normal_pair_t;
 
 AST_NODE(ImportTabLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, MacroName_t, macro_name_pair_t, import_all_macro_t> items;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, MacroName_t, macro_name_pair_t, import_all_macro_t, Exp_t> items;
 	AST_MEMBER(ImportTabLit, &sep, &items)
 AST_END(ImportTabLit)
 

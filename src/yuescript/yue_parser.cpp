@@ -199,20 +199,20 @@ YueParser::YueParser() {
 
 	macro_name_pair = Space >> MacroName >> Space >> symx(':') >> Space >> MacroName;
 	import_all_macro = expr('$');
-	ImportTabItem = variable_pair | normal_pair | sym(':') >> MacroName | macro_name_pair | Space >> import_all_macro;
+	ImportTabItem = variable_pair | normal_pair | sym(':') >> MacroName | macro_name_pair | Space >> import_all_macro | Exp;
 	ImportTabList = ImportTabItem >> *(sym(',') >> ImportTabItem);
 	ImportTabLine = (
 		PushIndent >> (ImportTabList >> PopIndent | PopIndent)
 	) | Space;
 	import_tab_lines = SpaceBreak >> ImportTabLine >> *(-sym(',') >> SpaceBreak >> ImportTabLine) >> -sym(',');
 	ImportTabLit =
-		sym('{') >> Seperator >>
+		Seperator >> (sym('{') >>
 		-ImportTabList >>
 		-sym(',') >>
 		-import_tab_lines >>
-		White >> sym('}');
+		White >> sym('}') | KeyValue >> *(sym(',') >> KeyValue));
 
-	ImportAs = ImportLiteral >> -(key("as") >> (Space >> Variable | ImportTabLit));
+	ImportAs = ImportLiteral >> -(key("as") >> (ImportTabLit | Space >> Variable));
 
 	Import = key("import") >> (ImportAs | ImportFrom);
 
