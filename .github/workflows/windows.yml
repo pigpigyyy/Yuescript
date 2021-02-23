@@ -1,0 +1,19 @@
+name: Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1
+      - name: Windows build
+        run: msbuild Yuescript.sln -p:Configuration=debug
+
