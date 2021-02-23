@@ -1,8 +1,6 @@
 # YueScript
 
-|macOS|Linux|Windows|
-|:---:|:---:|:-----:|
-|![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)|![CI](https://github.com/pigpigyyy/MoonPlus/workflows/build-test/badge.svg)|[![Build status](https://ci.appveyor.com/api/projects/status/4nbkye9mx9b3bf83/branch/master?svg=true)](https://ci.appveyor.com/project/pigpigyyy/moonplus/branch/master)|
+[![Ubuntu](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml) [![Windows](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml) [![macOS](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml)
 
 Yuescript is a Moonscript dialect. It is derived from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and continuously adopting new features to be more up to date. 
 
