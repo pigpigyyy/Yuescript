@@ -10,6 +10,7 @@ Moonscript is a language that compiles to Lua. Since original Moonscript has bee
 
 So Yuescript is a new code base for pushing the language to go forward and being a playground to try introducing new language syntax or programing paradigms to make Moonscript language more expressive and productive.
 
+Yue (月) is the name of Moon in Chinese and it's pronounced as [jyɛ].
 
 
 ## Features
