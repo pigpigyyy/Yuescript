@@ -22,5 +22,10 @@ for i = 1, 10
 	(print) 4
 	goto abc
 	(print) 5
-nil
 
+macro v = -> 'print 123'
+do
+	global *
+	$v!
+
+nil
