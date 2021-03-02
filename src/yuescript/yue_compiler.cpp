@@ -58,7 +58,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.6.9"sv;
+const std::string_view version = "0.6.10"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -957,7 +957,7 @@ private:
 			}
 			default: YUEE("AST node mismatch", content); break;
 		}
-		if (statement->needSep && !out.back().empty()) {
+		if (statement->needSep && !out.empty() && !out.back().empty()) {
 			auto index = std::string::npos;
 			if (_config.reserveLineNumber) {
 				index = out.back().rfind(" -- "sv);
