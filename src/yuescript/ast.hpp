@@ -100,7 +100,9 @@ public:
 	inline ast_ptr<false, T> new_ptr() const {
 		auto item = new T;
 		item->m_begin.m_line = m_begin.m_line;
-		item->m_end.m_line = m_begin.m_line;
+		item->m_begin.m_col = m_begin.m_col;
+		item->m_end.m_line = m_end.m_line;
+		item->m_end.m_col = m_end.m_col;
 		return ast_ptr<false, T>(item);
 	}
 private:

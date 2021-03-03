@@ -1,0 +1,43 @@
+a = close: true, close#: => print "out of scope"
+b = add#: (left, right)-> right - left
+c = key1: true, :add#, key2: true
+
+close _ = close#: -> print "out of scope"
+
+d, e = a.close, a.close#
+
+f = a\close# 1
+a.add# = (x, y)-> x + y
+
+do
+	{:new, :close#, close#: closeA} = a
+	print new, close, closeA
+
+do
+	local *
+	x, \
+	{:new, :var, :close#, close#: closeA}, \
+	:num, :add#, :sub# \
+	= 123, a.b.c, func!
+
+x.abc, a.b.# = 123, {}
+func!.# = mt, extra
+a, b.c.#, d, e = 1, mt, "abc"
+
+is_same = a.#.__index == a.index#
+
+--
+a.# = __index: tb
+a.#.__index = tb
+a.index# = tb
+--
+
+mt = a.#
+
+tb\func #list
+tb\func#list
+tb\func# list
+
+import "module" as :index#, newindex#:setFunc
+
+nil

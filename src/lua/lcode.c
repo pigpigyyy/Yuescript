@@ -314,15 +314,6 @@ void luaK_patchtohere (FuncState *fs, int list) {
 }
 
 
-/*
-** MAXimum number of successive Instructions WiTHout ABSolute line
-** information.
-*/
-#if !defined(MAXIWTHABS)
-#define MAXIWTHABS	120
-#endif
-
-
 /* limit for difference between lines in relative line info. */
 #define LIMLINEDIFF	0x80
 
@@ -337,13 +328,13 @@ void luaK_patchtohere (FuncState *fs, int list) {
 static void savelineinfo (FuncState *fs, Proto *f, int line) {
   int linedif = line - fs->previousline;
   int pc = fs->pc - 1;  /* last instruction coded */
-  if (abs(linedif) >= LIMLINEDIFF || fs->iwthabs++ > MAXIWTHABS) {
+  if (abs(linedif) >= LIMLINEDIFF || fs->iwthabs++ >= MAXIWTHABS) {
     luaM_growvector(fs->ls->L, f->abslineinfo, fs->nabslineinfo,
                     f->sizeabslineinfo, AbsLineInfo, MAX_INT, "lines");
     f->abslineinfo[fs->nabslineinfo].pc = pc;
     f->abslineinfo[fs->nabslineinfo++].line = line;
     linedif = ABSLINEINFO;  /* signal that there is absolute information */
-    fs->iwthabs = 0;  /* restart counter */
+    fs->iwthabs = 1;  /* restart counter */
   }
   luaM_growvector(fs->ls->L, f->lineinfo, pc, f->sizelineinfo, ls_byte,
                   MAX_INT, "opcodes");
@@ -1307,7 +1298,8 @@ static int validop (int op, TValue *v1, TValue *v2) {
     case LUA_OPBAND: case LUA_OPBOR: case LUA_OPBXOR:
     case LUA_OPSHL: case LUA_OPSHR: case LUA_OPBNOT: {  /* conversion errors */
       lua_Integer i;
-      return (tointegerns(v1, &i) && tointegerns(v2, &i));
+      return (luaV_tointegerns(v1, &i, LUA_FLOORN2I) &&
+              luaV_tointegerns(v2, &i, LUA_FLOORN2I));
     }
     case LUA_OPDIV: case LUA_OPIDIV: case LUA_OPMOD:  /* division by 0 */
       return (nvalue(v2) != 0);

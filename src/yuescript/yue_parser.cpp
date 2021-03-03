@@ -412,6 +412,9 @@ YueParser::YueParser() {
 	FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
 		(sym('!') >> not_(expr('=')));
 
+	Metatable = expr('#');
+	Metamethod = Name >> expr('#');
+
 	existential_op = expr('?');
 	chain_call = (Callable | String) >> -existential_op >> ChainItems;
 	chain_item = and_(set(".\\")) >> ChainItems;
@@ -427,8 +430,8 @@ YueParser::YueParser() {
 
 	Index = symx('[') >> Exp >> sym(']');
 	ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
-	DotChainItem = symx('.') >> Name;
-	ColonChainItem = symx('\\') >> (LuaKeyword | Name);
+	DotChainItem = symx('.') >> (Name >> not_('#') | Metatable | Metamethod);
+	ColonChainItem = symx('\\') >> ((LuaKeyword | Name) >> not_('#') | Metamethod);
 	invoke_chain = Invoke >> -existential_op >> -ChainItems;
 	ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
 
@@ -508,7 +511,7 @@ YueParser::YueParser() {
 	}) >> ExpList >> -Assign)
 	| Macro) >> not_(Space >> statement_appendix);
 
-	variable_pair = sym(':') >> Variable;
+	variable_pair = sym(':') >> Variable >> not_('#');
 
 	normal_pair = (
 		KeyName |
@@ -520,7 +523,12 @@ YueParser::YueParser() {
 	symx(':') >>
 	(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
-	KeyValue = variable_pair | normal_pair;
+	meta_variable_pair = sym(':') >> Variable >> expr('#');
+
+	meta_normal_pair = Space >> Name >> expr("#:") >>
+		(Exp | TableBlock | +(SpaceBreak) >> Exp);
+
+	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
 
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (Exp | TableBlock));

@@ -161,10 +161,12 @@ AST_END(import_all_macro)
 
 class variable_pair_t;
 class normal_pair_t;
+class meta_variable_pair_t;
+class meta_normal_pair_t;
 
 AST_NODE(ImportTabLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, MacroName_t, macro_name_pair_t, import_all_macro_t, Exp_t> items;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, MacroName_t, macro_name_pair_t, import_all_macro_t, Exp_t, meta_variable_pair_t, meta_normal_pair_t> items;
 	AST_MEMBER(ImportTabLit, &sep, &items)
 AST_END(ImportTabLit)
 
@@ -423,9 +425,20 @@ AST_NODE(normal_pair)
 	AST_MEMBER(normal_pair, &key, &value)
 AST_END(normal_pair)
 
+AST_NODE(meta_variable_pair)
+	ast_ptr<true, Variable_t> name;
+	AST_MEMBER(meta_variable_pair, &name)
+AST_END(meta_variable_pair)
+
+AST_NODE(meta_normal_pair)
+	ast_sel<true, Name_t> key;
+	ast_sel<true, Exp_t, TableBlock_t> value;
+	AST_MEMBER(meta_normal_pair, &key, &value)
+AST_END(meta_normal_pair)
+
 AST_NODE(simple_table)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, variable_pair_t, normal_pair_t> pairs;
+	ast_sel_list<true, variable_pair_t, normal_pair_t, meta_variable_pair_t, meta_normal_pair_t> pairs;
 	AST_MEMBER(simple_table, &sep, &pairs)
 AST_END(simple_table)
 
@@ -484,13 +497,21 @@ AST_NODE(String)
 	AST_MEMBER(String, &str)
 AST_END(String)
 
-AST_NODE(DotChainItem)
+AST_LEAF(Metatable)
+AST_END(Metatable)
+
+AST_NODE(Metamethod)
 	ast_ptr<true, Name_t> name;
+	AST_MEMBER(Metamethod, &name)
+AST_END(Metamethod)
+
+AST_NODE(DotChainItem)
+	ast_sel<true, Name_t, Metatable_t, Metamethod_t> name;
 	AST_MEMBER(DotChainItem, &name)
 AST_END(DotChainItem)
 
 AST_NODE(ColonChainItem)
-	ast_sel<true, LuaKeyword_t, Name_t> name;
+	ast_sel<true, LuaKeyword_t, Name_t, Metamethod_t> name;
 	bool switchToDot = false;
 	AST_MEMBER(ColonChainItem, &name)
 AST_END(ColonChainItem)
@@ -542,19 +563,19 @@ AST_END(default_value)
 
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t, meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit)
 
 AST_NODE(TableBlockIndent)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableBlockIndent, &sep, &values)
 AST_END(TableBlockIndent)
 
 AST_NODE(TableBlock)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableBlock, &sep, &values)
 AST_END(TableBlock)
 
