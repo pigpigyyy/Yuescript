@@ -12,6 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <stack>
 #include <vector>
 #include <memory>
+#include <set>
 
 #include "yuescript/yue_parser.h"
 #include "yuescript/yue_compiler.h"
@@ -58,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.0"sv;
+const std::string_view version = "0.7.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1549,11 +1550,20 @@ private:
 						}
 						case id<meta_normal_pair_t>(): {
 							auto mp = static_cast<meta_normal_pair_t*>(item);
-							auto key = _parser.toString(mp->key);
-							_buf << "__"sv << key;
-							auto newKey = toAst<KeyName_t>(clearBuf(), item);
 							auto newPair = item->new_ptr<normal_pair_t>();
-							newPair->key.set(newKey);
+							switch (mp->key->getId()) {
+								case id<Name_t>(): {
+									auto key = _parser.toString(mp->key);
+									_buf << "__"sv << key;
+									auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+									newPair->key.set(newKey);
+									break;
+								}
+								case id<Exp_t>():
+									newPair->key.set(mp->key);
+									break;
+								default: YUEE("AST node mismatch", mp->key); break;
+							}
 							newPair->value.set(mp->value);
 							subMetaDestruct->values.push_back(newPair);
 							break;
@@ -3167,6 +3177,9 @@ private:
 		if (opIt == chainList.end()) return false;
 		auto x = chainList.front();
 		auto chain = x->new_ptr<ChainValue_t>();
+		if (opIt == chainList.begin() && ast_is<ColonChainItem_t, DotChainItem_t>(x)) {
+			chain->items.push_back(toAst<Callable_t>(_withVars.top(), x));
+		}
 		for (auto it = chainList.begin(); it != opIt; ++it) {
 			chain->items.push_back(*it);
 		}
@@ -5157,11 +5170,20 @@ private:
 				case id<meta_normal_pair_t>(): {
 					isMetamethod = true;
 					auto mp = static_cast<meta_normal_pair_t*>(pair);
-					auto key = _parser.toString(mp->key);
-					_buf << "__"sv << key;
-					auto newKey = toAst<KeyName_t>(clearBuf(), pair);
 					auto newPair = pair->new_ptr<normal_pair_t>();
-					newPair->key.set(newKey);
+					switch (mp->key->getId()) {
+						case id<Name_t>(): {
+							auto key = _parser.toString(mp->key);
+							_buf << "__"sv << key;
+							auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+							newPair->key.set(newKey);
+							break;
+						}
+						case id<Exp_t>():
+							newPair->key.set(mp->key);
+							break;
+						default: YUEE("AST node mismatch", mp->key); break;
+					}
 					newPair->value.set(mp->value);
 					metatable->pairs.push_back(newPair);
 					break;

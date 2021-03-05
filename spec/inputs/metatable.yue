@@ -1,6 +1,8 @@
 a = close: true, close#: => print "out of scope"
 b = add#: (left, right)-> right - left
 c = key1: true, :add#, key2: true
+w = [name]#:123, ["new"]#:(val)=> {val}
+w.#["new"] w.#[name]
 
 close _ = close#: -> print "out of scope"
 
@@ -39,5 +41,11 @@ tb\func#list
 tb\func# list
 
 import "module" as :index#, newindex#:setFunc
+
+with tb
+	print .add#, .x\index# "key"
+	a = .index#.add#\new# 123
+	b = t#.close#.test
+	c = t #.close# .test
 
 nil

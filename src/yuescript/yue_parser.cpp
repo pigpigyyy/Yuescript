@@ -525,7 +525,7 @@ YueParser::YueParser() {
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
 
-	meta_normal_pair = Space >> Name >> expr("#:") >>
+	meta_normal_pair = (Space >> Name | sym('[') >> Exp >> sym(']')) >> expr("#:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;

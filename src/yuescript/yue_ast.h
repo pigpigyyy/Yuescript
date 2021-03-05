@@ -431,7 +431,7 @@ AST_NODE(meta_variable_pair)
 AST_END(meta_variable_pair)
 
 AST_NODE(meta_normal_pair)
-	ast_sel<true, Name_t> key;
+	ast_sel<true, Name_t, Exp_t> key;
 	ast_sel<true, Exp_t, TableBlock_t> value;
 	AST_MEMBER(meta_normal_pair, &key, &value)
 AST_END(meta_normal_pair)
