@@ -18,7 +18,7 @@ IF(LUA_EXEC_NAME STREQUAL "luajit")
 		NO_DEFAULT_PATH)
 ELSEIF(LUA_EXEC_NAME MATCHES "lua.*")
 	FIND_LIBRARY(LUA_LIBRARIES
-		NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51
+		NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51 liblua5.4 liblua5.3 liblua5.2 liblua5.1
 		PATHS ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib
 		NO_DEFAULT_PATH)
 ENDIF()
