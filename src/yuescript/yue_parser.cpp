@@ -328,7 +328,7 @@ YueParser::YueParser() {
 
 	unary_operator =
 		expr('-') >> not_(set(">=") | space_one) |
-		expr('#') |
+		expr('#') >> not_(':') |
 		expr('~') >> not_(expr('=') | space_one) |
 		expr("not") >> not_(AlphaNum);
 	unary_exp = *(Space >> unary_operator) >> expo_exp;
@@ -525,7 +525,7 @@ YueParser::YueParser() {
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
 
-	meta_normal_pair = (Space >> Name | sym('[') >> Exp >> sym(']')) >> expr("#:") >>
+	meta_normal_pair = Space >> -(Name | symx('[') >> Exp >> sym(']')) >> expr("#:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;

@@ -48,4 +48,15 @@ with tb
 	b = t#.close#.test
 	c = t #.close# .test
 
+#:mt = a
+a = #:mt
+a = #:__index:mt
+
+local index
+#:__index:index = a
+:index# = a
+
+do #:{new:ctor, :update} = a
+do {new:ctor, :update} = a.#
+
 nil

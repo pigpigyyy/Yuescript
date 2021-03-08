@@ -420,7 +420,7 @@ public:
 		return false;
 	}
 
-	 const node_container& objects() const {
+	const node_container& objects() const {
 		return m_objects;
 	}
 
