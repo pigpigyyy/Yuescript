@@ -91,4 +91,8 @@ do
 	-- this generates a nil value in the body
 	for a in *{} do _ = a
 
+do
+	local *
+	x = a or b
+
 g = 2323 -- test if anything leaked

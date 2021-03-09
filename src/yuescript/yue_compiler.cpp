@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.2"sv;
+const std::string_view version = "0.7.3"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2380,6 +2380,7 @@ private:
 					auto exp = ast_cast<Exp_t>(assign->values.objects().front());
 					BREAK_IF(!exp);
 					auto value = singleValueFrom(exp);
+					BREAK_IF(!value);
 					classDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
 					BLOCK_END
 				} else if (auto expList = expListFrom(stmt)) {

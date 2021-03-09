@@ -53,13 +53,11 @@ split = function(str, delim)
 		return { }
 	end
 	str = str .. delim
-	local _accum_0 = { }
-	local _len_0 = 1
+	local tokens = { }
 	for m in str:gmatch("(.-)" .. delim) do
-		_accum_0[_len_0] = m
-		_len_0 = _len_0 + 1
+		table.insert(tokens, m)
 	end
-	return _accum_0
+	return tokens
 end
 get_options = function(...)
 	local count = select("#", ...)
@@ -74,29 +72,14 @@ get_options = function(...)
 end
 create_yuepath = function(package_path)
 	local extension = yue.options.extension
-	local yuepaths
-	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		local _list_0 = split(package_path, ";")
-		for _index_0 = 1, #_list_0 do
-			local path = _list_0[_index_0]
-			local _continue_0 = false
-			repeat
-				local prefix = path:match("^(.-)%.lua$")
-				if not prefix then
-					_continue_0 = true
-					break
-				end
-				_accum_0[_len_0] = prefix .. "." .. extension
-				_len_0 = _len_0 + 1
-				_continue_0 = true
-			until true
-			if not _continue_0 then
-				break
-			end
+	local yuepaths = { }
+	local tokens = split(package_path, ";")
+	for i = 1, #tokens do
+		local path = tokens[i]
+		local prefix = path:match("^(.-)%.lua$")
+		if prefix then
+			table.insert(yuepaths, prefix .. "." .. extension)
 		end
-		yuepaths = _accum_0
 	end
 	return concat(yuepaths, ";")
 end
@@ -178,8 +161,8 @@ insert_loader = function(pos)
 		package.yuepath = create_yuepath(package.path)
 	end
 	local loaders = package.loaders or package.searchers
-	for _index_0 = 1, #loaders do
-		local loader = loaders[_index_0]
+	for i = 1, #loaders do
+		local loader = loaders[i]
 		if loader == yue_loader then
 			return false
 		end
@@ -219,12 +202,9 @@ setmetatable(yue, {
 		end
 		local stp = rawget(yue, "stp")
 		if not stp then
-			do
-				local _with_0 = yue.load_stacktraceplus()
-				_with_0.dump_locals = false
-				_with_0.simplified = true
-				stp = _with_0
-			end
+			stp = yue.load_stacktraceplus()
+			stp.dump_locals = false
+			stp.simplified = true
 			rawset(yue, "stp", stp)
 			rawset(yue, "load_stacktraceplus", nil)
 		end
