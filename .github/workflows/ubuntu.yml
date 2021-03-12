@@ -18,7 +18,7 @@ jobs:
         run: make test
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
-        run: zip ./linux-yue.zip ./bin/release/yue
+        run: (cd bin/release && zip -r ../../linux-yue.zip ./yue)
       - name: release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
