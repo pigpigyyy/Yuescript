@@ -15,3 +15,14 @@ jobs:
       - uses: actions/checkout@v1
       - name: build-test
         run: make test
+      - name: pack
+        if: startsWith(github.ref, 'refs/tags/')
+        run: zip ./linux-yue.zip ./bin/release/yue
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./linux-yue.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
