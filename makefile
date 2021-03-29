@@ -199,7 +199,7 @@ endif
 	@echo -n "Total build time: "
 	@$(END_TIME)
 
-$(BUILD_PATH)/yue.so: src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yue.cpp src/yuescript/parser.cpp
+$(BUILD_PATH)/yue.so: src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/yuescript/parser.cpp
 	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
 
 # Standard, non-optimized release build
