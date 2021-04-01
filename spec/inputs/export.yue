@@ -77,3 +77,10 @@ _ = "#{with a
 _ = "#{a?.b}"
 _ = "#{a\b}"
 _ = "#{class A}"
+
+local *
+v1 = 1
+export v2 = 2
+export v3 = class v4
+v5 = 5
+

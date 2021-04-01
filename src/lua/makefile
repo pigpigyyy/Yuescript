@@ -61,7 +61,7 @@ else
 endif
 
 CC= gcc
-CFLAGS= -Wall -O2 $(MYCFLAGS) -fno-stack-protector -fno-common -march=native
+CFLAGS= -Wall -O2 $(MYCFLAGS) -fno-stack-protector -fno-common
 AR= ar rc
 RANLIB= ranlib
 RM= rm -f

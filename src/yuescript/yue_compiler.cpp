@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.3"sv;
+const std::string_view version = "0.7.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2343,7 +2343,16 @@ private:
 				}
 			} else if (mode != LocalMode::None) {
 				ClassDecl_t* classDecl = nullptr;
-				if (auto assignment = assignmentFrom(stmt)) {
+				ast_ptr<false, ExpListAssign_t> assignment;
+				if (auto exportNode = stmt->content.as<Export_t>()) {
+					if (exportNode->assign) {
+						assignment = stmt->new_ptr<ExpListAssign_t>();
+						assignment->expList.set(exportNode->target);
+						assignment->action.set(exportNode->assign);
+					}
+				}
+				if (!assignment) assignment = assignmentFrom(stmt);
+				if (assignment) {
 					auto vars = getAssignVars(assignment);
 					for (const auto& var : vars) {
 						if (var.empty()) continue;
