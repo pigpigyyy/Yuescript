@@ -1,13 +1,13 @@
 # Changelog
 
-The implementation for original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
+The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
 
 ## v0.6.7
 
 ### Fixed Issues
 
-* Simplify macro syntax. Macro function can either return a Yuescript string or a config table containing Lua codes.
+* Simplify macro syntax. A macro function can either return a Yuescript string or a config table containing Lua codes.
 
 ```moonscript
 macro localFunc = (var)-> "local #{var} = ->"
@@ -38,9 +38,9 @@ f2 = function()
 end
 ```
 
-* Change Yuescript file extension to '.yue' because some of the Moonscript syntax are no longer supported and some codes written in Yuescript syntax won't be accepted by Moonscript compiler.
-* Disable the use of local and global statement with wildcard operators.
-* Change backcall operator syntax, extra parentheses for multiline chains are no longer needed.
+* Change the Yuescript file extension to '.yue' because some of the Moonscript syntax is no longer supported and some codes written in Yuescript syntax won't be accepted by the Moonscript compiler.
+* Disable the use of local and global statements with wildcard operators.
+* Change the backcall operator syntax, extra parentheses for multiline chains are no longer needed.
 ```moonscript
 readFile "example.txt"
   |> extract language, {}
@@ -100,18 +100,18 @@ end):Destroy()
 
 ### Fixed Issues
 
-* Remove support for escape new line symbol, binary operator expressions can now be written multiline without escape new line symbol.
+* Remove support for escape newline symbol, binary operator expressions can now be written multiline without escape newline symbol.
 
-* Fix an issue when extending class without name.
+* Fix an issue when extending class without a name.
 
-* Fix an issue when using return with export statement.
+* Fix an issue when using return with an export statement.
 
 * Fix issues when declaring table key with Lua multiline string and indexing expressions with Lua multiline string.
 
-* Make simple table and table block appear in the end of function arguments merged into one table.
+* Make simple table and table block appear at the end of function arguments merged into one table.
 
   ```Moonscript
-  -- function arguments end with simple table followed by table block
+  -- function arguments end with a simple table followed by table block
   another hello, one,
     two, three, four, yeah: man
     okay: yeah
@@ -207,14 +207,14 @@ end):Destroy()
 
 ### Fixed Issues
 
-* Fix issues of unary and binary operator "~".
+* Fix issues of the unary and binary operator "~".
 * Fix Moonscript issue 416: ambiguous Lua output in some cases.
 * Fix errors when explicitly declaring global or local variable initialized with table block.
 * Fix macro type mismatch issue.
 * Fix line break issue in macro, disable macro declaration outside the root scope.
-* Fix existential operator issue when used in operator-value list.
-* Fix assignment with backcall expr not well handled issue.
-* Fix destructure case assigning one table variable to an operator-value expression.
+* Fix existential operator issue when used in an operator-valued list.
+* Fix assignment with backcall expressions in not well-handled cases.
+* Fix destructure case assigning one table variable to an operator-valued expression.
 * Fix simple chain value with Lua keyword colon chain item.
 
 ### Added Features
@@ -263,7 +263,7 @@ end):Destroy()
 
 
 
-### Changed Hehaviors
+### Changed Behaviors
 
 * Remove else clause support from if-else line decorator syntax which makes users confused.
 
@@ -320,11 +320,11 @@ end
 
 ### Fixed Issues
 
-* Fix some cases when using backcall with assignment.
-* Fix a case that complier crashes with empty code body.
-* Force forward declaration of variable for assigning local function.
+* Fix some cases when using backcall with an assignment.
+* Fix a case that complier crashes with an empty code body.
+* Force forward declaration of a variable for assigning local function.
 
-From original Moonscript compiler:
+From the original Moonscript compiler:
 
 * [#390](https://github.com/leafo/moonscript/issues/390) Many lists are not allowed to be multiline
 
@@ -339,7 +339,7 @@ From original Moonscript compiler:
 * Add fat arrow support for backcall statement.
 * Add option to compile Yuescript as a Lua C lib. Got Yuescript released to `Luarocks`.
 * Move old `export` statement functions to `global` statement to match the `local` statement.
-* Change `export` statement behavier to support module management.  Moon codes with `export` statement can not explicit return values in root scope. And codes with `export default` can export only one value as the module content. Use cases:
+* Change `export` statement behavior to support module management.  Moon codes with `export` statements can not explicitly return values in the root scope. And codes with `export default` can export only one value as the module content. Use cases:
 ```Moonscript
 -- file 'Config.mp'
 export default {flag:1, value:"x"}
@@ -532,10 +532,10 @@ _call_4["else"](_call_4, res)
 
 
 
-### Changed Hehaviors
+### Changed Behaviors
 
 * Left part of update statement will now accept only one assignable expression.
-* Expression list appears in the middle of code block is not allowed. For codes like:
+* Expression list appears in the middle of the code block is not allowed. For codes like:
 
 ```Moonscript
 -- Moonscript 0.5.0
@@ -595,7 +595,7 @@ do
 end
 ```
 
-* Reusing variables which helps generate reduced Lua codes. 
+* Reusing variables which help generate reduced Lua codes. 
   For example, Yuescript will generate codes from:
 
 ```Moonscript
