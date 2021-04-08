@@ -26,6 +26,13 @@ hola = [===[
 
 mm = [[well trhere]]
 
+txt = [[
+
+
+nil
+Fail to compile
+]]
+
 oo = ""
 
 x = "\\"

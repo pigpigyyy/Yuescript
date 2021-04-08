@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.4"sv;
+const std::string_view version = "0.7.5"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4456,7 +4456,6 @@ private:
 	void transformLuaString(LuaString_t* luaString, str_list& out) {
 		auto content = _parser.toString(luaString->content);
 		Utils::replace(content, "\r\n"sv, "\n");
-		if (content[0] == '\n') content.erase(content.begin());
 		out.push_back(_parser.toString(luaString->open) + content + _parser.toString(luaString->close));
 	}
 
