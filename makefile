@@ -99,6 +99,7 @@ debug: export BIN_PATH := bin/debug
 shared: export BUILD_PATH := build/shared
 shared: export BIN_PATH := bin/shared
 install: export BIN_PATH := bin/release
+wasm: export BIN_PATH := bin/release
 
 # Find all source files in the source directory, sorted by most
 # recently modified
@@ -116,8 +117,10 @@ ifeq ($(SOURCES),)
 	SOURCES := $(call rwildcard, $(SRC_PATH), *.$(SRC_EXT))
 endif
 
+SOURCES := $(filter-out ./src/yue_wasm.cpp, $(SOURCES))
+
 ifeq ($(NO_LUA),true)
-	SOURCES := $(filter-out ./src/yuescript/yue.cpp, $(SOURCES))
+	SOURCES := $(filter-out ./src/yuescript/yuescript.cpp, $(SOURCES))
 endif
 
 # Set the object file names, with the source directory stripped
@@ -176,12 +179,18 @@ else
 	@echo "Beginning release build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) -C ./src/lua
+	@$(MAKE) generic -C ./src/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
 	@$(END_TIME)
+
+.PHONY: wasm
+wasm:
+	@$(MAKE) generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib' -C ./src/lua
+	@mkdir -p doc/docs/.vuepress/public/js
+	@emcc src/yue_wasm.cpp src/yuescript/ast.cpp src/yuescript/parser.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/lua/liblua.a -s WASM=1 -O2 -o doc/docs/.vuepress/public/js/yuescript.js -Isrc -Isrc/lua -std=c++17 --bind -fexceptions
 
 # Debug build for gdb debugging
 .PHONY: debug
@@ -192,7 +201,7 @@ else
 	@echo "Beginning debug build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) -C ./src/lua
+	@$(MAKE) generic -C ./src/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory

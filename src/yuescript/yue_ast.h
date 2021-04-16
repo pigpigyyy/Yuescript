@@ -763,6 +763,11 @@ AST_NODE(Block)
 	AST_MEMBER(Block, &sep, &statements)
 AST_END(Block)
 
+AST_NODE(BlockEnd)
+	ast_ptr<true, Block_t> block;
+	AST_MEMBER(BlockEnd, &block)
+AST_END(BlockEnd)
+
 AST_NODE(File)
 	ast_ptr<true, Block_t> block;
 	AST_MEMBER(File, &block)

@@ -238,9 +238,9 @@ public:
 			m_ptr = nullptr;
 		} else {
 			assert(accept(node));
+			node->retain();
 			if (m_ptr) m_ptr->release();
 			m_ptr = node;
-			node->retain();
 		}
 	}
 

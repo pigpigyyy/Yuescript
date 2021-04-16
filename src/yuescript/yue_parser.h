@@ -310,6 +310,7 @@ private:
 	AST_RULE(Statement)
 	AST_RULE(Body)
 	AST_RULE(Block)
+	AST_RULE(BlockEnd)
 	AST_RULE(File)
 };
 

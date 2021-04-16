@@ -12,3 +12,8 @@ tup/*.lua
 tup/t/*.lua
 src/lua/*.o
 src/lua/*.a
+src/lua/*.wasm
+src/lua/lua
+src/lua/luac
+doc/docs/.vuepress/public/js/yuescript.js
+doc/docs/.vuepress/public/js/yuescript.wasm

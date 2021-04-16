@@ -495,13 +495,13 @@ YueParser::YueParser() {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->exportCount++;
 		return true;
-	}) >> ((pl::user(export_default, [](const item_t& item) {
+	}) >> (pl::user(export_default >> Exp, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		bool isValid = !st->exportDefault && st->exportCount == 1;
 		st->exportDefault = true;
 		return isValid;
-	}) >> Exp)
-	| (pl::user(true_(), [](const item_t& item) {
+	})
+	| (not_(export_default) >> pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault && st->exportCount > 1) {
 			return false;
@@ -611,12 +611,13 @@ YueParser::YueParser() {
 
 	Body = InBlock | Statement;
 
-	empty_line_stop = Space >> and_(Stop);
+	empty_line_stop = Space >> and_(Break);
 	Line = and_(check_indent >> Space >> not_(BackcallOperator)) >> Statement | Advance >> ensure(and_(Space >> BackcallOperator) >> Statement, PopIndent) | empty_line_stop;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
-	File = White >> -Shebang >> Block >> eof();
+	BlockEnd = Block >> -(+Break >> Space >> and_(Stop)) >> Stop;
+	File = White >> -Shebang >> Block >> -(+Break >> Space >> and_(eof())) >> eof();
 }
 
 ParseInfo YueParser::parse(std::string_view codes, rule& r) {

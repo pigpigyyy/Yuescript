@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.5"sv;
+const std::string_view version = "0.7.6"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -3217,7 +3217,11 @@ private:
 		auto x = chainList.front();
 		auto chain = x->new_ptr<ChainValue_t>();
 		if (opIt == chainList.begin() && ast_is<ColonChainItem_t, DotChainItem_t>(x)) {
-			chain->items.push_back(toAst<Callable_t>(_withVars.top(), x));
+			if (_withVars.empty()) {
+				throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
+			} else {
+				chain->items.push_back(toAst<Callable_t>(_withVars.top(), x));
+			}
 		}
 		for (auto it = chainList.begin(); it != opIt; ++it) {
 			chain->items.push_back(*it);
@@ -3632,7 +3636,7 @@ private:
 		} else {
 			if (!codes.empty()) {
 				if (isBlock) {
-					info = _parser.parse<Block_t>(codes);
+					info = _parser.parse<BlockEnd_t>(codes);
 					if (!info.node) {
 						info.error = info.error.substr(info.error.find(':') + 2);
 						throw std::logic_error(_info.errorMessage(s("failed to expanded macro as block: "sv) + info.error, x));
@@ -3640,7 +3644,7 @@ private:
 				} else {
 					info = _parser.parse<Exp_t>(codes);
 					if (!info.node && allowBlockMacroReturn) {
-						info = _parser.parse<Block_t>(codes);
+						info = _parser.parse<BlockEnd_t>(codes);
 						if (!info.node) {
 							info.error = info.error.substr(info.error.find(':') + 2);
 							throw std::logic_error(_info.errorMessage(s("failed to expanded macro as expr or block: "sv) + info.error, x));
@@ -3693,7 +3697,9 @@ private:
 						info.node.set(exp);
 					}
 				}
-				if (auto block = info.node.as<Block_t>()) {
+				if (auto blockEnd = info.node.as<BlockEnd_t>()) {
+					auto block = blockEnd->block.get();
+					info.node.set(block);
 					for (auto stmt_ : block->statements.objects()) {
 						auto stmt = static_cast<Statement_t*>(stmt_);
 						if (auto global = stmt->content.as<Global_t>()) {
