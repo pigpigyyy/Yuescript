@@ -1,0 +1,25 @@
+{
+  "name": "Yuescript",
+  "version": "0.0.1",
+  "description": "Documentation",
+  "main": "index.js",
+  "authors": {
+    "name": "Li Jin",
+    "email": "dragon-fly@qq.com"
+  },
+  "repository": "https://github.com/pigpigyyy/Yuescript/doc",
+  "scripts": {
+    "dev": "vuepress dev docs",
+    "build": "vuepress build docs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@vuepress/plugin-back-to-top": "^1.3.1",
+    "@vuepress/plugin-medium-zoom": "^1.3.1",
+    "vuepress": "^1.3.1"
+  },
+  "dependencies": {
+    "vue-js-modal": "^2.0.0-rc.6",
+    "vue-prism-editor": "^1.2.2"
+  }
+}
