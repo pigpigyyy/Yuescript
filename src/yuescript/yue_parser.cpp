@@ -75,6 +75,7 @@ YueParser::YueParser() {
 	#define disable_do(patt) (DisableDo >> ((patt) >> EnableDo | EnableDo >> Cut))
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
 	#define disable_do_chain(patt) (DisableDoChain >> ((patt) >> EnableDoChain | EnableDoChain >> Cut))
+	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
 	#define plain_body_with(str) (-key(str) >> InBlock | key(str) >> Statement)
 	#define plain_body (InBlock | Statement)
 
@@ -290,6 +291,18 @@ YueParser::YueParser() {
 		return true;
 	});
 
+	DisableArgTableBlock = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->noTableBlockStack.push(true);
+		return true;
+	});
+
+	EnableArgTableBlock = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->noTableBlockStack.pop();
+		return true;
+	});
+
 	Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
 	comp_value = sym(',') >> Exp;
 	TblComprehension = sym('{') >> Exp >> -comp_value >> CompInner >> sym('}');
@@ -472,8 +485,9 @@ YueParser::YueParser() {
 
 	TableBlockInner = Seperator >> KeyValueLine >> *(+SpaceBreak >> KeyValueLine);
 	TableBlock = +SpaceBreak >> Advance >> ensure(TableBlockInner, PopIndent);
-	TableBlockIndent = sym('*') >> Seperator >> KeyValueList >> -sym(',') >>
-		-(+SpaceBreak >> Advance >> ensure(KeyValueList >> -sym(',') >> *(+SpaceBreak >> KeyValueLine), PopIndent));
+	TableBlockIndent = sym('*') >> Seperator >> disable_arg_table_block(
+		KeyValueList >> -sym(',') >>
+		-(+SpaceBreak >> Advance >> ensure(KeyValueList >> -sym(',') >> *(+SpaceBreak >> KeyValueLine), PopIndent)));
 
 	class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
 	ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
@@ -571,18 +585,22 @@ YueParser::YueParser() {
 	ArgLine = CheckIndent >> Exp >> *(sym(',') >> Exp);
 	ArgBlock = ArgLine >> *(sym(',') >> SpaceBreak >> ArgLine) >> PopIndent;
 
+	arg_table_block = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->noTableBlockStack.empty() || !st->noTableBlockStack.top();
+	}) >> TableBlock;
+
 	invoke_args_with_table =
-		sym(',') >>
-		(
+		sym(',') >> (
 			TableBlock |
-			SpaceBreak >> Advance >> ArgBlock >> -TableBlock
-		);
+			SpaceBreak >> Advance >> ArgBlock >> -arg_table_block
+		) | arg_table_block;
 
 	InvokeArgs =
 		not_(set("-~")) >> Seperator >>
 		(
-			Exp >> *(sym(',') >> Exp) >> -(invoke_args_with_table | TableBlock) |
-			TableBlock
+			(Exp >> *(sym(',') >> Exp) >> -invoke_args_with_table) |
+			arg_table_block
 		);
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);

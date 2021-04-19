@@ -79,6 +79,7 @@ protected:
 		std::stack<int> indents;
 		std::stack<bool> doStack;
 		std::stack<bool> chainBlockStack;
+		std::stack<bool> noTableBlockStack;
 	};
 
 	template <class T>
@@ -136,6 +137,8 @@ private:
 	rule EnableChain;
 	rule DisableDoChain;
 	rule EnableDoChain;
+	rule DisableArgTableBlock;
+	rule EnableArgTableBlock;
 	rule SwitchElse;
 	rule SwitchBlock;
 	rule IfElseIf;
@@ -175,6 +178,7 @@ private:
 	rule ArgLine;
 	rule ArgBlock;
 	rule invoke_args_with_table;
+	rule arg_table_block;
 	rule PipeOperator;
 	rule ExponentialOperator;
 	rule pipe_value;

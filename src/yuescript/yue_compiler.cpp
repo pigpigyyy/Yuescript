@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.7"sv;
+const std::string_view version = "0.7.8"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4111,7 +4111,7 @@ private:
 					transformExp(star_exp->value, temp, ExpUsage::Closure);
 					if (newListVal) _buf << indent() << "local "sv << listVar << " = "sv << temp.back() << nll(nameList);
 					_buf << indent() << "for "sv << indexVar << " = 1, #"sv << listVar << " do"sv << nlr(loopTarget);
-					_buf << indent(1) << "local "sv << join(vars) << " = "sv << listVar << "["sv << indexVar << "]"sv << nll(nameList);
+					_buf << indent(1) << "local "sv << join(vars, ", "sv) << " = "sv << listVar << "["sv << indexVar << "]"sv << nll(nameList);
 					out.push_back(clearBuf());
 				}
 				break;
