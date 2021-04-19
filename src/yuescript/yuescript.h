@@ -214,18 +214,48 @@ setmetatable(yue, {
 		return self.require(name)
 	end
 })
-for k, v in pairs({
-	insert_loader = insert_loader,
-	remove_loader = remove_loader,
-	loader = yue_loader,
-	dofile = dofile,
-	loadfile = loadfile,
-	loadstring = loadstring,
-	create_yuepath = create_yuepath,
-	find_modulepath = find_modulepath,
-	pcall = yue_call,
-	require = yue_require
-}) do
-	yue[k] = v
+local function dump(what)
+	local seen = { }
+	local _dump
+	_dump = function(what, depth)
+		depth = depth or 0
+		local t = type(what)
+		if "string" == t then
+			return "\"" .. tostring(what) .. "\"\n"
+		elseif "table" == t then
+			if seen[what] then
+				return "recursion(" .. tostring(what) .. ")...\n"
+			end
+			seen[what] = true
+			depth = depth + 1
+			local lines = {}
+			for k, v in pairs(what) do
+				insert(lines, ('\t'):rep(depth) .. "[" .. tostring(k) .. "] = " .. _dump(v, depth))
+			end
+			seen[what] = false
+			return "{\n" .. concat(lines) .. ('\t'):rep(depth - 1) .. "}\n"
+		else
+			return tostring(what) .. "\n"
+		end
+	end
+	return _dump(what)
 end
+local function p(...)
+	local args = {...}
+	for i = 1, #args do
+		args[i] = dump(args[i])
+	end
+	print(concat(args))
+end
+yue.insert_loader = insert_loader
+yue.remove_loader = remove_loader
+yue.loader = yue_loader
+yue.dofile = dofile
+yue.loadfile = loadfile
+yue.loadstring = loadstring
+yue.create_yuepath = create_yuepath
+yue.find_modulepath = find_modulepath
+yue.pcall = yue_call
+yue.require = yue_require
+yue.p = p
 )yuescript_codes";

@@ -175,10 +175,10 @@ private:
 	rule ArgLine;
 	rule ArgBlock;
 	rule invoke_args_with_table;
-	rule BackcallOperator;
+	rule PipeOperator;
 	rule ExponentialOperator;
-	rule backcall_value;
-	rule backcall_exp;
+	rule pipe_value;
+	rule pipe_exp;
 	rule expo_value;
 	rule expo_exp;
 	rule empty_line_stop;
@@ -216,7 +216,7 @@ private:
 	AST_RULE(Goto)
 	AST_RULE(fn_arrow_back)
 	AST_RULE(Backcall)
-	AST_RULE(BackcallBody)
+	AST_RULE(PipeBody)
 	AST_RULE(ExpListLow)
 	AST_RULE(ExpList)
 	AST_RULE(Return)

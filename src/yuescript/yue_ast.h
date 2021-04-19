@@ -391,15 +391,15 @@ class unary_exp_t;
 
 AST_NODE(exp_op_value)
 	ast_ptr<true, BinaryOperator_t> op;
-	ast_list<true, unary_exp_t> backcalls;
-	AST_MEMBER(exp_op_value, &op, &backcalls)
+	ast_list<true, unary_exp_t> pipeExprs;
+	AST_MEMBER(exp_op_value, &op, &pipeExprs)
 AST_END(exp_op_value)
 
 AST_NODE(Exp)
 	ast_ptr<true, Seperator_t> sep;
-	ast_list<true, unary_exp_t> backcalls;
+	ast_list<true, unary_exp_t> pipeExprs;
 	ast_list<false, exp_op_value_t> opValues;
-	AST_MEMBER(Exp, &sep, &backcalls, &opValues)
+	AST_MEMBER(Exp, &sep, &pipeExprs, &opValues)
 AST_END(Exp)
 
 class Parens_t;
@@ -727,11 +727,11 @@ AST_END(unless_line)
 AST_LEAF(BreakLoop)
 AST_END(BreakLoop)
 
-AST_NODE(BackcallBody)
+AST_NODE(PipeBody)
 	ast_ptr<true, Seperator_t> sep;
 	ast_list<true, unary_exp_t> values;
-	AST_MEMBER(BackcallBody, &sep, &values)
-AST_END(BackcallBody)
+	AST_MEMBER(PipeBody, &sep, &values)
+AST_END(PipeBody)
 
 AST_NODE(statement_appendix)
 	ast_sel<true, if_line_t, unless_line_t, CompInner_t> item;
@@ -744,7 +744,7 @@ AST_END(statement_sep)
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
-		Label_t, Goto_t, Backcall_t, LocalAttrib_t, BackcallBody_t, ExpListAssign_t> content;
+		Label_t, Goto_t, Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;
 	AST_MEMBER(Statement, &content, &appendix, &needSep)

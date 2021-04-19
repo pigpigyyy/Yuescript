@@ -30,6 +30,8 @@ for x in y, z
 for x in y, z, k
 	print x
 
+for name, members in *modules
+	print name, member
 
 x = ->
 	for x in y

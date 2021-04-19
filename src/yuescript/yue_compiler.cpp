@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.6"sv;
+const std::string_view version = "0.7.7"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -467,8 +467,8 @@ private:
 		if (!exp) return nullptr;
 		BLOCK_START
 		BREAK_IF(!exp->opValues.empty());
-		BREAK_IF(exp->backcalls.size() != 1);
-		auto unary = static_cast<unary_exp_t*>(exp->backcalls.back());
+		BREAK_IF(exp->pipeExprs.size() != 1);
+		auto unary = static_cast<unary_exp_t*>(exp->pipeExprs.back());
 		BREAK_IF(unary->expos.size() != 1);
 		return unary;
 		BLOCK_END
@@ -488,7 +488,7 @@ private:
 		auto unary = x->new_ptr<unary_exp_t>();
 		unary->expos.push_back(value);
 		auto exp = x->new_ptr<Exp_t>();
-		exp->backcalls.push_back(unary);
+		exp->pipeExprs.push_back(unary);
 		return exp;
 	}
 
@@ -500,17 +500,17 @@ private:
 			auto runary = x->new_ptr<unary_exp_t>();
 			runary->expos.push_back(right);
 			opValue->op.set(op);
-			opValue->backcalls.push_back(runary);
+			opValue->pipeExprs.push_back(runary);
 		}
 		auto exp = x->new_ptr<Exp_t>();
-		exp->backcalls.push_back(lunary);
+		exp->pipeExprs.push_back(lunary);
 		exp->opValues.push_back(opValue);
 		return exp;
 	}
 
 	ast_ptr<false, Exp_t> newExp(unary_exp_t* unary, ast_node* x) {
 		auto exp = x->new_ptr<Exp_t>();
-		exp->backcalls.push_back(unary);
+		exp->pipeExprs.push_back(unary);
 		return exp;
 	}
 
@@ -785,7 +785,7 @@ private:
 	}
 
 	bool isPureBackcall(Exp_t* exp) const {
-		return exp->opValues.empty() && exp->backcalls.size() > 1;
+		return exp->opValues.empty() && exp->pipeExprs.size() > 1;
 	}
 
 	bool isMacroChain(ChainValue_t* chainValue) const {
@@ -923,7 +923,7 @@ private:
 			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
 			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
 			case id<LocalAttrib_t>(): transformLocalAttrib(static_cast<LocalAttrib_t*>(content), out); break;
-			case id<BackcallBody_t>(): throw std::logic_error(_info.errorMessage("backcall chain must be following a value"sv, x)); break;
+			case id<PipeBody_t>(): throw std::logic_error(_info.errorMessage("pipe chain must be following a value"sv, x)); break;
 			case id<ExpListAssign_t>(): {
 				auto expListAssign = static_cast<ExpListAssign_t*>(content);
 				if (expListAssign->action) {
@@ -1955,7 +1955,7 @@ private:
 		out.push_back(join(temp, ", "sv));
 	}
 
-	void transform_backcall_exp(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+	void transform_pipe_exp(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		if (values.size() == 1 && usage == ExpUsage::Closure) {
 			transform_unary_exp(static_cast<unary_exp_t*>(values.front()), out);
 		} else {
@@ -1968,7 +1968,7 @@ private:
 				if (values.back() == *it && !unary->ops.empty() && usage == ExpUsage::Common) {
 					throw std::logic_error(_info.errorMessage("expression list is not supported here"sv, x));
 				}
-				if (!value) throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, *it));
+				if (!value) throw std::logic_error(_info.errorMessage("pipe operator must be followed by chain value"sv, *it));
 				if (auto chainValue = value->item.as<ChainValue_t>()) {
 					if (isChainValueCall(chainValue)) {
 						auto last = chainValue->items.back();
@@ -1989,7 +1989,7 @@ private:
 									args->swap(a, arg);
 									findPlaceHolder = true;
 								} else {
-									throw std::logic_error(_info.errorMessage("backcall placeholder can be used only in one place"sv, a));
+									throw std::logic_error(_info.errorMessage("pipe placeholder can be used only in one place"sv, a));
 								}
 							}
 						}
@@ -2003,7 +2003,7 @@ private:
 					}
 					arg.set(newExp(unary, x));
 				} else {
-					throw std::logic_error(_info.errorMessage("backcall operator must be followed by chain value"sv, value));
+					throw std::logic_error(_info.errorMessage("pipe operator must be followed by chain value"sv, value));
 				}
 			}
 			switch (usage) {
@@ -2046,18 +2046,18 @@ private:
 
 	void transformExp(Exp_t* exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		if (exp->opValues.empty()) {
-			transform_backcall_exp(exp->backcalls.objects(), out, usage, assignList);
+			transform_pipe_exp(exp->pipeExprs.objects(), out, usage, assignList);
 			return;
 		}
 		if (usage != ExpUsage::Closure) {
 			YUEE("invalid expression usage", exp);
 		}
 		str_list temp;
-			transform_backcall_exp(exp->backcalls.objects(), temp, ExpUsage::Closure);
+			transform_pipe_exp(exp->pipeExprs.objects(), temp, ExpUsage::Closure);
 		for (auto _opValue : exp->opValues.objects()) {
 			auto opValue = static_cast<exp_op_value_t*>(_opValue);
 			transformBinaryOperator(opValue->op, temp);
-			transform_backcall_exp(opValue->backcalls.objects(), temp, ExpUsage::Closure);
+			transform_pipe_exp(opValue->pipeExprs.objects(), temp, ExpUsage::Closure);
 		}
 		out.push_back(join(temp, " "sv));
 	}
@@ -2206,7 +2206,7 @@ private:
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {
 			auto node = *it;
 			auto stmt = static_cast<Statement_t*>(node);
-			if (auto backcallBody = stmt->content.as<BackcallBody_t>()) {
+			if (auto pipeBody = stmt->content.as<PipeBody_t>()) {
 				auto x = stmt;
 				bool cond = false;
 				BLOCK_START
@@ -2214,7 +2214,7 @@ private:
 				auto last = it; --last;
 				auto lst = static_cast<Statement_t*>(*last);
 				if (lst->appendix) {
-					throw std::logic_error(_info.errorMessage("statement decorator must be placed at the end of backcall chain"sv, lst->appendix.get()));
+					throw std::logic_error(_info.errorMessage("statement decorator must be placed at the end of pipe chain"sv, lst->appendix.get()));
 				}
 				lst->appendix.set(stmt->appendix);
 				stmt->appendix.set(nullptr);
@@ -2222,18 +2222,18 @@ private:
 				stmt->needSep.set(nullptr);
 				auto exp = lastExpFromStatement(lst);
 				BREAK_IF(!exp);
-				for (auto val : backcallBody->values.objects()) {
-					exp->backcalls.push_back(val);
+				for (auto val : pipeBody->values.objects()) {
+					exp->pipeExprs.push_back(val);
 				}
 				cond = true;
 				BLOCK_END
-				if (!cond) throw std::logic_error(_info.errorMessage("backcall chain must be following a value"sv, x));
+				if (!cond) throw std::logic_error(_info.errorMessage("pipe chain must be following a value"sv, x));
 				stmt->content.set(nullptr);
 				auto next = it; ++next;
 				BLOCK_START
 				BREAK_IF(next == nodes.end());
-				BREAK_IF(!static_cast<Statement_t*>(*next)->content.as<BackcallBody_t>());
-				throw std::logic_error(_info.errorMessage("indent mismatch in backcall chain"sv, *next));
+				BREAK_IF(!static_cast<Statement_t*>(*next)->content.as<PipeBody_t>());
+				throw std::logic_error(_info.errorMessage("indent mismatch in pipe chain"sv, *next));
 				BLOCK_END
 			} else if (auto backcall = stmt->content.as<Backcall_t>()) {
 				auto x = *nodes.begin();
@@ -3513,7 +3513,7 @@ private:
 		for (auto arg : *args) {
 			std::string str;
 			// check whether arg is reassembled
-			// do some workaround for backcall expression
+			// do some workaround for pipe expression
 			if (ast_is<Exp_t>(arg) && arg->m_begin.m_it == arg->m_end.m_it) {
 				auto exp = static_cast<Exp_t*>(arg);
 				BLOCK_START
@@ -3525,10 +3525,10 @@ private:
 				str = std::get<1>(expandMacroStr(chainValue));
 				BLOCK_END
 				if (str.empty()) {
-					// exp is reassembled due to backcall expressions
+					// exp is reassembled due to pipe expressions
 					// in transform stage, toString(exp) won't be able
 					// to convert its whole text content
-					str = _parser.toString(exp->backcalls.front());
+					str = _parser.toString(exp->pipeExprs.front());
 				}
 			} else if (auto lstr = ast_cast<LuaString_t>(arg)) {
 				str = _parser.toString(lstr->content);

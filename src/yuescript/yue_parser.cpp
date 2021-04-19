@@ -333,9 +333,9 @@ YueParser::YueParser() {
 		expr("not") >> not_(AlphaNum);
 	unary_exp = *(Space >> unary_operator) >> expo_exp;
 
-	BackcallOperator = expr("|>");
-	backcall_value = Space >> BackcallOperator >> *SpaceBreak >> unary_exp;
-	backcall_exp = unary_exp >> *backcall_value;
+	PipeOperator = expr("|>");
+	pipe_value = Space >> PipeOperator >> *SpaceBreak >> unary_exp;
+	pipe_exp = unary_exp >> *pipe_value;
 
 	BinaryOperator =
 		(expr("or") >> not_(AlphaNum)) |
@@ -350,8 +350,8 @@ YueParser::YueParser() {
 		expr(">>") |
 		expr("//") |
 		set("+-*/%><|&~");
-	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> backcall_exp;
-	Exp = Seperator >> backcall_exp >> *exp_op_value;
+	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> pipe_exp;
+	Exp = Seperator >> pipe_exp >> *exp_op_value;
 
 	DisableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -563,7 +563,7 @@ YueParser::YueParser() {
 	fn_arrow_back = expr('<') >> set("-=");
 	Backcall = -FnArgsDef >> Space >> fn_arrow_back >> Space >> ChainValue;
 
-	BackcallBody = Seperator >> Space >> BackcallOperator >> unary_exp >> *(+SpaceBreak >> CheckIndent >> Space >> BackcallOperator >> unary_exp);
+	PipeBody = Seperator >> Space >> PipeOperator >> unary_exp >> *(+SpaceBreak >> CheckIndent >> Space >> PipeOperator >> unary_exp);
 
 	ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
 	ExpListLow = Seperator >> Exp >> *(Space >> set(",;") >> Exp);
@@ -605,14 +605,14 @@ YueParser::YueParser() {
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		Space >> BreakLoop | Label | Goto | Backcall |
-		LocalAttrib | BackcallBody | ExpListAssign
+		LocalAttrib | PipeBody | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
 	Body = InBlock | Statement;
 
 	empty_line_stop = Space >> and_(Break);
-	Line = and_(check_indent >> Space >> not_(BackcallOperator)) >> Statement | Advance >> ensure(and_(Space >> BackcallOperator) >> Statement, PopIndent) | empty_line_stop;
+	Line = and_(check_indent >> Space >> not_(PipeOperator)) >> Statement | Advance >> ensure(and_(Space >> PipeOperator) >> Statement, PopIndent) | empty_line_stop;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
