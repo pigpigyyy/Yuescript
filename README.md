@@ -19,8 +19,8 @@ Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 * Written in C++17.
 * Support most of the features from Moonscript language. Generate Lua codes in the same way like the original compiler.
 * Reserve line numbers from source file in the compiled Lua codes to help debugging.
-* More features like macro, existential operator, backcall operator, Javascript-like export syntax and etc.
-* See other details in the [changelog](./CHANGELOG.md).
+* More features like macro, existential operator, pipe operator, Javascript-like export syntax and etc.
+* See other details in the [changelog](./CHANGELOG.md). Find document from [here](http://yuescript.org).
 
 
 
