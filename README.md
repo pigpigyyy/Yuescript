@@ -1,5 +1,7 @@
 # YueScript
 
+<img src="doc/docs/.vuepress/public/image/yuescript.svg" width="300" height="300" alt="logo"/>
+
 [![Ubuntu](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml) [![Windows](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml) [![macOS](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml)
 
 Yuescript is a Moonscript dialect. It is derived from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and continuously adopting new features to be more up to date. 

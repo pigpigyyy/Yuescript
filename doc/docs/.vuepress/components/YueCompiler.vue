@@ -146,7 +146,7 @@
 	}
 	.childTitle {
 		width: 100%;
-		font-size: 1.5em;
+		font-size: 1.2em;
 		color: #b7ae8f;
 		text-align: center;
 		padding: 0.2em;
@@ -195,8 +195,7 @@
 		hyphens: none;
 		background: #f5f7ff;
 		color: #5e6687;
-		font-size: 1em;
-		overflow: scroll;
+		font-size: 15px;
 	}
 
 	.my-editor >>> .prism-editor__textarea:focus {
