@@ -24,6 +24,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ./linux-yue.zip
+            ./yue-linux-x86_64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
