@@ -101,7 +101,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -116,7 +116,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -133,7 +133,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -152,7 +152,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -163,38 +163,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\lua\lapi.c" />
-    <ClCompile Include="src\lua\lauxlib.c" />
-    <ClCompile Include="src\lua\lbaselib.c" />
-    <ClCompile Include="src\lua\lcode.c" />
-    <ClCompile Include="src\lua\lcorolib.c" />
-    <ClCompile Include="src\lua\lctype.c" />
-    <ClCompile Include="src\lua\ldblib.c" />
-    <ClCompile Include="src\lua\ldebug.c" />
-    <ClCompile Include="src\lua\ldo.c" />
-    <ClCompile Include="src\lua\ldump.c" />
-    <ClCompile Include="src\lua\lfunc.c" />
-    <ClCompile Include="src\lua\lgc.c" />
-    <ClCompile Include="src\lua\linit.c" />
-    <ClCompile Include="src\lua\liolib.c" />
-    <ClCompile Include="src\lua\llex.c" />
-    <ClCompile Include="src\lua\lmathlib.c" />
-    <ClCompile Include="src\lua\lmem.c" />
-    <ClCompile Include="src\lua\loadlib.c" />
-    <ClCompile Include="src\lua\lobject.c" />
-    <ClCompile Include="src\lua\lopcodes.c" />
-    <ClCompile Include="src\lua\loslib.c" />
-    <ClCompile Include="src\lua\lparser.c" />
-    <ClCompile Include="src\lua\lstate.c" />
-    <ClCompile Include="src\lua\lstring.c" />
-    <ClCompile Include="src\lua\lstrlib.c" />
-    <ClCompile Include="src\lua\ltable.c" />
-    <ClCompile Include="src\lua\ltablib.c" />
-    <ClCompile Include="src\lua\ltm.c" />
-    <ClCompile Include="src\lua\lundump.c" />
-    <ClCompile Include="src\lua\lutf8lib.c" />
-    <ClCompile Include="src\lua\lvm.c" />
-    <ClCompile Include="src\lua\lzio.c" />
+    <ClCompile Include="src\3rdParty\lua\lapi.c" />
+    <ClCompile Include="src\3rdParty\lua\lauxlib.c" />
+    <ClCompile Include="src\3rdParty\lua\lbaselib.c" />
+    <ClCompile Include="src\3rdParty\lua\lcode.c" />
+    <ClCompile Include="src\3rdParty\lua\lcorolib.c" />
+    <ClCompile Include="src\3rdParty\lua\lctype.c" />
+    <ClCompile Include="src\3rdParty\lua\ldblib.c" />
+    <ClCompile Include="src\3rdParty\lua\ldebug.c" />
+    <ClCompile Include="src\3rdParty\lua\ldo.c" />
+    <ClCompile Include="src\3rdParty\lua\ldump.c" />
+    <ClCompile Include="src\3rdParty\lua\lfunc.c" />
+    <ClCompile Include="src\3rdParty\lua\lgc.c" />
+    <ClCompile Include="src\3rdParty\lua\linit.c" />
+    <ClCompile Include="src\3rdParty\lua\liolib.c" />
+    <ClCompile Include="src\3rdParty\lua\llex.c" />
+    <ClCompile Include="src\3rdParty\lua\lmathlib.c" />
+    <ClCompile Include="src\3rdParty\lua\lmem.c" />
+    <ClCompile Include="src\3rdParty\lua\loadlib.c" />
+    <ClCompile Include="src\3rdParty\lua\lobject.c" />
+    <ClCompile Include="src\3rdParty\lua\lopcodes.c" />
+    <ClCompile Include="src\3rdParty\lua\loslib.c" />
+    <ClCompile Include="src\3rdParty\lua\lparser.c" />
+    <ClCompile Include="src\3rdParty\lua\lstate.c" />
+    <ClCompile Include="src\3rdParty\lua\lstring.c" />
+    <ClCompile Include="src\3rdParty\lua\lstrlib.c" />
+    <ClCompile Include="src\3rdParty\lua\ltable.c" />
+    <ClCompile Include="src\3rdParty\lua\ltablib.c" />
+    <ClCompile Include="src\3rdParty\lua\ltm.c" />
+    <ClCompile Include="src\3rdParty\lua\lundump.c" />
+    <ClCompile Include="src\3rdParty\lua\lutf8lib.c" />
+    <ClCompile Include="src\3rdParty\lua\lvm.c" />
+    <ClCompile Include="src\3rdParty\lua\lzio.c" />
     <ClCompile Include="src\yue.cpp" />
     <ClCompile Include="src\yuescript\ast.cpp" />
     <ClCompile Include="src\yuescript\parser.cpp" />
@@ -203,34 +203,34 @@
     <ClCompile Include="src\yuescript\yue_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\linenoise.hpp" />
-    <ClInclude Include="src\lua\lapi.h" />
-    <ClInclude Include="src\lua\lauxlib.h" />
-    <ClInclude Include="src\lua\lcode.h" />
-    <ClInclude Include="src\lua\lctype.h" />
-    <ClInclude Include="src\lua\ldebug.h" />
-    <ClInclude Include="src\lua\ldo.h" />
-    <ClInclude Include="src\lua\lfunc.h" />
-    <ClInclude Include="src\lua\lgc.h" />
-    <ClInclude Include="src\lua\ljumptab.h" />
-    <ClInclude Include="src\lua\llex.h" />
-    <ClInclude Include="src\lua\llimits.h" />
-    <ClInclude Include="src\lua\lmem.h" />
-    <ClInclude Include="src\lua\lobject.h" />
-    <ClInclude Include="src\lua\lopcodes.h" />
-    <ClInclude Include="src\lua\lopnames.h" />
-    <ClInclude Include="src\lua\lparser.h" />
-    <ClInclude Include="src\lua\lprefix.h" />
-    <ClInclude Include="src\lua\lstate.h" />
-    <ClInclude Include="src\lua\lstring.h" />
-    <ClInclude Include="src\lua\ltable.h" />
-    <ClInclude Include="src\lua\ltm.h" />
-    <ClInclude Include="src\lua\lua.h" />
-    <ClInclude Include="src\lua\luaconf.h" />
-    <ClInclude Include="src\lua\lualib.h" />
-    <ClInclude Include="src\lua\lundump.h" />
-    <ClInclude Include="src\lua\lvm.h" />
-    <ClInclude Include="src\lua\lzio.h" />
+    <ClInclude Include="src\3rdParty\lua\lapi.h" />
+    <ClInclude Include="src\3rdParty\lua\lauxlib.h" />
+    <ClInclude Include="src\3rdParty\lua\lcode.h" />
+    <ClInclude Include="src\3rdParty\lua\lctype.h" />
+    <ClInclude Include="src\3rdParty\lua\ldebug.h" />
+    <ClInclude Include="src\3rdParty\lua\ldo.h" />
+    <ClInclude Include="src\3rdParty\lua\lfunc.h" />
+    <ClInclude Include="src\3rdParty\lua\lgc.h" />
+    <ClInclude Include="src\3rdParty\lua\ljumptab.h" />
+    <ClInclude Include="src\3rdParty\lua\llex.h" />
+    <ClInclude Include="src\3rdParty\lua\llimits.h" />
+    <ClInclude Include="src\3rdParty\lua\lmem.h" />
+    <ClInclude Include="src\3rdParty\lua\lobject.h" />
+    <ClInclude Include="src\3rdParty\lua\lopcodes.h" />
+    <ClInclude Include="src\3rdParty\lua\lopnames.h" />
+    <ClInclude Include="src\3rdParty\lua\lparser.h" />
+    <ClInclude Include="src\3rdParty\lua\lprefix.h" />
+    <ClInclude Include="src\3rdParty\lua\lstate.h" />
+    <ClInclude Include="src\3rdParty\lua\lstring.h" />
+    <ClInclude Include="src\3rdParty\lua\ltable.h" />
+    <ClInclude Include="src\3rdParty\lua\ltm.h" />
+    <ClInclude Include="src\3rdParty\lua\lua.h" />
+    <ClInclude Include="src\3rdParty\lua\lua.hpp" />
+    <ClInclude Include="src\3rdParty\lua\luaconf.h" />
+    <ClInclude Include="src\3rdParty\lua\lualib.h" />
+    <ClInclude Include="src\3rdParty\lua\lundump.h" />
+    <ClInclude Include="src\3rdParty\lua\lvm.h" />
+    <ClInclude Include="src\3rdParty\lua\lzio.h" />
     <ClInclude Include="src\yuescript\ast.hpp" />
     <ClInclude Include="src\yuescript\parser.hpp" />
     <ClInclude Include="src\yuescript\stacktraceplus.h" />
