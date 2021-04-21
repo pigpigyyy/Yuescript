@@ -59,7 +59,7 @@ inventory =
     * name: "bread"
       count: 3
 
--- backcall
+-- pipe operator
 {1, 2, 3}
   |> map (x)-> x * 2
   |> filter (x)-> x > 4
