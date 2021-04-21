@@ -28,7 +28,7 @@ MESSAGE(STATUS "Lua include: " ${LUA_INCLUDE_DIR})
 MESSAGE(STATUS "Lua library: ${LUA_LIBRARIES}")
 
 enable_language(CXX)
-include_directories(src ${LUA_INCLUDE_DIR})
+include_directories(src src/3rdParty ${LUA_INCLUDE_DIR})
 add_definitions(-std=c++17 -O3 -fPIC)
 
 add_library(libyue MODULE src/yuescript/ast.cpp src/yuescript/parser.cpp src/yuescript/yue_parser.cpp src/yuescript/yue_compiler.cpp src/yuescript/yuescript.cpp)

@@ -11,3 +11,5 @@ dist
 config.local.js
 basement_dist
 yarn.lock
+docs/.vuepress/public/js/yuescript.js
+docs/.vuepress/public/js/yuescript.wasm

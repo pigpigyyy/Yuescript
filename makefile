@@ -16,7 +16,7 @@ RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
-INCLUDES = -I $(SRC_PATH)
+INCLUDES = -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty
 # General linker settings
 LINK_FLAGS = -lpthread
 # Additional release-specific linker settings
@@ -47,8 +47,8 @@ else
 ifeq ($(NO_MACRO),true)
 	COMPILE_FLAGS += -DYUE_NO_MACRO
 endif
-	INCLUDES += -I ./src/lua
-	LINK_FLAGS += -L ./src/lua -llua -ldl
+	INCLUDES += -I $(SRC_PATH)/3rdParty/lua
+	LINK_FLAGS += -L $(SRC_PATH)/3rdParty/lua -llua -ldl
 endif
 
 # Add platform related linker flag
@@ -117,10 +117,10 @@ ifeq ($(SOURCES),)
 	SOURCES := $(call rwildcard, $(SRC_PATH), *.$(SRC_EXT))
 endif
 
-SOURCES := $(filter-out ./src/yue_wasm.cpp, $(SOURCES))
+SOURCES := $(filter-out $(SRC_PATH)/yue_wasm.cpp, $(SOURCES))
 
 ifeq ($(NO_LUA),true)
-	SOURCES := $(filter-out ./src/yuescript/yuescript.cpp, $(SOURCES))
+	SOURCES := $(filter-out $(SRC_PATH)/yuescript/yuescript.cpp, $(SOURCES))
 endif
 
 # Set the object file names, with the source directory stripped
@@ -179,7 +179,7 @@ else
 	@echo "Beginning release build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) generic -C ./src/lua
+	@$(MAKE) generic -C $(SRC_PATH)/3rdParty/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
@@ -188,9 +188,9 @@ endif
 
 .PHONY: wasm
 wasm:
-	@$(MAKE) generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib' -C ./src/lua
+	@$(MAKE) generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib' -C $(SRC_PATH)/3rdParty/lua
 	@mkdir -p doc/docs/.vuepress/public/js
-	@emcc src/yue_wasm.cpp src/yuescript/ast.cpp src/yuescript/parser.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/lua/liblua.a -s WASM=1 -O2 -o doc/docs/.vuepress/public/js/yuescript.js -Isrc -Isrc/lua -std=c++17 --bind -fexceptions
+	@emcc $(SRC_PATH)/yue_wasm.cpp $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/parser.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/3rdParty/lua/liblua.a -s WASM=1 -O2 -o doc/docs/.vuepress/public/js/yuescript.js -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty/lua -std=c++17 --bind -fexceptions
 
 # Debug build for gdb debugging
 .PHONY: debug
@@ -201,15 +201,15 @@ else
 	@echo "Beginning debug build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) generic -C ./src/lua
+	@$(MAKE) generic -C $(SRC_PATH)/3rdParty/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
 	@echo -n "Total build time: "
 	@$(END_TIME)
 
-$(BUILD_PATH)/yue.so: src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/yuescript/parser.cpp
-	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
+$(BUILD_PATH)/yue.so: $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/yuescript/parser.cpp
+	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
 
 # Standard, non-optimized release build
 .PHONY: shared
@@ -248,7 +248,7 @@ uninstall:
 # Removes all build files
 .PHONY: clean
 clean:
-	@$(MAKE) clean -C ./src/lua
+	@$(MAKE) clean -C $(SRC_PATH)/3rdParty/lua
 	@echo "Deleting $(BIN_NAME) symlink"
 	@$(RM) $(BIN_NAME)
 	@echo "Deleting directories"

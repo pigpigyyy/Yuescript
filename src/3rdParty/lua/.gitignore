@@ -1,0 +1,5 @@
+*.o
+*.a
+*.wasm
+lua
+luac
