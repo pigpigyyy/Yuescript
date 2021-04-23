@@ -3639,7 +3639,7 @@ private:
 					info = _parser.parse<BlockEnd_t>(codes);
 					if (!info.node) {
 						info.error = info.error.substr(info.error.find(':') + 2);
-						throw std::logic_error(_info.errorMessage(s("failed to expanded macro as block: "sv) + info.error, x));
+						throw std::logic_error(_info.errorMessage(s("failed to expand macro as block: "sv) + info.error, x));
 					}
 				} else {
 					info = _parser.parse<Exp_t>(codes);
@@ -3647,12 +3647,12 @@ private:
 						info = _parser.parse<BlockEnd_t>(codes);
 						if (!info.node) {
 							info.error = info.error.substr(info.error.find(':') + 2);
-							throw std::logic_error(_info.errorMessage(s("failed to expanded macro as expr or block: "sv) + info.error, x));
+							throw std::logic_error(_info.errorMessage(s("failed to expand macro as expr or block: "sv) + info.error, x));
 						}
 						isBlock = true;
 					} else if (!info.node) {
 						info.error = info.error.substr(info.error.find(':') + 2);
-						throw std::logic_error(_info.errorMessage(s("failed to expanded macro as expr: "sv) + info.error, x));
+						throw std::logic_error(_info.errorMessage(s("failed to expand macro as expr: "sv) + info.error, x));
 					}
 				}
 				int line = x->m_begin.m_line;
@@ -3715,7 +3715,7 @@ private:
 				}
 				return {info.node, std::move(info.codes), Empty, std::move(localVars)};
 			} else {
-				if (!isBlock) throw std::logic_error(_info.errorMessage(s("failed to expanded empty macro as expr"sv), x));
+				if (!isBlock) throw std::logic_error(_info.errorMessage(s("failed to expand empty macro as expr"sv), x));
 				return {x->new_ptr<Block_t>().get(), std::move(info.codes), Empty, std::move(localVars)};
 			}
 		}
