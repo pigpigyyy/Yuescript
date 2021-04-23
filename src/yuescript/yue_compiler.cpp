@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.8"sv;
+const std::string_view version = "0.7.9"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4411,6 +4411,11 @@ private:
 
 	void transform_variable_pair(variable_pair_t* pair, str_list& out) {
 		auto name = _parser.toString(pair->name);
+		if (_config.lintGlobalVariable && !isSolidDefined(name)) {
+			if (_globals.find(name) == _globals.end()) {
+				_globals[name] = {pair->name->m_begin.m_line, pair->name->m_begin.m_col};
+			}
+		}
 		out.push_back(name + s(" = "sv) + name);
 	}
 
