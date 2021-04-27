@@ -312,6 +312,14 @@ private:
 
 	bool isConst(const std::string& name) const {
 		bool isConst = false;
+		decltype(_scopes.back().allows.get()) allows = nullptr;
+		for (auto it  = _scopes.rbegin(); it != _scopes.rend(); ++it) {
+			if (it->allows) allows = it->allows.get();
+		}
+		bool checkShadowScopeOnly = false;
+		if (allows) {
+			checkShadowScopeOnly = allows->find(name) == allows->end();
+		}
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			auto vars = it->vars.get();
 			auto vit = vars->find(name);
@@ -319,6 +327,7 @@ private:
 				isConst = vit->second;
 				break;
 			}
+			if (checkShadowScopeOnly && it->allows) break;
 		}
 		return isConst;
 	}
@@ -4144,7 +4153,8 @@ private:
 		}
 		for (auto& var : varBefore) addToScope(var);
 		pushScope();
-		for (auto& var : varAfter) addToScope(var);
+		for (const auto& var : vars) forceAddToScope(var);
+		for (const auto& var : varAfter) addToScope(var);
 		if (!destructPairs.empty()) {
 			temp.clear();
 			for (auto& pair : destructPairs) {
@@ -4229,7 +4239,7 @@ private:
 		const auto& step = *(++it);
 		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : s(", "sv) + step) << " do"sv << nll(forNode);
 		pushScope();
-		addToScope(varName);
+		forceAddToScope(varName);
 		out.push_back(clearBuf());
 	}
 
@@ -5411,7 +5421,7 @@ private:
 		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : s(", "sv) + step) << " do"sv << nll(comp);
 		out.push_back(clearBuf());
 		pushScope();
-		addToScope(varName);
+		forceAddToScope(varName);
 	}
 
 	void transformTableBlockIndent(TableBlockIndent_t* table, str_list& out) {
