@@ -5913,16 +5913,20 @@ private:
 			str_list vars;
 			for (auto name : localAttrib->nameList->names.objects()) {
 				vars.push_back(_parser.toString(name));
+				forceAddToScope(vars.back());
 			}
+			str_list temp;
 			auto varStr = join(vars, ", "sv);
+			temp.push_back(s("local "sv) + varStr + nll(x));
 			auto varList = toAst<ExpList_t>(varStr, x);
 			auto assignment = x->new_ptr<ExpListAssign_t>();
 			assignment->expList.set(varList);
 			assignment->action.set(localAttrib->assign);
-			transformAssignment(assignment, out);
+			transformAssignment(assignment, temp);
 			for (const auto& var : vars) {
 				markVarConst(var);
 			}
+			out.push_back(join(temp));
 			return;
 		}
 		auto expList = x->new_ptr<ExpList_t>();
