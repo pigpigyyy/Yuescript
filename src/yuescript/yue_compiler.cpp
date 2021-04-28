@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.10"sv;
+const std::string_view version = "0.7.11"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1573,9 +1573,11 @@ private:
 				if (*j != nullNode) {
 					if (auto ssVal = simpleSingleValueFrom(*j)) {
 						if (ssVal->value.is<const_value_t>()) {
-							throw std::logic_error(_info.errorMessage("can not destruct a const value"sv, ssVal->value));
+							throw std::logic_error(_info.errorMessage("can not destructure a const value"sv, ssVal->value));
 						}
 					}
+				} else {
+					throw std::logic_error(_info.errorMessage("can not destructure a nil value"sv, destructNode));
 				}
 				destructPairs.push_back({i,j});
 				auto subDestruct = destructNode->new_ptr<TableLit_t>();
