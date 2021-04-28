@@ -806,6 +806,8 @@ private:
 	bool isAssignable(Assignable_t* assignable) {
 		if (auto assignableChain = ast_cast<AssignableChain_t>(assignable->item)) {
 			return isAssignable(assignableChain->items.objects());
+		} else if (auto variable = assignable->item.as<Variable_t>()) {
+			checkConst(_parser.toString(variable), variable);
 		}
 		return true;
 	}
@@ -4779,10 +4781,7 @@ private:
 			_buf << indent() << "end"sv << nll(classDecl);
 		}
 		if (!assignItem.empty()) {
-			auto assignment = toAst<ExpListAssign_t>(assignItem + s(" = "sv) + classVar, classDecl);
-			str_list temp;
-			transformAssignment(assignment, temp);
-			_buf << indent() << temp.back() << nll(classDecl);
+			_buf << indent() << assignItem << " = "sv << classVar << nll(classDecl);
 		}
 		switch (usage) {
 			case ExpUsage::Return: {
