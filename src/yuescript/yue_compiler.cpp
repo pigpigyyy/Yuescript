@@ -4778,8 +4778,11 @@ private:
 			_buf << indent(1) << parentVar << ".__inherited("sv << parentVar << ", "sv << classVar << ")"sv << nll(classDecl);
 			_buf << indent() << "end"sv << nll(classDecl);
 		}
-  		if (!assignItem.empty()) {
-  			_buf << indent() << assignItem << " = "sv << classVar << nll(classDecl);
+		if (!assignItem.empty()) {
+			auto assignment = toAst<ExpListAssign_t>(assignItem + s(" = "sv) + classVar, classDecl);
+			str_list temp;
+			transformAssignment(assignment, temp);
+			_buf << indent() << temp.back() << nll(classDecl);
 		}
 		switch (usage) {
 			case ExpUsage::Return: {
@@ -5369,7 +5372,7 @@ private:
 			kv.push_back(valVar);
 		}
 		_buf << indent(int(temp.size()) - 1) << tbl << "["sv << kv.front() << "] = "sv << kv.back() << nll(comp);
-		for (int ind = int(temp.size()) - 2; ind > -1 ; --ind) {
+		for (int ind = int(temp.size()) - 2; ind > -1; --ind) {
 			_buf << indent(ind) << "end"sv << nll(comp);
 		}
 		popScope();
