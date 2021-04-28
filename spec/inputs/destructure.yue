@@ -24,9 +24,9 @@ do
 
 	do :a, :b, c = tbl
 
-	do :a, b, :c = tbl
+	do a, :b, :c = tbl, _
 
-	do a, :b, :c = tbl
+	do :a, b, :c = tbl, _, _
 
 --- 
 
