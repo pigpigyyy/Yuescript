@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.11"sv;
+const std::string_view version = "0.7.12"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {

@@ -444,7 +444,7 @@ YueParser::YueParser() {
 	Index = symx('[') >> Exp >> sym(']');
 	ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
 	DotChainItem = symx('.') >> (Name >> not_('#') | Metatable | Metamethod);
-	ColonChainItem = symx('\\') >> ((LuaKeyword | Name) >> not_('#') | Metamethod);
+	ColonChainItem = (expr('\\') | expr("::")) >> ((LuaKeyword | Name) >> not_('#') | Metamethod);
 	invoke_chain = Invoke >> -existential_op >> -ChainItems;
 	ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
 
@@ -534,7 +534,7 @@ YueParser::YueParser() {
 		Space >> SingleString |
 		Space >> LuaString
 	) >>
-	symx(':') >>
+	symx(':') >> not_(':') >>
 	(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
