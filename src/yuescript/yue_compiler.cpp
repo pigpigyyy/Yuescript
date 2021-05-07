@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.12"sv;
+const std::string_view version = "0.7.13"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -216,9 +216,14 @@ private:
 		Capital = 1,
 		Any = 2
 	};
+	enum class VarType {
+		Local = 0,
+		Const = 1,
+		Global = 2
+	};
 	struct Scope {
 		GlobalMode mode = GlobalMode::None;
-		std::unique_ptr<std::unordered_map<std::string,bool>> vars;
+		std::unique_ptr<std::unordered_map<std::string,VarType>> vars;
 		std::unique_ptr<std::unordered_set<std::string>> allows;
 		std::unique_ptr<std::unordered_set<std::string>> globals;
 	};
@@ -257,7 +262,7 @@ private:
 
 	void pushScope() {
 		_scopes.emplace_back();
-		_scopes.back().vars = std::make_unique<std::unordered_map<std::string,bool>>();
+		_scopes.back().vars = std::make_unique<std::unordered_map<std::string,VarType>>();
 	}
 
 	void popScope() {
@@ -272,11 +277,11 @@ private:
 			if (current.globals) {
 				if (current.globals->find(name) != current.globals->end()) {
 					isDefined = true;
-					current.vars->insert_or_assign(name, false);
+					current.vars->insert_or_assign(name, VarType::Global);
 				}
 			} else {
 				isDefined = true;
-				current.vars->insert_or_assign(name, false);
+				current.vars->insert_or_assign(name, VarType::Global);
 			}
 		}
 		decltype(_scopes.back().allows.get()) allows = nullptr;
@@ -298,11 +303,12 @@ private:
 		return isDefined;
 	}
 
-	bool isSolidDefined(const std::string& name) const {
+	bool isLocal(const std::string& name) const {
 		bool isDefined = false;
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			auto vars = it->vars.get();
-			if (vars->find(name) != vars->end()) {
+			auto vit = vars->find(name);
+			if (vit != vars->end() && vit->second != VarType::Global) {
 				isDefined = true;
 				break;
 			}
@@ -324,7 +330,7 @@ private:
 			auto vars = it->vars.get();
 			auto vit = vars->find(name);
 			if (vit != vars->end()) {
-				isConst = vit->second;
+				isConst = (vit->second == VarType::Const);
 				break;
 			}
 			if (checkShadowScopeOnly && it->allows) break;
@@ -340,7 +346,7 @@ private:
 
 	void markVarConst(const std::string& name) {
 		auto& scope = _scopes.back();
-		scope.vars->insert_or_assign(name, true);
+		scope.vars->insert_or_assign(name, VarType::Const);
 	}
 
 	void markVarShadowed() {
@@ -348,16 +354,17 @@ private:
 		scope.allows = std::make_unique<std::unordered_set<std::string>>();
 	}
 
-	void markVarGlobal(GlobalMode mode, bool specified) {
+	void markVarsGlobal(GlobalMode mode) {
 		auto& scope = _scopes.back();
 		scope.mode = mode;
-		if (specified && !scope.globals) {
-			scope.globals = std::make_unique<std::unordered_set<std::string>>();
-		}
 	}
 
-	void addGlobalVar(const std::string& name) {
+	void addGlobalVar(const std::string& name, ast_node* x) {
+		if (isLocal(name)) throw std::logic_error(_info.errorMessage("can not declare a local variable to be global"sv, x));
 		auto& scope = _scopes.back();
+		if (!scope.globals) {
+			scope.globals = std::make_unique<std::unordered_set<std::string>>();
+		}
 		scope.globals->insert(name);
 	}
 
@@ -368,7 +375,7 @@ private:
 
 	void forceAddToScope(const std::string& name) {
 		auto& scope = _scopes.back();
-		scope.vars->insert_or_assign(name, false);
+		scope.vars->insert_or_assign(name, VarType::Local);
 	}
 
 	Scope& currentScope() {
@@ -379,7 +386,7 @@ private:
 		bool defined = isDefined(name);
 		if (!defined) {
 			auto& scope = currentScope();
-			scope.vars->insert_or_assign(name, false);
+			scope.vars->insert_or_assign(name, VarType::Local);
 		}
 		return !defined;
 	}
@@ -390,7 +397,7 @@ private:
 		do {
 			newName = s(name) + std::to_string(index);
 			index++;
-		} while (isSolidDefined(newName));
+		} while (isLocal(newName));
 		return newName;
 	}
 
@@ -2105,7 +2112,7 @@ private:
 		switch (item->getId()) {
 			case id<Variable_t>(): {
 				transformVariable(static_cast<Variable_t*>(item), out);
-				if (_config.lintGlobalVariable && !isSolidDefined(out.back())) {
+				if (_config.lintGlobalVariable && !isLocal(out.back())) {
 					if (_globals.find(out.back()) == _globals.end()) {
 						_globals[out.back()] = {item->m_begin.m_line, item->m_begin.m_col};
 					}
@@ -4060,7 +4067,7 @@ private:
 			case id<star_exp_t>(): {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
 				auto listVar = singleVariableFrom(star_exp->value);
-				if (!isSolidDefined(listVar)) listVar.clear();
+				if (!isLocal(listVar)) listVar.clear();
 				auto indexVar = getUnusedName("_index_"sv);
 				varAfter.push_back(indexVar);
 				auto value = singleValueFrom(star_exp->value);
@@ -4076,7 +4083,7 @@ private:
 				if (listVar.empty() && chainList.size() == 2) {
 					if (auto var = chainList.front()->getByPath<Variable_t>()) {
 						listVar = _parser.toString(var);
-						if (!isSolidDefined(listVar)) listVar.clear();
+						if (!isLocal(listVar)) listVar.clear();
 					}
 				}
 				chainList.pop_back();
@@ -4439,7 +4446,7 @@ private:
 
 	void transform_variable_pair(variable_pair_t* pair, str_list& out) {
 		auto name = _parser.toString(pair->name);
-		if (_config.lintGlobalVariable && !isSolidDefined(name)) {
+		if (_config.lintGlobalVariable && !isLocal(name)) {
 			if (_globals.find(name) == _globals.end()) {
 				_globals[name] = {pair->name->m_begin.m_line, pair->name->m_begin.m_col};
 			}
@@ -4938,7 +4945,7 @@ private:
 			if (vars.front().empty()) {
 				if (with->assigns->values.objects().size() == 1) {
 					auto var = singleVariableFrom(with->assigns->values.objects().front());
-					if (!var.empty() && isSolidDefined(var)) {
+					if (!var.empty() && isLocal(var)) {
 						withVar = var;
 					}
 				}
@@ -4984,7 +4991,7 @@ private:
 			}
 		} else {
 			withVar = singleVariableFrom(with->valueList);
-			if (withVar.empty() || !isSolidDefined(withVar)) {
+			if (withVar.empty() || !isLocal(withVar)) {
 				withVar = getUnusedName("_with_"sv);
 				auto assignment = x->new_ptr<ExpListAssign_t>();
 				assignment->expList.set(toAst<ExpList_t>(withVar, x));
@@ -5086,26 +5093,26 @@ private:
 			case id<ClassDecl_t>(): {
 				auto classDecl = static_cast<ClassDecl_t*>(item);
 				if (classDecl->name && classDecl->name->item->getId() == id<Variable_t>()) {
-					markVarGlobal(GlobalMode::Any, true);
-					addGlobalVar(_parser.toString(classDecl->name->item));
+					markVarsGlobal(GlobalMode::Any);
+					addGlobalVar(_parser.toString(classDecl->name->item), classDecl->name->item);
 				}
 				transformClassDecl(classDecl, out, ExpUsage::Common);
 				break;
 			}
 			case id<global_op_t>():
 				if (_parser.toString(item) == "*"sv) {
-					markVarGlobal(GlobalMode::Any, false);
+					markVarsGlobal(GlobalMode::Any);
 				} else {
-					markVarGlobal(GlobalMode::Capital, false);
+					markVarsGlobal(GlobalMode::Capital);
 				}
 				break;
 			case id<global_values_t>(): {
-				markVarGlobal(GlobalMode::Any, true);
+				markVarsGlobal(GlobalMode::Any);
 				auto values = global->item.to<global_values_t>();
 				if (values->valueList) {
 					auto expList = x->new_ptr<ExpList_t>();
 					for (auto name : values->nameList->names.objects()) {
-						addGlobalVar(_parser.toString(name));
+						addGlobalVar(_parser.toString(name), name);
 						auto callable = x->new_ptr<Callable_t>();
 						callable->item.set(name);
 						auto chainValue = x->new_ptr<ChainValue_t>();
@@ -5128,7 +5135,7 @@ private:
 					transformAssignment(assignment, out);
 				} else {
 					for (auto name : values->nameList->names.objects()) {
-						addGlobalVar(_parser.toString(name));
+						addGlobalVar(_parser.toString(name), name);
 					}
 				}
 				break;
@@ -5810,7 +5817,7 @@ private:
 			_enableReturn.push(true);
 		}
 		auto objVar = singleVariableFrom(switchNode->target);
-		if (objVar.empty()) {
+		if (objVar.empty() || !isLocal(objVar)) {
 			objVar = getUnusedName("_exp_"sv);
 			addToScope(objVar);
 			transformExp(switchNode->target, temp, ExpUsage::Closure);
@@ -5921,7 +5928,7 @@ private:
 			}
 			str_list temp;
 			auto varStr = join(vars, ", "sv);
-			temp.push_back(s("local "sv) + varStr + nll(x));
+			temp.push_back(indent() + s("local "sv) + varStr + nll(x));
 			auto varList = toAst<ExpList_t>(varStr, x);
 			auto assignment = x->new_ptr<ExpListAssign_t>();
 			assignment->expList.set(varList);
