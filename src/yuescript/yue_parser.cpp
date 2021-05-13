@@ -244,10 +244,11 @@ YueParser::YueParser() {
 	IfCond = disable_chain(Exp >> -Assign);
 	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> plain_body_with("then");
 	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> plain_body;
-	If = key("if") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
-	Unless = key("unless") >> Seperator >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
+	IfType = (expr("if") | expr("unless")) >> not_(AlphaNum);
+	If = Space >> IfType >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
 
-	While = key("while") >> disable_do_chain(Exp) >> plain_body_with("do");
+	WhileType = (expr("while") | expr("until")) >> not_(AlphaNum);
+	While = Space >> WhileType >> disable_do_chain(Exp) >> plain_body_with("do");
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> Exp;
@@ -607,7 +608,7 @@ YueParser::YueParser() {
 
 	SimpleValue =
 		(Space >> const_value) |
-		If | Unless | Switch | With | ClassDecl | ForEach | For | While | Do |
+		If | Switch | With | ClassDecl | ForEach | For | While | Do |
 		(Space >> unary_value) |
 		TblComprehension | TableLit | Comprehension | FunLit |
 		(Space >> Num);

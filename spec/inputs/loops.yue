@@ -109,6 +109,22 @@ repeat
 	print a
 until a == 10
 
+a = 3
+until a == 0
+	a -= 1
+done = false
+until done do done = true
+repeat
+	print "hello"
+until true
+until done
+	x = 10
+	repeat
+		x -= 1
+	until x == 0
+until cond
+	print "okay"
+
 for x=1,10
 	continue if x > 3 and x < 7
 	print x

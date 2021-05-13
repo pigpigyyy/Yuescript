@@ -256,22 +256,23 @@ AST_NODE(IfCond)
 	AST_MEMBER(IfCond, &condition, &assign)
 AST_END(IfCond)
 
+AST_LEAF(IfType)
+AST_END(IfType)
+
 AST_NODE(If)
-	ast_ptr<true, Seperator_t> sep;
+	ast_ptr<true, IfType_t> type;
 	ast_sel_list<true, IfCond_t, Block_t, Statement_t> nodes;
-	AST_MEMBER(If, &sep, &nodes)
+	AST_MEMBER(If, &type, &nodes)
 AST_END(If)
 
-AST_NODE(Unless)
-	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, IfCond_t, Block_t, Statement_t> nodes;
-	AST_MEMBER(Unless, &sep, &nodes)
-AST_END(Unless)
+AST_LEAF(WhileType)
+AST_END(WhileType)
 
 AST_NODE(While)
+	ast_ptr<true, WhileType_t> type;
 	ast_ptr<true, Exp_t> condition;
 	ast_sel<true, Block_t, Statement_t> body;
-	AST_MEMBER(While, &condition, &body)
+	AST_MEMBER(While, &type, &condition, &body)
 AST_END(While)
 
 class Body_t;
@@ -451,7 +452,7 @@ class FunLit_t;
 
 AST_NODE(SimpleValue)
 	ast_sel<true, const_value_t,
-	If_t, Unless_t, Switch_t, With_t, ClassDecl_t,
+	If_t, Switch_t, With_t, ClassDecl_t,
 	ForEach_t, For_t, While_t, Do_t,
 	unary_value_t,
 	TblComprehension_t, TableLit_t, Comprehension_t,

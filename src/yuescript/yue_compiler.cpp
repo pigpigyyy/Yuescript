@@ -59,7 +59,7 @@ inline std::string s(std::string_view sv) {
 	return std::string(sv);
 }
 
-const std::string_view version = "0.7.13"sv;
+const std::string_view version = "0.7.14"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -399,6 +399,22 @@ private:
 			index++;
 		} while (isLocal(newName));
 		return newName;
+	}
+
+	std::string transformCondExp(Exp_t* cond, bool unless) {
+		str_list tmp;
+		if (unless) {
+			if (auto value = singleValueFrom(cond)) {
+				transformValue(value, tmp);
+			} else {
+				transformExp(cond, tmp, ExpUsage::Closure);
+				tmp.back() = s("("sv) + tmp.back() + s(")"sv);
+			}
+			return s("not "sv) + tmp.back();
+		} else {
+			transformExp(cond, tmp, ExpUsage::Closure);
+			return tmp.back();
+		}
 	}
 
 	const std::string nll(ast_node* node) const {
@@ -874,8 +890,10 @@ private:
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
 				case id<if_line_t>(): {
-					auto if_line = appendix->item.to<if_line_t>();
+					auto if_line = static_cast<if_line_t*>(appendix->item.get());
 					auto ifNode = x->new_ptr<If_t>();
+					auto ifType = toAst<IfType_t>("if"sv, x);
+					ifNode->type.set(ifType);
 
 					auto ifCond = x->new_ptr<IfCond_t>();
 					ifCond->condition.set(if_line->condition);
@@ -900,20 +918,22 @@ private:
 					break;
 				}
 				case id<unless_line_t>(): {
-					auto unless_line = appendix->item.to<unless_line_t>();
-					auto unless = x->new_ptr<Unless_t>();
+					auto unless_line = static_cast<unless_line_t*>(appendix->item.get());
+					auto ifNode = x->new_ptr<If_t>();
+					auto ifType = toAst<IfType_t>("unless"sv, x);
+					ifNode->type.set(ifType);
 
 					auto ifCond = x->new_ptr<IfCond_t>();
 					ifCond->condition.set(unless_line->condition);
-					unless->nodes.push_back(ifCond);
+					ifNode->nodes.push_back(ifCond);
 
 					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(statement->content);
-					unless->nodes.push_back(stmt);
+					ifNode->nodes.push_back(stmt);
 
 					statement->appendix.set(nullptr);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
-					simpleValue->value.set(unless);
+					simpleValue->value.set(ifNode);
 					auto value = x->new_ptr<Value_t>();
 					value->item.set(simpleValue);
 					auto exp = newExp(value, x);
@@ -985,7 +1005,6 @@ private:
 							switch (value->getId()) {
 								case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Common); break;
 								case id<ClassDecl_t>(): transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Common); break;
-								case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Common); break;
 								case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Common); break;
 								case id<With_t>(): transformWith(static_cast<With_t*>(value), out); break;
 								case id<ForEach_t>(): transformForEach(static_cast<ForEach_t*>(value), out); break;
@@ -1208,16 +1227,12 @@ private:
 			}
 		}
 		switch (value->getId()) {
-			case id<If_t>():
-			case id<Unless_t>(): {
+			case id<If_t>(): {
 				auto expList = assignment->expList.get();
 				str_list temp;
 				auto defs = transformAssignDefs(expList, DefOp::Mark);
 				if (!defs.empty()) temp.push_back(getPredefine(defs) + nll(expList));
-				switch (value->getId()) {
-					case id<If_t>(): transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList); break;
-					case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), temp, ExpUsage::Assignment, expList); break;
-				}
+				transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList);
 				out.push_back(join(temp));
 				return;
 			}
@@ -1806,6 +1821,7 @@ private:
 				if (*it != nodes.front() && cond->assign) {
 					auto x = *it;
 					auto newIf = x->new_ptr<If_t>();
+					newIf->type.set(toAst<IfType_t>("if"sv, x));
 					for (auto j = ns.rbegin(); j != ns.rend(); ++j) {
 						newIf->nodes.push_back(*j);
 					}
@@ -1828,6 +1844,7 @@ private:
 		if (nodes.size() != ns.size()) {
 			auto x = ns.back();
 			auto newIf = x->new_ptr<If_t>();
+			newIf->type.set(toAst<IfType_t>("if"sv, x));
 			for (auto j = ns.rbegin(); j != ns.rend(); ++j) {
 				newIf->nodes.push_back(*j);
 			}
@@ -1918,23 +1935,13 @@ private:
 			if (pair.first) {
 				str_list tmp;
 				auto condition = pair.first->condition.get();
-				if (unless) {
-					if (auto value = singleValueFrom(condition)) {
-						transformValue(value, tmp);
-					} else {
-						transformExp(condition, tmp, ExpUsage::Closure);
-						tmp.back() = s("("sv) + tmp.back() + s(")"sv);
-					}
-					tmp.back().insert(0, s("not "sv));
-					unless = false;
-				} else {
-					transformExp(condition, tmp, ExpUsage::Closure);
-				}
+				auto condStr = transformCondExp(condition, unless);
+				if (unless) unless = false;
 				_buf << indent();
 				if (pair != ifCondPairs.front()) {
 					_buf << "else"sv;
 				}
-				_buf << "if "sv << tmp.back() << " then"sv << nll(condition);
+				_buf << "if "sv << condStr << " then"sv << nll(condition);
 				temp.push_back(clearBuf());
 			}
 			if (pair.second) {
@@ -1966,11 +1973,8 @@ private:
 	}
 
 	void transformIf(If_t* ifNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		transformCond(ifNode->nodes.objects(), out, usage, false, assignList);
-	}
-
-	void transformUnless(Unless_t* unless, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		transformCond(unless->nodes.objects(), out, usage, true, assignList);
+		bool unless = _parser.toString(ifNode->type) == "unless"sv;
+		transformCond(ifNode->nodes.objects(), out, usage, unless, assignList);
 	}
 
 	void transformExpList(ExpList_t* expList, str_list& out) {
@@ -2146,7 +2150,6 @@ private:
 		switch (value->getId()) {
 			case id<const_value_t>(): transform_const_value(static_cast<const_value_t*>(value), out); break;
 			case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
-			case id<Unless_t>(): transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Closure); break;
 			case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
 			case id<With_t>(): transformWithClosure(static_cast<With_t*>(value), out); break;
 			case id<ClassDecl_t>(): transformClassDeclClosure(static_cast<ClassDecl_t*>(value), out); break;
@@ -2756,9 +2759,6 @@ private:
 							return;
 						case id<If_t>():
 							transformIf(static_cast<If_t*>(value), out, ExpUsage::Return);
-							return;
-						case id<Unless_t>():
-							transformUnless(static_cast<Unless_t*>(value), out, ExpUsage::Return);
 							return;
 					}
 				} else if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
@@ -5054,6 +5054,7 @@ private:
 		_withVars.push(withVar);
 		if (with->eop) {
 			auto ifNode = x->new_ptr<If_t>();
+			ifNode->type.set(toAst<IfType_t>("if"sv, x));
 			ifNode->nodes.push_back(toAst<IfCond_t>(withVar + s("~=nil"sv), x));
 			ifNode->nodes.push_back(with->body);
 			transformIf(ifNode, temp, ExpUsage::Common);
@@ -5733,8 +5734,9 @@ private:
 		addToScope(lenVar);
 		temp.push_back(indent() + s("local "sv) + accumVar + s(" = { }"sv) + nll(whileNode));
 		temp.push_back(indent() + s("local "sv) + lenVar + s(" = 1"sv) + nll(whileNode));
-		transformExp(whileNode->condition, temp, ExpUsage::Closure);
-		temp.back() = indent() + s("while "sv) + temp.back() + s(" do"sv) + nll(whileNode);
+		bool isUntil = _parser.toString(whileNode->type) == "until"sv;
+		auto condStr = transformCondExp(whileNode->condition, isUntil);
+		temp.push_back(indent() + s("while "sv) + condStr + s(" do"sv) + nll(whileNode));
 		pushScope();
 		auto assignLeft = toAst<ExpList_t>(accumVar + s("["sv) + lenVar + s("]"sv), x);
 		auto lenLine = lenVar + s(" = "sv) + lenVar + s(" + 1"sv) + nlr(whileNode);
@@ -5770,8 +5772,9 @@ private:
 		addToScope(lenVar);
 		temp.push_back(indent() + s("local "sv) + accumVar + s(" = { }"sv) + nll(whileNode));
 		temp.push_back(indent() + s("local "sv) + lenVar + s(" = 1"sv) + nll(whileNode));
-		transformExp(whileNode->condition, temp, ExpUsage::Closure);
-		temp.back() = indent() + s("while "sv) + temp.back() + s(" do"sv) + nll(whileNode);
+		bool isUntil = _parser.toString(whileNode->type) == "until"sv;
+		auto condStr = transformCondExp(whileNode->condition, isUntil);
+		temp.push_back(indent() + s("while "sv) + condStr + s(" do"sv) + nll(whileNode));
 		pushScope();
 		auto assignLeft = toAst<ExpList_t>(accumVar + s("["sv) + lenVar + s("]"sv), x);
 		auto lenLine = lenVar + s(" = "sv) + lenVar + s(" + 1"sv) + nlr(whileNode);
@@ -5788,10 +5791,11 @@ private:
 	void transformWhile(While_t* whileNode, str_list& out) {
 		str_list temp;
 		pushScope();
-		transformExp(whileNode->condition, temp, ExpUsage::Closure);
+		bool isUntil = _parser.toString(whileNode->type) == "until"sv;
+		auto condStr = transformCondExp(whileNode->condition, isUntil);
 		transformLoopBody(whileNode->body, temp, Empty, ExpUsage::Common);
 		popScope();
-		_buf << indent() << "while "sv << temp.front() << " do"sv << nll(whileNode);
+		_buf << indent() << "while "sv << condStr << " do"sv << nll(whileNode);
 		_buf << temp.back();
 		_buf << indent() << "end"sv << nlr(whileNode);
 		out.push_back(clearBuf());
