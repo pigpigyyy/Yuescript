@@ -2,7 +2,7 @@
 
 <img src="doc/docs/.vuepress/public/image/yuescript.svg" width="300" height="300" alt="logo"/>
 
-[![Ubuntu](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml) [![Windows](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml) [![macOS](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml)
+[![Ubuntu](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml) [![Windows](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml) [![macOS](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml) [![discord](https://img.shields.io/discord/844031511208001577?logo=discord)](https://discord.gg/cRJ2VAm2NV)
 
 Yuescript is a Moonscript dialect. It is derived from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and continuously adopting new features to be more up to date. 
 
@@ -12,6 +12,7 @@ So Yuescript is a new code base for pushing the language to go forward and being
 
 Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
+## 
 
 ## Features
 
