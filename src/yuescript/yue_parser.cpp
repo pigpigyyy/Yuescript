@@ -548,7 +548,7 @@ YueParser::YueParser() {
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (Exp | TableBlock));
 
-	FnArgDef = (Variable | SelfName) >> -(sym('=') >> Space >> Exp);
+	FnArgDef = (Variable | SelfName >> -existential_op) >> -(sym('=') >> Space >> Exp);
 
 	FnArgDefList = Space >> Seperator >> (
 		(

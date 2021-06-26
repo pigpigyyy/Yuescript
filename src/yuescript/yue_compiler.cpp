@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.7.14"sv;
+const std::string_view version = "0.7.15"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2801,6 +2801,7 @@ private:
 	void transformFnArgDefList(FnArgDefList_t* argDefList, str_list& out) {
 		auto x = argDefList;
 		struct ArgItem {
+			bool checkExistence = false;
 			std::string name;
 			std::string assignSelf;
 		};
@@ -2815,27 +2816,33 @@ private:
 				case id<Variable_t>(): arg.name = _parser.toString(def->name); break;
 				case id<SelfName_t>(): {
 					assignSelf = true;
+					if (def->op) {
+						if (def->defaultValue) {
+							throw std::logic_error(_info.errorMessage("argument with default value should not check for existence"sv, def->op));
+						}
+						arg.checkExistence = true;
+					}
 					auto selfName = static_cast<SelfName_t*>(def->name.get());
 					switch (selfName->name->getId()) {
 						case id<self_class_name_t>(): {
 							auto clsName = static_cast<self_class_name_t*>(selfName->name.get());
 							arg.name = _parser.toString(clsName->name);
-							arg.assignSelf = "self.__class."s + arg.name;
+							arg.assignSelf = _parser.toString(clsName);
 							break;
 						}
-						case id<self_class_t>():
-							arg.name = "self.__class"sv;
-							break;
 						case id<self_name_t>(): {
 							auto sfName = static_cast<self_name_t*>(selfName->name.get());
 							arg.name = _parser.toString(sfName->name);
-							arg.assignSelf = "self."s + arg.name;
+							arg.assignSelf = _parser.toString(sfName);
 							break;
 						}
 						case id<self_t>():
 							arg.name = "self"sv;
+							if (def->op) throw std::logic_error(_info.errorMessage("can only check existence for assigning self field"sv, selfName->name));
 							break;
-						default: YUEE("AST node mismatch", selfName->name.get()); break;
+						default:
+							throw std::logic_error(_info.errorMessage("invald self expression here"sv, selfName->name));
+							break;
 					}
 					break;
 				}
@@ -2867,23 +2874,20 @@ private:
 			else varNames.append(", "s + arg.name);
 			_varArgs.top() = true;
 		}
-		std::string initCodes = join(temp);
 		if (assignSelf) {
-			auto sjoin = [](const decltype(argItems)& items, int index) {
-				std::string result;
-				for (auto it = items.begin(); it != items.end(); ++it) {
-					if (it->assignSelf.empty()) continue;
-					if (result.empty()) result = (&it->name)[index];
-					else result.append(", "s + (&it->name)[index]);
+			for (const auto& item : argItems) {
+				if (item.assignSelf.empty()) continue;
+				if (item.checkExistence) {
+					auto stmt = toAst<Statement_t>(item.assignSelf + " = "s + item.name + " if "s + item.name + '?', x);
+					transformStatement(stmt, temp);
+				} else {
+					auto assignment = toAst<ExpListAssign_t>(item.assignSelf + " = "s + item.name, x);
+					transformAssignment(assignment, temp);
 				}
-				return result;
-			};
-			std::string sleft = sjoin(argItems, 1);
-			std::string sright = sjoin(argItems, 0);
-			initCodes.append(indent() + sleft + " = "s + sright + nll(argDefList));
+			}
 		}
 		out.push_back(varNames);
-		out.push_back(initCodes);
+		out.push_back(join(temp));
 	}
 
 	void transformSelfName(SelfName_t* selfName, str_list& out, const ast_sel<false,Invoke_t,InvokeArgs_t>& invoke = {}) {

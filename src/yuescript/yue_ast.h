@@ -627,8 +627,9 @@ AST_END(Export)
 
 AST_NODE(FnArgDef)
 	ast_sel<true, Variable_t, SelfName_t> name;
+	ast_ptr<false, existential_op_t> op;
 	ast_ptr<false, Exp_t> defaultValue;
-	AST_MEMBER(FnArgDef, &name, &defaultValue)
+	AST_MEMBER(FnArgDef, &name, &op, &defaultValue)
 AST_END(FnArgDef)
 
 AST_NODE(FnArgDefList)
