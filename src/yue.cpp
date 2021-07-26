@@ -271,7 +271,7 @@ int main(int narg, const char** args) {
 			}
 			char ch;
 			std::string codes;
-			while ((ch = std::cin.get()) != EOF) {
+			while ((ch = std::cin.get()) && !std::cin.eof()) {
 				codes += ch;
 			}
 			yue::YueConfig conf;
