@@ -1,17 +1,3 @@
-P2菜单：一级菜单需要申请，二三级菜单不需要申请
-版本上线，项目号
-数据入湖入仓
-数据展示：cognos报表上线，智数洞察，本地数据查询
-
-一级菜单
-数据录入
-
-业务数据 -> 数据入湖 -> 任务下发 -> 任务分配录入 -> 数据回传入湖 -> 成效跟踪
-
-[![Discord](https://discord.com/api/guilds/844031511208001577/widget.svg)](https://discord.gg/cRJ2VAm2NV)
-
-bin\windows\Release\yue.exe
-
 name: Windows
 
 on:
