@@ -1,3 +1,17 @@
+P2菜单：一级菜单需要申请，二三级菜单不需要申请
+版本上线，项目号
+数据入湖入仓
+数据展示：cognos报表上线，智数洞察，本地数据查询
+
+一级菜单
+数据录入
+
+业务数据 -> 数据入湖 -> 任务下发 -> 任务分配录入 -> 数据回传入湖 -> 成效跟踪
+
+[![Discord](https://discord.com/api/guilds/844031511208001577/widget.svg)](https://discord.gg/cRJ2VAm2NV)
+
+bin\windows\Release\yue.exe
+
 name: Windows
 
 on:
@@ -15,5 +29,15 @@ jobs:
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1
       - name: Windows build
-        run: msbuild Yuescript.sln -p:Configuration=debug
-
+        run: msbuild Yuescript.sln /p:Configuration=release /p:Platform=x86
+      - name: pack
+        if: startsWith(github.ref, 'refs/tags/')
+        run: (cd bin\windows\Release && 7z a yue-windows-x86.7z yue.exe)
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./yue-windows-x86.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
