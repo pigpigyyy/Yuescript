@@ -38,7 +38,7 @@ extern "C" {
 
 namespace yue {
 using namespace std::string_view_literals;
-using namespace std::literals::string_literals;
+using namespace std::string_literals;
 using namespace parserlib;
 
 #define BLOCK_START do {
@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.7.15"sv;
+const std::string_view version = "0.7.16"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1722,7 +1722,8 @@ private:
 				auto leftValue = singleValueFrom(leftExp);
 				if (!leftValue) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftExp));
 				if (auto chain = leftValue->item.as<ChainValue_t>()) {
-					if (specialChainValue(chain) == ChainType::Metatable) {throw std::logic_error(_info.errorMessage("can not apply update to a metatable"sv, leftExp));
+					if (specialChainValue(chain) == ChainType::Metatable) {
+						throw std::logic_error(_info.errorMessage("can not apply update to a metatable"sv, leftExp));
 					}
 					auto tmpChain = x->new_ptr<ChainValue_t>();
 					for (auto item : chain->items.objects()) {
@@ -1747,6 +1748,7 @@ private:
 					chain->items.clear();
 					chain->items.dup(tmpChain->items);
 				}
+				auto defs = getPredefine(assignment);
 				transformValue(leftValue, temp);
 				auto left = std::move(temp.back());
 				temp.pop_back();
@@ -1756,7 +1758,10 @@ private:
 				if (!singleValueFrom(update->value)) {
 					right = '(' + right + ')';
 				}
-				_buf << join(temp) << indent() << left << " = "sv << left <<
+				_buf << join(temp);
+				if (!defs.empty()) _buf << defs;
+				else _buf << indent() << left;
+				_buf << " = "sv << left <<
 					' ' << _parser.toString(update->op) << ' ' << right << nll(assignment);
 				out.push_back(clearBuf());
 				break;

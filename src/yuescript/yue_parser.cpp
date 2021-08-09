@@ -705,8 +705,8 @@ namespace Utils {
 
 	void trim(std::string& str) {
 		if (str.empty()) return;
-		str.erase(0, str.find_first_not_of(" \t\n"));
-		str.erase(str.find_last_not_of(" \t\n") + 1);
+		str.erase(0, str.find_first_not_of(" \t\r\n"));
+		str.erase(str.find_last_not_of(" \t\r\n") + 1);
 	}
 }
 
