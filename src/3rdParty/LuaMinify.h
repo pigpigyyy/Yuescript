@@ -1945,6 +1945,9 @@ local function Format_Mini(ast)
 						out = out.." "
 					end
 				end
+				if i ~= #statement.LocalList then
+					out = out..","
+				end
 			end
 			if #statement.InitList > 0 then
 				out = out.."="
