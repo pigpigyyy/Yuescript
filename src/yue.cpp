@@ -160,9 +160,7 @@ int main(int narg, const char** args) {
 					completions.push_back(pre + "local ");
 					break;
 				case 'm':
-					completions.push_back(pre + "macro expr ");
-					completions.push_back(pre + "macro block ");
-					completions.push_back(pre + "macro lua ");
+					completions.push_back(pre + "macro ");
 					break;
 				case 's':
 					completions.push_back(pre + "switch ");
@@ -385,12 +383,19 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
-		} else if (arg.substr(0, 1) == "-"sv && arg.find('=') != std::string::npos) {
+		} else if (arg.size() > 1 && arg.substr(0, 1) == "-"sv && arg.substr(1, 1) != "-"sv) {
 			auto argStr = arg.substr(1);
+			yue::Utils::trim(argStr);
 			size_t idx = argStr.find('=');
-			auto key = argStr.substr(0, idx);
-			auto value = argStr.substr(idx + 1);
-			config.options[key] = value;
+			if (idx != std::string::npos) {
+				auto key = argStr.substr(0, idx);
+				auto value = argStr.substr(idx + 1);
+				yue::Utils::trim(key);
+				yue::Utils::trim(value);
+				config.options[key] = value;
+			} else {
+				config.options[argStr] = '1';
+			}
 		} else {
 			if (fs::is_directory(arg)) {
 				for (auto item : fs::recursive_directory_iterator(arg)) {
