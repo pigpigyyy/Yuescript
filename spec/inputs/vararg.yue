@@ -1,0 +1,56 @@
+join = (...) ->
+	f_with with a
+		\func!
+	f_with with a
+		\func ...
+
+	f_listcomp [items[i] for i = 1, 10]
+	f_listcomp [items[i] ... for i = 1, 10]
+	f_listcomp [item for item in *items]
+	f_listcomp [item ... for item in *items]
+
+	f_class class A
+		func!
+	f_class class A
+		func ...
+
+	f_tblcomp {k, v for k, v in pairs tb}
+	f_tblcomp {k, v ... for k, v in pairs tb}
+	f_tblcomp {item, true for item in *items}
+	f_tblcomp {item(...), true for item in *items}
+
+	f_do do
+		func!
+	f_do do
+		func ...
+
+	f_while while false
+		func!
+	f_while while false
+		func ...
+
+	f_if if false
+		func!
+	f_if if false
+		func ...
+
+	f_unless unless true
+		func!
+	f_unless unless true
+		func ...
+
+	f_switch switch x
+		when "abc"
+			func!
+	f_switch switch x
+		when "abc"
+			func ...
+
+	f_eop func?!
+	f_eop func? ...
+
+	f_colon f!\func
+	f_colon f(...)\func
+
+	nil
+

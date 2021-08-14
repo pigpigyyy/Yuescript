@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.7.16"sv;
+const std::string_view version = "0.7.17"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -109,7 +109,7 @@ public:
 				str_list out;
 				pushScope();
 				_enableReturn.push(_info.moduleName.empty());
-				_varArgs.push(true);
+				_varArgs.push({true, false});
 				transformBlock(_info.node.to<File_t>()->block, out,
 					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
 					nullptr, true);
@@ -192,7 +192,12 @@ private:
 	YueParser _parser;
 	ParseInfo _info;
 	int _indentOffset = 0;
-	std::stack<bool> _varArgs;
+	struct VarArgState
+	{
+		bool hasVar;
+		bool usedVar;
+	};
+	std::stack<VarArgState> _varArgs;
 	std::stack<bool> _enableReturn;
 	std::stack<std::string> _withVars;
 	std::stack<std::string> _continueVars;
@@ -858,6 +863,26 @@ private:
 		return true;
 		BLOCK_END
 		return false;
+	}
+
+	void pushAnonVarArg() {
+		if (!_varArgs.empty() && _varArgs.top().hasVar) {
+			_varArgs.push({true, false});
+		} else {
+			_varArgs.push({false, false});
+		}
+	}
+
+	void popAnonVarArg() {
+		_varArgs.pop();
+	}
+
+	std::string anonFuncStart() const {
+		return !_varArgs.empty() && _varArgs.top().hasVar && _varArgs.top().usedVar ? "(function(...)"s : "(function()"s;
+	}
+
+	std::string anonFuncEnd() const {
+		return !_varArgs.empty() && _varArgs.top().usedVar ? "end)(...)"s : "end)()"s;
 	}
 
 	std::string globalVar(std::string_view var, ast_node* x) {
@@ -1854,8 +1879,10 @@ private:
 			return;
 		}
 		str_list temp;
+		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			temp.push_back("(function()"s + nll(nodes.front()));
+			pushAnonVarArg();
+			funcStart = &temp.emplace_back();
 			pushScope();
 			_enableReturn.push(true);
 		}
@@ -1969,7 +1996,9 @@ private:
 		if (usage == ExpUsage::Closure) {
 			_enableReturn.pop();
 			popScope();
-			temp.push_back(indent() + "end)()"s);
+			*funcStart = anonFuncStart() + nll(nodes.front());
+			temp.push_back(indent() + anonFuncEnd());
+			popAnonVarArg();
 		}
 		out.push_back(join(temp));
 	}
@@ -2131,9 +2160,10 @@ private:
 				break;
 			}
 			case id<VarArg_t>():
-				if (_varArgs.empty() || !_varArgs.top()) {
+				if (_varArgs.empty() || !_varArgs.top().hasVar) {
 					throw std::logic_error(_info.errorMessage("cannot use '...' outside a vararg function near '...'"sv, item));
 				}
+				_varArgs.top().usedVar = true;
 				out.push_back("..."s);
 				break;
 			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
@@ -2171,7 +2201,7 @@ private:
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
 		_enableReturn.push(true);
-		_varArgs.push(false);
+		_varArgs.push({false, false});
 		str_list temp;
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -2877,7 +2907,7 @@ private:
 			arg.name = "..."sv;
 			if (varNames.empty()) varNames = arg.name;
 			else varNames.append(", "s + arg.name);
-			_varArgs.top() = true;
+			_varArgs.top().hasVar = true;
 		}
 		if (assignSelf) {
 			for (const auto& item : argItems) {
@@ -2996,8 +3026,10 @@ private:
 		if (opIt != chainList.end()) {
 			auto x = chainList.front();
 			str_list temp;
+			std::string* funcStart = nullptr;
 			if (usage == ExpUsage::Closure) {
-				temp.push_back("(function()"s + nll(x));
+				pushAnonVarArg();
+				funcStart = &temp.emplace_back();
 				pushScope();
 				_enableReturn.push(true);
 			}
@@ -3132,7 +3164,9 @@ private:
 					temp.push_back(indent() + "return nil"s + nlr(x));
 					_enableReturn.pop();
 					popScope();
-					temp.push_back(indent() + "end)()"s);
+					*funcStart = anonFuncStart() + nll(x);
+					temp.push_back(indent() + anonFuncEnd());
+					popAnonVarArg();
 					break;
 				default:
 					break;
@@ -3147,13 +3181,15 @@ private:
 		if (ast_is<ColonChainItem_t>(chainList.back())) {
 			auto x = chainList.front();
 			str_list temp;
+			std::string* funcStart = nullptr;
 			switch (usage) {
 				case ExpUsage::Assignment:
 					temp.push_back(indent() + "do"s + nll(x));
 					pushScope();
 					break;
 				case ExpUsage::Closure:
-					temp.push_back("(function()"s + nll(x));
+					pushAnonVarArg();
+					funcStart = &temp.emplace_back();
 					pushScope();
 					_enableReturn.push(true);
 					break;
@@ -3229,7 +3265,9 @@ private:
 				case ExpUsage::Closure:
 					_enableReturn.pop();
 					popScope();
-					temp.push_back(indent() + "end)()"s);
+					*funcStart = anonFuncStart() + nll(x);
+					temp.push_back(indent() + anonFuncEnd());
+					popAnonVarArg();
 					break;
 				default:
 					break;
@@ -3960,6 +3998,7 @@ private:
 			case ExpUsage::Closure:
 				_enableReturn.push(true);
 				pushScope();
+				pushAnonVarArg();
 				break;
 			case ExpUsage::Assignment:
 				pushScope();
@@ -4019,8 +4058,9 @@ private:
 				out.push_back(clearBuf());
 				out.back().append(indent() + "return "s + accumVar + nlr(comp));
 				popScope();
-				out.back().insert(0, "(function()"s + nll(comp));
-				out.back().append(indent() + "end)()"s);
+				out.back().insert(0, anonFuncStart() + nll(comp));
+				out.back().append(indent() + anonFuncEnd());
+				popAnonVarArg();
 				break;
 			}
 			case ExpUsage::Assignment: {
@@ -4345,14 +4385,17 @@ private:
 
 	void transformForClosure(For_t* forNode, str_list& out) {
 		str_list temp;
-		_buf << "(function()"sv << nll(forNode);
+		pushAnonVarArg();
+		std::string& funcStart = temp.emplace_back();
 		pushScope();
 		_enableReturn.push(true);
 		auto accum = transformForInner(forNode, temp);
 		temp.push_back(indent() + "return "s + accum + nlr(forNode));
 		_enableReturn.pop();
 		popScope();
-		temp.push_back(indent() + "end)()"s);
+		funcStart = anonFuncStart() + nll(forNode);
+		temp.push_back(indent() + anonFuncEnd());
+		popAnonVarArg();
 		out.push_back(join(temp));
 	}
 
@@ -4414,14 +4457,17 @@ private:
 
 	void transformForEachClosure(ForEach_t* forEach, str_list& out) {
 		str_list temp;
-		_buf << "(function()"sv << nll(forEach);
+		pushAnonVarArg();
+		std::string& funcStart = temp.emplace_back();
 		pushScope();
 		_enableReturn.push(true);
 		auto accum = transformForEachInner(forEach, temp);
 		temp.push_back(indent() + "return "s + accum + nlr(forEach));
 		_enableReturn.pop();
 		popScope();
-		temp.push_back(indent() + "end)()"s);
+		funcStart = anonFuncStart() + nll(forEach);
+		temp.push_back(indent() + anonFuncEnd());
+		popAnonVarArg();
 		out.push_back(join(temp));
 	}
 
@@ -4566,13 +4612,16 @@ private:
 
 	void transformClassDeclClosure(ClassDecl_t* classDecl, str_list& out) {
 		str_list temp;
-		temp.push_back("(function()"s + nll(classDecl));
+		pushAnonVarArg();
+		std::string& funcStart = temp.emplace_back();
 		pushScope();
 		_enableReturn.push(true);
 		transformClassDecl(classDecl, temp, ExpUsage::Return);
 		_enableReturn.pop();
 		popScope();
-		temp.push_back("end)()"s);
+		funcStart = anonFuncStart() + nll(classDecl);
+		temp.push_back(indent() + anonFuncEnd());
+		popAnonVarArg();
 		out.push_back(join(temp));
 	}
 
@@ -4744,15 +4793,15 @@ private:
 			if (extend) {
 				_buf << indent(1) << "__init = function(self, ...)"sv << nll(classDecl);
 				_buf << indent(2) << "return _class_0.__parent.__init(self, ...)"sv << nll(classDecl);
-    			_buf << indent(1) << "end,"sv << nll(classDecl);
+				_buf << indent(1) << "end,"sv << nll(classDecl);
 			} else {
 				_buf << indent(1) << "__init = function() end,"sv << nll(classDecl);
 			}
 		}
 		_buf << indent(1) << "__base = "sv << baseVar;
-    	if (!className.empty()) {
-    		_buf << ","sv << nll(classDecl);
-    		_buf << indent(1) << "__name = "sv << className;
+		if (!className.empty()) {
+			_buf << ","sv << nll(classDecl);
+			_buf << indent(1) << "__name = "sv << className;
 		}
 		if (extend) {
 			_buf << ","sv << nll(classDecl);
@@ -4931,13 +4980,16 @@ private:
 
 	void transformWithClosure(With_t* with, str_list& out) {
 		str_list temp;
-		temp.push_back("(function()"s + nll(with));
+		pushAnonVarArg();
+		std::string& funcStart = temp.emplace_back();
 		pushScope();
 		_enableReturn.push(true);
 		transformWith(with, temp, nullptr, true);
 		_enableReturn.pop();
 		popScope();
-		temp.push_back(indent() + "end)()"s);
+		funcStart = anonFuncStart() + nll(with);
+		temp.push_back(indent() + anonFuncEnd());
+		popAnonVarArg();
 		out.push_back(join(temp));
 	}
 
@@ -5340,6 +5392,7 @@ private:
 			case ExpUsage::Closure:
 				pushScope();
 				_enableReturn.push(true);
+				pushAnonVarArg();
 				break;
 			case ExpUsage::Assignment:
 				pushScope();
@@ -5397,8 +5450,9 @@ private:
 				out.push_back(clearBuf() + indent() + "return "s + tbl + nlr(comp));
 				popScope();
 				_enableReturn.pop();
-				out.back().insert(0, "(function()"s + nll(comp));
-				out.back().append(indent() + "end)()"s);
+				out.back().insert(0, anonFuncStart() + nll(comp));
+				out.back().append(indent() + anonFuncEnd());
+				popAnonVarArg();
 				break;
 			case ExpUsage::Assignment: {
 				out.push_back(clearBuf());
@@ -5452,9 +5506,11 @@ private:
 
 	void transformDo(Do_t* doNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
+		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			temp.push_back("(function()"s + nll(doNode));
 			_enableReturn.push(true);
+			pushAnonVarArg();
+			funcStart = &temp.emplace_back();
 		} else {
 			temp.push_back(indent() + "do"s + nll(doNode));
 		}
@@ -5463,7 +5519,9 @@ private:
 		popScope();
 		if (usage == ExpUsage::Closure) {
 			_enableReturn.pop();
-			temp.push_back(indent() + "end)()"s);
+			*funcStart = anonFuncStart() + nll(doNode);
+			temp.push_back(indent() + anonFuncEnd());
+			popAnonVarArg();
 		} else {
 			temp.push_back(indent() + "end"s + nlr(doNode));
 		}
@@ -5769,7 +5827,8 @@ private:
 	void transformWhileClosure(While_t* whileNode, str_list& out) {
 		auto x = whileNode;
 		str_list temp;
-		temp.push_back("(function() "s + nll(whileNode));
+		pushAnonVarArg();
+		std::string& funcStart = temp.emplace_back();
 		pushScope();
 		_enableReturn.push(true);
 		auto accumVar = getUnusedName("_accum_"sv);
@@ -5790,7 +5849,9 @@ private:
 		temp.push_back(indent() + "return "s + accumVar + nlr(whileNode));
 		_enableReturn.pop();
 		popScope();
-		temp.push_back(indent() + "end)()"s);
+		funcStart = anonFuncStart() + nll(whileNode);
+		temp.push_back(indent() + anonFuncEnd());
+		popAnonVarArg();
 		out.push_back(join(temp));
 	}
 
@@ -5821,8 +5882,10 @@ private:
 
 	void transformSwitch(Switch_t* switchNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
+		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			temp.push_back("(function()"s + nll(switchNode));
+			pushAnonVarArg();
+			funcStart = &temp.emplace_back();
 			pushScope();
 			_enableReturn.push(true);
 		}
@@ -5864,7 +5927,9 @@ private:
 		if (usage == ExpUsage::Closure) {
 			_enableReturn.pop();
 			popScope();
-			temp.push_back(indent() + "end)()"s);
+			*funcStart = anonFuncStart() + nll(switchNode);
+			temp.push_back(indent() + anonFuncEnd());
+			popAnonVarArg();
 		}
 		out.push_back(join(temp));
 	}
@@ -6027,3 +6092,4 @@ CompileInfo YueCompiler::compile(std::string_view codes, const YueConfig& config
 }
 
 } // namespace yue
+
