@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.7.17"sv;
+const std::string_view version = "0.7.18"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -248,6 +248,8 @@ private:
 		bool isVariable = false;
 		std::string name;
 		std::string structure;
+		ast_ptr<true, Exp_t> defVal;
+		bool isMetatable = false;
 	};
 
 	struct Destructure {
@@ -1364,45 +1366,102 @@ private:
 			if (info.second) {
 				transformAssignmentCommon(info.second, temp);
 			}
-			for (const auto& destruct : info.first) {
+			for (auto& destruct : info.first) {
+				std::list<std::pair<std::string, std::string>> leftPairs;
 				if (destruct.items.size() == 1) {
 					auto& pair = destruct.items.front();
-					_buf << indent();
-					if (pair.isVariable) {
-						checkConst(pair.name, assignment);
-						if (!isDefined(pair.name)) _buf << "local "s;
+					if (!pair.isVariable && pair.defVal) {
+						auto objVar = getUnusedName("_obj_"sv);
+						leftPairs.push_back({pair.name, objVar});
+						pair.name = objVar;
+						pair.isVariable = true;
 					}
-					_buf << pair.name << " = "sv << destruct.value << pair.structure << nll(assignment);
-					addToScope(pair.name);
-					temp.push_back(clearBuf());
+					if (pair.isMetatable) {
+						if (pair.isVariable) {
+							checkConst(pair.name, assignment);
+							if (addToScope(pair.name)) {
+								_buf << indent() << "local "sv << pair.name << nll(assignment);
+							}
+						}
+						bool valueDefined = isDefined(destruct.value);
+						std::string objVar;
+						if (valueDefined) {
+							objVar = destruct.value;
+						} else {
+							_buf << indent() << "do"sv << nll(assignment);
+							pushScope();
+							objVar = getUnusedName("_obj_"sv);
+							addToScope(objVar);
+							_buf << indent() << "local "sv << objVar << " = "sv << destruct.value << nll(assignment);
+							temp.push_back(clearBuf());
+						}
+						auto valueExp = toAst<Exp_t>(objVar + pair.structure, assignment);
+						transformExp(valueExp, temp, ExpUsage::Closure);
+						_buf << indent() << pair.name << " = "sv << temp.back() << nll(assignment);
+						if (!valueDefined) {
+							popScope();
+							_buf << indent() << "end"sv << nlr(assignment);
+						}
+						temp.back() = clearBuf();
+					} else {
+						_buf << indent();
+						if (pair.isVariable) {
+							checkConst(pair.name, assignment);
+							if (addToScope(pair.name)) _buf << "local "sv;
+						}
+						_buf << pair.name << " = "sv << destruct.value << pair.structure << nll(assignment);
+						temp.push_back(clearBuf());
+					}
 				} else if (_parser.match<Name_t>(destruct.value) && isDefined(destruct.value)) {
 					str_list defs, names, values;
-					for (const auto& item : destruct.items) {
+					bool isMetatable = false;
+					for (auto& item : destruct.items) {
 						if (item.isVariable) {
 							checkConst(item.name, assignment);
 							if (addToScope(item.name)) defs.push_back(item.name);
+						} else if (item.defVal) {
+							auto objVar = getUnusedName("_obj_"sv);
+							addToScope(objVar);
+							defs.push_back(objVar);
+							leftPairs.push_back({item.name, objVar});
+							item.name = objVar;
 						}
+						if (item.isMetatable) isMetatable = true;
 						names.push_back(item.name);
 						values.push_back(item.structure);
 					}
 					for (auto& v : values) v.insert(0, destruct.value);
+					if (isMetatable) {
+						auto newExpList = toAst<ExpList_t>(join(values, ","sv), assignment);
+						transformExpList(newExpList, temp);
+					} else {
+						temp.push_back(join(values, ", "sv));
+					}
 					if (defs.empty()) {
-						_buf << indent() << join(names, ", "sv) << " = "sv << join(values, ", "sv) << nll(assignment);
+						_buf << indent() << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
 					} else {
 						_buf << indent() << "local "sv;
 						if (defs.size() != names.size()) {
-							_buf << join(defs,", "sv) << nll(assignment) << indent();
+							_buf << join(defs, ", "sv) << nll(assignment) << indent();
 						}
-						_buf << join(names, ", "sv) << " = "sv << join(values, ", "sv) << nll(assignment);
+						_buf << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
 					}
-					temp.push_back(clearBuf());
+					temp.back() = clearBuf();
 				} else {
 					str_list defs, names, values;
-					for (const auto& item : destruct.items) {
+					bool isMetatable = false;
+					for (auto& item : destruct.items) {
 						if (item.isVariable) {
 							checkConst(item.name, assignment);
 							if (addToScope(item.name)) defs.push_back(item.name);
+						} else if (item.defVal) {
+							auto objVar = getUnusedName("_obj_"sv);
+							addToScope(objVar);
+							defs.push_back(objVar);
+							leftPairs.push_back({item.name, objVar});
+							item.name = objVar;
 						}
+						if (item.isMetatable) isMetatable = true;
 						names.push_back(item.name);
 						values.push_back(item.structure);
 					}
@@ -1410,13 +1469,34 @@ private:
 					_buf << indent() << "do"sv << nll(assignment);
 					pushScope();
 					auto objVar = getUnusedName("_obj_"sv);
+					addToScope(objVar);
 					for (auto& v : values) v.insert(0, objVar);
+					if (isMetatable) {
+						auto newExpList = toAst<ExpList_t>(join(values, ","sv), assignment);
+						transformExpList(newExpList, temp);
+					} else {
+						temp.push_back(join(values, ", "sv));
+					}
 					_buf << indent() << "local "sv << objVar << " = "sv << destruct.value << nll(assignment);
-					_buf << indent() << join(names, ", "sv) << " = "sv << join(values, ", "sv) << nll(assignment);
+					_buf << indent() << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
 					popScope();
 					_buf << indent() << "end"sv << nll(assignment);
-					temp.push_back(clearBuf());
+					temp.back() = clearBuf();
 				}
+				for (const auto& item : destruct.items) {
+					if (item.defVal) {
+						auto stmt = toAst<Statement_t>(item.name + "=nil if "s + item.name + "==nil", item.defVal);
+						auto defAssign = stmt->content.as<ExpListAssign_t>();
+						auto assign = defAssign->action.as<Assign_t>();
+						assign->values.clear();
+						assign->values.push_back(item.defVal);
+						transformStatement(stmt, temp);
+					}
+				}
+				for (const auto& item : leftPairs) {
+					_buf << indent() << item.first << " = "sv << item.second << nll(assignment);
+				}
+				temp.push_back(clearBuf());
 			}
 			out.push_back(join(temp));
 		}
@@ -1463,6 +1543,7 @@ private:
 		if (!tableItems) throw std::logic_error(_info.errorMessage("invalid destructure value"sv, node));
 		std::list<DestructItem> pairs;
 		int index = 0;
+		auto subMetaDestruct = node->new_ptr<TableLit_t>();
 		for (auto pair : *tableItems) {
 			switch (pair->getId()) {
 				case id<Exp_t>(): {
@@ -1477,7 +1558,8 @@ private:
 						auto subPairs = destructFromExp(pair);
 						for (auto& p : subPairs) {
 							pairs.push_back({p.isVariable, p.name,
-								'[' + std::to_string(index) + ']' + p.structure});
+								'[' + std::to_string(index) + ']' + p.structure,
+								p.defVal, p.isMetatable});
 						}
 					} else {
 						bool lintGlobal = _config.lintGlobalVariable;
@@ -1494,7 +1576,8 @@ private:
 						pairs.push_back({
 							isVariable,
 							varName,
-							'[' + std::to_string(index) + ']'
+							'[' + std::to_string(index) + ']',
+							nullptr
 						});
 					}
 					break;
@@ -1503,9 +1586,9 @@ private:
 					auto vp = static_cast<variable_pair_t*>(pair);
 					auto name = _parser.toString(vp->name);
 					if (Keywords.find(name) != Keywords.end()) {
-						pairs.push_back({true, name, "[\""s + name + "\"]"s});
+						pairs.push_back({true, name, "[\""s + name + "\"]"s, nullptr});
 					} else {
-						pairs.push_back({true, name, '.' + name});
+						pairs.push_back({true, name, '.' + name, nullptr});
 					}
 					break;
 				}
@@ -1532,7 +1615,9 @@ private:
 								pairs.push_back({
 									p.isVariable,
 									p.name,
-									keyName + p.structure
+									keyName + p.structure,
+									p.defVal,
+									p.isMetatable
 								});
 							}
 						} else {
@@ -1549,7 +1634,8 @@ private:
 							pairs.push_back({
 								isVariable,
 								varName,
-								keyName
+								keyName,
+								nullptr
 							});
 						}
 						break;
@@ -1560,7 +1646,9 @@ private:
 							pairs.push_back({
 								p.isVariable,
 								p.name,
-								keyName + p.structure
+								keyName + p.structure,
+								p.defVal,
+								p.isMetatable
 							});
 						}
 					}
@@ -1574,12 +1662,124 @@ private:
 						pairs.push_back({
 							p.isVariable,
 							p.name,
-							'[' + std::to_string(index) + ']' + p.structure
+							'[' + std::to_string(index) + ']' + p.structure,
+							p.defVal,
+							p.isMetatable
 						});
 					}
 					break;
 				}
+				case id<default_pair_t>() : {
+					auto dp = static_cast<default_pair_t*>(pair);
+					std::string keyName, valueStr;
+					if (dp->key) {
+						auto key = dp->key->getByPath<Name_t>();
+						if (!key) throw std::logic_error(_info.errorMessage("invalid key for destructure"sv, dp));
+						keyName = _parser.toString(key);
+						if (!dp->value) valueStr = keyName;
+						if (Keywords.find(keyName) != Keywords.end()) {
+							keyName = "[\""s + keyName + "\"]"s;
+						}
+						else {
+							keyName = "."s + keyName;
+						}
+					}
+					if (auto exp = dp->value.as<Exp_t>()) {
+						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
+						bool lintGlobal = _config.lintGlobalVariable;
+						_config.lintGlobalVariable = false;
+						auto varName = singleVariableFrom(exp);
+						bool isVariable = !varName.empty();
+						if (!isVariable) {
+							str_list temp;
+							transformExp(exp, temp, ExpUsage::Closure);
+							varName = std::move(temp.back());
+						}
+						_config.lintGlobalVariable = lintGlobal;
+						pairs.push_back({
+							isVariable,
+							varName,
+							keyName,
+							dp->defVal
+						});
+					} else {
+						pairs.push_back({
+							true,
+							valueStr,
+							keyName,
+							dp->defVal
+						});
+					}
+					break;
+				}
+				case id<meta_default_pair_t>(): {
+					auto mp = static_cast<meta_default_pair_t*>(pair);
+					auto newPair = pair->new_ptr<default_pair_t>();
+					if (mp->key) {
+						auto key = _parser.toString(mp->key);
+						_buf << "__"sv << key;
+						auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+						newPair->key.set(newKey);
+						if (newPair->value) {
+							newPair->value.set(mp->value);
+						}
+						else {
+							newPair->value.set(toAst<Exp_t>(key, mp->key));
+						}
+					} else {
+						newPair->value.set(mp->value);
+					}
+					newPair->defVal.set(mp->defVal);
+					subMetaDestruct->values.push_back(newPair);
+					break;
+				}
+				case id<meta_variable_pair_t>(): {
+					auto mp = static_cast<meta_variable_pair_t*>(pair);
+					auto name = _parser.toString(mp->name);
+					_buf << "__"sv << name << ':' << name;
+					auto newPair = toAst<normal_pair_t>(clearBuf(), pair);
+					subMetaDestruct->values.push_back(newPair);
+					break;
+				}
+				case id<meta_normal_pair_t>(): {
+					auto mp = static_cast<meta_normal_pair_t*>(pair);
+					auto newPair = pair->new_ptr<normal_pair_t>();
+					if (mp->key) {
+						switch (mp->key->getId()) {
+							case id<Name_t>(): {
+								auto key = _parser.toString(mp->key);
+								_buf << "__"sv << key;
+								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+								newPair->key.set(newKey);
+								break;
+							}
+							case id<Exp_t>():
+								newPair->key.set(mp->key);
+								break;
+							default: YUEE("AST node mismatch", mp->key); break;
+						}
+					}
+					newPair->value.set(mp->value);
+					subMetaDestruct->values.push_back(newPair);
+					break;
+				}
 				default: YUEE("AST node mismatch", pair); break;
+			}
+		}
+		if (!subMetaDestruct->values.empty()) {
+			auto simpleValue = subMetaDestruct->new_ptr<SimpleValue_t>();
+			simpleValue->value.set(subMetaDestruct);
+			auto value = subMetaDestruct->new_ptr<Value_t>();
+			value->item.set(simpleValue);
+			auto subPairs = destructFromExp(newExp(value, subMetaDestruct));
+			for (const auto& p : subPairs) {
+				pairs.push_back({
+					p.isVariable,
+					p.name,
+					".#"s + p.structure,
+					p.defVal,
+					true
+				});
 			}
 		}
 		return pairs;
@@ -1638,6 +1838,26 @@ private:
 				}
 				for (auto item : *dlist) {
 					switch (item->getId()) {
+						case id<meta_default_pair_t>(): {
+							auto mp = static_cast<meta_default_pair_t*>(item);
+							auto newPair = item->new_ptr<default_pair_t>();
+							if (mp->key) {
+								auto key = _parser.toString(mp->key);
+								_buf << "__"sv << key;
+								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+								newPair->key.set(newKey);
+								if (newPair->value) {
+									newPair->value.set(mp->value);
+								} else {
+									newPair->value.set(toAst<Exp_t>(key, mp->key));
+								}
+							} else {
+								newPair->value.set(mp->value);
+							}
+							newPair->defVal.set(mp->defVal);
+							subMetaDestruct->values.push_back(newPair);
+							break;
+						}
 						case id<meta_variable_pair_t>(): {
 							auto mp = static_cast<meta_variable_pair_t*>(item);
 							auto name = _parser.toString(mp->name);
@@ -5342,6 +5562,14 @@ private:
 						}
 						metatableItem.set(mp->value);
 					}
+					break;
+				}
+				case id<default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid use of default value"sv, static_cast<default_pair_t*>(pair)->defVal));
+					break;
+				}
+				case id<meta_default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid use of default value"sv, static_cast<meta_default_pair_t*>(pair)->defVal));
 					break;
 				}
 				default: YUEE("AST node mismatch", pair); break;

@@ -426,6 +426,14 @@ AST_NODE(normal_pair)
 	AST_MEMBER(normal_pair, &key, &value)
 AST_END(normal_pair)
 
+AST_NODE(default_pair)
+	ast_sel<true, Variable_t, KeyName_t> key;
+	ast_ptr<true, Seperator_t> sep;
+	ast_ptr<false, Exp_t> value;
+	ast_ptr<true, Exp_t> defVal;
+	AST_MEMBER(default_pair, &key, &sep, &value, &defVal)
+AST_END(default_pair)
+
 AST_NODE(meta_variable_pair)
 	ast_ptr<true, Variable_t> name;
 	AST_MEMBER(meta_variable_pair, &name)
@@ -436,6 +444,14 @@ AST_NODE(meta_normal_pair)
 	ast_sel<true, Exp_t, TableBlock_t> value;
 	AST_MEMBER(meta_normal_pair, &key, &value)
 AST_END(meta_normal_pair)
+
+AST_NODE(meta_default_pair)
+	ast_sel<false, Variable_t, Name_t> key;
+	ast_ptr<true, Seperator_t> sep;
+	ast_ptr<false, Exp_t> value;
+	ast_ptr<true, Exp_t> defVal;
+	AST_MEMBER(meta_default_pair, &key, &sep, &value, &defVal)
+AST_END(meta_default_pair)
 
 AST_NODE(simple_table)
 	ast_ptr<true, Seperator_t> sep;
@@ -562,21 +578,29 @@ AST_END(Value)
 AST_LEAF(default_value)
 AST_END(default_value)
 
+class default_pair_t;
+class meta_default_pair_t;
+
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, Exp_t, meta_variable_pair_t, meta_normal_pair_t> values;
+	ast_sel_list<false,
+		variable_pair_t, normal_pair_t, Exp_t, default_pair_t,
+		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit)
 
 AST_NODE(TableBlockIndent)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, meta_variable_pair_t, meta_normal_pair_t> values;
+	ast_sel_list<false,
+		variable_pair_t, normal_pair_t, TableBlockIndent_t, default_pair_t,
+		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
 	AST_MEMBER(TableBlockIndent, &sep, &values)
 AST_END(TableBlockIndent)
 
 AST_NODE(TableBlock)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, meta_variable_pair_t, meta_normal_pair_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, default_pair_t,
+		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
 	AST_MEMBER(TableBlock, &sep, &values)
 AST_END(TableBlock)
 

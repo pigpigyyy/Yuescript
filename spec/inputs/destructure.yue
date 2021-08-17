@@ -142,3 +142,32 @@ do
 
 	{:a},b = a\if(123) + t, 123
 
+do
+	{:name = "nameless", :job = "jobless"} = person
+	
+	request = (url, options = {}) ->
+		{
+			:method = "GET"
+			:headers = {}
+			:parameters = {}
+			:payload = ""
+			:ok
+			:err
+			:final
+		} = options
+		res = makeRequest(url, method, parameters, payload, ok, err, final)
+		return res
+	
+	{key1: {key2: value1 = 123}, :key3 = "abc"} = tb
+
+	{#: mt = {__index: {abc: 123}}, #: {:call# = (-> {}), :add#}} = tb
+
+	{x: {#: mtx = {}}, :y, z: zItem, :index# = -> nil} = tb
+
+	{#: {func: a.b(-> 123).c = item?.defVal}} = tb
+
+do
+	{#: mt = {}, sub#: subFunc} = tb.x
+
+do
+	{x: {#: mt = {}, sub#: subFunc}} = tb

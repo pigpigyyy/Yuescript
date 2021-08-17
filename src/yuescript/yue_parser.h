@@ -148,6 +148,7 @@ private:
 	rule CompClause;
 	rule Chain;
 	rule KeyValue;
+	rule KeyValueDef;
 	rule single_string_inner;
 	rule interp;
 	rule double_string_plain;
@@ -289,8 +290,10 @@ private:
 	AST_RULE(Export)
 	AST_RULE(variable_pair)
 	AST_RULE(normal_pair)
+	AST_RULE(default_pair)
 	AST_RULE(meta_variable_pair)
 	AST_RULE(meta_normal_pair)
+	AST_RULE(meta_default_pair)
 	AST_RULE(FnArgDef)
 	AST_RULE(FnArgDefList)
 	AST_RULE(outer_var_shadow)
