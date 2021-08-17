@@ -766,7 +766,7 @@ lua_Number luaV_modf (lua_State *L, lua_Number m, lua_Number n) {
 /*
 ** Shift left operation. (Shift right just negates 'y'.)
 */
-#define luaV_shiftr(x,y)	luaV_shiftl(x,-(y))
+#define luaV_shiftr(x,y)	luaV_shiftl(x,intop(-, 0, y))
 
 lua_Integer luaV_shiftl (lua_Integer x, lua_Integer y) {
   if (y < 0) {  /* shift right? */
@@ -847,8 +847,17 @@ void luaV_finishOp (lua_State *L) {
       luaV_concat(L, total);  /* concat them (may yield again) */
       break;
     }
-    case OP_CLOSE:  case OP_RETURN: {  /* yielded closing variables */
+    case OP_CLOSE: {  /* yielded closing variables */
       ci->u.l.savedpc--;  /* repeat instruction to close other vars. */
+      break;
+    }
+    case OP_RETURN: {  /* yielded closing variables */
+      StkId ra = base + GETARG_A(inst);
+      /* adjust top to signal correct number of returns, in case the
+         return is "up to top" ('isIT') */
+      L->top = ra + ci->u2.nres;
+      /* repeat instruction to close other vars. and complete the return */
+      ci->u.l.savedpc--;
       break;
     }
     default: {
@@ -1156,8 +1165,10 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
     Instruction i;  /* instruction being executed */
     StkId ra;  /* instruction's A register */
     vmfetch();
-// low-level line tracing for debugging Lua
-// printf("line: %d\n", luaG_getfuncline(cl->p, pcRel(pc, cl->p)));
+    #if 0
+      /* low-level line tracing for debugging Lua */
+      printf("line: %d\n", luaG_getfuncline(cl->p, pcRel(pc, cl->p)));
+    #endif
     lua_assert(base == ci->func + 1);
     lua_assert(base <= L->top && L->top < L->stack_last);
     /* invalidate top for instructions not expecting it */
@@ -1625,7 +1636,6 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
           updatetrap(ci);  /* C call; nothing else to be done */
         else {  /* Lua call: run function in this same C frame */
           ci = newci;
-          ci->callstatus = 0;  /* call re-uses 'luaV_execute' */
           goto startfunc;
         }
         vmbreak;
@@ -1637,31 +1647,19 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         int delta = (nparams1) ? ci->u.l.nextraargs + nparams1 : 0;
         if (b != 0)
           L->top = ra + b;
-        else  /* previous instruction set top */
-          b = cast_int(L->top - ra);
+        /* else previous instruction set top */
         savepc(ci);  /* several calls here can raise errors */
         if (TESTARG_k(i)) {
           luaF_closeupval(L, base);  /* close upvalues from current call */
           lua_assert(L->tbclist < base);  /* no pending tbc variables */
           lua_assert(base == ci->func + 1);
         }
-        while (!ttisfunction(s2v(ra))) {  /* not a function? */
-          luaD_tryfuncTM(L, ra);  /* try '__call' metamethod */
-          b++;  /* there is now one extra argument */
-          checkstackGCp(L, 1, ra);
-        }
-        if (!ttisLclosure(s2v(ra))) {  /* C function? */
-          luaD_precall(L, ra, LUA_MULTRET);  /* call it */
+        if (luaD_precall(L, ra, delta2retdel(delta)))  /* Lua function? */
+          goto startfunc;  /* execute the callee */
+        else {  /* C function */
           updatetrap(ci);
-          updatestack(ci);  /* stack may have been relocated */
-          ci->func -= delta;  /* restore 'func' (if vararg) */
-          luaD_poscall(L, ci, cast_int(L->top - ra));  /* finish caller */
-          updatetrap(ci);  /* 'luaD_poscall' can change hooks */
           goto ret;  /* caller returns after the tail call */
         }
-        ci->func -= delta;  /* restore 'func' (if vararg) */
-        luaD_pretailcall(L, ci, ra, b);  /* prepare call frame */
-        goto startfunc;  /* execute the callee */
       }
       vmcase(OP_RETURN) {
         int n = GETARG_B(i) - 1;  /* number of results */
@@ -1670,6 +1668,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
           n = cast_int(L->top - ra);  /* get what is available */
         savepc(ci);
         if (TESTARG_k(i)) {  /* may there be open upvalues? */
+          ci->u2.nres = n;  /* save number of returns */
           if (L->top < ci->top)
             L->top = ci->top;
           luaF_close(L, base, CLOSEKTOP, 1);
