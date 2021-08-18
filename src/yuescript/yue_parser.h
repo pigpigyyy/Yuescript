@@ -148,7 +148,6 @@ private:
 	rule CompClause;
 	rule Chain;
 	rule KeyValue;
-	rule KeyValueDef;
 	rule single_string_inner;
 	rule interp;
 	rule double_string_plain;

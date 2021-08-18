@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.8.0"sv;
+const std::string_view version = "0.8.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1671,6 +1671,36 @@ private:
 				}
 				case id<default_pair_t>() : {
 					auto dp = static_cast<default_pair_t*>(pair);
+					if (auto exp = dp->key.as<Exp_t>()) {
+						++index;
+						if (!isAssignable(static_cast<Exp_t*>(exp))) {
+							throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
+						}
+						auto value = singleValueFrom(exp);
+						auto item = value->item.get();
+						if (ast_is<simple_table_t>(item) ||
+							item->getByPath<TableLit_t>()) {
+							throw std::logic_error(_info.errorMessage("invalid use of default value"sv, dp->defVal));
+						} else {
+							bool lintGlobal = _config.lintGlobalVariable;
+							_config.lintGlobalVariable = false;
+							auto varName = singleVariableFrom(exp);
+							bool isVariable = !varName.empty();
+							if (!isVariable) {
+								str_list temp;
+								transformExp(exp, temp, ExpUsage::Closure);
+								varName = std::move(temp.back());
+							}
+							_config.lintGlobalVariable = lintGlobal;
+							pairs.push_back({
+								isVariable,
+								varName,
+								'[' + std::to_string(index) + ']',
+								dp->defVal
+							});
+						}
+						break;
+					}
 					std::string keyName, valueStr;
 					if (dp->key) {
 						auto key = dp->key->getByPath<Name_t>();
@@ -1679,8 +1709,7 @@ private:
 						if (!dp->value) valueStr = keyName;
 						if (Keywords.find(keyName) != Keywords.end()) {
 							keyName = "[\""s + keyName + "\"]"s;
-						}
-						else {
+						} else {
 							keyName = "."s + keyName;
 						}
 					}

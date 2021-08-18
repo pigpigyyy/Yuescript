@@ -171,3 +171,10 @@ do
 
 do
 	{x: {#: mt = {}, sub#: subFunc}} = tb
+
+do
+	{a = 1, b = 2, c: {d.e = 3}} = tb
+
+	for {left = "null", right = false} in *tuples
+		print left, right
+

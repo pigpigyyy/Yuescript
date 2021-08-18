@@ -427,7 +427,7 @@ AST_NODE(normal_pair)
 AST_END(normal_pair)
 
 AST_NODE(default_pair)
-	ast_sel<true, Variable_t, KeyName_t> key;
+	ast_sel<true, Variable_t, KeyName_t, Exp_t> key;
 	ast_ptr<true, Seperator_t> sep;
 	ast_ptr<false, Exp_t> value;
 	ast_ptr<true, Exp_t> defVal;

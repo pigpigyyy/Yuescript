@@ -465,7 +465,7 @@ YueParser::YueParser() {
 		and_(expr('[')) >> LuaString |
 		and_(expr('{')) >> TableLit);
 
-	TableValue = KeyValueDef | Exp;
+	TableValue = ((KeyValue | Exp) >> not_(sym('='))) | meta_default_pair | default_pair;
 
 	table_lit_lines = SpaceBreak >> TableLitLine >> *(-sym(',') >> SpaceBreak >> TableLitLine) >> -sym(',');
 
@@ -538,7 +538,7 @@ YueParser::YueParser() {
 	symx(':') >> not_(':') >>
 	(Exp | TableBlock | +SpaceBreak >> Exp);
 
-	default_pair = (sym(':') >> Variable >> not_('#') >> Seperator | KeyName >> symx(':') >> Seperator >> Exp) >> sym('=') >> Exp;
+	default_pair = (sym(':') >> Variable >> not_('#') >> Seperator | KeyName >> symx(':') >> Seperator >> Exp | Exp >> Seperator) >> sym('=') >> Exp;
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
 
@@ -548,8 +548,6 @@ YueParser::YueParser() {
 	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | -Name >> expr("#:") >> Seperator >> Exp) >> sym('=') >> Exp;
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
-	KeyValueDef = (variable_pair | normal_pair | meta_variable_pair | meta_normal_pair) >> not_(sym('=')) | default_pair | meta_default_pair;
-
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
 	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (Exp | TableBlock));
 
