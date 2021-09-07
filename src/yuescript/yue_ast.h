@@ -99,6 +99,7 @@ AST_END(NameList)
 
 class ExpListLow_t;
 class TableBlock_t;
+class Attrib_t;
 
 AST_NODE(local_values)
 	ast_ptr<true, NameList_t> nameList;
@@ -117,8 +118,11 @@ AST_END(Local)
 
 class Assign_t;
 
+AST_LEAF(Attrib)
+AST_END(Attrib)
+
 AST_NODE(LocalAttrib)
-	ast_ptr<true, Name_t> attrib;
+	ast_ptr<true, Attrib_t> attrib;
 	ast_ptr<true, NameList_t> nameList;
 	ast_ptr<true, Assign_t> assign;
 	AST_MEMBER(LocalAttrib, &attrib, &nameList, &assign)
@@ -795,7 +799,7 @@ AST_NODE(BlockEnd)
 AST_END(BlockEnd)
 
 AST_NODE(File)
-	ast_ptr<true, Block_t> block;
+	ast_ptr<false, Block_t> block;
 	AST_MEMBER(File, &block)
 AST_END(File)
 

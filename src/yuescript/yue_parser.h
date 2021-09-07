@@ -205,6 +205,7 @@ private:
 	AST_RULE(NameList)
 	AST_RULE(local_flag)
 	AST_RULE(local_values)
+	AST_RULE(Attrib)
 	AST_RULE(Local)
 	AST_RULE(LocalAttrib);
 	AST_RULE(colon_import_name)

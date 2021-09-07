@@ -28,8 +28,8 @@ std::unordered_set<std::string> Keywords = {
 	"or", "repeat", "return", "then", "true",
 	"until", "while", // Lua keywords
 	"as", "class", "continue", "export", "extends",
-	"from", "global", "import", "macro", "switch",
-	"unless", "using", "when", "with" // Yue keywords
+	"from", "global", "import", "is", "macro",
+	"switch", "unless", "using", "when", "with" // Yue keywords
 };
 
 YueParser::YueParser() {
@@ -179,15 +179,10 @@ YueParser::YueParser() {
 
 	local_flag = expr('*') | expr('^');
 	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
+	Attrib = (expr("const") | expr("close")) >> not_(AlphaNum);
 	Local = key("local") >> (Space >> local_flag | local_values);
 
-	LocalAttrib = and_(key(pl::user(Name, [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
-		auto it = Keywords.find(st->buffer);
-		st->buffer.clear();
-		return it == Keywords.end();
-	})) >> NameList >> sym('=') >> not_('=')) >> Space >> Name >> NameList >> Assign;
+	LocalAttrib = Space >> Attrib >> NameList >> Assign;
 
 	colon_import_name = sym('\\') >> Space >> Variable;
 	ImportName = colon_import_name | Space >> Variable;
@@ -626,8 +621,8 @@ YueParser::YueParser() {
 	Statement = (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
-		Space >> BreakLoop | Label | Goto | Backcall |
-		LocalAttrib | PipeBody | ExpListAssign
+		Space >> BreakLoop | Label | Goto | LocalAttrib |
+		Backcall | PipeBody | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
@@ -639,7 +634,7 @@ YueParser::YueParser() {
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
 	BlockEnd = Block >> -(+Break >> Space >> and_(Stop)) >> Stop;
-	File = White >> -Shebang >> Block >> -(+Break >> Space >> and_(eof())) >> eof();
+	File = White >> -Shebang >> -Block >> White >> eof();
 }
 
 ParseInfo YueParser::parse(std::string_view codes, rule& r) {
