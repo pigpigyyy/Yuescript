@@ -324,7 +324,7 @@ local function getYueLineNumber(fname, line)
 		source = yueCompiled["@="..fname]
 	end
 	if not source then
-		local name_path = fname:gsub("%.", yue.dirsep)
+		local name_path = fname:gsub("%.", yue.options.dirsep)
 		local file_exist, file_path
 		for path in package.path:gmatch("[^;]+") do
 			file_path = path:gsub("?", name_path)
