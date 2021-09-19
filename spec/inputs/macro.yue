@@ -1,5 +1,5 @@
 $ ->
-	package.yuepath = "?.yue;./spec/inputs/?.yue"
+	package.path = "?.lua;./spec/inputs/?.lua"
 
 import "macro-export" as {
 	$, -- import all macros

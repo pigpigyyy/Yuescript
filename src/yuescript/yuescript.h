@@ -205,6 +205,7 @@ local function p(...)
 	end
 	print(concat(args))
 end
+yue.find_modulepath = find_modulepath
 yue.insert_loader = insert_loader
 yue.dofile = yue_dofile
 yue.loadfile = yue_loadfile
