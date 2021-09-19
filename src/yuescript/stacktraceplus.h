@@ -398,9 +398,9 @@ function _M.stacktrace(thread, message, level)
 		end
 		dumper:add("\r\n}")
 	elseif type(message) == "string" then
-		local fname, line, msg = message:match('(.+):(%d+): (.*)$')
+		local fname, line, msg = message:match('([^\n]+):(%d+): (.*)$')
 		if fname then
-			local nfname, nline, nmsg = fname:match('(.+):(%d+): (.*)$')
+			local nfname, nmsg = fname:match('(.+):%d+: (.*)$')
 			if nfname then
 				fname = nmsg
 			end

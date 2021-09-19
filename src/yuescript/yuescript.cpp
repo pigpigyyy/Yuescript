@@ -19,9 +19,12 @@ static void init_yuescript(lua_State* L) {
 	if (luaL_loadbuffer(L, yuescriptCodes, sizeof(yuescriptCodes) / sizeof(yuescriptCodes[0]) - 1, "=(yuescript)") != 0) {
 		std::string err = std::string("failed to load yuescript module.\n") + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
-	} else if (lua_pcall(L, 0, 0, 0) != 0) {
-		std::string err = std::string("failed to init yuescript module.\n") + lua_tostring(L, -1);
-		luaL_error(L, err.c_str());
+	} else {
+		lua_insert(L, -2);
+		if (lua_pcall(L, 1, 0, 0) != 0) {
+			std::string err = std::string("failed to init yuescript module.\n") + lua_tostring(L, -1);
+			luaL_error(L, err.c_str());
+		}
 	}
 }
 
@@ -115,24 +118,29 @@ static int yuetolua(lua_State* L) {
 	return 3;
 }
 
+static const luaL_Reg yuelib[] = {
+	{"to_lua", yuetolua},
+	{"version", nullptr},
+	{"options", nullptr},
+	{"load_stacktraceplus", nullptr},
+	{nullptr, nullptr}
+};
+
 int luaopen_yue(lua_State* L) {
-	lua_getglobal(L, "package"); // package
-	lua_getfield(L, -1, "loaded"); // package loaded
-	lua_createtable(L, 0, 0); // package loaded yue
-	lua_pushcfunction(L, yuetolua); // package loaded yue func
-	lua_setfield(L, -2, "to_lua"); // yue["to_lua"] = func, package loaded yue
-	lua_pushlstring(L, &yue::version.front(), yue::version.size()); // package loaded yue version
-	lua_setfield(L, -2, "version"); // yue["version"] = version, package loaded yue
-	lua_createtable(L, 0, 0); // package loaded yue options
-	lua_pushlstring(L, &yue::extension.front(), yue::extension.size()); // package loaded yue options ext
-	lua_setfield(L, -2, "extension"); // options["extension"] = ext, package loaded yue options
-	lua_setfield(L, -2, "options"); // yue["options"] = options, package loaded yue
-	lua_pushcfunction(L, init_stacktraceplus); // package loaded yue func1
-	lua_setfield(L, -2, "load_stacktraceplus"); // yue["load_stacktraceplus"] = func1, package loaded yue
-	lua_setfield(L, -2, "yue"); // loaded["yue"] = yue, package loaded
-	lua_pop(L, 2); // empty
-	init_yuescript(L);
-	return 0;
+	luaL_newlib(L, yuelib); // yue
+	lua_pushlstring(L, &yue::version.front(), yue::version.size()); // yue version
+	lua_setfield(L, -2, "version"); // yue["version"] = version, yue
+	lua_createtable(L, 0, 0); // yue options
+	lua_pushlstring(L, &yue::extension.front(), yue::extension.size()); // yue options ext
+	lua_setfield(L, -2, "extension"); // options["extension"] = ext, yue options
+	lua_pushliteral(L, LUA_DIRSEP);
+	lua_setfield(L, -2, "dirsep"); // options["dirsep"] = dirsep, yue options
+	lua_setfield(L, -2, "options"); // yue["options"] = options, yue
+	lua_pushcfunction(L, init_stacktraceplus); // yue func1
+	lua_setfield(L, -2, "load_stacktraceplus"); // yue["load_stacktraceplus"] = func1, yue
+	lua_pushvalue(L, -1); // yue yue
+	init_yuescript(L); // yue
+	return 1;
 }
 
 } // extern "C"

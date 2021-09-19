@@ -37,7 +37,8 @@ int luaopen_yue(lua_State* L);
 static void openlibs(void* state) {
 	lua_State* L = static_cast<lua_State*>(state);
 	luaL_openlibs(L);
-	luaopen_yue(L);
+	luaL_requiref(L, "yue", luaopen_yue, 1);
+	lua_pop(L, 1);
 }
 
 void pushYue(lua_State* L, std::string_view name) {
