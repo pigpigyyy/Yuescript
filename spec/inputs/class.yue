@@ -229,4 +229,6 @@ do
 class extends lapis.Application
 	"/": => json: { status: true }
 
+class A using B, C, D
+
 nil

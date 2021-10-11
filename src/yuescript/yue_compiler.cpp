@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.8.3"sv;
+const std::string_view version = "0.8.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5039,6 +5039,16 @@ private:
 		} else {
 			temp.back() += "{ }"s + nll(classDecl);
 		}
+		if (classDecl->mixes) {
+			auto mixin = getUnusedName("_mixin_");
+			auto key = getUnusedName("_key_");
+			auto val = getUnusedName("_val_");
+			auto mixins = _parser.toString(classDecl->mixes);
+			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
+			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base\n"sv;
+			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if not "sv << key << "\\match\"^__\""sv;
+			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
+		}
 		temp.push_back(indent() + baseVar + ".__index = "s + baseVar + nll(classDecl));
 		str_list tmp;
 		if (usage == ExpUsage::Assignment) {
@@ -5052,9 +5062,9 @@ private:
 		if (extend) {
 			_buf << indent() << "setmetatable("sv << baseVar << ", "sv << parentVar << ".__base)"sv << nll(classDecl);
 		}
-		_buf << indent() << classVar << " = " << globalVar("setmetatable"sv, classDecl) << "({"sv << nll(classDecl);
+		_buf << indent() << classVar << " = "sv << globalVar("setmetatable"sv, classDecl) << "({"sv << nll(classDecl);
 		if (!builtins.empty()) {
-			_buf << join(builtins) << ","sv << nll(classDecl);
+			_buf << join(builtins) << ',' << nll(classDecl);
 		} else {
 			if (extend) {
 				_buf << indent(1) << "__init = function(self, ...)"sv << nll(classDecl);

@@ -623,8 +623,9 @@ AST_END(ClassBlock)
 AST_NODE(ClassDecl)
 	ast_ptr<false, Assignable_t> name;
 	ast_ptr<false, Exp_t> extend;
+	ast_ptr<false, ExpList_t> mixes;
 	ast_ptr<false, ClassBlock_t> body;
-	AST_MEMBER(ClassDecl, &name, &extend, &body)
+	AST_MEMBER(ClassDecl, &name, &extend, &mixes, &body)
 AST_END(ClassDecl)
 
 AST_NODE(global_values)

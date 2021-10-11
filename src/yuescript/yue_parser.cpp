@@ -492,7 +492,8 @@ YueParser::YueParser() {
 	ClassDecl =
 		key("class") >> not_(expr(':')) >>
 		-Assignable >>
-		-(key("extends")  >> PreventIndent >> ensure(Exp, PopIndent)) >>
+		-(key("extends") >> PreventIndent >> ensure(Exp, PopIndent)) >>
+		-(key("using") >> PreventIndent >> ensure(ExpList, PopIndent)) >>
 		-ClassBlock;
 
 	global_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
