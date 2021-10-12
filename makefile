@@ -29,7 +29,11 @@ DESTDIR = /
 INSTALL_PREFIX = usr/local
 # Test
 TEST_INPUT = ./spec/inputs
-TEST_OUTPUT = ./spec/outputs
+TEST_OUTPUT = ./spec/generated
+GEN_OUTPUT = ./spec/outputs
+
+PLAT = macos
+
 #### END PROJECT SETTINGS ####
 
 # Optionally you may move the section above to a separate config.mk file, and
@@ -54,6 +58,7 @@ endif
 # Add platform related linker flag
 ifneq ($(UNAME_S),Darwin)
 	LINK_FLAGS += -lstdc++fs -Wl,-E
+	PLAT = linux
 endif
 
 # Function used to check variables. Use on the command line:
@@ -179,7 +184,7 @@ else
 	@echo "Beginning release build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) generic -C $(SRC_PATH)/3rdParty/lua
+	@$(MAKE) $(PLAT) -C $(SRC_PATH)/3rdParty/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory
@@ -231,7 +236,6 @@ dirs:
 	@echo "Creating directories"
 	@mkdir -p $(dir $(OBJECTS))
 	@mkdir -p $(BIN_PATH)
-	@mkdir -p $(TEST_OUTPUT)
 
 # Installs to the set path
 .PHONY: install
@@ -254,16 +258,29 @@ clean:
 	@echo "Deleting directories"
 	@$(RM) -r build
 	@$(RM) -r bin
-	@echo "Deleting generated Lua codes"
 	@$(RM) -r $(TEST_OUTPUT)
 
 # Test Yuescript compiler
 .PHONY: test
 test: release
+	@mkdir -p $(TEST_OUTPUT)
 	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) -tl_enabled=true
 	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(TEST_OUTPUT)/teal-lang.lua
+	@echo -en "Compile time: "
+	@$(END_TIME)
+	@./$(BIN_NAME) -e "$$(printf "r = io.popen('git diff --no-index $(TEST_OUTPUT) $(GEN_OUTPUT) | head -5')\\\\read '*a'\nif r ~= ''\n print r\n os.exit 1")"
+	@$(RM) -r $(TEST_OUTPUT)
+	@echo "Done!"
+
+# Test Yuescript compiler
+.PHONY: gen
+gen: release
+	@echo "Compiling Yuescript codes..."
+	@$(START_TIME)
+	@./$(BIN_NAME) $(TEST_INPUT) -t $(GEN_OUTPUT) -tl_enabled=true
+	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(GEN_OUTPUT)/teal-lang.lua
 	@echo -en "Compile time: "
 	@$(END_TIME)
 

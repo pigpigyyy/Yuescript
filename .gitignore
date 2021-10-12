@@ -2,7 +2,6 @@ yue
 !src/yuescript/
 build
 build.luarocks
-spec/outputs
 yuescript-*.rock*
 !yuescript-dev-1.rockspec
 .vs
