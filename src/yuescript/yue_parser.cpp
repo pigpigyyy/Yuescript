@@ -323,7 +323,8 @@ YueParser::YueParser() {
 		expr("&") |
 		expr("|") |
 		expr(">>") |
-		expr("<<");
+		expr("<<") |
+		expr("??");
 
 	Update = Space >> update_op >> expr("=") >> Exp;
 
@@ -360,7 +361,7 @@ YueParser::YueParser() {
 		expr("//") |
 		set("+-*/%><|&~");
 	exp_op_value = Space >> BinaryOperator >> *SpaceBreak >> pipe_exp;
-	Exp = Seperator >> pipe_exp >> *exp_op_value;
+	Exp = Seperator >> pipe_exp >> *exp_op_value >> -(Space >> expr("??") >> Exp);
 
 	DisableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -424,7 +425,7 @@ YueParser::YueParser() {
 	Metatable = expr('#');
 	Metamethod = Name >> expr('#');
 
-	existential_op = expr('?');
+	existential_op = expr('?') >> not_(expr('?'));
 	chain_call = (Callable | String) >> -existential_op >> ChainItems;
 	chain_item = and_(set(".\\")) >> ChainItems;
 	chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;

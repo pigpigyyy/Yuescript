@@ -1,0 +1,40 @@
+do
+	a = b ?? c
+
+do
+	:a = b ?? c
+
+do
+	a = func!
+	a ??= false
+
+do
+	a ??= func!
+
+do
+	local a, b, c, d, e
+	a = b ?? c ?? d ?? e
+
+do
+	a = b ?? c ?? d ?? e
+
+do
+	func x ?? "hello"
+
+do
+	with funcA! ?? funcB!
+		print .field
+
+do
+	a = 1 + 2 + b ?? c + 3 + 4
+
+do
+	a = 1 + 2 + (b ?? c) + 3 + 4
+
+do
+	:a, :b = func!
+	a or= 1
+	b ??= c ?? 2
+
+nil
+

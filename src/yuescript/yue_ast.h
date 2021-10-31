@@ -404,7 +404,8 @@ AST_NODE(Exp)
 	ast_ptr<true, Seperator_t> sep;
 	ast_list<true, unary_exp_t> pipeExprs;
 	ast_list<false, exp_op_value_t> opValues;
-	AST_MEMBER(Exp, &sep, &pipeExprs, &opValues)
+	ast_ptr<false, Exp_t> nilCoalesed;
+	AST_MEMBER(Exp, &sep, &pipeExprs, &opValues, &nilCoalesed)
 AST_END(Exp)
 
 class Parens_t;

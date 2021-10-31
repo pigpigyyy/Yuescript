@@ -56,11 +56,13 @@ do
 	_with_0:callMethod():chainCall()
 	_with_0:callMethod():chainCall()
 	_with_0:chainCall()
-	local _exp_0 = _with_0.itemFieldB:getValue()
-	if "Valid" == _exp_0 or _with_0:getItemState() == _exp_0 then
-		_with_0:itemMethodA():getValue()
-	else
-		_with_0:itemMethodB():getValue()
+	do
+		local _exp_0 = _with_0.itemFieldB:getValue()
+		if "Valid" == _exp_0 or _with_0:getItemState() == _exp_0 then
+			_with_0:itemMethodA():getValue()
+		else
+			_with_0:itemMethodB():getValue()
+		end
 	end
 	local a
 	if _with_0.itemFieldC then

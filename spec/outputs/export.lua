@@ -65,22 +65,26 @@ y = function()
 	local k = 100
 end
 _module_0["y"] = y
-local _exp_0 = h
-if 100 == _exp_0 or 150 == _exp_0 then
-	_module_0[#_module_0 + 1] = 200
-elseif 200 == _exp_0 then
-	_module_0[#_module_0 + 1] = 300
-else
-	_module_0[#_module_0 + 1] = 0
+do
+	local _exp_0 = h
+	if 100 == _exp_0 or 150 == _exp_0 then
+		_module_0[#_module_0 + 1] = 200
+	elseif 200 == _exp_0 then
+		_module_0[#_module_0 + 1] = 300
+	else
+		_module_0[#_module_0 + 1] = 0
+	end
 end
 local Constant
-local _exp_1 = value
-if "good" == _exp_1 then
-	Constant = 1
-elseif "better" == _exp_1 then
-	Constant = 2
-elseif "best" == _exp_1 then
-	Constant = 3
+do
+	local _exp_0 = value
+	if "good" == _exp_0 then
+		Constant = 1
+	elseif "better" == _exp_0 then
+		Constant = 2
+	elseif "best" == _exp_0 then
+		Constant = 3
+	end
 end
 _module_0["Constant"] = Constant
 local item = func(123)
