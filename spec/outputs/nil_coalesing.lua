@@ -135,4 +135,22 @@ do
 		end
 	end
 end
+do
+	local a
+	do
+		local _exp_0 = 1
+		if _exp_0 ~= nil then
+			a = _exp_0
+		else
+			do
+				local _exp_1 = 2
+				if _exp_1 ~= nil then
+					a = _exp_1
+				else
+					a = 3
+				end
+			end
+		end
+	end
+end
 return nil

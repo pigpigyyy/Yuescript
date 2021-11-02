@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.8.4"sv;
+const std::string_view version = "0.8.5"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -530,6 +530,7 @@ private:
 		}
 		if (!exp) return nullptr;
 		BLOCK_START
+		BREAK_IF(exp->nilCoalesed);
 		BREAK_IF(!exp->opValues.empty());
 		BREAK_IF(exp->pipeExprs.size() != 1);
 		auto unary = static_cast<unary_exp_t*>(exp->pipeExprs.back());
