@@ -38,7 +38,7 @@ inventory =
 apple =
   size: 15
   index#: {color: 0x00ffff}
-p apple.color, apple.#?, apple.index#
+p apple.color, apple.index# if apple.#?
 
 -- js-like export syntax
 export yuescript = "月之脚本"
@@ -70,7 +70,7 @@ inventory =
 apple =
   size: 15
   index#: {color: 0x00ffff}
-p apple.color, apple.#?, apple.index#
+p apple.color, apple.index# if apple.#?
 
 -- js-like export syntax
 export yuescript = "月之脚本"
@@ -160,9 +160,11 @@ Usage: yue [options|files|directories] ...
 &emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**  
 &emsp;&emsp;Execute a Yuescript file:  **yue -e main.yue**
 
+
 ## Macro
 
 ### Common Usage
+
 Macro function is used for evaluating a string in the compile time and insert the generated codes into final compilation.
 
 ```moonscript
@@ -298,7 +300,6 @@ export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
 export macro filter = (items, action)-> "[_ for _ in *#{items} when #{action}]"
 export macro foreach = (items, action)-> "for _ in *#{items}
   #{action}"
-
 -- file main.yue
 -- import function is not available in browser, try it in a real environment
 --[[
@@ -311,9 +312,21 @@ import "utils" as {
 </pre>
 </YueDisplay>
 
+
 ## Operator
 
-All of Lua’s binary and unary operators are available. Additionally **!=** is as an alias for **~=**. And Yuescipt offers some special operator to write more expressive codes.
+All of Lua's binary and unary operators are available. Additionally **!=** is as an alias for **~=**, and either **\\** or **::** can be used to write a chaining function call like `tb\func!` or `tb::func!`. And Yuescipt offers some other special operators to write more expressive codes.
+
+```moonscript
+tb\func! if tb ~= nil
+tb::func! if tb != nil
+```
+<YueDisplay>
+<pre>
+tb\func! if tb ~= nil
+tb::func! if tb != nil
+</pre>
+</YueDisplay>
 
 ### Metatable
 
@@ -373,7 +386,6 @@ print tb.item
 tb = ["value"]#: 123
 tb.index# = tb.#
 print tb.value
-
 tb.# = __index: {item: "hello"}
 print tb.item
 </pre>
@@ -459,6 +471,27 @@ readFile "example.txt"
   |> print
 </pre>
 </YueDisplay>
+
+### Nil Coalescing
+
+The nil-coalescing operator **??** returns the value of its left-hand operand if it isn't **nil**; otherwise, it evaluates the right-hand operand and returns its result. The **??** operator doesn't evaluate its right-hand operand if the left-hand operand evaluates to non-nil.
+```moonscript
+local a, b, c, d
+a = b ?? c ?? d
+func a ?? {}
+
+a ??= false
+```
+<YueDisplay>
+<pre>
+local a, b, c, d
+a = b ?? c ?? d
+func a ?? {}
+
+a ??= false
+</pre>
+</YueDisplay>
+
 
 ## Module
 
@@ -593,9 +626,32 @@ export default ->
 </pre>
 </YueDisplay>
 
+
 ## Whitespace
 
 Yuescript is a whitespace significant language. You have to write some code block in the same indent with space **' '** or tab **'\t'** like function body, value list and some control blocks. And expressions containing different whitespaces might mean different things. Tab is treated like 4 space, but it's better not mix the use of spaces and tabs.
+
+### Multiline Chaining
+
+You can write multi-line chaining function calls with a same indent.
+```moonscript
+Rx.Observable
+  .fromRange 1, 8
+  \filter (x)-> x % 2 == 0
+  \concat Rx.Observable.of 'who do we appreciate'
+  \map (value)-> value .. '!'
+  \subscribe print
+```
+<YueDisplay>
+<pre>
+Rx.Observable
+  .fromRange 1, 8
+  \filter (x)-> x % 2 == 0
+  \concat Rx.Observable.of 'who do we appreciate'
+  \map (value)-> value .. '!'
+  \subscribe print
+</pre>
+</YueDisplay>
 
 ## Assignment
 
@@ -617,6 +673,7 @@ s ..= "world"
 arg or= "default value"
 ```
 <YueDisplay>
+
 <pre>
 hello = "world"
 a, b, c = 1, 2, 3
@@ -649,6 +706,7 @@ do
   B = 2
 ```
 <YueDisplay>
+
 <pre>
 do
   local *
@@ -2457,6 +2515,18 @@ This is effectively the same as import, but we can rename fields we want to extr
 {:mix, :max, random: rand} = math
 </pre>
 </YueDisplay>
+
+You can write default values while doing destructuring like:
+
+```moonscript
+{:name = "nameless", :job = "jobless"} = person
+```
+<YueDisplay>
+<pre>
+{:name = "nameless", :job = "jobless"} = person
+</pre>
+</YueDisplay>
+
 
 ### Destructuring In Other Places
 

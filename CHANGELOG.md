@@ -2,7 +2,7 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
-## v0.8.2
+## v0.8.5
 
 ### Fixed Issues
 
@@ -10,6 +10,38 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
 * Report an error when destructuring nil item.
 
 ### Added Features
+
+* Nil coalescing operator.
+```moonscript
+local a, b, c, d
+a = b ?? c ?? d
+func a ?? {}
+
+a ??= false
+```
+Compiles to:
+```lua
+local a, b, c, d
+if b ~= nil then
+  a = b
+else
+  if c ~= nil then
+    a = c
+  else
+    a = d
+  end
+end
+func((function()
+  if a ~= nil then
+    return a
+  else
+    return { }
+  end
+end)())
+if a == nil then
+  a = false
+end
+```
 
 * New metatable syntax.
   ```moonscript
