@@ -103,6 +103,7 @@ end
 yue_loadstring = function(...)
 	local options, str, chunk_name, mode, env = get_options(...)
 	chunk_name = chunk_name or "=(yuescript.loadstring)"
+	options.module = chunk_name
 	local code, err = yue.to_lua(str, options)
 	if not code then
 		return nil, err
@@ -117,7 +118,7 @@ yue_loadstring = function(...)
 end
 local function yue_loadfile(fname, ...)
 	local text = yue.read_file(fname)
-	return yue_loadstring(text, tostring(fname), ...)
+	return yue_loadstring(text, fname, ...)
 end
 local function yue_dofile(...)
 	local f = assert(yue_loadfile(...))

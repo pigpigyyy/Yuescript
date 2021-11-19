@@ -69,9 +69,9 @@ $foreach $filter($map({1,2,3}, _ * 2), _ > 4), print _
 
 val = $pipe(
 	{1, 2, 3}
-	$map(_ * 2)
-	$filter(_ > 4)
-	$reduce(0, _1 + _2)
+	[[$map(_ * 2)]]
+	[[$filter(_ > 4)]]
+	[[$reduce(0, _1 + _2)]]
 )
 
 macro plus = (a, b)-> "#{a} + #{b}"
@@ -110,8 +110,8 @@ do
 	a += $get_inner_hygienic!
 	print a
 
-macro lua = (codes)-> {
-	:codes
+macro lua = (code)-> {
+	:code
 	type: "lua"
 }
 
@@ -136,7 +136,7 @@ macro def = (fname, ...)->
 	args = {...}
 	last = table.remove args
 	{
-		codes: $showMacro "def", "local function #{fname}(#{table.concat args, ', '})
+		code: $showMacro "def", "local function #{fname}(#{table.concat args, ', '})
 	#{last}
 end"
 		type: "lua"
@@ -155,7 +155,7 @@ $def sel, a, b, c, [[
 $def dummy,[[]]
 
 macro insertComment = (text)-> {
-	codes: "-- #{text\match '[\'"](.*)[\'"]'}"
+	code: "-- #{text\match '[\'"](.*)[\'"]'}"
 	type: "lua"
 }
 
@@ -239,7 +239,7 @@ macro chainC = (...)->
 		else
 			callable = itemCodes
 	{
-		codes: $showMacro "chainC", callable
+		code: $showMacro "chainC", callable
 		type: "lua"
 	}
 
@@ -253,7 +253,27 @@ $chainC(
 	Destroy!
 )
 
+macro tb = -> "{'abc', a:123, call#:=> 998}"
+print $tb[1], $tb.a, ($tb)!, $tb!
+
+print "current line: #{ $LINE }"
+
+macro todoInner = (module, line, msg)->
+	print "TODO#{msg and ': ' .. msg or ''} in file #{module}, at line #{line}"
+	{
+		code: "-- TODO#{msg and ': ' .. msg or ''}"
+		type: "lua"
+	}
+
+macro todo = (msg)->
+	if msg
+		"$todoInner $MODULE, $LINE, #{msg}"
+	else
+		"$todoInner $MODULE, $LINE"
+
+$todo
+
 macro implicitReturnMacroIsAllowed = -> "print 'abc'\n123"
 
-$implicitReturnMacroIsAllowed!
+$implicitReturnMacroIsAllowed
 

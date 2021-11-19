@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.8.5"sv;
+const std::string_view version = "0.9.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -68,11 +68,9 @@ public:
 #ifndef YUE_NO_MACRO
 	YueCompilerImpl(lua_State* sharedState,
 		const std::function<void(void*)>& luaOpen,
-		bool sameModule,
-		std::string_view moduleName = {}):
+		bool sameModule):
 		L(sharedState),
-		_luaOpen(luaOpen),
-		_moduleName(moduleName) {
+		_luaOpen(luaOpen) {
 		BLOCK_START
 		BREAK_IF(!sameModule);
 		BREAK_IF(!L);
@@ -210,7 +208,6 @@ private:
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
 	const std::string _newLine = "\n";
-	std::string _moduleName;
 
 	enum class LocalMode {
 		None = 0,
@@ -863,16 +860,10 @@ private:
 
 	bool isMacroChain(ChainValue_t* chainValue) const {
 		const auto& chainList = chainValue->items.objects();
-		BLOCK_START
 		auto callable = ast_cast<Callable_t>(chainList.front());
-		BREAK_IF(!callable);
-		BREAK_IF(!callable->item.is<MacroName_t>());
-		if (chainList.size() == 1 ||
-			!ast_is<Invoke_t,InvokeArgs_t>(*(++chainList.begin()))) {
-			throw std::logic_error(_info.errorMessage("macro expression must be followed by arguments list"sv, callable));
+		if (callable && callable->item.is<MacroName_t>()) {
+			return true;
 		}
-		return true;
-		BLOCK_END
 		return false;
 	}
 
@@ -1052,7 +1043,7 @@ private:
 							}
 						}
 						if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
-							if (isChainValueCall(chainValue)) {
+							if (isChainValueCall(chainValue) || isMacroChain(chainValue)) {
 								transformChainValue(chainValue, out, ExpUsage::Common);
 								break;
 							}
@@ -3139,8 +3130,8 @@ private:
 			throw std::logic_error(_info.errorMessage("failed to generate macro function\n"s + err, macro->macroLit));
 		} // cur true macro
 		lua_remove(L, -2); // cur macro
-		if (exporting && !_moduleName.empty()) {
-			pushModuleTable(_moduleName); // cur macro module
+		if (exporting && _config.exporting && !_config.module.empty()) {
+			pushModuleTable(_config.module); // cur macro module
 			lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro module name
 			lua_pushvalue(L, -3); // cur macro module name macro
 			lua_rawset(L, -3); // cur macro module
@@ -3929,11 +3920,23 @@ private:
 	}
 
 #ifndef YUE_NO_MACRO
+	std::string expandBuiltinMacro(const std::string& name, ast_node* x) {
+		if (name == "LINE"sv) {
+			return std::to_string(x->m_begin.m_line + _config.lineOffset);
+		}
+		if (name == "MODULE"sv) {
+			return _config.module.empty() ? "\"yuescript\""s : '"' + _config.module + '"';
+		}
+		return Empty;
+	}
+
 	std::tuple<std::string,std::string,str_list> expandMacroStr(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
 		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
 		auto macroName = x->name ? _parser.toString(x->name) : Empty;
 		if (!macroName.empty() && !_useModule) {
+			auto code = expandBuiltinMacro(macroName, x);
+			if (!code.empty()) return {Empty, code, {}};
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		}
 		pushCurrentModule(); // cur
@@ -3941,8 +3944,8 @@ private:
 		DEFER(lua_settop(L, top));
 		if (macroName.empty()) {
 			lua_pop(L, 1); // empty
-			auto item = *(++chainList.begin());
 			const node_container* args = nullptr;
+			auto item = *(++chainList.begin());
 			if (auto invoke = ast_cast<Invoke_t>(item)) {
 				args = &invoke->args.objects();
 			} else {
@@ -3993,60 +3996,69 @@ private:
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
 		lua_rawget(L, -2); // cur[macroName], cur macroFunc
 		if (lua_isfunction(L, -1) == 0) {
+			auto code = expandBuiltinMacro(macroName, x);
+			if (!code.empty()) return {Empty, code, {}};
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
 		} // cur macroFunc
 		pushYue("pcall"sv); // cur macroFunc pcall
 		lua_insert(L, -2); // cur pcall macroFunc
-		auto item = *(++chainList.begin());
 		const node_container* args = nullptr;
-		if (auto invoke = ast_cast<Invoke_t>(item)) {
-			args = &invoke->args.objects();
-		} else {
-			args = &ast_to<InvokeArgs_t>(item)->args.objects();
+		if (chainList.size() > 1) {
+			auto item = *(++chainList.begin());
+			if (auto invoke = ast_cast<Invoke_t>(item)) {
+				args = &invoke->args.objects();
+			} else if (auto invoke = ast_cast<InvokeArgs_t>(item)){
+				args = &invoke->args.objects();
+			}
 		}
-		for (auto arg : *args) {
-			std::string str;
-			// check whether arg is reassembled
-			// do some workaround for pipe expression
-			if (ast_is<Exp_t>(arg) && arg->m_begin.m_it == arg->m_end.m_it) {
-				auto exp = static_cast<Exp_t*>(arg);
-				BLOCK_START
-				BREAK_IF(!exp->opValues.empty());
-				auto chainValue = exp->getByPath<unary_exp_t, Value_t, ChainValue_t>();
-				BREAK_IF(!chainValue);
-				BREAK_IF(!isMacroChain(chainValue));
-				BREAK_IF(chainValue->items.size() != 2);
-				str = std::get<1>(expandMacroStr(chainValue));
-				BLOCK_END
-				if (str.empty()) {
-					// exp is reassembled due to pipe expressions
-					// in transform stage, toString(exp) won't be able
-					// to convert its whole text content
-					str = _parser.toString(exp->pipeExprs.front());
+		if (args) {
+			for (auto arg : *args) {
+				std::string str;
+				bool rawString = false;
+				if (auto lstr = ast_cast<LuaString_t>(arg)) {
+					str = _parser.toString(lstr->content);
+					rawString = true;
+				} else {
+					BLOCK_START
+					auto exp = ast_cast<Exp_t>(arg);
+					BREAK_IF(!exp);
+					auto value = singleValueFrom(exp);
+					BREAK_IF(!value);
+					auto lstr = value->getByPath<String_t, LuaString_t>();
+					BREAK_IF(!lstr);
+					str = _parser.toString(lstr->content);
+					rawString = true;
+					BLOCK_END
 				}
-			} else if (auto lstr = ast_cast<LuaString_t>(arg)) {
-				str = _parser.toString(lstr->content);
-			} else {
-				bool multiLineStr = false;
-				BLOCK_START
-				auto exp = ast_cast<Exp_t>(arg);
-				BREAK_IF(!exp);
-				auto value = singleValueFrom(exp);
-				BREAK_IF(!value);
-				auto lstr = value->getByPath<String_t, LuaString_t>();
-				BREAK_IF(!lstr);
-				str = _parser.toString(lstr->content);
-				multiLineStr = true;
-				BLOCK_END
-				if (!multiLineStr) {
+				if (!rawString && str.empty()) {
+					// check whether arg is reassembled
+					// do some workaround for pipe expression
+					if (ast_is<Exp_t>(arg)) {
+						auto exp = static_cast<Exp_t*>(arg);
+						BLOCK_START
+						BREAK_IF(!exp->opValues.empty());
+						auto chainValue = exp->getByPath<unary_exp_t, Value_t, ChainValue_t>();
+						BREAK_IF(!chainValue);
+						BREAK_IF(!isMacroChain(chainValue));
+						str = std::get<1>(expandMacroStr(chainValue));
+						BLOCK_END
+						if (str.empty() && arg->m_begin.m_it == arg->m_end.m_it) {
+							// exp is reassembled due to pipe expressions
+							// in transform stage, toString(exp) won't be able
+							// to convert its whole text content
+							str = _parser.toString(exp->pipeExprs.front());
+						}
+					}
+				}
+				if (!rawString && str.empty()) {
 					str = _parser.toString(arg);
 				}
-			}
-			Utils::trim(str);
-			Utils::replace(str, "\r\n"sv, "\n"sv);
-			lua_pushlstring(L, str.c_str(), str.size());
-		} // cur pcall macroFunc args...
-		bool success = lua_pcall(L, static_cast<int>(args->size()) + 1, 2, 0) == 0;
+				Utils::trim(str);
+				Utils::replace(str, "\r\n"sv, "\n"sv);
+				lua_pushlstring(L, str.c_str(), str.size());
+			} // cur pcall macroFunc args...
+		}
+		bool success = lua_pcall(L, (args ? static_cast<int>(args->size()) : 0) + 1, 2, 0) == 0;
 		if (!success) { // cur err
 			std::string err = lua_tostring(L, -1);
 			throw std::logic_error(_info.errorMessage("failed to expand macro: "s + err, x));
@@ -4063,11 +4075,11 @@ private:
 		std::string type;
 		str_list localVars;
 		if (lua_istable(L, -1) != 0) {
-			lua_getfield(L, -1, "codes"); // cur res codes
+			lua_getfield(L, -1, "code"); // cur res code
 			if (lua_isstring(L, -1) != 0) {
 				codes = lua_tostring(L, -1);
 			} else {
-				throw std::logic_error(_info.errorMessage("macro table must contain field \"codes\" of string"sv, x));
+				throw std::logic_error(_info.errorMessage("macro table must contain field \"code\" of string"sv, x));
 			}
 			lua_pop(L, 1); // cur res
 			lua_getfield(L, -1, "type"); // cur res type
@@ -4108,7 +4120,7 @@ private:
 		std::string type, codes;
 		str_list localVars;
 		std::tie(type, codes, localVars) = expandMacroStr(chainValue);
-		bool isBlock = (usage == ExpUsage::Common) && (chainList.size() <= 2);
+		bool isBlock = (usage == ExpUsage::Common) && (chainList.size() < 2 || (chainList.size() == 2 && ast_is<Invoke_t, InvokeArgs_t>(chainList.back())));
 		ParseInfo info;
 		if (type == "lua"sv) {
 			if (!isBlock) {
@@ -4161,7 +4173,7 @@ private:
 				if (!isBlock) {
 					ast_ptr<false, Exp_t> exp;
 					exp.set(info.node);
-					if (!exp->opValues.empty() || chainList.size() > 2) {
+					if (!exp->opValues.empty() || (chainList.size() > 2 || (chainList.size() == 2 && !ast_is<Invoke_t, InvokeArgs_t>(chainList.back())))) {
 						auto paren = x->new_ptr<Parens_t>();
 						paren->expr.set(exp);
 						auto callable = x->new_ptr<Callable_t>();
@@ -4169,7 +4181,8 @@ private:
 						auto newChain = x->new_ptr<ChainValue_t>();
 						newChain->items.push_back(callable);
 						auto it = chainList.begin();
-						it++; it++;
+						it++;
+						if (chainList.size() > 1 && ast_is<Invoke_t, InvokeArgs_t>(*it)) it++;
 						for (; it != chainList.end(); ++it) {
 							newChain->items.push_back(*it);
 						}
@@ -6146,12 +6159,14 @@ private:
 						throw std::logic_error(_info.errorMessage("failed to get module text"sv, x));
 					} // cur text
 					std::string text = lua_tostring(L, -1);
-					auto compiler = YueCompilerImpl(L, _luaOpen, false, moduleFullName);
+					auto compiler = YueCompilerImpl(L, _luaOpen, false);
 					YueConfig config;
 					config.lineOffset = 0;
 					config.lintGlobalVariable = false;
 					config.reserveLineNumber = false;
 					config.implicitReturnRoot = _config.implicitReturnRoot;
+					config.module = moduleFullName;
+					config.exporting = true;
 					auto result = compiler.compile(text, config);
 					if (result.codes.empty() && !result.error.empty()) {
 						throw std::logic_error(_info.errorMessage("failed to compile module '"s + moduleName + "\': "s + result.error, x));

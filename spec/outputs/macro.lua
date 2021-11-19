@@ -229,5 +229,36 @@ end
 origin.transform.root.gameObject:Parents():Descendants():SelectEnable():SelectVisible():TagEqual("fx"):Where(function(x)
 	return x.name:EndsWith("(Clone)")
 end):Destroy()
+print((setmetatable({
+	'abc',
+	a = 123,
+}, {
+	__call = function(self)
+		return 998
+	end
+}))[1], (setmetatable({
+	'abc',
+	a = 123,
+}, {
+	__call = function(self)
+		return 998
+	end
+})).a, (setmetatable({
+	'abc',
+	a = 123,
+}, {
+	__call = function(self)
+		return 998
+	end
+}))(), setmetatable({
+	'abc',
+	a = 123,
+}, {
+	__call = function(self)
+		return 998
+	end
+}))
+print("current line: " .. tostring(259))
+-- TODO
 print('abc')
 return 123

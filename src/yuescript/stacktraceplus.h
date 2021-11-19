@@ -335,7 +335,7 @@ local function getYueLineNumber(fname, line)
 		end
 		if file_exist then
 			local codes = yue.read_file(file_path)
-			local yueFile = codes:match("^%s*--%s*%[yue%]:%s*([^\n]*)")
+			local yueFile = codes:match("^%s*--%s*%[.*%]:%s*([^\n]*)")
 			if yueFile then
 				fname = yueFile:gsub("^%s*(.-)%s*$", "%1")
 				source = codes

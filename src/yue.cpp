@@ -429,9 +429,11 @@ int main(int narg, const char** args) {
 				std::string s(
 					(std::istreambuf_iterator<char>(input)),
 					std::istreambuf_iterator<char>());
+				auto conf = config;
+				conf.module = file.first;
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
-					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, config);
+					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
 					auto end = std::chrono::high_resolution_clock::now();
 					if (!result.codes.empty()) {
 						std::chrono::duration<double> diff = end - start;
@@ -451,7 +453,7 @@ int main(int narg, const char** args) {
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
-				auto result = yue::YueCompiler{YUE_ARGS}.compile(s, config);
+				auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
 				if (result.error.empty()) {
 					if (!writeToFile) {
 						return std::tuple{0, file.first, result.codes + '\n'};

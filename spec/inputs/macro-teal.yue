@@ -4,8 +4,8 @@ $ ->
 		options.target_extension = "tl"
 	package.path ..= "?.lua;./spec/lib/?.lua"
 
-macro to_lua = (codes)->
-	"require('yue').to_lua(#{codes}, reserve_line_number:false, same_module:true)"
+macro to_lua = (code)->
+	"require('yue').to_lua(#{code}, reserve_line_number:false, same_module:true)"
 
 macro trim = (name)->
 	"if result = #{name}\\match '[\\'\"](.*)[\\'\"]' then result else #{name}"
@@ -16,12 +16,12 @@ export macro local = (decl, value = nil)->
 	if not (name and type)
 		error "invalid local varaible declaration for \"#{decl}\""
 	value = $to_lua(value)\gsub "^return ", ""
-	codes = if tl_enabled
+	code = if tl_enabled
 		"local #{name}:#{$trim type} = #{value}"
 	else
 		"local #{name} = #{value}"
 	{
-		:codes
+		:code
 		type: "text"
 		locals: {name}
 	}
@@ -37,28 +37,28 @@ export macro function = (decl, value)->
 	_, node = tl.parse_program tokens,{},"macro-function"
 	args = table.concat [arg.tk for arg in *node[1].args],", "
 	value = "(#{args})#{value}"
-	codes = if tl_enabled
+	code = if tl_enabled
 		value = $to_lua(value)\match "function%([^\n]*%)(.*)end"
 		"local function #{name}#{type}\n#{value}\nend"
 	else
 		value = $to_lua(value)\gsub "^return ", ""
 		"local #{name} = #{value}"
 	{
-		:codes
+		:code
 		type: "text"
 		locals: {name}
 	}
 
 export macro record = (name, decl)->
 	import "yue" as {options:{:tl_enabled}}
-	codes = if tl_enabled
+	code = if tl_enabled
 		"local record #{name}
 	#{decl}
 end"
 	else
 		"local #{name} = {}"
 	{
-		:codes
+		:code
 		type: "text"
 		locals: {name}
 	}
@@ -74,14 +74,14 @@ export macro method = (decl, value)->
 	_, node = tl.parse_program tokens,{},"macro-function"
 	args = table.concat [arg.tk for arg in *node[1].args],", "
 	value = "(#{args})->#{value\match "[%-=]>(.*)"}"
-	codes = if tl_enabled
+	code = if tl_enabled
 		value = $to_lua(value)\match "^return function%(.-%)\n(.*)end"
 		"function #{tab}#{sym}#{func}#{type}\n#{value}\nend"
 	else
 		value = $to_lua(value)\gsub "^return ", ""
 		"#{tab}.#{func} = #{value}"
 	{
-		:codes
+		:code
 		type: "text"
 	}
 

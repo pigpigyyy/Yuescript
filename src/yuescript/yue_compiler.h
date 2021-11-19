@@ -28,7 +28,9 @@ struct YueConfig {
 	bool implicitReturnRoot = true;
 	bool reserveLineNumber = true;
 	bool useSpaceOverTab = false;
+	bool exporting = false;
 	int lineOffset = 0;
+	std::string module;
 	Options options;
 };
 
