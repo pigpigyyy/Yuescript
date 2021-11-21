@@ -303,6 +303,7 @@ private:
 	AST_RULE(MacroName)
 	AST_RULE(MacroLit)
 	AST_RULE(Macro)
+	AST_RULE(MacroInPlace)
 	AST_RULE(NameOrDestructure)
 	AST_RULE(AssignableNameList)
 	AST_RULE(InvokeArgs)

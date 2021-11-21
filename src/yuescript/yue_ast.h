@@ -176,7 +176,7 @@ AST_END(ImportTabLit)
 
 AST_NODE(ImportAs)
 	ast_ptr<true, ImportLiteral_t> literal;
-	ast_sel<false, Variable_t, ImportTabLit_t> target;
+	ast_sel<false, Variable_t, ImportTabLit_t, import_all_macro_t> target;
 	AST_MEMBER(ImportAs, &literal, &target)
 AST_END(ImportAs)
 
@@ -691,7 +691,7 @@ AST_NODE(FunLit)
 AST_END(FunLit)
 
 AST_NODE(MacroName)
-	ast_ptr<false, Name_t> name;
+	ast_ptr<true, Name_t> name;
 	AST_MEMBER(MacroName, &name)
 AST_END(MacroName)
 
@@ -700,6 +700,11 @@ AST_NODE(MacroLit)
 	ast_ptr<true, Body_t> body;
 	AST_MEMBER(MacroLit, &argsDef, &body)
 AST_END(MacroLit)
+
+AST_NODE(MacroInPlace)
+	ast_ptr<true, Body_t> body;
+	AST_MEMBER(MacroInPlace, &body)
+AST_END(MacroInPlace)
 
 AST_NODE(Macro)
 	ast_ptr<true, Name_t> name;
@@ -775,8 +780,9 @@ AST_END(statement_sep)
 
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
-		Return_t, Local_t, Global_t, Export_t, Macro_t, BreakLoop_t,
-		Label_t, Goto_t, Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t> content;
+	Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
+	BreakLoop_t, Label_t, Goto_t, Backcall_t, LocalAttrib_t,
+	PipeBody_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;
 	AST_MEMBER(Statement, &content, &appendix, &needSep)

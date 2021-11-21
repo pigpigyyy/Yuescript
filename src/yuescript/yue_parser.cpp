@@ -71,12 +71,12 @@ YueParser::YueParser() {
 	#define sym(str) (Space >> str)
 	#define symx(str) expr(str)
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> Cut)
-	#define key(str) (Space >> str >> not_(AlphaNum))
+	#define key(str) (str >> not_(AlphaNum))
 	#define disable_do(patt) (DisableDo >> ((patt) >> EnableDo | EnableDo >> Cut))
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
 	#define disable_do_chain(patt) (DisableDoChain >> ((patt) >> EnableDoChain | EnableDoChain >> Cut))
 	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
-	#define plain_body_with(str) (-key(str) >> InBlock | key(str) >> Statement)
+	#define plain_body_with(str) (-(Space >> key(str)) >> InBlock | Space >> key(str) >> Statement)
 	#define plain_body (InBlock | Statement)
 
 	Variable = pl::user(Name, [](const item_t& item) {
@@ -182,12 +182,12 @@ YueParser::YueParser() {
 	Attrib = (expr("const") | expr("close")) >> not_(AlphaNum);
 	Local = key("local") >> (Space >> local_flag | local_values);
 
-	LocalAttrib = Space >> Attrib >> NameList >> Assign;
+	LocalAttrib = Attrib >> NameList >> Assign;
 
 	colon_import_name = sym('\\') >> Space >> Variable;
 	ImportName = colon_import_name | Space >> Variable;
 	ImportNameList = Seperator >> *SpaceBreak >> ImportName >> *((+SpaceBreak | sym(',') >> *SpaceBreak) >> ImportName);
-	ImportFrom = ImportNameList >> *SpaceBreak >> key("from") >> Exp;
+	ImportFrom = ImportNameList >> *SpaceBreak >> Space >> key("from") >> Exp;
 
 	import_literal_inner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(AlphaNum | '-');
 	import_literal_chain = Seperator >> import_literal_inner >> *(expr('.') >> import_literal_inner);
@@ -208,11 +208,11 @@ YueParser::YueParser() {
 		-import_tab_lines >>
 		White >> sym('}') | KeyValue >> *(sym(',') >> KeyValue));
 
-	ImportAs = ImportLiteral >> -(key("as") >> (ImportTabLit | Space >> Variable));
+	ImportAs = ImportLiteral >> -(Space >> key("as") >> Space >> (ImportTabLit | Variable | import_all_macro));
 
 	Import = key("import") >> (ImportAs | ImportFrom);
 
-	Label = Space >> expr("::") >> LabelName >> expr("::");
+	Label = expr("::") >> LabelName >> expr("::");
 
 	Goto = key("goto") >> Space >> LabelName;
 
@@ -222,9 +222,9 @@ YueParser::YueParser() {
 
 	WithExp = ExpList >> -Assign;
 
-	With = key("with") >> -existential_op >> disable_do_chain(WithExp) >> plain_body_with("do");
-	SwitchCase = key("when") >> disable_chain(ExpList) >> plain_body_with("then");
-	SwitchElse = key("else") >> plain_body;
+	With = Space >> key("with") >> -existential_op >> disable_do_chain(WithExp) >> plain_body_with("do");
+	SwitchCase = Space >> key("when") >> disable_chain(ExpList) >> plain_body_with("then");
+	SwitchElse = Space >> key("else") >> plain_body;
 
 	SwitchBlock = *EmptyLine >>
 		Advance >> Seperator >>
@@ -233,18 +233,18 @@ YueParser::YueParser() {
 		-(+SpaceBreak >> SwitchElse) >>
 		PopIndent;
 
-	Switch = key("switch") >> disable_do(Exp) >> -key("do")
+	Switch = Space >> key("switch") >> disable_do(Exp) >> -(Space >> key("do"))
 		>> -Space >> Break >> SwitchBlock;
 
 	IfCond = disable_chain(Exp >> -Assign);
-	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> key("elseif") >> IfCond >> plain_body_with("then");
-	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> key("else") >> plain_body;
+	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("elseif") >> IfCond >> plain_body_with("then");
+	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("else") >> plain_body;
 	IfType = (expr("if") | expr("unless")) >> not_(AlphaNum);
 	If = Space >> IfType >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
 
 	WhileType = (expr("while") | expr("until")) >> not_(AlphaNum);
-	While = Space >> WhileType >> disable_do_chain(Exp) >> plain_body_with("do");
-	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> key("until") >> Exp;
+	While = WhileType >> disable_do_chain(Exp) >> plain_body_with("do");
+	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> Space >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> Exp;
 	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
@@ -253,10 +253,10 @@ YueParser::YueParser() {
 
 	for_in = star_exp | ExpList;
 
-	ForEach = key("for") >> AssignableNameList >> key("in") >>
+	ForEach = key("for") >> AssignableNameList >> Space >> key("in") >>
 		disable_do_chain(for_in) >> plain_body_with("do");
 
-	Do = pl::user(key("do"), [](const item_t& item) {
+	Do = pl::user(Space >> key("do"), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		return st->doStack.empty() || st->doStack.top();
 	}) >> Body;
@@ -299,15 +299,15 @@ YueParser::YueParser() {
 		return true;
 	});
 
-	Comprehension = sym('[') >> Exp >> CompInner >> sym(']');
+	Comprehension = sym('[') >> Exp >> Space >> CompInner >> sym(']');
 	comp_value = sym(',') >> Exp;
-	TblComprehension = sym('{') >> Exp >> -comp_value >> CompInner >> sym('}');
+	TblComprehension = sym('{') >> Exp >> -comp_value >> Space >> CompInner >> sym('}');
 
 	CompInner = Seperator >> (CompForEach | CompFor) >> *CompClause;
 	star_exp = sym('*') >> Exp;
-	CompForEach = key("for") >> AssignableNameList >> key("in") >> (star_exp | Exp);
+	CompForEach = key("for") >> AssignableNameList >> Space >> key("in") >> (star_exp | Exp);
 	CompFor = key("for") >> Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
-	CompClause = CompFor | CompForEach | key("when") >> Exp;
+	CompClause = Space >> (CompFor | CompForEach | key("when") >> Exp);
 
 	Assign = sym('=') >> Seperator >> (With | If | Switch | TableBlock | Exp >> *(Space >> set(",;") >> Exp));
 
@@ -491,10 +491,10 @@ YueParser::YueParser() {
 	ClassBlock = +SpaceBreak >> Advance >> Seperator >> ClassLine >> *(+SpaceBreak >> ClassLine) >> PopIndent;
 
 	ClassDecl =
-		key("class") >> not_(expr(':')) >>
+		Space >> key("class") >> not_(expr(':')) >>
 		-Assignable >>
-		-(key("extends") >> PreventIndent >> ensure(Exp, PopIndent)) >>
-		-(key("using") >> PreventIndent >> ensure(ExpList, PopIndent)) >>
+		-(Space >> key("extends") >> PreventIndent >> ensure(Exp, PopIndent)) >>
+		-(Space >> key("using") >> PreventIndent >> ensure(ExpList, PopIndent)) >>
 		-ClassBlock;
 
 	global_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
@@ -507,13 +507,13 @@ YueParser::YueParser() {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->exportCount++;
 		return true;
-	}) >> (pl::user(export_default >> Exp, [](const item_t& item) {
+	}) >> (pl::user(Space >> export_default >> Exp, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		bool isValid = !st->exportDefault && st->exportCount == 1;
 		st->exportDefault = true;
 		return isValid;
 	})
-	| (not_(export_default) >> pl::user(true_(), [](const item_t& item) {
+	| (not_(Space >> export_default) >> pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault && st->exportCount > 1) {
 			return false;
@@ -521,7 +521,7 @@ YueParser::YueParser() {
 			return true;
 		}
 	}) >> ExpList >> -Assign)
-	| Macro) >> not_(Space >> statement_appendix);
+	| Space >> Macro) >> not_(Space >> statement_appendix);
 
 	variable_pair = sym(':') >> Variable >> not_('#');
 
@@ -560,16 +560,17 @@ YueParser::YueParser() {
 		)
 	);
 
-	outer_var_shadow = key("using") >> (NameList | Space >> expr("nil"));
+	outer_var_shadow = Space >> key("using") >> (NameList | Space >> expr("nil"));
 
 	FnArgsDef = sym('(') >> White >> -FnArgDefList >> -outer_var_shadow >> White >> sym(')');
 	fn_arrow = expr("->") | expr("=>");
 	FunLit = -FnArgsDef >> Space >> fn_arrow >> -Body;
 
-	MacroName = expr('$') >> -Name;
+	MacroName = expr('$') >> Name;
 	macro_args_def = sym('(') >> White >> -FnArgDefList >> White >> sym(')');
 	MacroLit = -macro_args_def >> Space >> expr("->") >> Body;
 	Macro = key("macro") >> Space >> Name >> sym('=') >> MacroLit;
+	MacroInPlace = expr('$') >> Space >> expr("->") >> Body;
 
 	NameList = Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable);
 	NameOrDestructure = Space >> Variable | TableLit;
@@ -578,7 +579,7 @@ YueParser::YueParser() {
 	fn_arrow_back = expr('<') >> set("-=");
 	Backcall = -FnArgsDef >> Space >> fn_arrow_back >> Space >> ChainValue;
 
-	PipeBody = Seperator >> Space >> PipeOperator >> unary_exp >> *(+SpaceBreak >> CheckIndent >> Space >> PipeOperator >> unary_exp);
+	PipeBody = Seperator >> PipeOperator >> unary_exp >> *(+SpaceBreak >> CheckIndent >> Space >> PipeOperator >> unary_exp);
 
 	ExpList = Seperator >> Exp >> *(sym(',') >> Exp);
 	ExpListLow = Seperator >> Exp >> *(Space >> set(",;") >> Exp);
@@ -606,24 +607,22 @@ YueParser::YueParser() {
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
 
-	SimpleValue =
-		(Space >> const_value) |
+	SimpleValue = Space >> (const_value |
 		If | Switch | With | ClassDecl | ForEach | For | While | Do |
-		(Space >> unary_value) |
-		TblComprehension | TableLit | Comprehension | FunLit |
-		(Space >> Num);
+		unary_value | TblComprehension | TableLit | Comprehension |
+		FunLit | Num);
 
 	ExpListAssign = ExpList >> -(Update | Assign);
 
-	if_line = key("if") >> Exp >> -Assign;
-	unless_line = key("unless") >> Exp;
+	if_line = Space >> key("if") >> Exp >> -Assign;
+	unless_line = Space >> key("unless") >> Exp;
 
 	statement_appendix = (if_line | unless_line | CompInner) >> Space;
 	statement_sep = and_(*SpaceBreak >> CheckIndent >> Space >> (set("($'\"") | expr("[[") | expr("[=")));
-	Statement = (
+	Statement = Space >> (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
-		Space >> BreakLoop | Label | Goto | LocalAttrib |
+		MacroInPlace | BreakLoop | Label | Goto | LocalAttrib |
 		Backcall | PipeBody | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;

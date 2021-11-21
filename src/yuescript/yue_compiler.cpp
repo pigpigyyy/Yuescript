@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.0"sv;
+const std::string_view version = "0.9.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1007,6 +1007,7 @@ private:
 			case id<Global_t>(): transformGlobal(static_cast<Global_t*>(content), out); break;
 			case id<Export_t>(): transformExport(static_cast<Export_t*>(content), out); break;
 			case id<Macro_t>(): transformMacro(static_cast<Macro_t*>(content), out, false); break;
+			case id<MacroInPlace_t>(): transformMacroInPlace(static_cast<MacroInPlace_t*>(content)); break;
 			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
 			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
@@ -3919,6 +3920,55 @@ private:
 		}
 	}
 
+	void transformMacroInPlace(MacroInPlace_t* macroInPlace) {
+#ifdef YUE_NO_MACRO
+		throw std::logic_error(_info.errorMessage("macro feature not supported"sv, macroInPlace));
+#else // YUE_NO_MACRO
+		auto x = macroInPlace;
+		pushCurrentModule(); // cur
+		int top = lua_gettop(L) - 1;
+		DEFER(lua_settop(L, top));
+		lua_pop(L, 1); // empty
+		auto fcodes = _parser.toString(macroInPlace).substr(1);
+		Utils::trim(fcodes);
+		pushYue("loadstring"sv); // loadstring
+		lua_pushlstring(L, fcodes.c_str(), fcodes.size()); // loadstring codes
+		lua_pushliteral(L, "=(macro in-place)"); // loadstring codes chunk
+		pushOptions(macroInPlace->m_begin.m_line - 1); // loadstring codes chunk options
+		if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), f err
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to load macro codes\n"s + err, x));
+		} // f err
+		if (lua_isnil(L, -2) != 0) { // f == nil, f err
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to load macro codes, at (macro in-place): "s + err, x));
+		}
+		lua_pop(L, 1); // f
+		pushYue("pcall"sv); // f pcall
+		lua_insert(L, -2); // pcall f
+		if (lua_pcall(L, 1, 2, 0) != 0) { // f(), success macroFunc
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to generate macro function\n"s + err, x));
+		} // success res
+		if (lua_toboolean(L, -2) == 0) {
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to generate macro function\n"s + err, x));
+		} // true macroFunc
+		lua_remove(L, -2); // macroFunc
+		pushYue("pcall"sv); // macroFunc pcall
+		lua_insert(L, -2); // pcall macroFunc
+		bool success = lua_pcall(L, 1, 2, 0) == 0;
+		if (!success) { // err
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to expand macro: "s + err, x));
+		} // success err
+		if (lua_toboolean(L, -2) == 0) {
+			std::string err = lua_tostring(L, -1);
+			throw std::logic_error(_info.errorMessage("failed to expand macro: "s + err, x));
+		}
+#endif // YUE_NO_MACRO
+	}
+
 #ifndef YUE_NO_MACRO
 	std::string expandBuiltinMacro(const std::string& name, ast_node* x) {
 		if (name == "LINE"sv) {
@@ -3933,8 +3983,8 @@ private:
 	std::tuple<std::string,std::string,str_list> expandMacroStr(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
 		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
-		auto macroName = x->name ? _parser.toString(x->name) : Empty;
-		if (!macroName.empty() && !_useModule) {
+		auto macroName = _parser.toString(x->name);
+		if (!_useModule) {
 			auto code = expandBuiltinMacro(macroName, x);
 			if (!code.empty()) return {Empty, code, {}};
 			throw std::logic_error(_info.errorMessage("can not resolve macro"sv, x));
@@ -3942,57 +3992,6 @@ private:
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
 		DEFER(lua_settop(L, top));
-		if (macroName.empty()) {
-			lua_pop(L, 1); // empty
-			const node_container* args = nullptr;
-			auto item = *(++chainList.begin());
-			if (auto invoke = ast_cast<Invoke_t>(item)) {
-				args = &invoke->args.objects();
-			} else {
-				args = &ast_to<InvokeArgs_t>(item)->args.objects();
-			}
-			if (args->size() != 1) {
-				throw std::logic_error(_info.errorMessage("in-place macro must be followed by a compile time function"sv, x));
-			}
-			auto fcodes = _parser.toString(args->back());
-			Utils::trim(fcodes);
-			pushYue("loadstring"sv); // loadstring
-			lua_pushlstring(L, fcodes.c_str(), fcodes.size()); // loadstring codes
-			lua_pushliteral(L, "=(macro in-place)"); // loadstring codes chunk
-			pushOptions(args->back()->m_begin.m_line - 1); // loadstring codes chunk options
-			if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), f err
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to load macro codes\n"s + err, x));
-			} // f err
-			if (lua_isnil(L, -2) != 0) { // f == nil, f err
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to load macro codes, at (macro in-place): "s + err, x));
-			}
-			lua_pop(L, 1); // f
-			pushYue("pcall"sv); // f pcall
-			lua_insert(L, -2); // pcall f
-			if (lua_pcall(L, 1, 2, 0) != 0) { // f(), success macroFunc
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to generate macro function\n"s + err, x));
-			} // success res
-			if (lua_toboolean(L, -2) == 0) {
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to generate macro function\n"s + err, x));
-			} // true macroFunc
-			lua_remove(L, -2); // macroFunc
-			pushYue("pcall"sv); // macroFunc pcall
-			lua_insert(L, -2); // pcall macroFunc
-			bool success = lua_pcall(L, 1, 2, 0) == 0;
-			if (!success) { // err
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to expand macro: "s + err, x));
-			} // success err
-			if (lua_toboolean(L, -2) == 0) {
-				std::string err = lua_tostring(L, -1);
-				throw std::logic_error(_info.errorMessage("failed to expand macro: "s + err, x));
-			}
-			return {Empty, Empty, {}};
-		}
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
 		lua_rawget(L, -2); // cur[macroName], cur macroFunc
 		if (lua_isfunction(L, -1) == 0) {
@@ -6097,38 +6096,49 @@ private:
 			auto name = moduleNameFrom(import->literal);
 			import->target.set(toAst<Variable_t>(name, x));
 		}
-		if (auto tabLit = import->target.as<ImportTabLit_t>()) {
-			auto newTab = x->new_ptr<ImportTabLit_t>();
-#ifndef YUE_NO_MACRO
-			bool importAllMacro = false;
+		if (ast_is<import_all_macro_t, ImportTabLit_t>(import->target)) {
+			bool importAllMacro = import->target.is<import_all_macro_t>();
 			std::list<std::pair<std::string,std::string>> macroPairs;
-			for (auto item : tabLit->items.objects()) {
-				switch (item->getId()) {
-					case id<MacroName_t>(): {
-						auto macroName = static_cast<MacroName_t*>(item);
-						auto name = _parser.toString(macroName->name);
-						macroPairs.emplace_back(name, name);
-						break;
+			auto newTab = x->new_ptr<ImportTabLit_t>();
+			if (auto tabLit = import->target.as<ImportTabLit_t>()) {
+				for (auto item : tabLit->items.objects()) {
+					switch (item->getId()) {
+#ifdef YUE_NO_MACRO
+						case id<MacroName_t>():
+						case id<macro_name_pair_t>():
+						case id<import_all_macro_t>(): {
+							throw std::logic_error(_info.errorMessage("macro feature not supported"sv, item));
+							break;
+						}
+#else // YUE_NO_MACRO
+						case id<MacroName_t>(): {
+							auto macroName = static_cast<MacroName_t*>(item);
+							auto name = _parser.toString(macroName->name);
+							macroPairs.emplace_back(name, name);
+							break;
+						}
+						case id<macro_name_pair_t>(): {
+							auto pair = static_cast<macro_name_pair_t*>(item);
+							macroPairs.emplace_back(_parser.toString(pair->key->name), _parser.toString(pair->value->name));
+							break;
+						}
+						case id<import_all_macro_t>():
+							if (importAllMacro) throw std::logic_error(_info.errorMessage("import all macro symbol duplicated"sv, item));
+							importAllMacro = true;
+							break;
+#endif // YUE_NO_MACRO
+						case id<variable_pair_t>():
+						case id<normal_pair_t>():
+						case id<meta_variable_pair_t>():
+						case id<meta_normal_pair_t>():
+						case id<Exp_t>():
+							newTab->items.push_back(item);
+							break;
+						default: YUEE("AST node mismatch", item); break;
 					}
-					case id<macro_name_pair_t>(): {
-						auto pair = static_cast<macro_name_pair_t*>(item);
-						macroPairs.emplace_back(_parser.toString(pair->key->name), _parser.toString(pair->value->name));
-						break;
-					}
-					case id<import_all_macro_t>():
-						if (importAllMacro) throw std::logic_error(_info.errorMessage("import all macro symbol duplicated"sv, item));
-						importAllMacro = true;
-						break;
-					case id<variable_pair_t>():
-					case id<normal_pair_t>():
-					case id<meta_variable_pair_t>():
-					case id<meta_normal_pair_t>():
-					case id<Exp_t>():
-						newTab->items.push_back(item);
-						break;
-					default: YUEE("AST node mismatch", item); break;
 				}
 			}
+#ifndef YUE_NO_MACRO
 			if (importAllMacro || !macroPairs.empty()) {
 				auto moduleName = _parser.toString(import->literal);
 				Utils::replace(moduleName, "'"sv, ""sv);
@@ -6188,21 +6198,8 @@ private:
 				}
 			}
 #else // YUE_NO_MACRO
-			for (auto item : tabLit->items.objects()) {
-				switch (item->getId()) {
-					case id<MacroName_t>():
-					case id<macro_name_pair_t>():
-					case id<import_all_macro_t>(): {
-						throw std::logic_error(_info.errorMessage("macro feature not supported"sv, item));
-						break;
-					}
-					case id<variable_pair_t>():
-					case id<normal_pair_t>():
-					case id<Exp_t>():
-						newTab->items.push_back(item);
-						break;
-					default: YUEE("AST node mismatch", item); break;
-				}
+			if (importAllMacro) {
+				throw std::logic_error(_info.errorMessage("macro feature not supported"sv, import->target));
 			}
 #endif // YUE_NO_MACRO
 			if (newTab->items.empty()) {
@@ -6220,13 +6217,14 @@ private:
 			auto chainValue = x->new_ptr<ChainValue_t>();
 			chainValue->items.push_back(callable);
 			value->item.set(chainValue);
-		} else {
-			auto tabLit = ast_to<ImportTabLit_t>(target);
+		} else if (auto tabLit = ast_cast<ImportTabLit_t>(target)) {
 			auto simpleValue = x->new_ptr<SimpleValue_t>();
 			auto tableLit = x->new_ptr<TableLit_t>();
 			tableLit->values.dup(tabLit->items);
 			simpleValue->value.set(tableLit);
 			value->item.set(simpleValue);
+		} else {
+			return;
 		}
 		auto exp = newExp(value, x);
 		auto assignList = x->new_ptr<ExpList_t>();
