@@ -258,7 +258,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(259))
+print("current line: " .. tostring(261));
 -- TODO
 print('abc')
 return 123

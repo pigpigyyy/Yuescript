@@ -6,6 +6,8 @@ import "macro-export" as {
 	$config:$myconfig, -- rename macro $config to $myconfig
 }
 
+import "macro-todo" as $
+
 $asserts item == nil
 
 $myconfig false
@@ -257,19 +259,6 @@ macro tb = -> "{'abc', a:123, call#:=> 998}"
 print $tb[1], $tb.a, ($tb)!, $tb!
 
 print "current line: #{ $LINE }"
-
-macro todoInner = (module, line, msg)->
-	print "TODO#{msg and ': ' .. msg or ''} in file #{module}, at line #{line}"
-	{
-		code: "-- TODO#{msg and ': ' .. msg or ''}"
-		type: "lua"
-	}
-
-macro todo = (msg)->
-	if msg
-		"$todoInner $MODULE, $LINE, #{msg}"
-	else
-		"$todoInner $MODULE, $LINE"
 
 $todo
 
