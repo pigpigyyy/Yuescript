@@ -7,7 +7,7 @@ export macro todoInner = (module, line, msg)->
 
 export macro todo = (msg)->
 	if msg
-		"$todoInner $MODULE, $LINE, #{msg}"
+		"$todoInner $FILE, $LINE, #{msg}"
 	else
-		"$todoInner $MODULE, $LINE"
+		"$todoInner $FILE, $LINE"
 

@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.1"sv;
+const std::string_view version = "0.9.2"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -3974,7 +3974,7 @@ private:
 		if (name == "LINE"sv) {
 			return std::to_string(x->m_begin.m_line + _config.lineOffset);
 		}
-		if (name == "MODULE"sv) {
+		if (name == "FILE"sv) {
 			return _config.module.empty() ? "\"yuescript\""s : '"' + _config.module + '"';
 		}
 		return Empty;
@@ -6255,8 +6255,8 @@ private:
 		str_list temp;
 		if (expList) {
 			temp.push_back(indent() + "do"s + nll(whileNode));
+			pushScope();
 		}
-		pushScope();
 		auto accumVar = getUnusedName("_accum_"sv);
 		addToScope(accumVar);
 		auto lenVar = getUnusedName("_len_"sv);
@@ -6279,10 +6279,10 @@ private:
 			assignment->expList.set(expList);
 			assignment->action.set(assign);
 			transformAssignment(assignment, temp);
+			popScope();
 		} else {
 			temp.push_back(indent() + "return "s + accumVar + nlr(whileNode));
 		}
-		popScope();
 		if (expList) {
 			temp.push_back(indent() + "end"s + nlr(whileNode));
 		}

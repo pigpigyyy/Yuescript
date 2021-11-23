@@ -262,6 +262,22 @@ print "current line: #{ $LINE }"
 
 $todo
 
+macro skip = -> ""
+
+do
+	print 1
+	<- $skip
+	print 2
+	print 3
+
+macro skip = -> "while false do break"
+
+_ = ->
+	print 1
+	<- $skip
+	print 2
+	print 3
+
 macro implicitReturnMacroIsAllowed = -> "print 'abc'\n123"
 
 $implicitReturnMacroIsAllowed
