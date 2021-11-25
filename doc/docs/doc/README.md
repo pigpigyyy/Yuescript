@@ -168,6 +168,12 @@ Usage: yue [options|files|directories] ...
 Macro function is used for evaluating a string in the compile time and insert the generated codes into final compilation.
 
 ```moonscript
+macro PI2 = -> math.pi * 2
+area = $PI2 * 5
+
+macro HELLO = -> "'hello world'"
+print $HELLO
+
 macro config = (debugging)->
   global debugMode = debugging == "true"
   ""
@@ -191,6 +197,12 @@ if $and f1!, f2!, f3!
 ```
 <YueDisplay>
 <pre>
+macro PI2 = -> math.pi * 2
+area = $PI2 * 5
+
+macro HELLO = -> "'hello world'"
+print $HELLO
+
 macro config = (debugging)->
   global debugMode = debugging == "true"
   ""
@@ -225,15 +237,15 @@ funcA = -> "assign the Yue defined variable"
 -- take care and let Yuescript know the
 -- local variables you declared in Lua code
 macro luaFunc = (var)-> {
-  codes: "local function #{var}() end"
+  code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
 $luaFunc funcB
 funcB = -> "assign the Lua defined variable"
 
-macro lua = (codes)-> {
-  :codes
+macro lua = (code)-> {
+  :code
   type: "lua"
 }
 
@@ -254,7 +266,7 @@ funcA = -> "assign the Yue defined variable"
 -- take care and let Yuescript know the
 -- local variables you declared in Lua codes
 macro luaFunc = (var)-> {
-  codes: "local function #{var}() end"
+  code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
@@ -262,7 +274,7 @@ $luaFunc funcB
 funcB = -> "assign the Lua defined variable"
 
 macro lua = (codes)-> {
-  :codes
+  :code
   type: "lua"
 }
 
