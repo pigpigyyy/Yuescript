@@ -133,7 +133,11 @@ static const luaL_Reg yuelib[] = {
 };
 
 int luaopen_yue(lua_State* L) {
+#if LUA_VERSION_NUM > 501
 	luaL_newlib(L, yuelib); // yue
+#else
+	luaL_register(L, "yue", yuelib); // yue
+#endif
 	lua_pushlstring(L, &yue::version.front(), yue::version.size()); // yue version
 	lua_setfield(L, -2, "version"); // yue["version"] = version, yue
 	lua_createtable(L, 0, 0); // yue options

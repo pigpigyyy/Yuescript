@@ -37,7 +37,12 @@ int luaopen_yue(lua_State* L);
 static void openlibs(void* state) {
 	lua_State* L = static_cast<lua_State*>(state);
 	luaL_openlibs(L);
+#if LUA_VERSION_NUM > 501
 	luaL_requiref(L, "yue", luaopen_yue, 1);
+#else
+	lua_pushcfunction(L, luaopen_yue);
+	lua_call(L, 0, 0);
+#endif
 	lua_pop(L, 1);
 }
 
@@ -238,7 +243,14 @@ int main(int narg, const char** args) {
 			if (success) {
 				if (retCount > 1) {
 					for (int i = 1; i < retCount; ++i) {
+#if LUA_VERSION_NUM > 501
 						std::cout << Val << luaL_tolstring(L, -retCount + i, nullptr) << Stop;
+#else // LUA_VERSION_NUM
+						lua_getglobal(L, "tostring");
+						lua_pushvalue(L, -retCount + i - 1);
+						lua_call(L, 1, 1);
+						std::cout << Val << lua_tostring(L, -1) << Stop;
+#endif // LUA_VERSION_NUM
 						lua_pop(L, 1);
 					}
 				}
