@@ -273,7 +273,7 @@ macro luaFunc = (var)-> {
 $luaFunc funcB
 funcB = -> "assign the Lua defined variable"
 
-macro lua = (codes)-> {
+macro lua = (code)-> {
   :code
   type: "lua"
 }
