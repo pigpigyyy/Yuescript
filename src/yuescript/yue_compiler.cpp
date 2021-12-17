@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.3"sv;
+const std::string_view version = "0.9.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5141,6 +5141,7 @@ private:
 						auto exp = ast_cast<Exp_t>(assign->values.objects().front());
 						BREAK_IF(!exp);
 						auto value = singleValueFrom(exp);
+						BREAK_IF(!value);
 						clsDecl = value->getByPath<SimpleValue_t, ClassDecl_t>();
 						BLOCK_END
 					} else if (auto expList = expListFrom(statement)) {

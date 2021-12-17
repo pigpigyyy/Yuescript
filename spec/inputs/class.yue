@@ -231,4 +231,8 @@ class extends lapis.Application
 
 class A using B, C, D
 
+class Example
+  @field1 = 1
+  @field2 = @field1 + 1
+
 nil
