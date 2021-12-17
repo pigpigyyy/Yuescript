@@ -269,4 +269,34 @@ if 1 then
 else
 	m = 6
 end
+do
+	a({
+		b = b
+	})
+	if a then
+		return {
+			b = b
+		}
+	else
+		if c then
+			return {
+				d = e
+			}
+		else
+			return {
+				f = 123
+			}
+		end
+	end
+end
+do
+	c({
+		d = e
+	})
+	if a then
+		b = tb.b
+	elseif c then
+		local e = tb.d
+	end
+end
 return nil

@@ -182,7 +182,23 @@ m = if 1
 
 else 6
 
+do
+	a
+		:b
+	return if a
+		:b
+	else if c
+		d: e
+	else
+		f: 123
 
+do
+	c
+		d: e
+	if a
+		:b = tb
+	elseif c
+		d: e = tb
 
 nil
 
