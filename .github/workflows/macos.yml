@@ -12,6 +12,6 @@ jobs:
     name: Build & Test
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: build-test
         run: make test
