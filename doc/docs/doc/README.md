@@ -499,8 +499,76 @@ a ??= false
 local a, b, c, d
 a = b ?? c ?? d
 func a ?? {}
-
 a ??= false
+</pre>
+</YueDisplay>
+
+### Implicit Object
+
+You can write a list of implicit structures that starts with the symbol **\*** inside a table block. If you are creating implicit object, the fields of the object must be with the same indent.
+```moonscript
+list =
+  * 1
+  * 2
+  * 3
+
+func
+  * 1
+  * 2
+  * 3
+
+tb =
+  name: "abc"
+
+  values:
+    * "a"
+    * "b"
+    * "c"
+
+  objects:
+    * name: "a"
+      value: 1
+      func: => @value + 1
+      tb:
+        fieldA: 1
+
+    * name: "b"
+      value: 2
+      func: => @value + 2
+      tb: { }
+
+```
+<YueDisplay>
+<pre>
+list =
+  * 1
+  * 2
+  * 3
+
+func
+  * 1
+  * 2
+  * 3
+
+tb =
+  name: "abc"
+
+  values:
+    * "a"
+    * "b"
+    * "c"
+
+  objects:
+    * name: "a"
+      value: 1
+      func: => @value + 1
+      tb:
+        fieldA: 1
+
+    * name: "b"
+      value: 2
+      func: => @value + 2
+      tb: { }
 </pre>
 </YueDisplay>
 
