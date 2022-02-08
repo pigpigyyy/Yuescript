@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.6"sv;
+const std::string_view version = "0.9.7"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -800,6 +800,11 @@ private:
 				return true;
 			}
 		} else {
+			if (std::find_if(chainItems.begin(), chainItems.end(), [](ast_node* node) {
+				return ast_is<existential_op_t>(node);
+			}) != chainItems.end()) {
+				return false;
+			}
 			auto lastItem = chainItems.back();
 			switch (lastItem->getId()) {
 				case id<DotChainItem_t>():
@@ -1207,48 +1212,49 @@ private:
 			BREAK_IF(!value);
 			auto chainValue = value->item.as<ChainValue_t>();
 			BREAK_IF(!chainValue);
-			if (specialChainValue(chainValue) == ChainType::Metatable) {
-				str_list args;
-				chainValue->items.pop_back();
-				if (chainValue->items.empty()) {
-					if (_withVars.empty()) {
-						throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
-					} else {
-						args.push_back(_withVars.top());
-					}
+			auto dot = ast_cast<DotChainItem_t>(chainValue->items.back());
+			BREAK_IF(!dot);
+			BREAK_IF(!dot->name.is<Metatable_t>());
+			str_list args;
+			chainValue->items.pop_back();
+			if (chainValue->items.empty()) {
+				if (_withVars.empty()) {
+					throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
 				} else {
-					transformExp(static_cast<Exp_t*>(*it), args, ExpUsage::Closure);
+					args.push_back(_withVars.top());
 				}
-				if (vit != values.end()) transformAssignItem(*vit, args);
-				else args.push_back("nil"s);
-				_buf << indent() << globalVar("setmetatable"sv, x) << '(' << join(args, ", "sv) << ')' << nll(x);
-				str_list temp;
-				temp.push_back(clearBuf());
-				auto newExpList = x->new_ptr<ExpList_t>();
-				auto newAssign = x->new_ptr<Assign_t>();
-				auto newAssignment = x->new_ptr<ExpListAssign_t>();
-				newAssignment->expList.set(newExpList);
-				newAssignment->action.set(newAssign);
-				for (auto exp : exprs) {
-					if (exp != *it) newExpList->exprs.push_back(exp);
-				}
-				for (auto value : values) {
-					if (value != *vit) newAssign->values.push_back(value);
-				}
-				if (newExpList->exprs.empty() && newAssign->values.empty()) {
-					out.push_back(temp.back());
-					return;
-				}
-				if (newExpList->exprs.size() < newAssign->values.size()) {
-					auto exp = toAst<Exp_t>("_"sv, x);
-					while (newExpList->exprs.size() < newAssign->values.size()) {
-						newExpList->exprs.push_back(exp);
-					}
-				}
-				transformAssignment(newAssignment, temp);
-				out.push_back(join(temp));
+			} else {
+				transformExp(static_cast<Exp_t*>(*it), args, ExpUsage::Closure);
+			}
+			if (vit != values.end()) transformAssignItem(*vit, args);
+			else args.push_back("nil"s);
+			_buf << indent() << globalVar("setmetatable"sv, x) << '(' << join(args, ", "sv) << ')' << nll(x);
+			str_list temp;
+			temp.push_back(clearBuf());
+			auto newExpList = x->new_ptr<ExpList_t>();
+			auto newAssign = x->new_ptr<Assign_t>();
+			auto newAssignment = x->new_ptr<ExpListAssign_t>();
+			newAssignment->expList.set(newExpList);
+			newAssignment->action.set(newAssign);
+			for (auto exp : exprs) {
+				if (exp != *it) newExpList->exprs.push_back(exp);
+			}
+			for (auto value : values) {
+				if (value != *vit) newAssign->values.push_back(value);
+			}
+			if (newExpList->exprs.empty() && newAssign->values.empty()) {
+				out.push_back(temp.back());
 				return;
 			}
+			if (newExpList->exprs.size() < newAssign->values.size()) {
+				auto exp = toAst<Exp_t>("_"sv, x);
+				while (newExpList->exprs.size() < newAssign->values.size()) {
+					newExpList->exprs.push_back(exp);
+				}
+			}
+			transformAssignment(newAssignment, temp);
+			out.push_back(join(temp));
+			return;
 			BLOCK_END
 			if (vit != values.end()) ++vit;
 		}
@@ -4287,13 +4293,13 @@ private:
 #endif // YUE_NO_MACRO
 		}
 		const auto& chainList = chainValue->items.objects();
-		if (transformChainWithMetatable(chainList, out, usage, assignList)) {
-			return;
-		}
 		if (transformChainEndWithEOP(chainList, out, usage, assignList)) {
 			return;
 		}
 		if (transformChainWithEOP(chainList, out, usage, assignList)) {
+			return;
+		}
+		if (transformChainWithMetatable(chainList, out, usage, assignList)) {
 			return;
 		}
 		if (transformChainEndWithColonItem(chainList, out, usage, assignList)) {

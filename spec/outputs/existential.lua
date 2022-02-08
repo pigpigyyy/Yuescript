@@ -148,9 +148,27 @@ end)() ~= nil) or (function()
 	end
 	return nil
 end)()
-local _with_0 = io.open("test.txt", "w")
-if _with_0 ~= nil then
-	_with_0:write("hello")
-	_with_0:close()
+do
+	local _with_0 = io.open("test.txt", "w")
+	if _with_0 ~= nil then
+		_with_0:write("hello")
+		_with_0:close()
+	end
 end
-return _with_0
+if tb ~= nil then
+	local _obj_1 = getmetatable(tb).__a
+	if _obj_1 ~= nil then
+		_obj_1(123)
+	end
+end
+do
+	local _with_0
+	local _obj_1 = getmetatable(tb)
+	if _obj_1 ~= nil then
+		_with_0 = getmetatable(_obj_1).__index
+	end
+	if _with_0 ~= nil then
+		_with_0.a = 1
+	end
+end
+return nil
