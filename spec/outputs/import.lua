@@ -90,3 +90,15 @@ do
 		func, ifVar = _obj_0["function"], _obj_0["if"]
 	end
 end
+do
+	b = getmetatable(require("m")).__a
+	local _obj_0 = require("m")
+	local f = _obj_0.e
+	b = getmetatable(_obj_0).__a
+	local d = require("m").c
+	local g, i
+	do
+		local _obj_1 = require("m")
+		g, i = _obj_1[1], getmetatable(_obj_1[2]).__h
+	end
+end

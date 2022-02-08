@@ -195,7 +195,7 @@ YueParser::YueParser() {
 
 	macro_name_pair = Space >> MacroName >> Space >> symx(':') >> Space >> MacroName;
 	import_all_macro = expr('$');
-	ImportTabItem = variable_pair | normal_pair | sym(':') >> MacroName | macro_name_pair | Space >> import_all_macro | Exp;
+	ImportTabItem = variable_pair | normal_pair | sym(':') >> MacroName | macro_name_pair | Space >> import_all_macro | meta_variable_pair | meta_normal_pair | Exp;
 	ImportTabList = ImportTabItem >> *(sym(',') >> ImportTabItem);
 	ImportTabLine = (
 		PushIndent >> (ImportTabList >> PopIndent | PopIndent)
@@ -542,7 +542,7 @@ YueParser::YueParser() {
 	meta_normal_pair = Space >> -(Name | symx('[') >> Exp >> sym(']')) >> expr("#:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
-	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | -Name >> expr("#:") >> Seperator >> Exp) >> sym('=') >> Exp;
+	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | Space >> -Name >> expr("#:") >> Seperator >> Exp) >> sym('=') >> Exp;
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);

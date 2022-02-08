@@ -67,3 +67,10 @@ do
 
 do
 	import "org.package.module" as function:func, if:ifVar
+
+do
+	import "m" as {a#: b}
+	import "m" as {e: f, a#: b}
+	import "m" as {c: d}
+	import "m" as {g, {h#: i}}
+
