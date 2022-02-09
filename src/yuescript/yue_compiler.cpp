@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.7"sv;
+const std::string_view version = "0.9.8"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2081,8 +2081,9 @@ private:
 					rightExp->pipeExprs.dup(leftExp->pipeExprs);
 					rightExp->opValues.dup(leftExp->opValues);
 					rightExp->nilCoalesed.set(update->value);
-					transformNilCoalesedExp(rightExp, out, ExpUsage::Assignment, assignment->expList, true);
-					if (!defs.empty()) out.back().insert(0, defs + nll(x));
+					transformNilCoalesedExp(rightExp, temp, ExpUsage::Assignment, assignment->expList, true);
+					if (!defs.empty()) temp.back().insert(0, defs + nll(x));
+					out.push_back(join(temp));
 					return;
 				}
 				auto defs = getPredefine(assignment);
@@ -2495,7 +2496,7 @@ private:
 				assignment->expList.set(expList);
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
-				return true;
+				return forAssignment;
 			}
 			return false;
 		};
@@ -2552,8 +2553,9 @@ private:
 					assign->values.push_back(exp->nilCoalesed);
 					auto defs = getPredefine(assignment);
 					if (!defs.empty()) temp.push_back(defs + nll(x));
-					prepareValue();
-					_buf << indent() << "if "sv << objVar << " == nil then"sv << nll(x);
+					transformExp(left, temp, ExpUsage::Closure);
+					_buf << indent() << "if "sv << temp.back() << " == nil then"sv << nll(x);
+					temp.pop_back();
 					temp.push_back(clearBuf());
 				}
 				pushScope();

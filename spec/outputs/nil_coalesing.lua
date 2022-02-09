@@ -153,4 +153,29 @@ do
 		end
 	end
 end
+do
+	local _obj_0 = a.b
+	if _obj_0.c == nil then
+		_obj_0.c = 1
+	end
+	local a
+	do
+		local _exp_0 = b.x
+		if _exp_0 ~= nil then
+			a = _exp_0
+		else
+			do
+				local _exp_1 = c.x
+				if _exp_1 ~= nil then
+					a = _exp_1
+				else
+					a = d.x
+				end
+			end
+		end
+	end
+	if a.c == nil then
+		a.c = 1
+	end
+end
 return nil
