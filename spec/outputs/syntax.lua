@@ -184,7 +184,17 @@ local _update_0 = "hello"
 a[_update_0] = a[_update_0] + 10
 local _update_1 = "hello" .. tostring(tostring(ff))
 a[_update_1] = a[_update_1] + 10
-a[four].x = a[four].x + 10
+local _obj_0 = a[four]
+_obj_0.x = _obj_0.x + 10
+a.b = a.b + 1
+local _obj_1 = a.b[1].c
+local _update_2 = 2 + 3
+_obj_1[_update_2] = _obj_1[_update_2] + 1
+do
+	local _with_0 = tb
+	local _obj_2 = _with_0.a
+	_obj_2.c = _obj_2.c + 1
+end
 x = 0
 local _list_0 = values
 for _index_0 = 1, #_list_0 do

@@ -2015,9 +2015,42 @@ private:
 				auto leftValue = singleValueFrom(leftExp);
 				if (!leftValue) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftExp));
 				if (auto chain = leftValue->item.as<ChainValue_t>()) {
-					if (specialChainValue(chain) == ChainType::Metatable) {
+					auto dot = ast_cast<DotChainItem_t>(chain->items.back());
+					if (dot && dot->name.is<Metatable_t>()) {
 						throw std::logic_error(_info.errorMessage("can not apply update to a metatable"sv, leftExp));
 					}
+					BLOCK_START
+					BREAK_IF(chain->items.size() < 2);
+					if (chain->items.size() == 2) {
+						if (auto callable = ast_cast<Callable_t>(chain->items.front())) {
+							ast_node* var = callable->item.as<Variable_t>();
+							if (auto self = callable->item.as<SelfName_t>()) {
+								var = self->name.as<self_t>();
+							}
+							BREAK_IF(var);
+						}
+					}
+					auto tmpChain = x->new_ptr<ChainValue_t>();
+					ast_ptr<false, ast_node> ptr(chain->items.back());
+					for (auto item : chain->items.objects()) {
+						if (item != ptr) {
+							tmpChain->items.push_back(item);
+						}
+					}
+					auto value = x->new_ptr<Value_t>();
+					value->item.set(tmpChain);
+					auto exp = newExp(value, x);
+					auto objVar = getUnusedName("_obj_"sv);
+					auto newAssignment = x->new_ptr<ExpListAssign_t>();
+					newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
+					auto assign = x->new_ptr<Assign_t>();
+					assign->values.push_back(exp);
+					newAssignment->action.set(assign);
+					transformAssignment(newAssignment, temp);
+					chain->items.clear();
+					chain->items.push_back(toAst<Callable_t>(objVar, x));
+					chain->items.push_back(ptr);
+					BLOCK_END
 					auto tmpChain = x->new_ptr<ChainValue_t>();
 					for (auto item : chain->items.objects()) {
 						bool itemAdded = false;
