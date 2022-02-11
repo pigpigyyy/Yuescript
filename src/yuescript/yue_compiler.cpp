@@ -2023,17 +2023,9 @@ private:
 						throw std::logic_error(_info.errorMessage("can not apply update to a metatable"sv, leftExp));
 					}
 					BLOCK_START
-					BREAK_IF(chain->items.size() < 2);
-					if (chain->items.size() == 2) {
-						if (auto callable = ast_cast<Callable_t>(chain->items.front())) {
-							ast_node* var = callable->item.as<Variable_t>();
-							if (auto self = callable->item.as<SelfName_t>()) {
-								var = self->name.as<self_t>();
-							}
-							BREAK_IF(var);
-						}
-					}
 					if (op == "#"sv) {
+						auto varName = singleVariableFrom(chain);
+						BREAK_IF(!varName.empty() && isLocal(varName));
 						auto objVar = getUnusedName("_obj_"sv);
 						auto newAssignment = x->new_ptr<ExpListAssign_t>();
 						newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
@@ -2044,6 +2036,16 @@ private:
 						chain->items.clear();
 						chain->items.push_back(toAst<Callable_t>(objVar, x));
 					} else {
+						BREAK_IF(chain->items.size() < 2);
+						if (chain->items.size() == 2) {
+							if (auto callable = ast_cast<Callable_t>(chain->items.front())) {
+								ast_node* var = callable->item.as<Variable_t>();
+								if (auto self = callable->item.as<SelfName_t>()) {
+									var = self->name.as<self_t>();
+								}
+								BREAK_IF(var && isLocal(_parser.toString(var)));
+							}
+						}
 						auto tmpChain = x->new_ptr<ChainValue_t>();
 						ast_ptr<false, ast_node> ptr(chain->items.back());
 						for (auto item : chain->items.objects()) {
