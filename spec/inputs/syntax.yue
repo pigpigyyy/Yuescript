@@ -184,9 +184,20 @@ a["hello#{tostring ff}"] += 10
 a[four].x += 10
 
 a.b += 1
-a.b[1].c[2+3] += 1
+a.b[1].c[2 + 3] += 1
 with tb
 	.a.c += 1
+
+tb #= 10
+a.b.c #= 1
+x #= if v
+	1
+else
+	2
+with tb
+	.b.c #= with vec
+		.x = 1
+		.y = 2
 
 x = 0
 _ = (if ntype(v) == "fndef" then x += 1) for v in *values

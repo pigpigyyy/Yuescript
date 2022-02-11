@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.8"sv;
+const std::string_view version = "0.9.9"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2014,7 +2014,10 @@ private:
 				auto leftExp = static_cast<Exp_t*>(expList->exprs.objects().front());
 				auto leftValue = singleValueFrom(leftExp);
 				if (!leftValue) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftExp));
-				if (auto chain = leftValue->item.as<ChainValue_t>()) {
+				auto chain = leftValue->item.as<ChainValue_t>();
+				if (!chain) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, chain));
+				auto op = _parser.toString(update->op);
+				{
 					auto dot = ast_cast<DotChainItem_t>(chain->items.back());
 					if (dot && dot->name.is<Metatable_t>()) {
 						throw std::logic_error(_info.errorMessage("can not apply update to a metatable"sv, leftExp));
@@ -2030,26 +2033,38 @@ private:
 							BREAK_IF(var);
 						}
 					}
-					auto tmpChain = x->new_ptr<ChainValue_t>();
-					ast_ptr<false, ast_node> ptr(chain->items.back());
-					for (auto item : chain->items.objects()) {
-						if (item != ptr) {
-							tmpChain->items.push_back(item);
+					if (op == "#"sv) {
+						auto objVar = getUnusedName("_obj_"sv);
+						auto newAssignment = x->new_ptr<ExpListAssign_t>();
+						newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
+						auto assign = x->new_ptr<Assign_t>();
+						assign->values.push_back(leftExp);
+						newAssignment->action.set(assign);
+						transformAssignment(newAssignment, temp);
+						chain->items.clear();
+						chain->items.push_back(toAst<Callable_t>(objVar, x));
+					} else {
+						auto tmpChain = x->new_ptr<ChainValue_t>();
+						ast_ptr<false, ast_node> ptr(chain->items.back());
+						for (auto item : chain->items.objects()) {
+							if (item != ptr) {
+								tmpChain->items.push_back(item);
+							}
 						}
+						auto value = x->new_ptr<Value_t>();
+						value->item.set(tmpChain);
+						auto exp = newExp(value, x);
+						auto objVar = getUnusedName("_obj_"sv);
+						auto newAssignment = x->new_ptr<ExpListAssign_t>();
+						newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
+						auto assign = x->new_ptr<Assign_t>();
+						assign->values.push_back(exp);
+						newAssignment->action.set(assign);
+						transformAssignment(newAssignment, temp);
+						chain->items.clear();
+						chain->items.push_back(toAst<Callable_t>(objVar, x));
+						chain->items.push_back(ptr);
 					}
-					auto value = x->new_ptr<Value_t>();
-					value->item.set(tmpChain);
-					auto exp = newExp(value, x);
-					auto objVar = getUnusedName("_obj_"sv);
-					auto newAssignment = x->new_ptr<ExpListAssign_t>();
-					newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
-					auto assign = x->new_ptr<Assign_t>();
-					assign->values.push_back(exp);
-					newAssignment->action.set(assign);
-					transformAssignment(newAssignment, temp);
-					chain->items.clear();
-					chain->items.push_back(toAst<Callable_t>(objVar, x));
-					chain->items.push_back(ptr);
 					BLOCK_END
 					auto tmpChain = x->new_ptr<ChainValue_t>();
 					for (auto item : chain->items.objects()) {
@@ -2074,7 +2089,6 @@ private:
 					chain->items.clear();
 					chain->items.dup(tmpChain->items);
 				}
-				auto op = _parser.toString(update->op);
 				if (op == "??"sv) {
 					auto defs = getPredefine(assignment);
 					auto rightExp = x->new_ptr<Exp_t>();
@@ -2083,6 +2097,16 @@ private:
 					rightExp->nilCoalesed.set(update->value);
 					transformNilCoalesedExp(rightExp, temp, ExpUsage::Assignment, assignment->expList, true);
 					if (!defs.empty()) temp.back().insert(0, defs + nll(x));
+					out.push_back(join(temp));
+					return;
+				} else if (op == "#"sv) {
+					auto left = _parser.toString(chain->items.front());
+					auto newAssignment = x->new_ptr<ExpListAssign_t>();
+					newAssignment->expList.set(toAst<ExpList_t>(left + "[#"s + left + "+1]"s, x));
+					auto assign = x->new_ptr<Assign_t>();
+					assign->values.push_back(update->value);
+					newAssignment->action.set(assign);
+					transformAssignment(newAssignment, temp);
 					out.push_back(join(temp));
 					return;
 				}

@@ -195,6 +195,24 @@ do
 	local _obj_2 = _with_0.a
 	_obj_2.c = _obj_2.c + 1
 end
+tb[#tb + 1] = 10
+local _obj_2 = a.b.c
+_obj_2[#_obj_2 + 1] = 1
+if v then
+	x[#x + 1] = 1
+else
+	x[#x + 1] = 2
+end
+do
+	local _with_0 = tb
+	local _obj_3 = _with_0.b.c
+	do
+		local _with_1 = vec
+		_with_1.x = 1
+		_with_1.y = 2
+		_obj_3[#_obj_3 + 1] = _with_1
+	end
+end
 x = 0
 local _list_0 = values
 for _index_0 = 1, #_list_0 do

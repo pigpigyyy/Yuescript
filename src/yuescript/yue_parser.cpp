@@ -324,7 +324,8 @@ YueParser::YueParser() {
 		expr("|") |
 		expr(">>") |
 		expr("<<") |
-		expr("??");
+		expr("??") |
+		expr("#");
 
 	Update = Space >> update_op >> expr("=") >> Exp;
 
