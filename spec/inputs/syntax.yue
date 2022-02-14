@@ -188,16 +188,25 @@ a.b[1].c[2 + 3] += 1
 with tb
 	.a.c += 1
 
-tb #= 10
-a.b.c #= 1
-x #= if v
+tb[] = 10
+a.b.c[] = 1
+x[] = if v
 	1
 else
 	2
 with tb
-	.b.c #= with vec
+	.b.c[] = with vec
 		.x = 1
 		.y = 2
+a
+	.b.c
+	.d\f!
+	.g[] = 1
+
+tb = {}
+tb[] = 1
+tb[] = 2
+tb[] = 3
 
 x = 0
 _ = (if ntype(v) == "fndef" then x += 1) for v in *values

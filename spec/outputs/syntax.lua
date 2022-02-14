@@ -195,10 +195,14 @@ do
 	local _obj_2 = _with_0.a
 	_obj_2.c = _obj_2.c + 1
 end
-local _obj_2 = tb
-_obj_2[#_obj_2 + 1] = 10
-local _obj_3 = a.b.c
-_obj_3[#_obj_3 + 1] = 1
+do
+	local _obj_2 = tb
+	_obj_2[#_obj_2 + 1] = 10
+end
+do
+	local _obj_2 = a.b.c
+	_obj_2[#_obj_2 + 1] = 1
+end
 if v then
 	x[#x + 1] = 1
 else
@@ -206,14 +210,24 @@ else
 end
 do
 	local _with_0 = tb
-	local _obj_4 = _with_0.b.c
 	do
-		local _with_1 = vec
-		_with_1.x = 1
-		_with_1.y = 2
-		_obj_4[#_obj_4 + 1] = _with_1
+		local _obj_2 = _with_0.b.c
+		do
+			local _with_1 = vec
+			_with_1.x = 1
+			_with_1.y = 2
+			_obj_2[#_obj_2 + 1] = _with_1
+		end
 	end
 end
+do
+	local _obj_2 = a.b.c.d:f().g
+	_obj_2[#_obj_2 + 1] = 1
+end
+local tb = { }
+tb[#tb + 1] = 1
+tb[#tb + 1] = 2
+tb[#tb + 1] = 3
 x = 0
 local _list_0 = values
 for _index_0 = 1, #_list_0 do
@@ -231,7 +245,7 @@ hello = {
 	["function"] = "okay",
 	good = 230203
 }
-local tb = {
+tb = {
 	["do"] = b,
 	(function()
 		return {

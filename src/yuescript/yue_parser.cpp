@@ -324,8 +324,7 @@ YueParser::YueParser() {
 		expr("|") |
 		expr(">>") |
 		expr("<<") |
-		expr("??") |
-		expr("#");
+		expr("??");
 
 	Update = Space >> update_op >> expr("=") >> Exp;
 
@@ -382,7 +381,7 @@ YueParser::YueParser() {
 		return st->chainBlockStack.empty() || st->chainBlockStack.top();
 	}) >> +SpaceBreak >> Advance >> ensure(
 		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
-	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block);
+	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;
 
 	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
 	Value = SimpleValue | simple_table | ChainValue | String;
@@ -427,6 +426,7 @@ YueParser::YueParser() {
 	Metamethod = Name >> expr('#');
 
 	existential_op = expr('?') >> not_(expr('?'));
+	table_appending_op = expr("[]");
 	chain_call = (Callable | String) >> -existential_op >> ChainItems;
 	chain_item = and_(set(".\\")) >> ChainItems;
 	chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;
