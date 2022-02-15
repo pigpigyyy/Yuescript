@@ -200,6 +200,14 @@ do
 	elseif c
 		d: e = tb
 
+if :pi = math
+	print pi
+
+do
+	local math
+	if :pi = math
+		print pi
+
 nil
 
 

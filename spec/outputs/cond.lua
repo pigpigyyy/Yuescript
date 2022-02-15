@@ -299,4 +299,18 @@ do
 		local e = tb.d
 	end
 end
+do
+	local _des_0 = math
+	if _des_0 then
+		local pi = _des_0.pi
+		print(pi)
+	end
+end
+do
+	local math
+	if math then
+		local pi = math.pi
+		print(pi)
+	end
+end
 return nil

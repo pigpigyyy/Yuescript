@@ -2259,7 +2259,7 @@ private:
 				auto desVar = getUnusedName("_des_"sv);
 				if (assign->values.objects().size() == 1) {
 					auto var = singleVariableFrom(assign->values.objects().front());
-					if (!var.empty()) {
+					if (!var.empty() && isLocal(var)) {
 						desVar = var;
 						storingValue = false;
 					}
