@@ -32,31 +32,45 @@ do
 end
 do
 	local _with_0
-	if create ~= nil then
-		_with_0 = create(b, "new")
+	do
+		local _obj_0 = create
+		if _obj_0 ~= nil then
+			_with_0 = _obj_0(b, "new")
+		end
 	end
 	_with_0.value = 123
 	print(_with_0:work())
 end
-if f ~= nil then
-	f(123)
+do
+	local _obj_0 = f
+	if _obj_0 ~= nil then
+		_obj_0(123)
+	end
 end
-if f2 ~= nil then
-	f2((function()
-		if f1 ~= nil then
-			return f1("abc")
-		end
-		return nil
-	end)())
+do
+	local _obj_0 = f2
+	if _obj_0 ~= nil then
+		_obj_0((function()
+			local _obj_1 = f1
+			if _obj_1 ~= nil then
+				return _obj_1("abc")
+			end
+			return nil
+		end)())
+	end
 end
 local c
-if f2 ~= nil then
-	c = f2((function()
-		if f1 ~= nil then
-			return f1("abc")
-		end
-		return nil
-	end)())
+do
+	local _obj_0 = f2
+	if _obj_0 ~= nil then
+		c = _obj_0((function()
+			local _obj_1 = f1
+			if _obj_1 ~= nil then
+				return _obj_1("abc")
+			end
+			return nil
+		end)())
+	end
 end
 local f
 f = function()

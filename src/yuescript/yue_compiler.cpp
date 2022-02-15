@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.10"sv;
+const std::string_view version = "0.9.11"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -3539,7 +3539,19 @@ private:
 			}
 			BLOCK_END
 			auto objVar = singleVariableFrom(partOne);
-			if (objVar.empty()) {
+			bool isScoped = false;
+			if (objVar.empty() || !isLocal(objVar)) {
+				switch (usage) {
+					case ExpUsage::Common:
+					case ExpUsage::Assignment:
+						isScoped = true;
+						break;
+					default: break;
+				}
+				if (isScoped) {
+					temp.push_back(indent() + "do"s + nll(x));
+					pushScope();
+				}
 				objVar = getUnusedName("_obj_"sv);
 				if (auto colonItem = ast_cast<ColonChainItem_t>(partOne->items.back())) {
 					auto chainValue = x->new_ptr<ChainValue_t>();
@@ -3549,7 +3561,7 @@ private:
 						if (_withVars.empty()) {
 							throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
 						}
-					chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), x));
+						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), x));
 					}
 					auto newObj = singleVariableFrom(chainValue);
 					if (!newObj.empty()) {
@@ -3649,6 +3661,10 @@ private:
 					break;
 				default:
 					break;
+			}
+			if (isScoped) {
+				popScope();
+				temp.push_back(indent() + "end"s + nlr(x));
 			}
 			out.push_back(join(temp));
 			return true;

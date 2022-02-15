@@ -189,14 +189,16 @@ join = function(...)
 		end
 	end)(...))
 	f_eop((function()
-		if func ~= nil then
-			return func()
+		local _obj_0 = func
+		if _obj_0 ~= nil then
+			return _obj_0()
 		end
 		return nil
 	end)())
 	f_eop((function(...)
-		if func ~= nil then
-			return func(...)
+		local _obj_0 = func
+		if _obj_0 ~= nil then
+			return _obj_0(...)
 		end
 		return nil
 	end)(...))

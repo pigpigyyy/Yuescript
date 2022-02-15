@@ -298,8 +298,11 @@ do
 	end
 	local _obj_1 = getmetatable(tb).func
 	if _obj_1 == nil then
-		if item ~= nil then
-			_obj_1 = item.defVal
+		do
+			local _obj_2 = item
+			if _obj_2 ~= nil then
+				_obj_1 = _obj_2.defVal
+			end
 		end
 	end
 	a.b(function()

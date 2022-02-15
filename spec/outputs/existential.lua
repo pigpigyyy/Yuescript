@@ -1,18 +1,28 @@
-if f1 ~= nil then
-	f1()
+do
+	local _obj_0 = f1
+	if _obj_0 ~= nil then
+		_obj_0()
+	end
 end
-if f2 ~= nil then
-	f2("arg0", 123)
+do
+	local _obj_0 = f2
+	if _obj_0 ~= nil then
+		_obj_0("arg0", 123)
+	end
 end
 local x
-if tab ~= nil then
-	x = tab.value
+do
+	local _obj_0 = tab
+	if _obj_0 ~= nil then
+		x = _obj_0.value
+	end
 end
 print((function()
-	if abc ~= nil then
-		local _obj_0 = abc["hello world"]
-		if _obj_0 ~= nil then
-			return _obj_0.xyz
+	local _obj_0 = abc
+	if _obj_0 ~= nil then
+		local _obj_1 = _obj_0["hello world"]
+		if _obj_1 ~= nil then
+			return _obj_1.xyz
 		end
 		return nil
 	end
@@ -21,16 +31,24 @@ end)())
 if print and (x ~= nil) then
 	print(x)
 end
-if self ~= nil then
-	self:func(998)
+do
+	local _obj_0 = self
+	if _obj_0 ~= nil then
+		_obj_0:func(998)
+	end
 end
 do
 	local _with_0
-	if abc ~= nil then
-		local _obj_0 = abc()
-		local _obj_1 = _obj_0.func
-		if _obj_1 ~= nil then
-			_with_0 = _obj_1(_obj_0)
+	do
+		local _obj_0 = abc
+		if _obj_0 ~= nil then
+			do
+				local _obj_1 = _obj_0()
+				local _obj_2 = _obj_1.func
+				if _obj_2 ~= nil then
+					_with_0 = _obj_2(_obj_1)
+				end
+			end
 		end
 	end
 	if (function()
@@ -45,19 +63,29 @@ do
 end
 do
 	local _des_0
-	if a ~= nil then
-		local _obj_0 = a["if"]
+	do
+		local _obj_0 = a
 		if _obj_0 ~= nil then
-			local _obj_1 = _obj_0["then"]
-			if _obj_1 ~= nil then
-				local _obj_2 = _obj_1(_obj_0, 123)
-				if _obj_2 ~= nil then
-					_des_0 = _obj_2((function()
-						if self ~= nil then
-							return self["function"](self, 998)
+			do
+				local _obj_1 = _obj_0["if"]
+				if _obj_1 ~= nil then
+					do
+						local _obj_2 = _obj_1["then"]
+						if _obj_2 ~= nil then
+							do
+								local _obj_3 = _obj_2(_obj_1, 123)
+								if _obj_3 ~= nil then
+									_des_0 = _obj_3((function()
+										local _obj_4 = self
+										if _obj_4 ~= nil then
+											return _obj_4["function"](_obj_4, 998)
+										end
+										return nil
+									end)())
+								end
+							end
 						end
-						return nil
-					end)())
+					end
 				end
 			end
 		end
@@ -97,41 +125,54 @@ if (window ~= nil) then
 	local environment = 'browser (probably)'
 end
 local zip
-local _obj_0 = lottery.drawWinner
-if _obj_0 ~= nil then
-	local _obj_1 = _obj_0().address
-	if _obj_1 ~= nil then
-		zip = _obj_1.zipcode
+do
+	local _obj_0 = lottery.drawWinner
+	if _obj_0 ~= nil then
+		do
+			local _obj_1 = _obj_0().address
+			if _obj_1 ~= nil then
+				zip = _obj_1.zipcode
+			end
+		end
 	end
 end
 local len = (function()
-	if utf8 ~= nil then
-		return utf8.len
+	local _obj_0 = utf8
+	if _obj_0 ~= nil then
+		return _obj_0.len
 	end
 	return nil
 end)() or (function()
-	if string ~= nil then
-		return string.len
+	local _obj_0 = string
+	if _obj_0 ~= nil then
+		return _obj_0.len
 	end
 	return nil
 end)() or function(o)
 	return #o
 end
 local a
-if tb1 ~= nil then
-	local _obj_1 = tb1["end"]
-	if _obj_1 ~= nil then
-		a = _obj_1(tb1, 123 + (function()
-			if tb2 ~= nil then
-				return tb2["then"](tb2, 456)
+do
+	local _obj_0 = tb1
+	if _obj_0 ~= nil then
+		do
+			local _obj_1 = _obj_0["end"]
+			if _obj_1 ~= nil then
+				a = _obj_1(_obj_0, 123 + (function()
+					local _obj_2 = tb2
+					if _obj_2 ~= nil then
+						return _obj_2["then"](_obj_2, 456)
+					end
+					return nil
+				end)())
 			end
-			return nil
-		end)())
+		end
 	end
 end
 local b = ((function()
-	if tb1 ~= nil then
-		local _base_0 = tb1
+	local _obj_0 = tb1
+	if _obj_0 ~= nil then
+		local _base_0 = _obj_0
 		local _fn_0 = _base_0["end"]
 		return _fn_0 and function(...)
 			return _fn_0(_base_0, ...)
@@ -139,8 +180,9 @@ local b = ((function()
 	end
 	return nil
 end)() ~= nil) or (function()
-	if tb2 ~= nil then
-		local _base_0 = tb2
+	local _obj_0 = tb2
+	if _obj_0 ~= nil then
+		local _base_0 = _obj_0
 		local _fn_0 = _base_0["then"]
 		return _fn_0 and function(...)
 			return _fn_0(_base_0, ...)
@@ -155,17 +197,24 @@ do
 		_with_0:close()
 	end
 end
-if tb ~= nil then
-	local _obj_1 = getmetatable(tb).__a
-	if _obj_1 ~= nil then
-		_obj_1(123)
+do
+	local _obj_0 = tb
+	if _obj_0 ~= nil then
+		do
+			local _obj_1 = getmetatable(_obj_0).__a
+			if _obj_1 ~= nil then
+				_obj_1(123)
+			end
+		end
 	end
 end
 do
 	local _with_0
-	local _obj_1 = getmetatable(tb)
-	if _obj_1 ~= nil then
-		_with_0 = getmetatable(_obj_1).__index
+	do
+		local _obj_0 = getmetatable(tb)
+		if _obj_0 ~= nil then
+			_with_0 = getmetatable(_obj_0).__index
+		end
 	end
 	if _with_0 ~= nil then
 		_with_0.a = 1

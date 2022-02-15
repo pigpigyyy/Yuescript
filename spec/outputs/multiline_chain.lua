@@ -21,8 +21,11 @@ local tbb = {
 	}
 }
 local tb
-if f2 ~= nil then
-	tb = f2("abc", f1({ }).a)
+do
+	local _obj_0 = f2
+	if _obj_0 ~= nil then
+		tb = _obj_0("abc", f1({ }).a)
+	end
 end
 local f
 f = function()
