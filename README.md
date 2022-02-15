@@ -114,8 +114,7 @@ Usage: yue [options|files|directories] ...
 ## Editor Support
 
 * [Vim](https://github.com/pigpigyyy/Yuescript-vim)
-
-
+* [ZeroBraneStudio](https://github.com/pkulchenko/ZeroBraneStudio/issues/1134) (Syntax highlighting)
 
 ## License
 
