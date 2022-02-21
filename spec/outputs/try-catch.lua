@@ -21,7 +21,5 @@ pcall(tb.func)
 pcall(tb.func)
 pcall((tb.func()))
 pcall(tb.func, 1)
-xpcall(tb.func, function(err)
-	return print(err)
-end, 1)
+pcall(tb.func, 1)
 return nil

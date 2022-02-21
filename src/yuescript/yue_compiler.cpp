@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.0"sv;
+const std::string_view version = "0.10.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -6093,11 +6093,19 @@ private:
 		auto x = tryNode;
 		ast_ptr<true, Exp_t> errHandler;
 		if (tryNode->catchBlock) {
-			auto errHandleStr = "("s + _parser.toString(tryNode->catchBlock->err) + ")->\n"s + _parser.toString(tryNode->catchBlock->body);
+			auto errHandleStr = "("s + _parser.toString(tryNode->catchBlock->err) + ")->"s;
 			errHandler.set(toAst<Exp_t>(errHandleStr, x));
+			auto funLit = simpleSingleValueFrom(errHandler)->value.to<FunLit_t>();
+			auto body = x->new_ptr<Body_t>();
+			body->content.set(tryNode->catchBlock->body);
+			funLit->body.set(body);
 		}
 		if (auto tryBlock = tryNode->func.as<Block_t>()) {
-			auto tryExp = toAst<Exp_t>("->\n"s + _parser.toString(tryBlock), x);
+			auto tryExp = toAst<Exp_t>("->"sv, x);
+			auto funLit = simpleSingleValueFrom(tryExp)->value.to<FunLit_t>();
+			auto body = x->new_ptr<Body_t>();
+			body->content.set(tryBlock);
+			funLit->body.set(body);
 			if (errHandler) {
 				auto xpcall = toAst<ChainValue_t>("xpcall()", x);
 				auto invoke = ast_to<Invoke_t>(xpcall->items.back());
