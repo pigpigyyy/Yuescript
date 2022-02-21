@@ -364,7 +364,7 @@ private:
 
 class _ast_list : public ast_member {
 public:
-   ~_ast_list() {
+	~_ast_list() {
 		clear();
 	}
 

@@ -1,0 +1,30 @@
+try
+  func 1, 2, 3
+catch err
+  print err
+
+success, result = try
+  func 1, 2, 3
+catch err
+  print err
+
+try func 1, 2, 3
+catch err
+  print err
+
+success, result = try func 1, 2, 3
+
+try
+  print "trying"
+  func 1, 2, 3
+
+try tb.func
+try tb.func!
+try tb.func()
+try (tb.func!)
+
+try tb.func 1
+try tb.func(1)
+
+nil
+

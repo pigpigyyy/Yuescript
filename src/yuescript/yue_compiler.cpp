@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.9.11"sv;
+const std::string_view version = "0.10.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -576,8 +576,8 @@ private:
 		return exp;
 	}
 
-	SimpleValue_t* simpleSingleValueFrom(ast_node* expList) const {
-		auto value = singleValueFrom(expList);
+	SimpleValue_t* simpleSingleValueFrom(ast_node* node) const {
+		auto value = singleValueFrom(node);
 		if (value && value->item.is<SimpleValue_t>()) {
 			return static_cast<SimpleValue_t*>(value->item.get());
 		}
@@ -1042,6 +1042,7 @@ private:
 								case id<For_t>(): transformFor(static_cast<For_t*>(value), out); break;
 								case id<While_t>(): transformWhile(static_cast<While_t*>(value), out); break;
 								case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Common); break;
+								case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Common); break;
 								case id<Comprehension_t>(): transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
 								default: specialSingleValue = false; break;
 							}
@@ -2660,6 +2661,7 @@ private:
 			case id<For_t>(): transformForClosure(static_cast<For_t*>(value), out); break;
 			case id<While_t>(): transformWhileClosure(static_cast<While_t*>(value), out); break;
 			case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
+			case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Closure); break;
 			case id<unary_value_t>(): transform_unary_value(static_cast<unary_value_t*>(value), out); break;
 			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
@@ -6085,6 +6087,85 @@ private:
 			temp.push_back(indent() + "end"s + nlr(doNode));
 		}
 		out.push_back(join(temp));
+	}
+
+	void transformTry(Try_t* tryNode, str_list& out, ExpUsage usage) {
+		auto x = tryNode;
+		ast_ptr<true, Exp_t> errHandler;
+		if (tryNode->catchBlock) {
+			auto errHandleStr = "("s + _parser.toString(tryNode->catchBlock->err) + ")->\n"s + _parser.toString(tryNode->catchBlock->body);
+			errHandler.set(toAst<Exp_t>(errHandleStr, x));
+		}
+		if (auto tryBlock = tryNode->func.as<Block_t>()) {
+			auto tryExp = toAst<Exp_t>("->\n"s + _parser.toString(tryBlock), x);
+			if (errHandler) {
+				auto xpcall = toAst<ChainValue_t>("xpcall()", x);
+				auto invoke = ast_to<Invoke_t>(xpcall->items.back());
+				invoke->args.push_back(tryExp);
+				invoke->args.push_back(errHandler);
+				transformChainValue(xpcall, out, ExpUsage::Closure);
+			} else {
+				auto pcall = toAst<ChainValue_t>("pcall()", x);
+				auto invoke = ast_to<Invoke_t>(pcall->items.back());
+				invoke->args.push_back(tryExp);
+				transformChainValue(pcall, out, ExpUsage::Closure);
+			}
+			if (usage == ExpUsage::Common) {
+				out.back().append(nlr(x));
+			}
+			return;
+		} else if (auto value = singleValueFrom(tryNode->func)) {
+			BLOCK_START
+			auto chainValue = value->item.as<ChainValue_t>();
+			BREAK_IF(!chainValue);
+			BREAK_IF(!isChainValueCall(chainValue));
+			ast_ptr<true, ast_node> last = chainValue->items.back();
+			chainValue->items.pop_back();
+			_ast_list* args = nullptr;
+			if (auto invoke = ast_cast<InvokeArgs_t>(last)) {
+				args = &invoke->args;
+			} else {
+				args = &(ast_to<Invoke_t>(last)->args);
+			}
+			if (errHandler) {
+				auto xpcall = toAst<ChainValue_t>("xpcall()", x);
+				auto invoke = ast_to<Invoke_t>(xpcall->items.back());
+				invoke->args.push_back(tryNode->func);
+				invoke->args.push_back(errHandler);
+				for (auto arg : args->objects()) {
+					invoke->args.push_back(arg);
+				}
+				transformChainValue(xpcall, out, ExpUsage::Closure);
+			} else {
+				auto pcall = toAst<ChainValue_t>("pcall()", x);
+				auto invoke = ast_to<Invoke_t>(pcall->items.back());
+				invoke->args.push_back(tryNode->func);
+				for (auto arg : args->objects()) {
+					invoke->args.push_back(arg);
+				}
+				transformChainValue(pcall, out, ExpUsage::Closure);
+			}
+			if (usage == ExpUsage::Common) {
+				out.back().append(nlr(x));
+			}
+			return;
+			BLOCK_END
+		}
+		if (errHandler) {
+			auto xpcall = toAst<ChainValue_t>("xpcall()", x);
+			auto invoke = ast_to<Invoke_t>(xpcall->items.back());
+			invoke->args.push_back(tryNode->func);
+			invoke->args.push_back(errHandler);
+			transformChainValue(xpcall, out, ExpUsage::Closure);
+		} else {
+			auto pcall = toAst<ChainValue_t>("pcall()", x);
+			auto invoke = ast_to<Invoke_t>(pcall->items.back());
+			invoke->args.push_back(tryNode->func);
+			transformChainValue(pcall, out, ExpUsage::Closure);
+		}
+		if (usage == ExpUsage::Common) {
+			out.back().append(nlr(x));
+		}
 	}
 
 	void transformImportFrom(ImportFrom_t* import, str_list& out) {

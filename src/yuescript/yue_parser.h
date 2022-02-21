@@ -238,6 +238,8 @@ private:
 	AST_RULE(For)
 	AST_RULE(ForEach)
 	AST_RULE(Do)
+	AST_RULE(catch_block)
+	AST_RULE(Try)
 	AST_RULE(Comprehension)
 	AST_RULE(comp_value)
 	AST_RULE(TblComprehension)

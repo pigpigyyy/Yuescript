@@ -316,6 +316,18 @@ AST_NODE(Do)
 	AST_MEMBER(Do, &body)
 AST_END(Do)
 
+AST_NODE(catch_block)
+	ast_ptr<true, Variable_t> err;
+	ast_ptr<true, Block_t> body;
+	AST_MEMBER(catch_block, &err, &body)
+AST_END(catch_block)
+
+AST_NODE(Try)
+	ast_sel<true, Block_t, Exp_t> func;
+	ast_ptr<false, catch_block_t> catchBlock;
+	AST_MEMBER(Try, &func, &catchBlock)
+AST_END(Try)
+
 class CompInner_t;
 class Statement_t;
 
@@ -474,7 +486,7 @@ class FunLit_t;
 AST_NODE(SimpleValue)
 	ast_sel<true, const_value_t,
 	If_t, Switch_t, With_t, ClassDecl_t,
-	ForEach_t, For_t, While_t, Do_t,
+	ForEach_t, For_t, While_t, Do_t, Try_t,
 	unary_value_t,
 	TblComprehension_t, TableLit_t, Comprehension_t,
 	FunLit_t, Num_t> value;
