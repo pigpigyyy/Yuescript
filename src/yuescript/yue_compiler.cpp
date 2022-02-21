@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.1"sv;
+const std::string_view version = "0.10.2"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -922,13 +922,8 @@ private:
 				case id<if_line_t>(): {
 					auto if_line = static_cast<if_line_t*>(appendix->item.get());
 					auto ifNode = x->new_ptr<If_t>();
-					auto ifType = toAst<IfType_t>("if"sv, x);
-					ifNode->type.set(ifType);
-
-					auto ifCond = x->new_ptr<IfCond_t>();
-					ifCond->condition.set(if_line->condition);
-					ifCond->assign.set(if_line->assign);
-					ifNode->nodes.push_back(ifCond);
+					ifNode->type.set(if_line->type);
+					ifNode->nodes.push_back(if_line->condition);
 
 					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(statement->content);
@@ -944,33 +939,6 @@ private:
 					expList->exprs.push_back(exp);
 					auto expListAssign = x->new_ptr<ExpListAssign_t>();
 					expListAssign->expList.set(expList);
-					statement->content.set(expListAssign);
-					break;
-				}
-				case id<unless_line_t>(): {
-					auto unless_line = static_cast<unless_line_t*>(appendix->item.get());
-					auto ifNode = x->new_ptr<If_t>();
-					auto ifType = toAst<IfType_t>("unless"sv, x);
-					ifNode->type.set(ifType);
-
-					auto ifCond = x->new_ptr<IfCond_t>();
-					ifCond->condition.set(unless_line->condition);
-					ifNode->nodes.push_back(ifCond);
-
-					auto stmt = x->new_ptr<Statement_t>();
-					stmt->content.set(statement->content);
-					ifNode->nodes.push_back(stmt);
-
-					statement->appendix.set(nullptr);
-					auto simpleValue = x->new_ptr<SimpleValue_t>();
-					simpleValue->value.set(ifNode);
-					auto value = x->new_ptr<Value_t>();
-					value->item.set(simpleValue);
-					auto exp = newExp(value, x);
-					auto exprList = x->new_ptr<ExpList_t>();
-					exprList->exprs.push_back(exp);
-					auto expListAssign = x->new_ptr<ExpListAssign_t>();
-					expListAssign->expList.set(exprList);
 					statement->content.set(expListAssign);
 					break;
 				}
@@ -2185,11 +2153,11 @@ private:
 	}
 
 	void transformCond(const node_container& nodes, str_list& out, ExpUsage usage, bool unless, ExpList_t* assignList) {
-		std::vector<ast_ptr<false, ast_node>> ns(false);
+		std::vector<ast_ptr<false, ast_node>> ns;
 		for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
 			ns.push_back(*it);
 			if (auto cond = ast_cast<IfCond_t>(*it)) {
-				if (*it != nodes.front() && cond->assign) {
+				if (*it != nodes.front() && cond->condition.is<assignment_t>()) {
 					auto x = *it;
 					auto newIf = x->new_ptr<If_t>();
 					newIf->type.set(toAst<IfType_t>("if"sv, x));
@@ -2245,11 +2213,11 @@ private:
 				default: YUEE("AST node mismatch", node); break;
 			}
 		}
-		auto assign = ifCondPairs.front().first->assign.get();
+		auto asmt = ifCondPairs.front().first->condition.as<assignment_t>();
 		bool storingValue = false;
 		ast_ptr<false, ExpListAssign_t> extraAssignment;
-		if (assign) {
-			auto exp = ifCondPairs.front().first->condition.get();
+		if (asmt) {
+			ast_ptr<false, ast_node> exp = asmt->expList->exprs.front();
 			auto x = exp;
 			bool lintGlobal = _config.lintGlobalVariable;
 			_config.lintGlobalVariable = false;
@@ -2258,8 +2226,8 @@ private:
 			if (var.empty()) {
 				storingValue = true;
 				auto desVar = getUnusedName("_des_"sv);
-				if (assign->values.objects().size() == 1) {
-					auto var = singleVariableFrom(assign->values.objects().front());
+				if (asmt->assign->values.objects().size() == 1) {
+					auto var = singleVariableFrom(asmt->assign->values.objects().front());
 					if (!var.empty() && isLocal(var)) {
 						desVar = var;
 						storingValue = false;
@@ -2267,13 +2235,17 @@ private:
 				}
 				if (storingValue) {
 					if (usage != ExpUsage::Closure) {
-						temp.push_back(indent() + "do"s + nll(assign));
+						temp.push_back(indent() + "do"s + nll(asmt));
 						pushScope();
 					}
+					asmt->expList->exprs.pop_front();
 					auto expList = toAst<ExpList_t>(desVar, x);
 					auto assignment = x->new_ptr<ExpListAssign_t>();
+					for (auto expr : asmt->expList->exprs.objects()) {
+						expList->exprs.push_back(expr);
+					}
 					assignment->expList.set(expList);
-					assignment->action.set(assign);
+					assignment->action.set(asmt->assign);
 					transformAssignment(assignment, temp);
 				}
 				{
@@ -2292,22 +2264,27 @@ private:
 				if (!isDefined(var)) {
 					storingValue = true;
 					if (usage != ExpUsage::Closure) {
-						temp.push_back(indent() + "do"s + nll(assign));
+						temp.push_back(indent() + "do"s + nll(asmt));
 						pushScope();
 					}
 				}
 				auto expList = x->new_ptr<ExpList_t>();
 				expList->exprs.push_back(exp);
+				asmt->expList->exprs.pop_front();
+				for (auto expr : asmt->expList->exprs.objects()) {
+					expList->exprs.push_back(expr);
+				}
 				auto assignment = x->new_ptr<ExpListAssign_t>();
 				assignment->expList.set(expList);
-				assignment->action.set(assign);
+				assignment->action.set(asmt->assign);
 				transformAssignment(assignment, temp);
+				ifCondPairs.front().first->condition.set(exp);
 			}
 		}
 		for (const auto& pair : ifCondPairs) {
 			if (pair.first) {
 				str_list tmp;
-				auto condition = pair.first->condition.get();
+				auto condition = pair.first->condition.to<Exp_t>();
 				auto condStr = transformCondExp(condition, unless);
 				if (unless) unless = false;
 				_buf << indent();

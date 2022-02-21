@@ -254,10 +254,15 @@ AST_NODE(Switch)
 	AST_MEMBER(Switch, &target, &sep, &branches, &lastBranch)
 AST_END(Switch)
 
+AST_NODE(assignment)
+	ast_ptr<true, ExpList_t> expList;
+	ast_ptr<true, Assign_t> assign;
+	AST_MEMBER(assignment, &expList, &assign)
+AST_END(assignment)
+
 AST_NODE(IfCond)
-	ast_ptr<true, Exp_t> condition;
-	ast_ptr<false, Assign_t> assign;
-	AST_MEMBER(IfCond, &condition, &assign)
+	ast_sel<true, Exp_t, assignment_t> condition;
+	AST_MEMBER(IfCond, &condition)
 AST_END(IfCond)
 
 AST_LEAF(IfType)
@@ -766,15 +771,10 @@ AST_NODE(ExpListAssign)
 AST_END(ExpListAssign)
 
 AST_NODE(if_line)
-	ast_ptr<true, Exp_t> condition;
-	ast_ptr<false, Assign_t> assign;
-	AST_MEMBER(if_line, &condition, &assign)
+	ast_ptr<true, IfType_t> type;
+	ast_ptr<true, IfCond_t> condition;
+	AST_MEMBER(if_line, &type, &condition)
 AST_END(if_line)
-
-AST_NODE(unless_line)
-	ast_ptr<true, Exp_t> condition;
-	AST_MEMBER(unless_line, &condition)
-AST_END(unless_line)
 
 AST_LEAF(BreakLoop)
 AST_END(BreakLoop)
@@ -786,7 +786,7 @@ AST_NODE(PipeBody)
 AST_END(PipeBody)
 
 AST_NODE(statement_appendix)
-	ast_sel<true, if_line_t, unless_line_t, CompInner_t> item;
+	ast_sel<true, if_line_t, CompInner_t> item;
 	AST_MEMBER(statement_appendix, &item)
 AST_END(statement_appendix)
 
