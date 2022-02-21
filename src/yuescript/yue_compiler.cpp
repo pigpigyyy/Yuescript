@@ -6071,7 +6071,7 @@ private:
 		ast_ptr<true, Exp_t> errHandler;
 		if (tryNode->catchBlock) {
 			auto errHandleStr = "("s + _parser.toString(tryNode->catchBlock->err) + ")->"s;
-			errHandler.set(toAst<Exp_t>(errHandleStr, x));
+			errHandler.set(toAst<Exp_t>(errHandleStr, x->func));
 			auto funLit = simpleSingleValueFrom(errHandler)->value.to<FunLit_t>();
 			auto body = x->new_ptr<Body_t>();
 			body->content.set(tryNode->catchBlock->body);
