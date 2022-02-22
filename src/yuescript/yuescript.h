@@ -1,6 +1,6 @@
 R"yuescript_codes(
 --[[
-Copyright (C) 2020 by Leaf Corcoran, modified by Li Jin, 2021
+Copyright (C) 2020 by Leaf Corcoran, modified by Li Jin, 2022
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -97,7 +97,7 @@ local function yue_call(f, ...)
 	return xpcall((function()
 		return f(unpack(args))
 	end), function(err)
-		return yue.stp.stacktrace(err, 1)
+		return yue.traceback(err, 1)
 	end)
 end
 yue_loadstring = function(...)
@@ -138,37 +138,34 @@ local function insert_loader(pos)
 	insert(loaders, pos, yue_loader)
 	return true
 end
+yue.options.dump_locals = false
+yue.options.simplified = true
+local load_stacktraceplus = yue.load_stacktraceplus
+yue.load_stacktraceplus = nil
+local stp
+local function yue_traceback(err, level)
+	if not stp then
+		stp = load_stacktraceplus()
+	end
+	stp.dump_locals = yue.options.dump_locals
+	stp.simplified = yue.options.simplified
+	return stp.stacktrace(err, level)
+end
 local function yue_require(name)
 	insert_loader()
-	local success, res = xpcall((function()
+	local success, res = xpcall(function()
 		return require(name)
-	end), function(err)
-		local msg = yue.stp.stacktrace(err, 1)
-		print(msg)
-		return msg
+	end, function(err)
+		return yue_traceback(err, 2)
 	end)
 	if success then
 		return res
 	else
+		print(res)
 		return nil
 	end
 end
-local load_stacktraceplus = yue.load_stacktraceplus
-yue.load_stacktraceplus = nil
 setmetatable(yue, {
-	__index = function(self, key)
-		if not (key == "stp") then
-			return nil
-		end
-		local stp = rawget(yue, "stp")
-		if not stp then
-			stp = load_stacktraceplus()
-			stp.dump_locals = false
-			stp.simplified = true
-			yue.stp = stp
-		end
-		return stp
-	end,
 	__call = function(self, name)
 		return self.require(name)
 	end
@@ -214,4 +211,5 @@ yue.loadstring = yue_loadstring
 yue.pcall = yue_call
 yue.require = yue_require
 yue.p = p
+yue.traceback = yue_traceback
 )yuescript_codes";
