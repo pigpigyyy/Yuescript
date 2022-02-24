@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Yuescript", "Yuescript\Yuescript.vcxproj", "{CF4F54DB-61FE-48E0-BA2E-4168BA27ECBD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua51", "lua51\lua51.vcxproj", "{26D6E513-4959-4B9D-B213-C45A348FB350}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lua51", "Lua51\Lua51.vcxproj", "{26D6E513-4959-4B9D-B213-C45A348FB350}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yue", "yue\yue.vcxproj", "{08A9E377-ECC6-4ACB-AF99-8F683D5F48A5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YuescriptDLL", "YuescriptDLL\YuescriptDLL.vcxproj", "{08A9E377-ECC6-4ACB-AF99-8F683D5F48A5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{26D6E513-4959-4B9D-B213-C45A348FB350} = {26D6E513-4959-4B9D-B213-C45A348FB350}
 	EndProjectSection
