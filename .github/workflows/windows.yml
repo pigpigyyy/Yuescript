@@ -16,15 +16,24 @@ jobs:
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1
       - name: Windows build
-        run: msbuild Yuescript.sln /p:Configuration=release /p:Platform=x86
+        run: |
+          msbuild win-build\Yuescript.sln /p:Configuration=release /p:Platform=x86
+          msbuild win-build\Yuescript.sln /p:Configuration=release /p:Platform=x64
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
-        run: (cd bin\windows\Release && 7z a ..\..\..\yue-windows-x86.7z yue.exe)
+        run: |
+          (cd bin\windows\Win32\Release && 7z a ..\..\..\..\yue-windows-x86.7z yue.exe)
+          (cd bin\windows\x64\Release && 7z a ..\..\..\..\yue-windows-x64.7z yue.exe)
+          (cd bin\windows\Win32\Release && 7z a ..\..\..\..\yue-windows-x86-lua51-dll.7z yue.dll)
+          (cd bin\windows\x64\Release && 7z a ..\..\..\..\yue-windows-x64-lua51-dll.7z yue.dll)
       - name: release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             yue-windows-x86.7z
+            yue-windows-x64.7z
+            yue-windows-x86-lua51-dll.7z
+            yue-windows-x64-lua51-dll.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
