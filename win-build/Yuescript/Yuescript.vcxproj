@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -72,26 +72,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)\build\windows\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)\bin\windows\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
     <TargetName>yue</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\build\windows\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>yue</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)\build\windows\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)\bin\windows\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
     <TargetName>yue</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\build\windows\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>yue</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -100,8 +100,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -115,8 +115,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -132,8 +132,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -151,8 +151,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>.\src;.\src\3rdParty;.\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -163,81 +163,81 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\3rdParty\lua\lapi.c" />
-    <ClCompile Include="src\3rdParty\lua\lauxlib.c" />
-    <ClCompile Include="src\3rdParty\lua\lbaselib.c" />
-    <ClCompile Include="src\3rdParty\lua\lcode.c" />
-    <ClCompile Include="src\3rdParty\lua\lcorolib.c" />
-    <ClCompile Include="src\3rdParty\lua\lctype.c" />
-    <ClCompile Include="src\3rdParty\lua\ldblib.c" />
-    <ClCompile Include="src\3rdParty\lua\ldebug.c" />
-    <ClCompile Include="src\3rdParty\lua\ldo.c" />
-    <ClCompile Include="src\3rdParty\lua\ldump.c" />
-    <ClCompile Include="src\3rdParty\lua\lfunc.c" />
-    <ClCompile Include="src\3rdParty\lua\lgc.c" />
-    <ClCompile Include="src\3rdParty\lua\linit.c" />
-    <ClCompile Include="src\3rdParty\lua\liolib.c" />
-    <ClCompile Include="src\3rdParty\lua\llex.c" />
-    <ClCompile Include="src\3rdParty\lua\lmathlib.c" />
-    <ClCompile Include="src\3rdParty\lua\lmem.c" />
-    <ClCompile Include="src\3rdParty\lua\loadlib.c" />
-    <ClCompile Include="src\3rdParty\lua\lobject.c" />
-    <ClCompile Include="src\3rdParty\lua\lopcodes.c" />
-    <ClCompile Include="src\3rdParty\lua\loslib.c" />
-    <ClCompile Include="src\3rdParty\lua\lparser.c" />
-    <ClCompile Include="src\3rdParty\lua\lstate.c" />
-    <ClCompile Include="src\3rdParty\lua\lstring.c" />
-    <ClCompile Include="src\3rdParty\lua\lstrlib.c" />
-    <ClCompile Include="src\3rdParty\lua\ltable.c" />
-    <ClCompile Include="src\3rdParty\lua\ltablib.c" />
-    <ClCompile Include="src\3rdParty\lua\ltm.c" />
-    <ClCompile Include="src\3rdParty\lua\lundump.c" />
-    <ClCompile Include="src\3rdParty\lua\lutf8lib.c" />
-    <ClCompile Include="src\3rdParty\lua\lvm.c" />
-    <ClCompile Include="src\3rdParty\lua\lzio.c" />
-    <ClCompile Include="src\yue.cpp" />
-    <ClCompile Include="src\yuescript\ast.cpp" />
-    <ClCompile Include="src\yuescript\parser.cpp" />
-    <ClCompile Include="src\yuescript\yuescript.cpp" />
-    <ClCompile Include="src\yuescript\yue_compiler.cpp" />
-    <ClCompile Include="src\yuescript\yue_parser.cpp" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lapi.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lauxlib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lbaselib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lcode.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lcorolib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lctype.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ldblib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ldebug.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ldo.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ldump.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lfunc.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lgc.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\linit.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\liolib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\llex.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lmathlib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lmem.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\loadlib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lobject.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lopcodes.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\loslib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lparser.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lstate.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lstring.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lstrlib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ltable.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ltablib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\ltm.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lundump.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lutf8lib.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lvm.c" />
+    <ClCompile Include="..\..\src\3rdParty\lua\lzio.c" />
+    <ClCompile Include="..\..\src\yue.cpp" />
+    <ClCompile Include="..\..\src\yuescript\ast.cpp" />
+    <ClCompile Include="..\..\src\yuescript\parser.cpp" />
+    <ClCompile Include="..\..\src\yuescript\yuescript.cpp" />
+    <ClCompile Include="..\..\src\yuescript\yue_compiler.cpp" />
+    <ClCompile Include="..\..\src\yuescript\yue_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\3rdParty\lua\lapi.h" />
-    <ClInclude Include="src\3rdParty\lua\lauxlib.h" />
-    <ClInclude Include="src\3rdParty\lua\lcode.h" />
-    <ClInclude Include="src\3rdParty\lua\lctype.h" />
-    <ClInclude Include="src\3rdParty\lua\ldebug.h" />
-    <ClInclude Include="src\3rdParty\lua\ldo.h" />
-    <ClInclude Include="src\3rdParty\lua\lfunc.h" />
-    <ClInclude Include="src\3rdParty\lua\lgc.h" />
-    <ClInclude Include="src\3rdParty\lua\ljumptab.h" />
-    <ClInclude Include="src\3rdParty\lua\llex.h" />
-    <ClInclude Include="src\3rdParty\lua\llimits.h" />
-    <ClInclude Include="src\3rdParty\lua\lmem.h" />
-    <ClInclude Include="src\3rdParty\lua\lobject.h" />
-    <ClInclude Include="src\3rdParty\lua\lopcodes.h" />
-    <ClInclude Include="src\3rdParty\lua\lopnames.h" />
-    <ClInclude Include="src\3rdParty\lua\lparser.h" />
-    <ClInclude Include="src\3rdParty\lua\lprefix.h" />
-    <ClInclude Include="src\3rdParty\lua\lstate.h" />
-    <ClInclude Include="src\3rdParty\lua\lstring.h" />
-    <ClInclude Include="src\3rdParty\lua\ltable.h" />
-    <ClInclude Include="src\3rdParty\lua\ltm.h" />
-    <ClInclude Include="src\3rdParty\lua\lua.h" />
-    <ClInclude Include="src\3rdParty\lua\lua.hpp" />
-    <ClInclude Include="src\3rdParty\lua\luaconf.h" />
-    <ClInclude Include="src\3rdParty\lua\lualib.h" />
-    <ClInclude Include="src\3rdParty\lua\lundump.h" />
-    <ClInclude Include="src\3rdParty\lua\lvm.h" />
-    <ClInclude Include="src\3rdParty\lua\lzio.h" />
-    <ClInclude Include="src\yuescript\ast.hpp" />
-    <ClInclude Include="src\yuescript\parser.hpp" />
-    <ClInclude Include="src\yuescript\stacktraceplus.h" />
-    <ClInclude Include="src\yuescript\yuescript.h" />
-    <ClInclude Include="src\yuescript\yue_ast.h" />
-    <ClInclude Include="src\yuescript\yue_compiler.h" />
-    <ClInclude Include="src\yuescript\yue_parser.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lapi.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lauxlib.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lcode.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lctype.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\ldebug.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\ldo.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lfunc.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lgc.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\ljumptab.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\llex.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\llimits.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lmem.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lobject.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lopcodes.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lopnames.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lparser.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lprefix.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lstate.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lstring.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\ltable.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\ltm.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lua.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lua.hpp" />
+    <ClInclude Include="..\..\src\3rdParty\lua\luaconf.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lualib.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lundump.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lvm.h" />
+    <ClInclude Include="..\..\src\3rdParty\lua\lzio.h" />
+    <ClInclude Include="..\..\src\yuescript\ast.hpp" />
+    <ClInclude Include="..\..\src\yuescript\parser.hpp" />
+    <ClInclude Include="..\..\src\yuescript\stacktraceplus.h" />
+    <ClInclude Include="..\..\src\yuescript\yuescript.h" />
+    <ClInclude Include="..\..\src\yuescript\yue_ast.h" />
+    <ClInclude Include="..\..\src\yuescript\yue_compiler.h" />
+    <ClInclude Include="..\..\src\yuescript\yue_parser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
