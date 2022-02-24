@@ -1,4 +1,5 @@
 yue
+!win-build/yue
 !src/yuescript/
 build
 build.luarocks
