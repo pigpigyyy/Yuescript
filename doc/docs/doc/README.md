@@ -81,45 +81,64 @@ export yuescript = "月之脚本"
 
 * **Lua Module**
 
-&emsp;&emsp;Install [luarocks](https://luarocks.org), a package manager for Lua modules. Then install it as a Lua module and executable with:
+&emsp;Install [luarocks](https://luarocks.org), a package manager for Lua modules. Then install it as a Lua module and executable with:
 
 ```
 > luarocks install yuescript
 ```
 
-&emsp;&emsp;Or you can build `yue.so` file with:
+&emsp;Or you can build `yue.so` file with:
 
 ```
 > make shared LUAI=/usr/local/include/lua LUAL=/usr/local/lib/lua
 ```
 
-&emsp;&emsp;Then get the binary file from path **bin/shared/yue.so**.
+&emsp;Then get the binary file from path **bin/shared/yue.so**.
 
 * **Binary Tool**
 
-&emsp;&emsp;Clone this repo, then build and install executable with:
+&emsp;Clone this repo, then build and install executable with:
 ```
 > make install
 ```
 
-&emsp;&emsp;Build Yuescript tool without macro feature:
+&emsp;Build Yuescript tool without macro feature:
 ```
 > make install NO_MACRO=true
 ```
 
-&emsp;&emsp;Build Yuescript tool without built-in Lua binary:
+&emsp;Build Yuescript tool without built-in Lua binary:
 ```
 > make install NO_LUA=true
 ```
 
 ## Usage
 
-&emsp;&emsp;Require the Yuescript module in Lua:
-```Lua
--- require `main.yue` in Lua
-require("yue")("main")
+### Lua Module
 
--- use the Yuescript compiler in Lua
+&emsp;Use Yuescript module in Lua:
+
+* **Case 1**  
+Require "your_yuescript_entry.yue" in Lua.
+```Lua
+require("yue")("your_yuescript_entry")
+```
+&emsp;And this code still works when you compile "your_yuescript_entry.yue"  to "your_yuescript_entry.lua" in the same path. In the rest Yuescript files just use the normal **require** or **import**. The code line numbers in error messages will also be handled correctly.
+
+* **Case 2**  
+Require Yuescript module and rewite message by hand.
+```lua
+local yue = require("yue")
+local success, result = xpcall(function()
+  yue.require("yuescript_module_name")
+end, function(err)
+  return yue.traceback(err)
+end)
+```
+
+* **Case 3**  
+Use the Yuescript compiler function in Lua.
+```lua
 local yue = require("yue")
 local codes, err, globals = yue.to_lua([[
 f = ->
@@ -131,7 +150,10 @@ f!
   lint_global = true
 })
 ```
-&emsp;&emsp;Use Yuescript tool with:
+
+### Yuescript Tool
+
+&emsp;Use Yuescript tool with:
 ```
 > yue -h
 Usage: yue [options|files|directories] ...
@@ -159,7 +181,6 @@ Usage: yue [options|files|directories] ...
 &emsp;&emsp;Compile and generate minified codes:  **yue -m .**  
 &emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**  
 &emsp;&emsp;Execute a Yuescript file:  **yue -e main.yue**
-
 
 ## Macro
 
@@ -226,7 +247,7 @@ if $and f1!, f2!, f3!
 </pre>
 </YueDisplay>
 
-### Insert Raw  Codes
+### Insert Raw Codes
 
 A macro function can either return a Yuescript string or a config table containing Lua codes.
 ```moonscript
@@ -323,7 +344,6 @@ import "utils" as {
 ]]
 </pre>
 </YueDisplay>
-
 
 ## Operator
 
@@ -572,7 +592,6 @@ tb =
 </pre>
 </YueDisplay>
 
-
 ## Module
 
 ### Import
@@ -706,6 +725,54 @@ export default ->
 </pre>
 </YueDisplay>
 
+## Try
+
+The syntax for Lua error handling in a common form.
+
+```moonscript
+try
+  func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try
+  func 1, 2, 3
+catch err
+  yue.traceback err
+
+try func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try func 1, 2, 3
+
+try
+  print "trying"
+  func 1, 2, 3
+```
+<YueDisplay>
+<pre>
+try
+  func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try
+  func 1, 2, 3
+catch err
+  yue.traceback err
+
+try func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try func 1, 2, 3
+
+try
+  print "trying"
+  func 1, 2, 3
+</pre>
+</YueDisplay>
 
 ## Whitespace
 
@@ -836,6 +903,7 @@ do
 </YueDisplay>
 
 ## Comment
+
 ```moonscript
 -- I am a comment
 
