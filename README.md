@@ -115,6 +115,7 @@ Usage: yue [options|files|directories] ...
 
 * [Vim](https://github.com/pigpigyyy/Yuescript-vim)
 * [ZeroBraneStudio](https://github.com/pkulchenko/ZeroBraneStudio/issues/1134) (Syntax highlighting)
+* [Visual Studio Code](https://github.com/pigpigyyy/yuescript-vscode)
 
 ## License
 
