@@ -58,37 +58,41 @@ local function find_modulepath(name)
 	local dirsep = yue.options.dirsep
 	local name_path = name:match("[\\/]") and name or name:gsub("%.", dirsep)
 	local file_exist, file_path
+	local tried = {}
 	for path in package.path:gmatch("[^;]+") do
 		file_path = path:gsub("?", name_path):gsub("%.lua$", suffix)
 		file_exist = yue.file_exist(file_path)
 		if file_exist then
 			break
+		else
+			tried[#tried + 1] = file_path
 		end
 	end
 	if file_exist then
 		return file_path
 	else
-		return nil
+		return nil, tried
 	end
-end
-local function load_text(name)
-	local file_path = find_modulepath(name)
-	if file_path then
-		return yue.read_file(file_path), file_path
-	end
-	return nil, nil
 end
 local yue_loadstring
 local function yue_loader(name)
-	local text, file_path = load_text(name)
-	if text then
-		local res, err = yue_loadstring(text, file_path)
-		if not res then
-			error(file_path .. ": " .. err)
+	local file_path, tried = yue.find_modulepath(name)
+	if file_path then
+		local text = yue.read_file(file_path)
+		if text then
+			local res, err = yue_loadstring(text, file_path)
+			if not res then
+				error(file_path .. ": " .. err)
+			end
+			return res
+		else
+			return "no file '" .. file_path .. "'"
 		end
-		return res
 	end
-	return nil, "Could not find yue file"
+	for i = 1, #tried do
+		tried[i] = "no file '" .. tried[i] .. "'"
+	end
+	return concat(tried, "\n\t")
 end
 local function yue_call(f, ...)
 	local args = {
@@ -126,7 +130,7 @@ local function yue_dofile(...)
 end
 local function insert_loader(pos)
 	if pos == nil then
-		pos = 2
+		pos = 3
 	end
 	local loaders = package.loaders or package.searchers
 	for i = 1, #loaders do
