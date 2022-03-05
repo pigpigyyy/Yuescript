@@ -312,6 +312,14 @@ int main(int narg, const char** args) {
 					return 1;
 				}
 				std::string evalStr = args[i];
+				lua_newtable(L);
+				i++;
+				for (int j = i, index = 1; j < narg; j++) {
+					lua_pushstring(L, args[j]);
+					lua_rawseti(L, -2, index);
+					index++;
+				}
+				lua_setglobal(L, "arg");
 				std::ifstream input(evalStr, std::ios::in);
 				if (input) {
 					auto ext = fs::path(evalStr).extension().string();
@@ -343,7 +351,6 @@ int main(int narg, const char** args) {
 				pushYue(L, "pcall"sv);
 				lua_insert(L, -2);
 				int argCount = 0;
-				i++;
 				while (i < narg) {
 					argCount++;
 					lua_pushstring(L, args[i]);
