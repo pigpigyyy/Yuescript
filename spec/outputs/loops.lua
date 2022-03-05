@@ -171,11 +171,13 @@ for i = 1, 10 do
 	while true do
 		local _continue_0 = false
 		repeat
-			if not true then
-				_continue_0 = true
+			do
+				if not true then
+					_continue_0 = true
+					break
+				end
 				break
 			end
-			break
 			_continue_0 = true
 		until true
 		if not _continue_0 then
@@ -313,11 +315,13 @@ end
 while true do
 	local _continue_0 = false
 	repeat
-		if false then
-			_continue_0 = true
+		do
+			if false then
+				_continue_0 = true
+				break
+			end
 			break
 		end
-		break
 		_continue_0 = true
 	until true
 	if not _continue_0 then

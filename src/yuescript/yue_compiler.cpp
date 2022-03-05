@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.4"sv;
+const std::string_view version = "0.10.5"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4844,17 +4844,34 @@ private:
 			}
 			return traversal::Continue;
 		});
+		bool extraDo = false;
 		if (withContinue) {
+			if (auto block = ast_cast<Block_t>(body)) {
+				if (!block->statements.empty()) {
+					auto stmt = static_cast<Statement_t*>(block->statements.back());
+					if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
+						extraDo = _parser.toString(breakLoop) == "break"sv;
+					}
+				}
+			}
 			auto continueVar = getUnusedName("_continue_"sv);
 			addToScope(continueVar);
+			_continueVars.push(continueVar);
 			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
 			_buf << indent() << "repeat"sv << nll(body);
-			temp.push_back(clearBuf());
-			_continueVars.push(continueVar);
 			pushScope();
+			if (extraDo) {
+				_buf << indent() << "do"sv << nll(body);
+				pushScope();
+			}
+			temp.push_back(clearBuf());
 		}
 		transform_plain_body(body, temp, usage, assignList);
 		if (withContinue) {
+			if (extraDo) {
+				popScope();
+				_buf << indent() << "end"sv << nll(body);
+			}
 			if (!appendContent.empty()) {
 				_buf << indent() << appendContent;
 			}
