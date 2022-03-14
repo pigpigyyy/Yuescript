@@ -157,8 +157,37 @@ do
 	end
 end
 do
-	local _with_0 = dad
-	_with_0["if"]("yes")
-	local y = _with_0["end"].of["function"]
-	return _with_0
+	do
+		local _with_0 = dad
+		_with_0["if"]("yes")
+		local y = _with_0["end"].of["function"]
+	end
 end
+do
+	do
+		local _with_0 = SolidRect({
+			width = w,
+			height = h,
+			color = 0x66000000
+		})
+		mask = _with_0
+		if _with_0 ~= nil then
+			_with_0.touchEnabled = true
+			_with_0.swallowTouches = true
+		end
+	end
+end
+do
+	do
+		local mask = SolidRect({
+			width = w,
+			height = h,
+			color = 0x66000000
+		})
+		if mask ~= nil then
+			mask.touchEnabled = true
+			mask.swallowTouches = true
+		end
+	end
+end
+return nil

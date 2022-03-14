@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.6"sv;
+const std::string_view version = "0.10.7"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -279,12 +279,7 @@ private:
 		int mode = int(std::isupper(name[0]) ? GlobalMode::Capital : GlobalMode::Any);
 		const auto& current = _scopes.back();
 		if (int(current.mode) >= mode) {
-			if (current.globals) {
-				if (current.globals->find(name) != current.globals->end()) {
-					isDefined = true;
-					current.vars->insert_or_assign(name, VarType::Global);
-				}
-			} else {
+			if (!current.globals) {
 				isDefined = true;
 				current.vars->insert_or_assign(name, VarType::Global);
 			}
@@ -309,16 +304,29 @@ private:
 	}
 
 	bool isLocal(const std::string& name) const {
-		bool isDefined = false;
+		bool local = false;
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			auto vars = it->vars.get();
 			auto vit = vars->find(name);
 			if (vit != vars->end() && vit->second != VarType::Global) {
-				isDefined = true;
+				local = true;
 				break;
 			}
 		}
-		return isDefined;
+		return local;
+	}
+
+	bool isGlobal(const std::string& name) const {
+		bool global = false;
+		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
+			auto vars = it->vars.get();
+			auto vit = vars->find(name);
+			if (vit != vars->end() && vit->second == VarType::Global) {
+				global = true;
+				break;
+			}
+		}
+		return global;
 	}
 
 	bool isConst(const std::string& name) const {
@@ -371,6 +379,7 @@ private:
 			scope.globals = std::make_unique<std::unordered_set<std::string>>();
 		}
 		scope.globals->insert(name);
+		scope.vars->insert_or_assign(name, VarType::Global);
 	}
 
 	void addToAllowList(const std::string& name) {
@@ -1399,9 +1408,9 @@ private:
 								_buf << indent() << "local "sv << pair.name << nll(assignment);
 							}
 						}
-						bool valueDefined = isDefined(destruct.value);
+						bool isLocalValue = isLocal(destruct.value);
 						std::string objVar;
-						if (valueDefined) {
+						if (isLocalValue) {
 							objVar = destruct.value;
 						} else {
 							_buf << indent() << "do"sv << nll(assignment);
@@ -1414,7 +1423,7 @@ private:
 						auto valueExp = toAst<Exp_t>(objVar + pair.structure, assignment);
 						transformExp(valueExp, temp, ExpUsage::Closure);
 						_buf << indent() << pair.name << " = "sv << temp.back() << nll(assignment);
-						if (!valueDefined) {
+						if (!isLocalValue) {
 							popScope();
 							_buf << indent() << "end"sv << nlr(assignment);
 						}
@@ -1428,7 +1437,7 @@ private:
 						_buf << pair.name << " = "sv << destruct.value << pair.structure << nll(assignment);
 						temp.push_back(clearBuf());
 					}
-				} else if (_parser.match<Name_t>(destruct.value) && isDefined(destruct.value)) {
+				} else if (_parser.match<Name_t>(destruct.value) && isLocal(destruct.value)) {
 					str_list defs, names, values;
 					bool isMetatable = false;
 					for (auto& item : destruct.items) {
@@ -2223,7 +2232,7 @@ private:
 			_config.lintGlobalVariable = false;
 			auto var = singleVariableFrom(exp);
 			_config.lintGlobalVariable = lintGlobal;
-			if (var.empty()) {
+			if (var.empty() || isGlobal(var)) {
 				storingValue = true;
 				auto desVar = getUnusedName("_des_"sv);
 				if (asmt->assign->values.objects().size() == 1) {
@@ -5547,7 +5556,7 @@ private:
 		bool scoped = false;
 		if (with->assigns) {
 			auto vars = getAssignVars(with);
-			if (vars.front().empty()) {
+			if (vars.front().empty() || isGlobal(vars.front())) {
 				if (with->assigns->values.objects().size() == 1) {
 					auto var = singleVariableFrom(with->assigns->values.objects().front());
 					if (!var.empty() && isLocal(var)) {

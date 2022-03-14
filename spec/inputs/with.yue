@@ -121,3 +121,16 @@ do
 	with dad
 		.if "yes"
 		y = .end.of.function
+
+do
+	global mask
+	with? mask = SolidRect width: w, height: h, color: 0x66000000
+		.touchEnabled = true
+		.swallowTouches = true
+
+do
+	with? mask = SolidRect width: w, height: h, color: 0x66000000
+		.touchEnabled = true
+		.swallowTouches = true
+
+nil

@@ -208,6 +208,17 @@ do
 	if :pi = math
 		print pi
 
+do
+	if _M = {}
+		:Thing = _M
+		:a, :b = _M
+
+do
+	global _M
+	if _M = {}
+		:Thing = _M
+		:a, :b = _M
+
 nil
 
 
