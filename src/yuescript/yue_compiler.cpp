@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.5"sv;
+const std::string_view version = "0.10.6"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2012,7 +2012,7 @@ private:
 				auto leftValue = singleValueFrom(leftExp);
 				if (!leftValue) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftExp));
 				auto chain = leftValue->item.as<ChainValue_t>();
-				if (!chain) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, chain));
+				if (!chain) throw std::logic_error(_info.errorMessage("left hand expression is not assignable"sv, leftValue));
 				BLOCK_START
 				{
 					auto dot = ast_cast<DotChainItem_t>(chain->items.back());
