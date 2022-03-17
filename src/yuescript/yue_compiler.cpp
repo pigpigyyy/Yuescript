@@ -1069,20 +1069,26 @@ private:
 
 	str_list getAssignVars(ExpListAssign_t* assignment) {
 		str_list vars;
+		bool lintGlobal = _config.lintGlobalVariable;
+		_config.lintGlobalVariable = false;
 		if (!assignment->action.is<Assign_t>()) return vars;
 		for (auto exp : assignment->expList->exprs.objects()) {
 			auto var = singleVariableFrom(exp);
 			vars.push_back(var.empty() ? Empty : var);
 		}
+		_config.lintGlobalVariable = lintGlobal;
 		return vars;
 	}
 
 	str_list getAssignVars(With_t* with) {
 		str_list vars;
+		bool lintGlobal = _config.lintGlobalVariable;
+		_config.lintGlobalVariable = false;
 		for (auto exp : with->valueList->exprs.objects()) {
 			auto var = singleVariableFrom(exp);
 			vars.push_back(var.empty() ? Empty : var);
 		}
+		_config.lintGlobalVariable = lintGlobal;
 		return vars;
 	}
 
@@ -4804,13 +4810,13 @@ private:
 		out.push_back('(' + join(temp, ", "sv) + ')');
 	}
 
-	void transformForHead(For_t* forNode, str_list& out) {
+	void transformForHead(Variable_t* var, Exp_t* startVal, Exp_t* stopVal, for_step_value_t* stepVal, str_list& out) {
 		str_list temp;
-		std::string varName = _parser.toString(forNode->varName);
-		transformExp(forNode->startValue, temp, ExpUsage::Closure);
-		transformExp(forNode->stopValue, temp, ExpUsage::Closure);
-		if (forNode->stepValue) {
-			transformExp(forNode->stepValue->value, temp, ExpUsage::Closure);
+		std::string varName = _parser.toString(var);
+		transformExp(startVal, temp, ExpUsage::Closure);
+		transformExp(stopVal, temp, ExpUsage::Closure);
+		if (stepVal) {
+			transformExp(stepVal->value, temp, ExpUsage::Closure);
 		} else {
 			temp.emplace_back();
 		}
@@ -4818,10 +4824,14 @@ private:
 		const auto& start = *it;
 		const auto& stop = *(++it);
 		const auto& step = *(++it);
-		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : ", "s + step) << " do"sv << nll(forNode);
+		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : ", "s + step) << " do"sv << nll(var);
 		pushScope();
 		forceAddToScope(varName);
 		out.push_back(clearBuf());
+	}
+
+	void transformForHead(For_t* forNode, str_list& out) {
+		transformForHead(forNode->varName, forNode->startValue, forNode->stopValue, forNode->stepValue, out);
 	}
 
 	void transform_plain_body(ast_node* body, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
@@ -6041,23 +6051,7 @@ private:
 	}
 
 	void transformCompFor(CompFor_t* comp, str_list& out) {
-		str_list temp;
-		std::string varName = _parser.toString(comp->varName);
-		transformExp(comp->startValue, temp, ExpUsage::Closure);
-		transformExp(comp->stopValue, temp, ExpUsage::Closure);
-		if (comp->stepValue) {
-			transformExp(comp->stepValue->value, temp, ExpUsage::Closure);
-		} else {
-			temp.emplace_back();
-		}
-		auto it = temp.begin();
-		const auto& start = *it;
-		const auto& stop = *(++it);
-		const auto& step = *(++it);
-		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : ", "s + step) << " do"sv << nll(comp);
-		out.push_back(clearBuf());
-		pushScope();
-		forceAddToScope(varName);
+		transformForHead(comp->varName, comp->startValue, comp->stopValue, comp->stepValue, out);
 	}
 
 	void transformTableBlockIndent(TableBlockIndent_t* table, str_list& out) {

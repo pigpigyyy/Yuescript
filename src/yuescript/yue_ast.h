@@ -334,7 +334,6 @@ AST_NODE(Try)
 AST_END(Try)
 
 class CompInner_t;
-class Statement_t;
 
 AST_NODE(Comprehension)
 	ast_sel<true, Exp_t, Statement_t> value;
