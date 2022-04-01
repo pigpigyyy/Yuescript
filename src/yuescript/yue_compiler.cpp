@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.7"sv;
+const std::string_view version = "0.10.8"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1876,8 +1876,16 @@ private:
 			if (destructNode || (destructNode = value->item.as<simple_table_t>())) {
 				if (*j != nullNode) {
 					if (auto ssVal = simpleSingleValueFrom(*j)) {
-						if (ssVal->value.is<const_value_t>()) {
-							throw std::logic_error(_info.errorMessage("can not destructure a const value"sv, ssVal->value));
+						switch (ssVal->value->getId()) {
+							case id<const_value_t>():
+								throw std::logic_error(_info.errorMessage("can not destructure a const value"sv, ssVal->value));
+								break;
+							case id<Num_t>():
+								throw std::logic_error(_info.errorMessage("can not destructure a number"sv, ssVal->value));
+								break;
+							case id<FunLit_t>():
+								throw std::logic_error(_info.errorMessage("can not destructure a function"sv, ssVal->value));
+								break;
 						}
 					}
 				} else {

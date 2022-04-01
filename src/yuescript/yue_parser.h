@@ -77,8 +77,8 @@ protected:
 		std::string moduleName = "_module_0";
 		std::string buffer;
 		std::stack<int> indents;
-		std::stack<bool> doStack;
-		std::stack<bool> chainBlockStack;
+		std::stack<bool> noDoStack;
+		std::stack<bool> noChainBlockStack;
 		std::stack<bool> noTableBlockStack;
 	};
 
@@ -135,8 +135,8 @@ private:
 	rule EnableDo;
 	rule DisableChain;
 	rule EnableChain;
-	rule DisableDoChain;
-	rule EnableDoChain;
+	rule DisableDoChainArgTableBlock;
+	rule EnableDoChainArgTableBlock;
 	rule DisableArgTableBlock;
 	rule EnableArgTableBlock;
 	rule SwitchElse;

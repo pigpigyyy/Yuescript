@@ -267,11 +267,12 @@ z = x and b
 z = x andb
 
 
--- undelimited tables
+while 10 > something(
+		something: "world"
+	)
+	print "yeah"
 
-while 10 > something
-	something: "world"
-		print "yeah"
+-- undelimited tables
 
 x =
 	okay: sure

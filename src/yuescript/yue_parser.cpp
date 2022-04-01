@@ -75,7 +75,7 @@ YueParser::YueParser() {
 	#define key(str) (str >> not_(AlphaNum))
 	#define disable_do(patt) (DisableDo >> ((patt) >> EnableDo | EnableDo >> Cut))
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
-	#define disable_do_chain(patt) (DisableDoChain >> ((patt) >> EnableDoChain | EnableDoChain >> Cut))
+	#define disable_do_chain_arg_table_block(patt) (DisableDoChainArgTableBlock >> ((patt) >> EnableDoChainArgTableBlock | EnableDoChainArgTableBlock >> Cut))
 	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
 	#define plain_body_with(str) (-(Space >> key(str)) >> InBlock | Space >> key(str) >> Statement)
 	#define plain_body (InBlock | Statement)
@@ -223,8 +223,8 @@ YueParser::YueParser() {
 
 	WithExp = ExpList >> -Assign;
 
-	With = Space >> key("with") >> -existential_op >> disable_do_chain(WithExp) >> plain_body_with("do");
-	SwitchCase = Space >> key("when") >> disable_chain(ExpList) >> plain_body_with("then");
+	With = Space >> key("with") >> -existential_op >> disable_do_chain_arg_table_block(WithExp) >> plain_body_with("do");
+	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(ExpList)) >> plain_body_with("then");
 	SwitchElse = Space >> key("else") >> plain_body;
 
 	SwitchBlock = *EmptyLine >>
@@ -238,54 +238,56 @@ YueParser::YueParser() {
 		>> -Space >> Break >> SwitchBlock;
 
 	assignment = ExpList >> Assign;
-	IfCond = disable_do_chain(disable_arg_table_block(assignment | Exp));
+	IfCond = disable_do_chain_arg_table_block(assignment | Exp);
 	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("elseif") >> IfCond >> plain_body_with("then");
 	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("else") >> plain_body;
 	IfType = (expr("if") | expr("unless")) >> not_(AlphaNum);
 	If = Space >> IfType >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
 
 	WhileType = (expr("while") | expr("until")) >> not_(AlphaNum);
-	While = WhileType >> disable_do_chain(Exp) >> plain_body_with("do");
+	While = WhileType >> disable_do_chain_arg_table_block(Exp) >> plain_body_with("do");
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> Space >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> Exp;
 	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
-	For = key("for") >> disable_do_chain(for_args) >> plain_body_with("do");
+	For = key("for") >> disable_do_chain_arg_table_block(for_args) >> plain_body_with("do");
 
 	for_in = star_exp | ExpList;
 
 	ForEach = key("for") >> AssignableNameList >> Space >> key("in") >>
-		disable_do_chain(for_in) >> plain_body_with("do");
+		disable_do_chain_arg_table_block(for_in) >> plain_body_with("do");
 
 	Do = pl::user(Space >> key("do"), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		return st->doStack.empty() || st->doStack.top();
+		return st->noDoStack.empty() || !st->noDoStack.top();
 	}) >> Body;
 
 	DisableDo = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->doStack.push(false);
+		st->noDoStack.push(true);
 		return true;
 	});
 
 	EnableDo = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->doStack.pop();
+		st->noDoStack.pop();
 		return true;
 	});
 
-	DisableDoChain = pl::user(true_(), [](const item_t& item) {
+	DisableDoChainArgTableBlock = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->doStack.push(false);
-		st->chainBlockStack.push(false);
+		st->noDoStack.push(true);
+		st->noChainBlockStack.push(true);
+		st->noTableBlockStack.push(true);
 		return true;
 	});
 
-	EnableDoChain = pl::user(true_(), [](const item_t& item) {
+	EnableDoChainArgTableBlock = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->doStack.pop();
-		st->chainBlockStack.pop();
+		st->noDoStack.pop();
+		st->noChainBlockStack.pop();
+		st->noTableBlockStack.pop();
 		return true;
 	});
 
@@ -370,20 +372,20 @@ YueParser::YueParser() {
 
 	DisableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->chainBlockStack.push(false);
+		st->noChainBlockStack.push(true);
 		return true;
 	});
 
 	EnableChain = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		st->chainBlockStack.pop();
+		st->noChainBlockStack.pop();
 		return true;
 	});
 
 	chain_line = CheckIndent >> (chain_item | Space >> (chain_dot_chain | ColonChain)) >> -InvokeArgs;
 	chain_block = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		return st->chainBlockStack.empty() || st->chainBlockStack.top();
+		return st->noChainBlockStack.empty() || !st->noChainBlockStack.top();
 	}) >> +SpaceBreak >> Advance >> ensure(
 		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
 	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;

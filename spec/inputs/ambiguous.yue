@@ -28,4 +28,34 @@ do
 	global *
 	$v!
 
+do
+	f
+		:v
+
+	tb = while f
+		:v
+
+	repeat
+		print v
+	until f
+		:v
+
+	with f
+		:v = tb
+		.x = 1
+
+	x = if f
+		:v
+
+	x = switch f
+		:v
+		when f
+			:v
+
+	nums = for num = 1, len
+		:num
+	
+	objects = for item in *items
+		name: item
+
 nil
