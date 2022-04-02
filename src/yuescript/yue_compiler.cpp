@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.8"sv;
+const std::string_view version = "0.10.9"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5344,7 +5344,7 @@ private:
 			auto mixins = _parser.toString(classDecl->mixes);
 			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
 			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base\n"sv;
-			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if not "sv << key << "\\match\"^__\""sv;
+			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if not "sv << key << "\\match\"^__\" and "sv << baseVar << '[' << key << "] == nil"sv;
 			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
 		}
 		temp.push_back(indent() + baseVar + ".__index = "s + baseVar + nll(classDecl));
