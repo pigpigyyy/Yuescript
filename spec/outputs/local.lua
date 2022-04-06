@@ -78,7 +78,9 @@ do
 		local _class_0
 		local Five
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -100,7 +102,9 @@ do
 		local _class_0
 		local No
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -118,7 +122,9 @@ do
 		do
 			local _class_1
 			local _base_1 = { }
-			_base_1.__index = _base_1
+			if _base_1.__index == nil then
+				_base_1.__index = _base_1
+			end
 			_class_1 = setmetatable({
 				__init = function() end,
 				__base = _base_1,

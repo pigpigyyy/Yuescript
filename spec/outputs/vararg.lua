@@ -55,7 +55,9 @@ join = function(...)
 		do
 			local _class_0
 			local _base_0 = { }
-			_base_0.__index = _base_0
+			if _base_0.__index == nil then
+				_base_0.__index = _base_0
+			end
 			_class_0 = setmetatable({
 				__init = function() end,
 				__base = _base_0,
@@ -80,7 +82,9 @@ join = function(...)
 		do
 			local _class_0
 			local _base_0 = { }
-			_base_0.__index = _base_0
+			if _base_0.__index == nil then
+				_base_0.__index = _base_0
+			end
 			_class_0 = setmetatable({
 				__init = function() end,
 				__base = _base_0,

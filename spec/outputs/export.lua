@@ -13,7 +13,9 @@ do
 	local _base_0 = {
 		umm = "cool"
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -168,7 +170,9 @@ f((function()
 	do
 		local _class_0
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -264,7 +268,9 @@ _ = tostring((function()
 	do
 		local _class_0
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -289,7 +295,9 @@ _module_0["v2"] = v2
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,

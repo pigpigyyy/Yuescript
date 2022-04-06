@@ -9,7 +9,9 @@ do
 			return "hello world"
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function(self, test, world)
 			self.test = test
@@ -40,7 +42,9 @@ do
 			return print("cool")
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -61,7 +65,9 @@ do
 	local _class_0
 	local _parent_0 = Simple
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self)
@@ -104,7 +110,9 @@ do
 			return print("num", num)
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function(self, arg)
 			return print("init arg", arg)
@@ -130,7 +138,9 @@ do
 			return _class_0.__parent.__base.cool(self, 120302)
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self)
@@ -172,7 +182,9 @@ do
 	local _base_0 = {
 		something = 20323
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -199,7 +211,9 @@ do
 			return assert(_class_0.__parent == Okay)
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -240,7 +254,9 @@ do
 			return _class_0.__parent.something(self, 1, 2, 3, 4)
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -264,7 +280,9 @@ do
 			return print("val:", self.val)
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -293,7 +311,9 @@ do
 			end
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -353,7 +373,9 @@ do
 			return nil
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -386,7 +408,9 @@ do
 		blue = function(self) end,
 		green = function(self) end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -420,7 +444,9 @@ do
 	local _class_0
 	local hello
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -453,7 +479,9 @@ yyy = function()
 	do
 		local _class_0
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -476,7 +504,9 @@ end
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -497,7 +527,9 @@ end
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -519,7 +551,9 @@ do
 	local _class_0
 	local _parent_0 = Hello.World
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -560,7 +594,9 @@ local a
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -581,7 +617,9 @@ local Something
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -603,7 +641,9 @@ do
 	local _class_0
 	local _parent_0 = Hello
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -642,7 +682,9 @@ do
 	local _class_0
 	local _parent_0 = World
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -680,7 +722,9 @@ print(((function()
 	do
 		local _class_0
 		local _base_0 = { }
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function() end,
 			__base = _base_0,
@@ -701,7 +745,9 @@ end)()).__name)
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -723,7 +769,9 @@ do
 	local _class_0
 	local val, insert
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function(self)
 			return print(insert, val)
@@ -747,7 +795,9 @@ end
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = hi,
 		__base = _base_0,
@@ -778,7 +828,9 @@ do
 			}
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -819,7 +871,9 @@ do
 			return _class_0.__parent.__base.dang(self)
 		end)
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -856,7 +910,9 @@ do
 	local _class_0
 	local _parent_0 = Thing
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -921,7 +977,9 @@ do
 				return self.__class["if"] and self.__class["do"](self.__class)
 			end
 		}
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function(self)
 				self.__class["if"] = true
@@ -958,7 +1016,9 @@ do
 				return self["if"] and self["do"](self)
 			end
 		}
-		_base_0.__index = _base_0
+		if _base_0.__index == nil then
+			_base_0.__index = _base_0
+		end
 		_class_0 = setmetatable({
 			__init = function(self)
 				self["if"] = true
@@ -991,7 +1051,9 @@ do
 			}
 		end
 	}
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	setmetatable(_base_0, _parent_0.__base)
 	_class_0 = setmetatable({
 		__init = function(self, ...)
@@ -1025,6 +1087,9 @@ end
 do
 	local _class_0
 	local _base_0 = { }
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	local _list_0 = {
 		B,
 		C,
@@ -1033,12 +1098,11 @@ do
 	for _index_0 = 1, #_list_0 do
 		local _mixin_0 = _list_0[_index_0]
 		for _key_0, _val_0 in pairs(_mixin_0.__base) do
-			if not _key_0:match("^__") and _base_0[_key_0] == nil then
+			if _key_0 ~= "__class" then
 				_base_0[_key_0] = _val_0
 			end
 		end
 	end
-	_base_0.__index = _base_0
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -1057,7 +1121,9 @@ end
 do
 	local _class_0
 	local _base_0 = { }
-	_base_0.__index = _base_0
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
