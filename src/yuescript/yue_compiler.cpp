@@ -5418,7 +5418,7 @@ private:
 			auto val = getUnusedName("_val_"sv);
 			auto mixins = _parser.toString(classDecl->mixes);
 			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
-			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base\n"sv;
+			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__class and "sv << mixin << ".__base or "sv << mixin << '\n';
 			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil"sv;
 			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
 		}

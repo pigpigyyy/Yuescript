@@ -229,7 +229,7 @@ do
 class extends lapis.Application
 	"/": => json: { status: true }
 
-class A using B, C, D
+class A using B, C, D, {value: 123}
 
 class Example
   @field1 = 1
