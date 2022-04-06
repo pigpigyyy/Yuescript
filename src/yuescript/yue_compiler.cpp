@@ -5338,16 +5338,6 @@ private:
 			temp.back() += "{ }"s + nll(classDecl);
 		}
 		transformAssignment(toAst<ExpListAssign_t>(baseVar + ".__index ?\?= "s + baseVar, classDecl), temp);
-		if (classDecl->mixes) {
-			auto mixin = getUnusedName("_mixin_"sv);
-			auto key = getUnusedName("_key_"sv);
-			auto val = getUnusedName("_val_"sv);
-			auto mixins = _parser.toString(classDecl->mixes);
-			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
-			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base\n"sv;
-			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << key << "~=\"__class\""sv;
-			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
-		}
 		str_list tmp;
 		if (usage == ExpUsage::Assignment) {
 			auto assign = x->new_ptr<Assign_t>();
@@ -5420,6 +5410,17 @@ private:
 		}
 		if (!assignItem.empty()) {
 			_buf << indent() << assignItem << " = "sv << classVar << nll(classDecl);
+		}
+		temp.push_back(clearBuf());
+		if (classDecl->mixes) {
+			auto mixin = getUnusedName("_mixin_"sv);
+			auto key = getUnusedName("_key_"sv);
+			auto val = getUnusedName("_val_"sv);
+			auto mixins = _parser.toString(classDecl->mixes);
+			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
+			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base\n"sv;
+			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil"sv;
+			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
 		}
 		switch (usage) {
 			case ExpUsage::Return: {

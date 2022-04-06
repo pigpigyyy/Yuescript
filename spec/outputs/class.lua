@@ -1090,19 +1090,6 @@ do
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
-	local _list_0 = {
-		B,
-		C,
-		D
-	}
-	for _index_0 = 1, #_list_0 do
-		local _mixin_0 = _list_0[_index_0]
-		for _key_0, _val_0 in pairs(_mixin_0.__base) do
-			if _key_0 ~= "__class" then
-				_base_0[_key_0] = _val_0
-			end
-		end
-	end
 	_class_0 = setmetatable({
 		__init = function() end,
 		__base = _base_0,
@@ -1117,6 +1104,19 @@ do
 	})
 	_base_0.__class = _class_0
 	A = _class_0
+	local _list_0 = {
+		B,
+		C,
+		D
+	}
+	for _index_0 = 1, #_list_0 do
+		local _mixin_0 = _list_0[_index_0]
+		for _key_0, _val_0 in pairs(_mixin_0.__base) do
+			if _base_0[_key_0] == nil then
+				_base_0[_key_0] = _val_0
+			end
+		end
+	end
 end
 do
 	local _class_0
