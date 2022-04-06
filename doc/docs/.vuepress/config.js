@@ -19,6 +19,15 @@ module.exports = {
 		['meta', { name: 'theme-color', content: '#3eaf7c' }],
 		['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
 		['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
+		['meta', { property: 'og:title', content: 'Yuescript' }],
+		['meta', { property: 'og:description', content: description }],
+		// Should probably have a og:url but I'm not sure how to add that without it being the same on all pages
+		['meta', { property: 'og:type', content: 'website' }],
+		['meta', { property: 'og:image', content: 'https://yuescript.org/image/yuescript.png' }],
+		['meta', { property: 'og:image:secure_url', content: 'https://yuescript.org/image/yuescript.png' }],
+		['meta', { property: 'og:image:type', content: 'image/png' }],
+		['meta', { property: 'og:image:width', content: '1200' }],
+		['meta', { property: 'og:image:height', content: '1200' }],
 		['script', {}, `window.global = window;`],
 		['script', {}, `
 			var Module = {
