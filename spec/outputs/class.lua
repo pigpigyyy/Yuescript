@@ -1087,6 +1087,22 @@ end
 do
 	local _class_0
 	local _base_0 = { }
+	local _list_0 = {
+		B,
+		C,
+		D,
+		{
+			value = 123
+		}
+	}
+	for _index_0 = 1, #_list_0 do
+		local _mixin_0 = _list_0[_index_0]
+		for _key_0, _val_0 in pairs(_mixin_0.__base or _mixin_0) do
+			if _base_0[_key_0] == nil then
+				_base_0[_key_0] = _val_0
+			end
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -1104,22 +1120,6 @@ do
 	})
 	_base_0.__class = _class_0
 	A = _class_0
-	local _list_0 = {
-		B,
-		C,
-		D,
-		{
-			value = 123
-		}
-	}
-	for _index_0 = 1, #_list_0 do
-		local _mixin_0 = _list_0[_index_0]
-		for _key_0, _val_0 in pairs(_mixin_0.__base or _mixin_0) do
-			if _base_0[_key_0] == nil then
-				_base_0[_key_0] = _val_0
-			end
-		end
-	end
 end
 do
 	local _class_0
