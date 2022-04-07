@@ -1114,7 +1114,7 @@ do
 	}
 	for _index_0 = 1, #_list_0 do
 		local _mixin_0 = _list_0[_index_0]
-		for _key_0, _val_0 in pairs(_mixin_0.__class and _mixin_0.__base or _mixin_0) do
+		for _key_0, _val_0 in pairs(_mixin_0.__base or _mixin_0) do
 			if _base_0[_key_0] == nil then
 				_base_0[_key_0] = _val_0
 			end
