@@ -1096,9 +1096,10 @@ do
 		}
 	}
 	for _index_0 = 1, #_list_0 do
-		local _mixin_0 = _list_0[_index_0]
-		for _key_0, _val_0 in pairs(_mixin_0.__base or _mixin_0) do
-			if _base_0[_key_0] == nil then
+		local _item_0 = _list_0[_index_0]
+		local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0
+		for _key_0, _val_0 in pairs(_mixin_0) do
+			if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then
 				_base_0[_key_0] = _val_0
 			end
 		end

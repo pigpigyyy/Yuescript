@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.10"sv;
+const std::string_view version = "0.10.11"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5338,13 +5338,16 @@ private:
 			temp.back() += "{ }"s + nll(classDecl);
 		}
 		if (classDecl->mixes) {
+			auto item = getUnusedName("_item_"sv);
+			auto cls = getUnusedName("_cls_"sv);
 			auto mixin = getUnusedName("_mixin_"sv);
 			auto key = getUnusedName("_key_"sv);
 			auto val = getUnusedName("_val_"sv);
 			auto mixins = _parser.toString(classDecl->mixes);
-			_buf << "for "sv << mixin << " in *{"sv << mixins << "}\n"sv;
-			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << ".__base or "sv << mixin << '\n';
-			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil"sv;
+			_buf << "for "sv << item << " in *{"sv << mixins << "}\n"sv;
+			_buf << '\t' << cls << ',' << mixin << '=' << item << ".__base?,"sv << item << ".__base or "sv << item << '\n';
+			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << '\n';
+			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil and (not "sv << cls << " or not "sv << key << "\\match \"^__\")"sv;
 			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
 		}
 		transformAssignment(toAst<ExpListAssign_t>(baseVar + ".__index ?\?= "s + baseVar, classDecl), temp);
