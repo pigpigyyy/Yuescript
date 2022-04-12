@@ -118,14 +118,14 @@ export yuescript = "月之脚本"
 
 &emsp;Use Yuescript module in Lua:
 
-* **Case 1**  
+* **Case 1**
 Require "your_yuescript_entry.yue" in Lua.
 ```Lua
 require("yue")("your_yuescript_entry")
 ```
 &emsp;And this code still works when you compile "your_yuescript_entry.yue"  to "your_yuescript_entry.lua" in the same path. In the rest Yuescript files just use the normal **require** or **import**. The code line numbers in error messages will also be handled correctly.
 
-* **Case 2**  
+* **Case 2**
 Require Yuescript module and rewite message by hand.
 ```lua
 local yue = require("yue")
@@ -136,7 +136,7 @@ end, function(err)
 end)
 ```
 
-* **Case 3**  
+* **Case 3**
 Use the Yuescript compiler function in Lua.
 ```lua
 local yue = require("yue")
@@ -174,12 +174,12 @@ Usage: yue [options|files|directories] ...
    Execute without options to enter REPL, type symbol '$'
    in a single line to start/stop multi-line mode
 ```
-&emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every Yuescript file with extension **.yue** under current path:  **yue .**  
-&emsp;&emsp;Compile and save results to a target path:  **yue -t /target/path/ .**  
-&emsp;&emsp;Compile and reserve debug info:  **yue -l .**  
-&emsp;&emsp;Compile and generate minified codes:  **yue -m .**  
-&emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**  
+&emsp;&emsp;Use cases:
+&emsp;&emsp;Recursively compile every Yuescript file with extension **.yue** under current path:  **yue .**
+&emsp;&emsp;Compile and save results to a target path:  **yue -t /target/path/ .**
+&emsp;&emsp;Compile and reserve debug info:  **yue -l .**
+&emsp;&emsp;Compile and generate minified codes:  **yue -m .**
+&emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**
 &emsp;&emsp;Execute a Yuescript file:  **yue -e main.yue**
 
 ## Macro
@@ -360,11 +360,42 @@ tb::func! if tb != nil
 </pre>
 </YueDisplay>
 
+### Incrementing and Decrementing
+
+Yuescript adds the **+=** operator for incrementing and **-=** operator for decrementing values.
+
+```moonscript
+i = 0
+i += 1
+i -= 1
+```
+<YueDisplay>
+<pre>
+i = 0
+i += 1
+i -= 1
+</pre>
+</YueDisplay>
+
+### Appending to tables
+The **[] =** operator is used to append values to tables.
+
+```moonscript
+table = {}
+table[] = "Value"
+```
+<YueDisplay>
+<pre>
+table = {}
+table[] = "Value"
+</pre>
+</YueDisplay>
+
 ### Metatable
 
 The **#** operator can be used as a shortcut for metatable manipulation.
 
-* **Metatable Creation**  
+* **Metatable Creation**
 Create normal table with  key **#** or metamethod key that ends with **#**.
 
 ```moonscript
@@ -400,7 +431,7 @@ close _ = close#: -> print "out of scope"
 </pre>
 </YueDisplay>
 
-* **Metatable Accessing**  
+* **Metatable Accessing**
 Accessing metatable with key **#** or metamethod key that ends with **#**.
 
 ```moonscript
@@ -423,7 +454,7 @@ print tb.item
 </pre>
 </YueDisplay>
 
-* **Metatable Destructure**  
+* **Metatable Destructure**
 Destruct metatable with metamethod key that ends with **#**.
 
 ```moonscript
@@ -643,7 +674,7 @@ do
 
 The export statement offers a concise way to define modules.
 
-* **Named Export**  
+* **Named Export**
 Named export will define a local variable as well as adding a field in the exported table.
 
 ```moonscript
@@ -679,7 +710,7 @@ export class Something
 </pre>
 </YueDisplay>
 
-* **Unnamed Export**  
+* **Unnamed Export**
 Unnamed export will add the target item into the array part of the exported table.
 
 ```moonscript
@@ -709,7 +740,7 @@ export with tmp
 </pre>
 </YueDisplay>
 
-* **Default Export**  
+* **Default Export**
 Using the **default** keyword in export statement to replace the exported table with any thing.
 
 ```moonscript
