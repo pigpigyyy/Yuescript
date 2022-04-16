@@ -3,6 +3,7 @@ name: macOS
 on:
   push:
     branches: [ main ]
+    tags: 'v*.*.*'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -15,3 +16,29 @@ jobs:
       - uses: actions/checkout@v2
       - name: build-test
         run: make test
+      - name: build for luajit
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git clone https://github.com/LuaJIT/LuaJIT.git
+          cd LuaJIT
+          TARGET_FLAGS="-arch x86_64" MACOSX_DEPLOYMENT_TARGET=11 make
+          mkdir x86_64
+          mv src/libluajit.a x86_64/liblua.a
+          MACOSX_DEPLOYMENT_TARGET=11 make clean
+          TARGET_FLAGS="-arch arm64" MACOSX_DEPLOYMENT_TARGET=11 make
+          mkdir arm64
+          mv src/libluajit.a arm64/liblua.a
+          make shared LUAI=LuaJIT/src LUAL=LuaJIT/x86_64 TARGET_FLAGS="-arch x86_64"
+          mv bin/shared/yue.so yue_x86_64.so
+          make clean
+          make shared LUAI=LuaJIT/src LUAL=LuaJIT/arm64 TARGET_FLAGS="-arch arm64"
+          lipo -create yue_x86_64.so bin/shared/yue.so -output yue.so
+          zip -r yue-macos-universal-luajit-so.zip yue.so
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./yue-macos-universal-luajit-so.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
