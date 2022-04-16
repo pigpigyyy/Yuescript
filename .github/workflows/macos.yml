@@ -28,6 +28,7 @@ jobs:
           TARGET_FLAGS="-arch arm64" MACOSX_DEPLOYMENT_TARGET=11 make
           mkdir arm64
           mv src/libluajit.a arm64/liblua.a
+          cd ..
           make shared LUAI=LuaJIT/src LUAL=LuaJIT/x86_64 TARGET_FLAGS="-arch x86_64"
           mv bin/shared/yue.so yue_x86_64.so
           make clean
