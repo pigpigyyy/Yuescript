@@ -20,7 +20,7 @@ ELSE(LUA_FOUND)
 			NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51 liblua5.4 liblua5.3 liblua5.2 liblua5.1
 			PATHS ${LUA_LIBDIR}
 			NO_DEFAULT_PATH)
-	ENDIF(LUA_EXEC_NAME)
+	ENDIF(LUA_EXEC_NAME STREQUAL "luajit")
 ENDIF(LUA_FOUND)
 
 MESSAGE(STATUS "Lua: " ${LUA})
@@ -39,12 +39,12 @@ target_link_libraries(libyue ${LUA_LIBRARIES})
 find_package(Threads REQUIRED)
 add_executable(yue src/yuescript/ast.cpp src/yuescript/yue_compiler.cpp src/yuescript/yue_parser.cpp src/yuescript/yuescript.cpp src/yuescript/parser.cpp src/yue.cpp)
 target_link_libraries(yue ${LUA_LIBRARIES} Threads::Threads)
-if(CMAKE_DL_LIBS)
+IF(CMAKE_DL_LIBS)
 	target_link_libraries(yue ${CMAKE_DL_LIBS})
-endif()
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+ENDIF(CMAKE_DL_LIBS)
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_link_options(yue PRIVATE -lstdc++fs)
-endif()
+ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 install(CODE "")
 

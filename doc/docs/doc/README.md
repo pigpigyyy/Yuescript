@@ -360,34 +360,17 @@ tb::func! if tb != nil
 </pre>
 </YueDisplay>
 
-### Incrementing and Decrementing
-
-Yuescript adds the **+=** operator for incrementing and **-=** operator for decrementing values.
-
-```moonscript
-i = 0
-i += 1
-i -= 1
-```
-<YueDisplay>
-<pre>
-i = 0
-i += 1
-i -= 1
-</pre>
-</YueDisplay>
-
-### Appending to tables
+### Appending to Tables
 The **[] =** operator is used to append values to tables.
 
 ```moonscript
-table = {}
-table[] = "Value"
+tab = {}
+tab[] = "Value"
 ```
 <YueDisplay>
 <pre>
-table = {}
-table[] = "Value"
+tab = {}
+tab[] = "Value"
 </pre>
 </YueDisplay>
 
@@ -756,52 +739,320 @@ export default ->
 </pre>
 </YueDisplay>
 
-## Try
+## Assignment
 
-The syntax for Lua error handling in a common form.
+The variable is dynamic typed and is defined as local by default. But you can change the scope of declaration by **local** and **global** statement.
 
 ```moonscript
-try
-  func 1, 2, 3
-catch err
-  print yue.traceback err
-
-success, result = try
-  func 1, 2, 3
-catch err
-  yue.traceback err
-
-try func 1, 2, 3
-catch err
-  print yue.traceback err
-
-success, result = try func 1, 2, 3
-
-try
-  print "trying"
-  func 1, 2, 3
+hello = "world"
+a, b, c = 1, 2, 3
+hello = 123 -- uses the existing variable
 ```
 <YueDisplay>
 <pre>
-try
-  func 1, 2, 3
-catch err
-  print yue.traceback err
+hello = "world"
+a, b, c = 1, 2, 3
+hello = 123 -- uses the existing variable
+</pre>
+</YueDisplay>
 
-success, result = try
-  func 1, 2, 3
-catch err
-  yue.traceback err
+### Perform Update
 
-try func 1, 2, 3
-catch err
-  print yue.traceback err
+You can perform update assignment with many binary operators.
+```moonscript
+x = 1
+x += 1
+x -= 1
+x *= 10
+x /= 10
+x %= 10
+s ..= "world" -- will add a new local if local variable is not exist
+arg or= "default value"
+```
+<YueDisplay>
+<pre>
+x = 1
+x += 1
+x -= 1
+x *= 10
+x /= 10
+x %= 10
+s ..= "world" -- will add a new local if local variable is not exist
+arg or= "default value"
+</pre>
+</YueDisplay>
 
-success, result = try func 1, 2, 3
+### Explicit Locals
+```moonscript
+do
+  local *
+  print "forward declare all variables as locals"
+  x = -> 1 + y + z
+  y, z = 2, 3
+  global instance = Item\new!
 
-try
-  print "trying"
-  func 1, 2, 3
+do
+  local ^
+  print "only forward declare upper case variables"
+  a = 1
+  B = 2
+```
+<YueDisplay>
+<pre>
+do
+  local *
+  print "forward declare all variables as locals"
+  x = -> 1 + y + z
+  y, z = 2, 3
+  global instance = Item\new!
+
+do
+  local ^
+  print "only forward declare upper case variables"
+  a = 1
+  B = 2
+</pre>
+</YueDisplay>
+
+### Explicit Globals
+```moonscript
+do
+  global *
+  print "declare all variables as globals"
+  x = -> 1 + y + z
+  y, z = 2, 3
+
+do
+  global ^
+  print "only declare upper case variables as globals"
+  a = 1
+  B = 2
+  local Temp = "a local value"
+```
+<YueDisplay>
+<pre>
+do
+  global *
+  print "declare all variables as globals"
+  x = -> 1 + y + z
+  y, z = 2, 3
+
+do
+  global ^
+  print "only declare upper case variables as globals"
+  a = 1
+  B = 2
+  local Temp = "a local value"
+</pre>
+</YueDisplay>
+
+## Destructuring Assignment
+
+Destructuring assignment is a way to quickly extract values from a table by their name or position in array based tables.
+
+Typically when you see a table literal, {1,2,3}, it is on the right hand side of an assignment because it is a value. Destructuring assignment swaps the role of the table literal, and puts it on the left hand side of an assign statement.
+
+This is best explained with examples. Here is how you would unpack the first two values from a table:
+
+```moonscript
+thing = {1, 2}
+
+{a, b} = thing
+print a, b
+```
+<YueDisplay>
+<pre>
+thing = {1, 2}
+
+{a, b} = thing
+print a, b
+</pre>
+</YueDisplay>
+
+In the destructuring table literal, the key represents the key to read from the right hand side, and the value represents the name the read value will be assigned to.
+
+```moonscript
+obj = {
+  hello: "world"
+  day: "tuesday"
+  length: 20
+}
+
+{hello: hello, day: the_day} = obj
+print hello, the_day
+
+:day = obj -- OK to do simple destructuring without braces
+```
+<YueDisplay>
+<pre>
+obj = {
+  hello: "world"
+  day: "tuesday"
+  length: 20
+}
+
+{hello: hello, day: the_day} = obj
+print hello, the_day
+
+:day = obj -- OK to do simple destructuring without braces
+</pre>
+</YueDisplay>
+
+This also works with nested data structures as well:
+
+```moonscript
+obj2 = {
+  numbers: {1,2,3,4}
+  properties: {
+    color: "green"
+    height: 13.5
+  }
+}
+
+{numbers: {first, second}} = obj2
+print first, second, color
+```
+<YueDisplay>
+<pre>
+obj2 = {
+  numbers: {1,2,3,4}
+  properties: {
+    color: "green"
+    height: 13.5
+  }
+}
+
+{numbers: {first, second}} = obj2
+print first, second, color
+</pre>
+</YueDisplay>
+
+If the destructuring statement is complicated, feel free to spread it out over a few lines. A slightly more complicated example:
+
+```moonscript
+{
+  numbers: {first, second}
+  properties: {
+    color: color
+  }
+} = obj2
+```
+<YueDisplay>
+<pre>
+{
+  numbers: {first, second}
+  properties: {
+    color: color
+  }
+} = obj2
+</pre>
+</YueDisplay>
+
+It’s common to extract values from at table and assign them the local variables that have the same name as the key. In order to avoid repetition we can use the **:** prefix operator:
+
+```moonscript
+{:concat, :insert} = table
+```
+<YueDisplay>
+<pre>
+{:concat, :insert} = table
+</pre>
+</YueDisplay>
+
+This is effectively the same as import, but we can rename fields we want to extract by mixing the syntax:
+
+```moonscript
+{:mix, :max, random: rand} = math
+```
+<YueDisplay>
+<pre>
+{:mix, :max, random: rand} = math
+</pre>
+</YueDisplay>
+
+You can write default values while doing destructuring like:
+
+```moonscript
+{:name = "nameless", :job = "jobless"} = person
+```
+<YueDisplay>
+<pre>
+{:name = "nameless", :job = "jobless"} = person
+</pre>
+</YueDisplay>
+
+### Destructuring In Other Places
+
+Destructuring can also show up in places where an assignment implicitly takes place. An example of this is a for loop:
+
+```moonscript
+tuples = {
+  {"hello", "world"}
+  {"egg", "head"}
+}
+
+for {left, right} in *tuples
+  print left, right
+```
+<YueDisplay>
+<pre>
+tuples = {
+  {"hello", "world"}
+  {"egg", "head"}
+}
+
+for {left, right} in *tuples
+  print left, right
+</pre>
+</YueDisplay>
+
+We know each element in the array table is a two item tuple, so we can unpack it directly in the names clause of the for statement using a destructure.
+
+## If Assignment
+
+if and elseif blocks can take an assignment in place of a conditional expression. Upon evaluating the conditional, the assignment will take place and the value that was assigned to will be used as the conditional expression. The assigned variable is only in scope for the body of the conditional, meaning it is never available if the value is not truthy.
+
+```moonscript
+if user = database.find_user "moon"
+  print user.name
+```
+<YueDisplay>
+<pre>
+if user = database.find_user "moon"
+  print user.name
+</pre>
+</YueDisplay>
+
+```moonscript
+if hello = os.getenv "hello"
+  print "You have hello", hello
+elseif world = os.getenv "world"
+  print "you have world", world
+else
+  print "nothing :("
+```
+<YueDisplay>
+<pre>
+if hello = os.getenv "hello"
+  print "You have hello", hello
+elseif world = os.getenv "world"
+  print "you have world", world
+else
+  print "nothing :("
+</pre>
+</YueDisplay>
+
+If assignment with extra return values.
+```moonscript
+if success, result = pcall -> "get result without problems"
+  print result -- variable result is scoped
+print "OK"
+```
+<YueDisplay>
+<pre>
+if success, result = pcall -> "get result without problems"
+  print result -- variable result is scoped
+print "OK"
 </pre>
 </YueDisplay>
 
@@ -831,108 +1082,6 @@ Rx.Observable
 </pre>
 </YueDisplay>
 
-## Assignment
-
-The variable is dynamic typed and is defined as local by default. But you can change the scope of declaration by **local** and **global** statement.
-
-* **Common Use**
-```moonscript
-hello = "world"
-a, b, c = 1, 2, 3
-hello = 123 -- uses the existing variable
-
--- update Assignment
-x = 0
-x += 10
-
-s = "hello "
-s ..= "world"
-
-arg or= "default value"
-```
-<YueDisplay>
-
-<pre>
-hello = "world"
-a, b, c = 1, 2, 3
-hello = 123 -- uses the existing variable
-
--- update Assignment
-x = 0
-x += 10
-
-s = "hello "
-s ..= "world"
-
-arg or= "default value"
-</pre>
-</YueDisplay>
-
-* **Explicit Locals**
-```moonscript
-do
-  local *
-  print "forward declare all variables as locals"
-  x = -> 1 + y + z
-  y, z = 2, 3
-  global instance = Item\new!
-
-do
-  local ^
-  print "only forward declare upper case variables"
-  a = 1
-  B = 2
-```
-<YueDisplay>
-
-<pre>
-do
-  local *
-  print "forward declare all variables as locals"
-  x = -> 1 + y + z
-  y, z = 2, 3
-  global instance = Item\new!
-
-do
-  local ^
-  print "only forward declare upper case variables"
-  a = 1
-  B = 2
-</pre>
-</YueDisplay>
-
-* **Explicit Globals**
-```moonscript
-do
-  global *
-  print "declare all variables as globals"
-  x = -> 1 + y + z
-  y, z = 2, 3
-
-do
-  global ^
-  print "only declare upper case variables as globals"
-  a = 1
-  B = 2
-  local Temp = "a local value"
-```
-<YueDisplay>
-<pre>
-do
-  global *
-  print "declare all variables as globals"
-  x = -> 1 + y + z
-  y, z = 2, 3
-
-do
-  global ^
-  print "only declare upper case variables as globals"
-  a = 1
-  B = 2
-  local Temp = "a local value"
-</pre>
-</YueDisplay>
-
 ## Comment
 
 ```moonscript
@@ -959,6 +1108,67 @@ It's OK.
   .. strC
 
 func --[[port]] 3000, --[[ip]] "192.168.1.1"
+</pre>
+</YueDisplay>
+
+## Try
+
+The syntax for Lua error handling in a common form.
+
+```moonscript
+try
+  func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try
+  func 1, 2, 3
+catch err
+  yue.traceback err
+
+try func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try func 1, 2, 3
+
+try
+  print "trying"
+  func 1, 2, 3
+
+-- working with if assignment pattern
+if success, result = try func 1, 2, 3
+catch err
+    print yue.traceback err
+  print result
+```
+<YueDisplay>
+<pre>
+try
+  func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try
+  func 1, 2, 3
+catch err
+  yue.traceback err
+
+try func 1, 2, 3
+catch err
+  print yue.traceback err
+
+success, result = try func 1, 2, 3
+
+try
+  print "trying"
+  func 1, 2, 3
+
+-- working with if assignment pattern
+if success, result = try func 1, 2, 3
+catch err
+    print yue.traceback err
+  print result
 </pre>
 </YueDisplay>
 
@@ -1882,40 +2092,6 @@ print "You're lucky!" unless math.random! > 0.1
 </pre>
 </YueDisplay>
 
-## If Assignment
-
-if and elseif blocks can take an assignment in place of a conditional expression. Upon evaluating the conditional, the assignment will take place and the value that was assigned to will be used as the conditional expression. The assigned variable is only in scope for the body of the conditional, meaning it is never available if the value is not truthy.
-
-```moonscript
-if user = database.find_user "moon"
-  print user.name
-```
-<YueDisplay>
-<pre>
-if user = database.find_user "moon"
-  print user.name
-</pre>
-</YueDisplay>
-
-```moonscript
-if hello = os.getenv "hello"
-  print "You have hello", hello
-elseif world = os.getenv "world"
-  print "you have world", world
-else
-  print "nothing :("
-```
-<YueDisplay>
-<pre>
-if hello = os.getenv "hello"
-  print "You have hello", hello
-elseif world = os.getenv "world"
-  print "you have world", world
-else
-  print "nothing :("
-</pre>
-</YueDisplay>
-
 ## Line Decorators
 
 For convenience, the for loop and if statement can be applied to single statements at the end of the line:
@@ -2574,165 +2750,6 @@ tbl = {
 }
 </pre>
 </YueDisplay>
-
-## Destructuring Assignment
-
-Destructuring assignment is a way to quickly extract values from a table by their name or position in array based tables.
-
-Typically when you see a table literal, {1,2,3}, it is on the right hand side of an assignment because it is a value. Destructuring assignment swaps the role of the table literal, and puts it on the left hand side of an assign statement.
-
-This is best explained with examples. Here is how you would unpack the first two values from a table:
-
-```moonscript
-thing = {1, 2}
-
-{a, b} = thing
-print a, b
-```
-<YueDisplay>
-<pre>
-thing = {1, 2}
-
-{a, b} = thing
-print a, b
-</pre>
-</YueDisplay>
-
-In the destructuring table literal, the key represents the key to read from the right hand side, and the value represents the name the read value will be assigned to.
-
-```moonscript
-obj = {
-  hello: "world"
-  day: "tuesday"
-  length: 20
-}
-
-{hello: hello, day: the_day} = obj
-print hello, the_day
-```
-<YueDisplay>
-<pre>
-obj = {
-  hello: "world"
-  day: "tuesday"
-  length: 20
-}
-
-{hello: hello, day: the_day} = obj
-print hello, the_day
-</pre>
-</YueDisplay>
-
-This also works with nested data structures as well:
-
-```moonscript
-obj2 = {
-  numbers: {1,2,3,4}
-  properties: {
-    color: "green"
-    height: 13.5
-  }
-}
-
-{numbers: {first, second}} = obj2
-print first, second, color
-```
-<YueDisplay>
-<pre>
-obj2 = {
-  numbers: {1,2,3,4}
-  properties: {
-    color: "green"
-    height: 13.5
-  }
-}
-
-{numbers: {first, second}} = obj2
-print first, second, color
-</pre>
-</YueDisplay>
-
-If the destructuring statement is complicated, feel free to spread it out over a few lines. A slightly more complicated example:
-
-```moonscript
-{
-  numbers: {first, second}
-  properties: {
-    color: color
-  }
-} = obj2
-```
-<YueDisplay>
-<pre>
-{
-  numbers: {first, second}
-  properties: {
-    color: color
-  }
-} = obj2
-</pre>
-</YueDisplay>
-
-It’s common to extract values from at table and assign them the local variables that have the same name as the key. In order to avoid repetition we can use the **:** prefix operator:
-
-```moonscript
-{:concat, :insert} = table
-```
-<YueDisplay>
-<pre>
-{:concat, :insert} = table
-</pre>
-</YueDisplay>
-
-This is effectively the same as import, but we can rename fields we want to extract by mixing the syntax:
-
-```moonscript
-{:mix, :max, random: rand} = math
-```
-<YueDisplay>
-<pre>
-{:mix, :max, random: rand} = math
-</pre>
-</YueDisplay>
-
-You can write default values while doing destructuring like:
-
-```moonscript
-{:name = "nameless", :job = "jobless"} = person
-```
-<YueDisplay>
-<pre>
-{:name = "nameless", :job = "jobless"} = person
-</pre>
-</YueDisplay>
-
-
-### Destructuring In Other Places
-
-Destructuring can also show up in places where an assignment implicitly takes place. An example of this is a for loop:
-
-```moonscript
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
-
-for {left, right} in *tuples
-  print left, right
-```
-<YueDisplay>
-<pre>
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
-
-for {left, right} in *tuples
-  print left, right
-</pre>
-</YueDisplay>
-
-We know each element in the array table is a two item tuple, so we can unpack it directly in the names clause of the for statement using a destructure.
 
 ## Function Stubs
 
