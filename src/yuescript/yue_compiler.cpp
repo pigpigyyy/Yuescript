@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.11"sv;
+const std::string_view version = "0.10.12"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1597,6 +1597,7 @@ private:
 						_config.lintGlobalVariable = false;
 						auto exp = static_cast<Exp_t*>(pair);
 						auto varName = singleVariableFrom(exp);
+						if (varName == "_"sv) break;
 						bool isVariable = !varName.empty();
 						if (!isVariable) {
 							str_list temp;

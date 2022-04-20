@@ -358,3 +358,10 @@ do
 		print(left, right)
 	end
 end
+do
+	local a, b
+	do
+		local _obj_0 = tb
+		a, b = _obj_0[2], _obj_0[4]
+	end
+end

@@ -657,7 +657,7 @@ do
 
 The export statement offers a concise way to define modules.
 
-* **Named Export**
+* **Named Export**  
 Named export will define a local variable as well as adding a field in the exported table.
 
 ```moonscript
@@ -693,7 +693,7 @@ export class Something
 </pre>
 </YueDisplay>
 
-* **Unnamed Export**
+* **Unnamed Export**  
 Unnamed export will add the target item into the array part of the exported table.
 
 ```moonscript
@@ -723,7 +723,7 @@ export with tmp
 </pre>
 </YueDisplay>
 
-* **Default Export**
+* **Default Export**  
 Using the **default** keyword in export statement to replace the exported table with any thing.
 
 ```moonscript

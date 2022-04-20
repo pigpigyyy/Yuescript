@@ -178,3 +178,6 @@ do
 	for {left = "null", right = false} in *tuples
 		print left, right
 
+do
+	{_, a, _, b} = tb -- list placeholder
+
