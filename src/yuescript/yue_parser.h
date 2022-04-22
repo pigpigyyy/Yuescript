@@ -281,6 +281,7 @@ private:
 	AST_RULE(Invoke)
 	AST_RULE(existential_op)
 	AST_RULE(table_appending_op)
+	AST_RULE(SpreadExp)
 	AST_RULE(TableLit)
 	AST_RULE(TableBlock)
 	AST_RULE(TableBlockIndent)

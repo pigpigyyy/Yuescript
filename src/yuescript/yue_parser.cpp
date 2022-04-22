@@ -469,7 +469,9 @@ YueParser::YueParser() {
 		and_(expr('[')) >> LuaString |
 		and_(expr('{')) >> TableLit);
 
-	TableValue = ((KeyValue | Exp) >> not_(sym('='))) | meta_default_pair | default_pair;
+	SpreadExp = sym("...") >> Exp;
+
+	TableValue = ((KeyValue | SpreadExp | Exp) >> not_(sym('='))) | meta_default_pair | default_pair;
 
 	table_lit_lines = SpaceBreak >> TableLitLine >> *(-sym(',') >> SpaceBreak >> TableLitLine) >> -sym(',');
 

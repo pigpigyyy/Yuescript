@@ -605,10 +605,15 @@ AST_END(default_value)
 class default_pair_t;
 class meta_default_pair_t;
 
+AST_NODE(SpreadExp)
+	ast_ptr<true, Exp_t> exp;
+	AST_MEMBER(SpreadExp, &exp)
+AST_END(SpreadExp)
+
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false,
-		variable_pair_t, normal_pair_t, Exp_t, default_pair_t,
+		variable_pair_t, normal_pair_t, SpreadExp_t, Exp_t, default_pair_t,
 		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit)

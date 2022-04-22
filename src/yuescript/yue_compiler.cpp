@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.12"sv;
+const std::string_view version = "0.10.14"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1352,6 +1352,16 @@ private:
 				transformWhileInPlace(static_cast<While_t*>(value), out, expList);
 				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 				return;
+			}
+			case id<TableLit_t>(): {
+				auto tableLit = static_cast<TableLit_t*>(value);
+				if (hasSpreadExp(tableLit)) {
+					auto expList = assignment->expList.get();
+					std::string preDefine = getPredefine(assignment);
+					transformTableLit(tableLit, out, true, ExpUsage::Assignment, expList);
+					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+					return;
+				}
 			}
 		}
 		auto exp = ast_cast<Exp_t>(value);
@@ -2665,7 +2675,7 @@ private:
 			case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Closure); break;
 			case id<unary_value_t>(): transform_unary_value(static_cast<unary_value_t*>(value), out); break;
 			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
-			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
+			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out, false, ExpUsage::Closure); break;
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<FunLit_t>(): transformFunLit(static_cast<FunLit_t*>(value), out); break;
 			case id<Num_t>(): transformNum(static_cast<Num_t*>(value), out); break;
@@ -3274,6 +3284,13 @@ private:
 						case id<If_t>():
 							transformIf(static_cast<If_t*>(value), out, ExpUsage::Return);
 							return;
+						case id<TableLit_t>(): {
+							auto tableLit = static_cast<TableLit_t*>(value);
+							if (hasSpreadExp(tableLit)) {
+								transformTableLit(tableLit, out, true, ExpUsage::Return);
+								return;
+							}
+						}
 					}
 				} else if (auto chainValue = singleValue->item.as<ChainValue_t>()) {
 					if (specialChainValue(chainValue) != ChainType::Common) {
@@ -3834,6 +3851,12 @@ private:
 
 	void transformChainList(const node_container& chainList, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = chainList.front();
+		if (chainList.size() > 1) {
+			auto callable = ast_cast<Callable_t>(x);
+			if (callable && callable->item.is<VarArg_t>()) {
+				throw std::logic_error(_info.errorMessage("can not access variadic arguments directly"sv, x));
+			}
+		}
 		str_list temp;
 		switch (x->getId()) {
 			case id<DotChainItem_t>():
@@ -4429,7 +4452,7 @@ private:
 				case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(arg), temp); break;
 				case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
 				case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
-				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp); break;
+				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp, false, ExpUsage::Closure); break;
 				default: YUEE("AST node mismatch", arg); break;
 			}
 		}
@@ -4472,8 +4495,160 @@ private:
 		out.push_back(_parser.toString(num));
 	}
 
-	void transformTableLit(TableLit_t* table, str_list& out) {
-		transformTable(table, table->values.objects(), out);
+	bool hasSpreadExp(TableLit_t* table) {
+		for (auto item : table->values.objects()) {
+			if (ast_is<SpreadExp_t>(item)) return true;
+		}
+		return false;
+	}
+
+	void transformTableLit(TableLit_t* table, str_list& out, bool spreading, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		if (spreading) {
+			auto x = table;
+			switch (usage) {
+				case ExpUsage::Closure:
+					_enableReturn.push(true);
+					pushAnonVarArg();
+					pushScope();
+					break;
+				case ExpUsage::Assignment:
+					pushScope();
+					break;
+				default:
+					break;
+			}
+			str_list temp;
+			std::string tableVar = getUnusedName("_tab_"sv);
+			forceAddToScope(tableVar);
+			auto it = table->values.objects().begin();
+			if (ast_is<SpreadExp_t>(*it)) {
+				temp.push_back(indent() + "local "s + tableVar + " = { }"s + nll(x));
+			} else {
+				auto initialTab = x->new_ptr<TableLit_t>();
+				while (it != table->values.objects().end() && !ast_is<SpreadExp_t>(*it)) {
+					initialTab->values.push_back(*it);
+					++it;
+				}
+				transformTableLit(initialTab, temp, false, ExpUsage::Closure);
+				temp.back() = indent() + "local "s + tableVar + " = "s + temp.back() + nll(*it);
+			}
+			for (; it != table->values.objects().end(); ++it) {
+				auto item = *it;
+				switch (item->getId()) {
+					case id<SpreadExp_t>(): {
+						auto spread = static_cast<SpreadExp_t*>(item);
+						std::string keyVar = getUnusedName("_key_"sv);
+						std::string valueVar = getUnusedName("_value_"sv);
+						auto targetStr = _parser.toString(spread->exp);
+						_buf << "for "sv << keyVar << ',' << valueVar
+							<< " in pairs! do "sv
+							<< tableVar << '[' << keyVar << "]="sv << valueVar;
+						auto forEach = toAst<ForEach_t>(clearBuf(), spread);
+						auto chainValue = singleValueFrom(forEach->loopValue.to<ExpList_t>())->item.to<ChainValue_t>();
+						ast_to<Invoke_t>(*(++chainValue->items.objects().begin()))->args.push_back(spread->exp);
+						transformForEach(forEach, temp);
+						break;
+					}
+					case id<variable_pair_t>(): {
+						auto variablePair = static_cast<variable_pair_t*>(item);
+						auto nameStr = _parser.toString(variablePair->name);
+						auto assignment = toAst<ExpListAssign_t>(tableVar + '.' + nameStr + '=' + nameStr, item);
+						transformAssignment(assignment, temp);
+						break;
+					}
+					case id<normal_pair_t>(): {
+						auto normalPair = static_cast<normal_pair_t*>(item);
+						auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
+						auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
+						auto key = normalPair->key.get();
+						switch (key->getId()) {
+							case id<KeyName_t>(): {
+								auto keyName = static_cast<KeyName_t*>(key);
+								ast_ptr<false, ast_node> chainItem;
+								if (auto name = keyName->name.as<Name_t>()) {
+									auto dotItem = x->new_ptr<DotChainItem_t>();
+									dotItem->name.set(name);
+									chainItem = dotItem.get();
+								} else {
+									auto selfName = keyName->name.to<SelfName_t>();
+									auto callable = x->new_ptr<Callable_t>();
+									callable->item.set(selfName);
+									auto chainValue = x->new_ptr<ChainValue_t>();
+									chainValue->items.push_back(callable);
+									auto value = x->new_ptr<Value_t>();
+									value->item.set(chainValue);
+									auto exp = newExp(value, key);
+									chainItem = exp.get();
+								}
+								chainValue->items.push_back(chainItem);
+								break;
+							}
+							case id<Exp_t>():
+								chainValue->items.push_back(key);
+								break;
+							case id<DoubleString_t>():
+							case id<SingleString_t>():
+							case id<LuaString_t>(): {
+								auto strNode = x->new_ptr<String_t>();
+								strNode->str.set(key);
+								chainValue->items.push_back(strNode);
+								break;
+							}
+							default: YUEE("AST node mismatch", key); break;
+						}
+						auto assign = assignment->action.to<Assign_t>();
+						assign->values.clear();
+						assign->values.push_back(normalPair->value);
+						transformAssignment(assignment, temp);
+						break;
+					}
+					case id<Exp_t>(): {
+						auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
+						auto assign = assignment->action.to<Assign_t>();
+						assign->values.clear();
+						assign->values.push_back(item);
+						transformAssignment(assignment, temp);
+						break;
+					}
+					default: YUEE("AST node mismatch", item); break;
+				}
+			}
+			switch (usage) {
+				case ExpUsage::Common:
+					break;
+				case ExpUsage::Closure: {
+					out.push_back(join(temp));
+					out.back().append(indent() + "return "s + tableVar + nlr(x));
+					popScope();
+					out.back().insert(0, anonFuncStart() + nll(x));
+					out.back().append(indent() + anonFuncEnd());
+					popAnonVarArg();
+					_enableReturn.pop();
+					break;
+				}
+				case ExpUsage::Assignment: {
+					auto assign = x->new_ptr<Assign_t>();
+					assign->values.push_back(toAst<Exp_t>(tableVar, x));
+					auto assignment = x->new_ptr<ExpListAssign_t>();
+					assignment->expList.set(assignList);
+					assignment->action.set(assign);
+					transformAssignment(assignment, temp);
+					popScope();
+					out.push_back(join(temp));
+					out.back() = indent() + "do"s + nll(x) +
+						out.back() + indent() + "end"s + nlr(x);
+					break;
+				}
+				case ExpUsage::Return:
+					out.push_back(join(temp));
+					out.back().append(indent() + "return "s + tableVar + nlr(x));
+					break;
+				default:
+					break;
+			}
+		} else {
+			transformTable(table, table->values.objects(), out);
+		}
 	}
 
 	void transformCompCommon(Comprehension_t* comp, str_list& out) {
@@ -5070,14 +5245,15 @@ private:
 		out.push_back(name + " = "s + name);
 	}
 
-	void transform_normal_pair(normal_pair_t* pair, str_list& out) {
+	void transform_normal_pair(normal_pair_t* pair, str_list& out, bool assignClass) {
 		auto key = pair->key.get();
 		str_list temp;
 		switch (key->getId()) {
 			case id<KeyName_t>(): {
-				transformKeyName(static_cast<KeyName_t*>(key), temp);
-				if (LuaKeywords.find(temp.back()) != LuaKeywords.end()) {
-					temp.back() = "[\""s + temp.back() + "\"]"s;
+				auto keyName = static_cast<KeyName_t*>(key);
+				transformKeyName(keyName, temp);
+				if (keyName->name.is<SelfName_t>() && !assignClass) {
+					temp.back() = '[' + temp.back() + ']';
 				}
 				break;
 			}
@@ -5109,8 +5285,18 @@ private:
 	void transformKeyName(KeyName_t* keyName, str_list& out) {
 		auto name = keyName->name.get();
 		switch (name->getId()) {
-			case id<SelfName_t>(): transformSelfName(static_cast<SelfName_t*>(name), out); break;
-			case id<Name_t>(): out.push_back(_parser.toString(name)); break;
+			case id<SelfName_t>():
+				transformSelfName(static_cast<SelfName_t*>(name), out);
+				break;
+			case id<Name_t>(): {
+				auto nameStr = _parser.toString(name);
+				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
+					out.push_back("[\""s + nameStr + "\"]"s);
+				} else {
+					out.push_back(nameStr);
+				}
+				break;
+			}
 			default: YUEE("AST node mismatch", name); break;
 		}
 	}
@@ -5531,7 +5717,7 @@ private:
 					transform_variable_pair(static_cast<variable_pair_t*>(keyValue), temp);
 					break;
 				case id<normal_pair_t>():
-					transform_normal_pair(static_cast<normal_pair_t*>(keyValue), temp);
+					transform_normal_pair(static_cast<normal_pair_t*>(keyValue), temp, true);
 					break;
 				default: YUEE("AST node mismatch", keyValue); break;
 			}
@@ -5876,7 +6062,7 @@ private:
 			switch (pair->getId()) {
 				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
 				case id<variable_pair_t>(): transform_variable_pair(static_cast<variable_pair_t*>(pair), temp); break;
-				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp); break;
+				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp, false); break;
 				case id<TableBlockIndent_t>(): transformTableBlockIndent(static_cast<TableBlockIndent_t*>(pair), temp); break;
 				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(pair), temp); break;
 				case id<meta_variable_pair_t>(): {
