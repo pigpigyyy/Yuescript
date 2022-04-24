@@ -262,5 +262,24 @@ tbMixB = {
 	1, 2, 3
 }
 
+const template = {
+	foo: "Hello"
+	bar: "World"
+	baz: "!"
+}
+
+const specialized = {
+	...template
+	bar: "Bob"
+}
+
+specializedB = {
+	function: ->
+	...template
+	end: ->
+	if: true
+	else: false
+}
+
 nil
 

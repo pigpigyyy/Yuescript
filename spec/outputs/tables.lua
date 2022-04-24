@@ -351,10 +351,14 @@ local menus = {
 local tb
 do
 	local _tab_0 = { }
-	local _list_0 = other
-	for _index_0 = 1, #_list_0 do
-		local _value_0 = _list_0[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(other) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	tb = _tab_0
 end
@@ -372,9 +376,14 @@ do
 		_with_0:func()
 		_obj_0 = _with_0
 	end
-	for _index_0 = 1, #_obj_0 do
-		local _value_0 = _obj_0[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(_obj_0) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	_tab_0[#_tab_0 + 1] = "a"
 	_tab_0[#_tab_0 + 1] = "b"
@@ -386,9 +395,14 @@ do
 			_obj_1 = _obj_2()
 		end
 	end
-	for _index_0 = 1, #_obj_1 do
-		local _value_0 = _obj_1[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_1 = 1
+	for _key_0, _value_0 in pairs(_obj_1) do
+		if _idx_1 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_1 = _idx_1 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	_tab_0.key = "value"
 	for _index_0 = 1, select('#', ...) do
@@ -409,9 +423,14 @@ do
 		end
 		_obj_0 = _accum_0
 	end
-	for _index_0 = 1, #_obj_0 do
-		local _value_0 = _obj_0[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(_obj_0) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	_tab_0[#_tab_0 + 1] = 11
 	tbMixA = _tab_0
@@ -420,34 +439,92 @@ local tbMixB
 do
 	local _tab_0 = { }
 	local _obj_0 = ...
-	for _index_0 = 1, #_obj_0 do
-		local _value_0 = _obj_0[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(_obj_0) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	local _obj_1 = {
 		...
 	}
-	for _index_0 = 1, #_obj_1 do
-		local _value_0 = _obj_1[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_1 = 1
+	for _key_0, _value_0 in pairs(_obj_1) do
+		if _idx_1 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_1 = _idx_1 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	local _obj_2
 	do
 		local _tab_1 = { }
 		local _obj_3 = ...
-		for _index_0 = 1, #_obj_3 do
-			local _value_0 = _obj_3[_index_0]
-			_tab_1[#_tab_1 + 1] = _value_0
+		local _idx_2 = 1
+		for _key_0, _value_0 in pairs(_obj_3) do
+			if _idx_2 == _key_0 then
+				_tab_1[#_tab_1 + 1] = _value_0
+				_idx_2 = _idx_2 + 1
+			else
+				_tab_1[_key_0] = _value_0
+			end
 		end
 		_obj_2 = _tab_1
 	end
-	for _index_0 = 1, #_obj_2 do
-		local _value_0 = _obj_2[_index_0]
-		_tab_0[#_tab_0 + 1] = _value_0
+	local _idx_2 = 1
+	for _key_0, _value_0 in pairs(_obj_2) do
+		if _idx_2 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_2 = _idx_2 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
 	end
 	_tab_0[#_tab_0 + 1] = 1
 	_tab_0[#_tab_0 + 1] = 2
 	_tab_0[#_tab_0 + 1] = 3
 	tbMixB = _tab_0
+end
+local template <const> = {
+	foo = "Hello",
+	bar = "World",
+	baz = "!"
+}
+local specialized <const> = (function()
+	local _tab_0 = { }
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(template) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
+	end
+	_tab_0.bar = "Bob"
+	return _tab_0
+end)()
+local specializedB
+do
+	local _tab_0 = {
+		["function"] = function() end
+	}
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(template) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
+	end
+	_tab_0["end"] = function() end
+	_tab_0["if"] = true
+	_tab_0["else"] = false
+	specializedB = _tab_0
 end
 return nil

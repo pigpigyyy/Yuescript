@@ -1358,7 +1358,7 @@ private:
 				if (hasSpreadExp(tableLit)) {
 					auto expList = assignment->expList.get();
 					std::string preDefine = getPredefine(assignment);
-					transformTableLit(tableLit, out, true, ExpUsage::Assignment, expList);
+					transformSpreadTableLit(tableLit, out, ExpUsage::Assignment, expList);
 					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 					return;
 				}
@@ -2675,7 +2675,7 @@ private:
 			case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Closure); break;
 			case id<unary_value_t>(): transform_unary_value(static_cast<unary_value_t*>(value), out); break;
 			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
-			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out, false, ExpUsage::Closure); break;
+			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<FunLit_t>(): transformFunLit(static_cast<FunLit_t*>(value), out); break;
 			case id<Num_t>(): transformNum(static_cast<Num_t*>(value), out); break;
@@ -3287,7 +3287,7 @@ private:
 						case id<TableLit_t>(): {
 							auto tableLit = static_cast<TableLit_t*>(value);
 							if (hasSpreadExp(tableLit)) {
-								transformTableLit(tableLit, out, true, ExpUsage::Return);
+								transformSpreadTableLit(tableLit, out, ExpUsage::Return);
 								return;
 							}
 						}
@@ -4452,7 +4452,7 @@ private:
 				case id<SingleString_t>(): transformSingleString(static_cast<SingleString_t*>(arg), temp); break;
 				case id<DoubleString_t>(): transformDoubleString(static_cast<DoubleString_t*>(arg), temp); break;
 				case id<LuaString_t>(): transformLuaString(static_cast<LuaString_t*>(arg), temp); break;
-				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp, false, ExpUsage::Closure); break;
+				case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(arg), temp); break;
 				default: YUEE("AST node mismatch", arg); break;
 			}
 		}
@@ -4502,173 +4502,183 @@ private:
 		return false;
 	}
 
-	void transformTableLit(TableLit_t* table, str_list& out, bool spreading, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		if (spreading) {
-			auto x = table;
-			switch (usage) {
-				case ExpUsage::Closure:
-					_enableReturn.push(true);
-					pushAnonVarArg();
-					pushScope();
-					break;
-				case ExpUsage::Assignment:
-					pushScope();
-					break;
-				default:
-					break;
-			}
-			str_list temp;
-			std::string tableVar = getUnusedName("_tab_"sv);
-			forceAddToScope(tableVar);
-			auto it = table->values.objects().begin();
-			if (ast_is<SpreadExp_t>(*it)) {
-				temp.push_back(indent() + "local "s + tableVar + " = { }"s + nll(x));
-			} else {
-				auto initialTab = x->new_ptr<TableLit_t>();
-				while (it != table->values.objects().end() && !ast_is<SpreadExp_t>(*it)) {
-					initialTab->values.push_back(*it);
-					++it;
-				}
-				transformTableLit(initialTab, temp, false, ExpUsage::Closure);
-				temp.back() = indent() + "local "s + tableVar + " = "s + temp.back() + nll(*it);
-			}
-			for (; it != table->values.objects().end(); ++it) {
-				auto item = *it;
-				switch (item->getId()) {
-					case id<SpreadExp_t>(): {
-						auto spread = static_cast<SpreadExp_t*>(item);
-						std::string valueVar = getUnusedName("_value_"sv);
-						auto objVar = singleVariableFrom(spread->exp);
-						if (objVar.empty()) {
-							objVar = getUnusedName("_obj_");
-							auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, spread);
-							auto assign = assignment->action.to<Assign_t>();
-							assign->values.clear();
-							assign->values.push_back(spread->exp);
-							transformAssignment(assignment, temp);
-						}
-						_buf << "for "sv << valueVar
-							<< " in *"sv << objVar << " do "sv
-							<< tableVar << "[]="sv << valueVar;
-						auto forEach = toAst<ForEach_t>(clearBuf(), spread);
-						transformForEach(forEach, temp);
-						break;
-					}
-					case id<variable_pair_t>(): {
-						auto variablePair = static_cast<variable_pair_t*>(item);
-						auto nameStr = _parser.toString(variablePair->name);
-						auto assignment = toAst<ExpListAssign_t>(tableVar + '.' + nameStr + '=' + nameStr, item);
-						transformAssignment(assignment, temp);
-						break;
-					}
-					case id<normal_pair_t>(): {
-						auto normalPair = static_cast<normal_pair_t*>(item);
-						auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
-						auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
-						auto key = normalPair->key.get();
-						switch (key->getId()) {
-							case id<KeyName_t>(): {
-								auto keyName = static_cast<KeyName_t*>(key);
-								ast_ptr<false, ast_node> chainItem;
-								if (auto name = keyName->name.as<Name_t>()) {
-									auto dotItem = x->new_ptr<DotChainItem_t>();
-									dotItem->name.set(name);
-									chainItem = dotItem.get();
-								} else {
-									auto selfName = keyName->name.to<SelfName_t>();
-									auto callable = x->new_ptr<Callable_t>();
-									callable->item.set(selfName);
-									auto chainValue = x->new_ptr<ChainValue_t>();
-									chainValue->items.push_back(callable);
-									auto value = x->new_ptr<Value_t>();
-									value->item.set(chainValue);
-									auto exp = newExp(value, key);
-									chainItem = exp.get();
-								}
-								chainValue->items.push_back(chainItem);
-								break;
-							}
-							case id<Exp_t>():
-								chainValue->items.push_back(key);
-								break;
-							case id<DoubleString_t>():
-							case id<SingleString_t>():
-							case id<LuaString_t>(): {
-								auto strNode = x->new_ptr<String_t>();
-								strNode->str.set(key);
-								chainValue->items.push_back(strNode);
-								break;
-							}
-							default: YUEE("AST node mismatch", key); break;
-						}
-						auto assign = assignment->action.to<Assign_t>();
-						assign->values.clear();
-						assign->values.push_back(normalPair->value);
-						transformAssignment(assignment, temp);
-						break;
-					}
-					case id<Exp_t>(): {
-						bool lastVarArg = false;
-						BLOCK_START
-						BREAK_IF(item != table->values.back());
-						auto value = singleValueFrom(item);
-						BREAK_IF(!value);
-						auto chainValue = value->item.as<ChainValue_t>();
-						BREAK_IF(!chainValue);
-						BREAK_IF(chainValue->items.size() != 1);
-						BREAK_IF((!chainValue->getByPath<Callable_t,VarArg_t>()));
-						auto indexVar = getUnusedName("_index_");
-						_buf << "for "sv << indexVar << "=1,select '#',...\n\t"sv << tableVar << "[]= select "sv << indexVar << ",..."sv;
-						transformFor(toAst<For_t>(clearBuf(), item), temp);
-						lastVarArg = true;
-						BLOCK_END
-						if (!lastVarArg) {
-							auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
-							auto assign = assignment->action.to<Assign_t>();
-							assign->values.clear();
-							assign->values.push_back(item);
-							transformAssignment(assignment, temp);
-						}
-						break;
-					}
-					default: YUEE("AST node mismatch", item); break;
-				}
-			}
-			switch (usage) {
-				case ExpUsage::Common:
-					break;
-				case ExpUsage::Closure: {
-					out.push_back(join(temp));
-					out.back().append(indent() + "return "s + tableVar + nlr(x));
-					popScope();
-					out.back().insert(0, anonFuncStart() + nll(x));
-					out.back().append(indent() + anonFuncEnd());
-					popAnonVarArg();
-					_enableReturn.pop();
-					break;
-				}
-				case ExpUsage::Assignment: {
-					auto assign = x->new_ptr<Assign_t>();
-					assign->values.push_back(toAst<Exp_t>(tableVar, x));
-					auto assignment = x->new_ptr<ExpListAssign_t>();
-					assignment->expList.set(assignList);
-					assignment->action.set(assign);
-					transformAssignment(assignment, temp);
-					popScope();
-					out.push_back(join(temp));
-					out.back() = indent() + "do"s + nll(x) +
-						out.back() + indent() + "end"s + nlr(x);
-					break;
-				}
-				case ExpUsage::Return:
-					out.push_back(join(temp));
-					out.back().append(indent() + "return "s + tableVar + nlr(x));
-					break;
-				default:
-					break;
-			}
+	void transformTableLit(TableLit_t* table, str_list& out) {
+		if (hasSpreadExp(table)) {
+			transformSpreadTableLit(table, out, ExpUsage::Closure);
 		} else {
 			transformTable(table, table->values.objects(), out);
+		}
+	}
+
+	void transformSpreadTableLit(TableLit_t* table, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		auto x = table;
+		switch (usage) {
+			case ExpUsage::Closure:
+				_enableReturn.push(true);
+				pushAnonVarArg();
+				pushScope();
+				break;
+			case ExpUsage::Assignment:
+				pushScope();
+				break;
+			default:
+				break;
+		}
+		str_list temp;
+		std::string tableVar = getUnusedName("_tab_"sv);
+		forceAddToScope(tableVar);
+		auto it = table->values.objects().begin();
+		if (ast_is<SpreadExp_t>(*it)) {
+			temp.push_back(indent() + "local "s + tableVar + " = { }"s + nll(x));
+		} else {
+			auto initialTab = x->new_ptr<TableLit_t>();
+			while (it != table->values.objects().end() && !ast_is<SpreadExp_t>(*it)) {
+				initialTab->values.push_back(*it);
+				++it;
+			}
+			transformTable(table, initialTab->values.objects(), temp);
+			temp.back() = indent() + "local "s + tableVar + " = "s + temp.back() + nll(*it);
+		}
+		for (; it != table->values.objects().end(); ++it) {
+			auto item = *it;
+			switch (item->getId()) {
+				case id<SpreadExp_t>(): {
+					auto spread = static_cast<SpreadExp_t*>(item);
+					std::string indexVar = getUnusedName("_idx_"sv);
+					std::string keyVar = getUnusedName("_key_"sv);
+					std::string valueVar = getUnusedName("_value_"sv);
+					auto objVar = singleVariableFrom(spread->exp);
+					if (objVar.empty()) {
+						objVar = getUnusedName("_obj_");
+						auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, item);
+						auto assign = assignment->action.to<Assign_t>();
+						assign->values.clear();
+						assign->values.push_back(spread->exp);
+						transformAssignment(assignment, temp);
+					}
+					forceAddToScope(indexVar);
+					temp.push_back(indent() + "local "s + indexVar + " = 1"s + nll(item));
+					_buf << "for "sv << keyVar << ',' << valueVar << " in pairs "sv << objVar
+						<< "\n\tif "sv << indexVar << "=="sv << keyVar
+						<< "\n\t\t"sv << tableVar << "[]="sv << valueVar
+						<< "\n\t\t"sv << indexVar << "+=1"sv
+						<< "\n\telse "sv << tableVar << '[' << keyVar << "]="sv << valueVar;
+					auto forEach = toAst<ForEach_t>(clearBuf(), item);
+					transformForEach(forEach, temp);
+					break;
+				}
+				case id<variable_pair_t>(): {
+					auto variablePair = static_cast<variable_pair_t*>(item);
+					auto nameStr = _parser.toString(variablePair->name);
+					auto assignment = toAst<ExpListAssign_t>(tableVar + '.' + nameStr + '=' + nameStr, item);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<normal_pair_t>(): {
+					auto normalPair = static_cast<normal_pair_t*>(item);
+					auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
+					auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
+					auto key = normalPair->key.get();
+					switch (key->getId()) {
+						case id<KeyName_t>(): {
+							auto keyName = static_cast<KeyName_t*>(key);
+							ast_ptr<false, ast_node> chainItem;
+							if (auto name = keyName->name.as<Name_t>()) {
+								auto dotItem = x->new_ptr<DotChainItem_t>();
+								dotItem->name.set(name);
+								chainItem = dotItem.get();
+							} else {
+								auto selfName = keyName->name.to<SelfName_t>();
+								auto callable = x->new_ptr<Callable_t>();
+								callable->item.set(selfName);
+								auto chainValue = x->new_ptr<ChainValue_t>();
+								chainValue->items.push_back(callable);
+								auto value = x->new_ptr<Value_t>();
+								value->item.set(chainValue);
+								auto exp = newExp(value, key);
+								chainItem = exp.get();
+							}
+							chainValue->items.push_back(chainItem);
+							break;
+						}
+						case id<Exp_t>():
+							chainValue->items.push_back(key);
+							break;
+						case id<DoubleString_t>():
+						case id<SingleString_t>():
+						case id<LuaString_t>(): {
+							auto strNode = x->new_ptr<String_t>();
+							strNode->str.set(key);
+							chainValue->items.push_back(strNode);
+							break;
+						}
+						default: YUEE("AST node mismatch", key); break;
+					}
+					auto assign = assignment->action.to<Assign_t>();
+					assign->values.clear();
+					assign->values.push_back(normalPair->value);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<Exp_t>(): {
+					bool lastVarArg = false;
+					BLOCK_START
+					BREAK_IF(item != table->values.back());
+					auto value = singleValueFrom(item);
+					BREAK_IF(!value);
+					auto chainValue = value->item.as<ChainValue_t>();
+					BREAK_IF(!chainValue);
+					BREAK_IF(chainValue->items.size() != 1);
+					BREAK_IF((!chainValue->getByPath<Callable_t,VarArg_t>()));
+					auto indexVar = getUnusedName("_index_");
+					_buf << "for "sv << indexVar << "=1,select '#',...\n\t"sv << tableVar << "[]= select "sv << indexVar << ",..."sv;
+					transformFor(toAst<For_t>(clearBuf(), item), temp);
+					lastVarArg = true;
+					BLOCK_END
+					if (!lastVarArg) {
+						auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
+						auto assign = assignment->action.to<Assign_t>();
+						assign->values.clear();
+						assign->values.push_back(item);
+						transformAssignment(assignment, temp);
+					}
+					break;
+				}
+				default: YUEE("AST node mismatch", item); break;
+			}
+		}
+		switch (usage) {
+			case ExpUsage::Common:
+				break;
+			case ExpUsage::Closure: {
+				out.push_back(join(temp));
+				out.back().append(indent() + "return "s + tableVar + nlr(x));
+				popScope();
+				out.back().insert(0, anonFuncStart() + nll(x));
+				out.back().append(indent() + anonFuncEnd());
+				popAnonVarArg();
+				_enableReturn.pop();
+				break;
+			}
+			case ExpUsage::Assignment: {
+				auto assign = x->new_ptr<Assign_t>();
+				assign->values.push_back(toAst<Exp_t>(tableVar, x));
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				assignment->expList.set(assignList);
+				assignment->action.set(assign);
+				transformAssignment(assignment, temp);
+				popScope();
+				out.push_back(join(temp));
+				out.back() = indent() + "do"s + nll(x) +
+					out.back() + indent() + "end"s + nlr(x);
+				break;
+			}
+			case ExpUsage::Return:
+				out.push_back(join(temp));
+				out.back().append(indent() + "return "s + tableVar + nlr(x));
+				break;
+			default:
+				break;
 		}
 	}
 
