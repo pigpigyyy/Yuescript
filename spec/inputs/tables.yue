@@ -237,5 +237,30 @@ menus =
 				click: ->
 			}
 
+tb = {...other}
+
+tbMix = {
+	1, 2, 3
+	... with item
+		.x = 1
+		\func!
+	"a", "b", "c"
+	...func?!
+	key: "value"
+	... -- perform the Lua table behavior here
+}
+
+tbMixA = {
+	...[i for i = 1, 10]
+	11
+}
+
+tbMixB = {
+	... ... -- only the first item in vararg been accessed here
+	... {...}
+	... {......}
+	1, 2, 3
+}
+
 nil
 

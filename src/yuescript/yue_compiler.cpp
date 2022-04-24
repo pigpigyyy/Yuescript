@@ -4537,15 +4537,20 @@ private:
 				switch (item->getId()) {
 					case id<SpreadExp_t>(): {
 						auto spread = static_cast<SpreadExp_t*>(item);
-						std::string keyVar = getUnusedName("_key_"sv);
 						std::string valueVar = getUnusedName("_value_"sv);
-						auto targetStr = _parser.toString(spread->exp);
-						_buf << "for "sv << keyVar << ',' << valueVar
-							<< " in pairs! do "sv
-							<< tableVar << '[' << keyVar << "]="sv << valueVar;
+						auto objVar = singleVariableFrom(spread->exp);
+						if (objVar.empty()) {
+							objVar = getUnusedName("_obj_");
+							auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, spread);
+							auto assign = assignment->action.to<Assign_t>();
+							assign->values.clear();
+							assign->values.push_back(spread->exp);
+							transformAssignment(assignment, temp);
+						}
+						_buf << "for "sv << valueVar
+							<< " in *"sv << objVar << " do "sv
+							<< tableVar << "[]="sv << valueVar;
 						auto forEach = toAst<ForEach_t>(clearBuf(), spread);
-						auto chainValue = singleValueFrom(forEach->loopValue.to<ExpList_t>())->item.to<ChainValue_t>();
-						ast_to<Invoke_t>(*(++chainValue->items.objects().begin()))->args.push_back(spread->exp);
 						transformForEach(forEach, temp);
 						break;
 					}
@@ -4603,11 +4608,27 @@ private:
 						break;
 					}
 					case id<Exp_t>(): {
-						auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
-						auto assign = assignment->action.to<Assign_t>();
-						assign->values.clear();
-						assign->values.push_back(item);
-						transformAssignment(assignment, temp);
+						bool lastVarArg = false;
+						BLOCK_START
+						BREAK_IF(item != table->values.back());
+						auto value = singleValueFrom(item);
+						BREAK_IF(!value);
+						auto chainValue = value->item.as<ChainValue_t>();
+						BREAK_IF(!chainValue);
+						BREAK_IF(chainValue->items.size() != 1);
+						BREAK_IF((!chainValue->getByPath<Callable_t,VarArg_t>()));
+						auto indexVar = getUnusedName("_index_");
+						_buf << "for "sv << indexVar << "=1,select '#',...\n\t"sv << tableVar << "[]= select "sv << indexVar << ",..."sv;
+						transformFor(toAst<For_t>(clearBuf(), item), temp);
+						lastVarArg = true;
+						BLOCK_END
+						if (!lastVarArg) {
+							auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
+							auto assign = assignment->action.to<Assign_t>();
+							assign->values.clear();
+							assign->values.push_back(item);
+							transformAssignment(assignment, temp);
+						}
 						break;
 					}
 					default: YUEE("AST node mismatch", item); break;

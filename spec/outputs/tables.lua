@@ -348,4 +348,106 @@ local menus = {
 		}
 	}
 }
+local tb
+do
+	local _tab_0 = { }
+	local _list_0 = other
+	for _index_0 = 1, #_list_0 do
+		local _value_0 = _list_0[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	tb = _tab_0
+end
+local tbMix
+do
+	local _tab_0 = {
+		1,
+		2,
+		3
+	}
+	local _obj_0
+	do
+		local _with_0 = item
+		_with_0.x = 1
+		_with_0:func()
+		_obj_0 = _with_0
+	end
+	for _index_0 = 1, #_obj_0 do
+		local _value_0 = _obj_0[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	_tab_0[#_tab_0 + 1] = "a"
+	_tab_0[#_tab_0 + 1] = "b"
+	_tab_0[#_tab_0 + 1] = "c"
+	local _obj_1
+	do
+		local _obj_2 = func
+		if _obj_2 ~= nil then
+			_obj_1 = _obj_2()
+		end
+	end
+	for _index_0 = 1, #_obj_1 do
+		local _value_0 = _obj_1[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	_tab_0.key = "value"
+	for _index_0 = 1, select('#', ...) do
+		_tab_0[#_tab_0 + 1] = select(_index_0, ...)
+	end
+	tbMix = _tab_0
+end
+local tbMixA
+do
+	local _tab_0 = { }
+	local _obj_0
+	do
+		local _accum_0 = { }
+		local _len_0 = 1
+		for i = 1, 10 do
+			_accum_0[_len_0] = i
+			_len_0 = _len_0 + 1
+		end
+		_obj_0 = _accum_0
+	end
+	for _index_0 = 1, #_obj_0 do
+		local _value_0 = _obj_0[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	_tab_0[#_tab_0 + 1] = 11
+	tbMixA = _tab_0
+end
+local tbMixB
+do
+	local _tab_0 = { }
+	local _obj_0 = ...
+	for _index_0 = 1, #_obj_0 do
+		local _value_0 = _obj_0[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	local _obj_1 = {
+		...
+	}
+	for _index_0 = 1, #_obj_1 do
+		local _value_0 = _obj_1[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	local _obj_2
+	do
+		local _tab_1 = { }
+		local _obj_3 = ...
+		for _index_0 = 1, #_obj_3 do
+			local _value_0 = _obj_3[_index_0]
+			_tab_1[#_tab_1 + 1] = _value_0
+		end
+		_obj_2 = _tab_1
+	end
+	for _index_0 = 1, #_obj_2 do
+		local _value_0 = _obj_2[_index_0]
+		_tab_0[#_tab_0 + 1] = _value_0
+	end
+	_tab_0[#_tab_0 + 1] = 1
+	_tab_0[#_tab_0 + 1] = 2
+	_tab_0[#_tab_0 + 1] = 3
+	tbMixB = _tab_0
+end
 return nil
