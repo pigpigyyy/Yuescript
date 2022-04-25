@@ -408,7 +408,7 @@ lyrics =
 copy = {...other}
 
 a = {1, 2, 3, x: 1}
-a = {4, 5, y: 1}
+b = {4, 5, y: 1}
 merge = {...a, ...b}
 </pre>
 </YueDisplay>
