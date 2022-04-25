@@ -360,7 +360,7 @@ tb::func! if tb != nil
 </pre>
 </YueDisplay>
 
-### Appending to Tables
+### Table Appending
 The **[] =** operator is used to append values to tables.
 
 ```moonscript
@@ -371,6 +371,45 @@ tab[] = "Value"
 <pre>
 tab = {}
 tab[] = "Value"
+</pre>
+</YueDisplay>
+
+### Table Spreading
+
+You can concatenate array tables or hash tables using spread operator `...` before expressions in table literals.
+
+```moonscript
+parts =
+	* "shoulders"
+	* "knees"
+lyrics =
+	* "head"
+	* ...parts
+	* "and"
+	* "toes"
+
+copy = {...other}
+
+a = {1, 2, 3, x: 1}
+b = {4, 5, y: 1}
+merge = {...a, ...b}
+```
+<YueDisplay>
+<pre>
+parts =
+	* "shoulders"
+	* "knees"
+lyrics =
+	* "head"
+	* ...parts
+	* "and"
+	* "toes"
+
+copy = {...other}
+
+a = {1, 2, 3, x: 1}
+a = {4, 5, y: 1}
+merge = {...a, ...b}
 </pre>
 </YueDisplay>
 
@@ -603,45 +642,6 @@ tb =
       value: 2
       func: => @value + 2
       tb: { }
-</pre>
-</YueDisplay>
-
-### Spread Table
-
-You can concatenate array tables or hash tables using spread operator `...` before expressions in table literals.
-
-```moonscript
-parts =
-	* "shoulders"
-	* "knees"
-lyrics =
-	* "head"
-	* ...parts
-	* "and"
-	* "toes"
-
-copy = {...other}
-
-a = {1, 2, 3, x: 1}
-b = {4, 5, y: 1}
-merge = {...a, ...b}
-```
-<YueDisplay>
-<pre>
-parts =
-	* "shoulders"
-	* "knees"
-lyrics =
-	* "head"
-	* ...parts
-	* "and"
-	* "toes"
-
-copy = {...other}
-
-a = {1, 2, 3, x: 1}
-a = {4, 5, y: 1}
-merge = {...a, ...b}
 </pre>
 </YueDisplay>
 
@@ -1979,9 +1979,30 @@ print func_b! -- prints table object
 
 This is done to avoid the needless creation of tables for functions that don’t need to return the results of the loop.
 
+## Repeat Loop
+
+The repeat loop comes from Lua:
+
+```moonscript
+i = 10
+repeat
+  print i
+  i -= 1
+until i == 0
+```
+<YueDisplay>
+<pre>
+i = 10
+repeat
+  print i
+  i -= 1
+until i == 0
+</pre>
+</YueDisplay>
+
 ## While Loop
 
-The while loop also comes in two variations:
+The while loop also comes in four variations:
 
 ```moonscript
 i = 10
@@ -1999,6 +2020,24 @@ while i > 0
   i -= 1
 
 while running == true do my_function!
+</pre>
+</YueDisplay>
+
+```moonscript
+i = 10
+until i == 0
+  print i
+  i -= 1
+
+until running == false do my_function!
+```
+<YueDisplay>
+<pre>
+i = 10
+until i == 0
+  print i
+  i -= 1
+until running == false do my_function!
 </pre>
 </YueDisplay>
 
