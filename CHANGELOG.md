@@ -2,6 +2,112 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.10.15
+
+### Fixed Issues
+
+* Fix ambiguous syntax caused by argument table block.
+* Fix an issue using import as table destructuring with meta methods.
+* Fix a case combining the use of existential operator and metatable operator.
+* Raise error when use existential operator in the left part of an assignment.
+* Fix the way update assignment is implemented to reduce unnecessary table indexing.
+* Fix more cases that global variables are not being cached.
+* Fix Yuescript loader insertion order.
+* Fix Yuescript not found error messages.
+
+### Added Features
+
+* Builtin macros `$FILE`, `$LINE` to get the source file names and code line numbers.
+* Table appending operator.
+   ```moonscript
+   tb = {}
+   tb[] = 1
+   ```
+   Compiles to:
+   ```lua
+   local tb = { }
+   tb[#tb + 1] = 1
+   ```
+* Class mixing function by keyword `using`.
+   ```moonscript
+   class A using B
+   -- If B is a Yuescript class object (which has a field named __base),
+   -- only fields that are not meta method will be added to class object A
+   -- If B is a plain table, all the fields will be added to class object A
+   -- so that you can change the behavior of Yuescript class' meta method __index.
+   ```
+* Try catch syntax.
+   ```moonscript
+   try
+     func 1, 2, 3
+   catch err
+     print yue.traceback err
+   
+   success, result = try func 1, 2, 3
+   ```
+   Compiles to:
+   ```lua
+   xpcall(function()
+     return func(1, 2, 3)
+   end, function(err)
+     return print(yue.traceback(err))
+   end)
+   local success, result = pcall(func, 1, 2, 3)
+   ```
+* Add nil coalescing operator.
+   ```moonscript
+   local a, b, c
+   a = b ?? c
+   a ??= false
+   ```
+   Compiles to:
+   ```lua
+   local a, b, c
+   if b ~= nil then
+     a = b
+   else
+     a = c
+   end
+   if a == nil then
+     a = false
+   end
+   ```
+
+* Add a global variable "arg" for Yuescipt tool CLI execution.
+* Add placeholder support for list destructuring.
+   ```moonscript
+   {_, b, _, d} = tb
+   ```
+   Compiles to:
+   ```lua
+   local b, d
+   do
+     local _obj_0 = tb
+     b, d = _obj_0[2], _obj_0[4]
+   end
+   ```
+* Add table spread syntax.
+   ```moonscript
+   copy = {...other}
+   ```
+   Compiles to:
+   ```lua
+   local copy
+   do
+     local _tab_0 = { }
+     local _idx_0 = 1
+     for _key_0, _value_0 in pairs(other) do
+       if _idx_0 == _key_0 then
+         _tab_0[#_tab_0 + 1] = _value_0
+         _idx_0 = _idx_0 + 1
+       else
+         _tab_0[_key_0] = _value_0
+       end
+     end
+     copy = _tab_0
+   end
+   ```
+
 ## v0.8.5
 
 ### Fixed Issues
@@ -12,36 +118,36 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
 ### Added Features
 
 * Nil coalescing operator.
-```moonscript
-local a, b, c, d
-a = b ?? c ?? d
-func a ?? {}
-
-a ??= false
-```
-Compiles to:
-```lua
-local a, b, c, d
-if b ~= nil then
-  a = b
-else
-  if c ~= nil then
-    a = c
-  else
-    a = d
-  end
-end
-func((function()
-  if a ~= nil then
-    return a
-  else
-    return { }
-  end
-end)())
-if a == nil then
-  a = false
-end
-```
+   ```moonscript
+   local a, b, c, d
+   a = b ?? c ?? d
+   func a ?? {}
+   
+   a ??= false
+   ```
+   Compiles to:
+   ```lua
+   local a, b, c, d
+   if b ~= nil then
+     a = b
+   else
+     if c ~= nil then
+       a = c
+     else
+       a = d
+     end
+   end
+   func((function()
+     if a ~= nil then
+       return a
+     else
+       return { }
+     end
+   end)())
+   if a == nil then
+     a = false
+   end
+   ```
 
 * New metatable syntax.
   ```moonscript
@@ -190,7 +296,7 @@ end
         return false
       x.name\EndsWith "(Clone)"
     \Destroy!
-
+  
   origin.transform.root.gameObject
     \Parents!\Descendants!
     \SelectEnable!
@@ -315,7 +421,7 @@ end
       return 'abc'
     end
   end)()
-  ```
+   ```
 
   
 
@@ -395,24 +501,24 @@ end
   export macro config = (debugging = true)->
     global debugMode = debugging == "true"
     ""
-
+  
   export macro asserts = (cond)->
     debugMode and "assert #{cond}" or ""
-
+  
   export macro assert = (cond)->
     debugMode and "assert #{cond}" or "#{cond}"
-
+  
   $config!
-
+  
   -- file 'main.mp'
   import 'macro' as {:$config, :$assert, :$asserts}
-
+  
   macro and = (...)-> "#{ table.concat {...}, ' and ' }"
-
+  
   $asserts item ~= nil
   $config false
   value = $assert item
-
+  
   if $and f1!, f2!, f3!
     print "OK"
   ```
@@ -421,7 +527,7 @@ end
   -- file 'macro.mp'
   local _module_0 = { }
   return _module_0
-
+  
   -- file 'main.mp'
   assert(item ~= nil)
   local value = item
@@ -459,11 +565,11 @@ From the original Moonscript compiler:
   ```Moonscript
   -- file 'Config.mp'
   export default {flag:1, value:"x"}
-
+  
   -- file 'Utils.mp'
   export map = (items, func)-> [func item for item in *items]
   export filter = (items, func)-> [item for item in *items when func item]
-
+  
   -- file 'main.mp'
   import 'Config' as {:flag, :value}
   import 'Utils' as {:map, :filter}
@@ -477,7 +583,7 @@ From the original Moonscript compiler:
     value = "x"
   }
   return _module_0
-
+  
   -- file 'Utils.mp'
   local _module_0 = { }
   local map
@@ -507,7 +613,7 @@ From the original Moonscript compiler:
   end
   _module_0["filter"] = filter
   return _module_0
-
+  
   -- file 'main.mp'
   local flag, value
   do
@@ -547,7 +653,7 @@ Fix issues in original Moonscript compiler:
     |> filter((x)-> x > 4)
     |> reduce(0, (a,b)-> a + b)
     |> print
-
+  
   do
     (data) <- http.get "ajaxtest"
     body[".result"]\html data
@@ -582,11 +688,11 @@ Fix issues in original Moonscript compiler:
 * Existential operator support. Generate codes from:
   ```Moonscript
   func?!
-
+  
   x = tab?.value
-
+  
   print abc?["hello world"]?.xyz
-
+  
   if print and x?
     print x
   ```
@@ -715,11 +821,11 @@ Fix issues in original Moonscript compiler:
   ```Moonscript
   with leaf
     .world 1,2,3
-
+  
   with leaf
     g = .what.is.this
     print g
-
+  
   for x in *something
     print x
   ```
