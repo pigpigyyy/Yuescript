@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.14"sv;
+const std::string_view version = "0.10.15"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1355,10 +1355,20 @@ private:
 			}
 			case id<TableLit_t>(): {
 				auto tableLit = static_cast<TableLit_t*>(value);
-				if (hasSpreadExp(tableLit)) {
+				if (hasSpreadExp(tableLit->values.objects())) {
 					auto expList = assignment->expList.get();
 					std::string preDefine = getPredefine(assignment);
-					transformSpreadTableLit(tableLit, out, ExpUsage::Assignment, expList);
+					transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Assignment, expList);
+					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+					return;
+				}
+			}
+			case id<TableBlock_t>(): {
+				auto tableBlock = static_cast<TableBlock_t*>(value);
+				if (hasSpreadExp(tableBlock->values.objects())) {
+					auto expList = assignment->expList.get();
+					std::string preDefine = getPredefine(assignment);
+					transformSpreadTable(tableBlock->values.objects(), out, ExpUsage::Assignment, expList);
 					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
 					return;
 				}
@@ -3239,7 +3249,7 @@ private:
 			if (!target) target = returnNode;
 			throw std::logic_error(_info.errorMessage("illegal return statement here"sv, target));
 		}
-		if (auto valueList = returnNode->valueList.get()) {
+		if (auto valueList = returnNode->valueList.as<ExpListLow_t>()) {
 			if (valueList->exprs.size() == 1) {
 				auto exp = static_cast<Exp_t*>(valueList->exprs.back());
 				if (isPureBackcall(exp)) {
@@ -3286,8 +3296,8 @@ private:
 							return;
 						case id<TableLit_t>(): {
 							auto tableLit = static_cast<TableLit_t*>(value);
-							if (hasSpreadExp(tableLit)) {
-								transformSpreadTableLit(tableLit, out, ExpUsage::Return);
+							if (hasSpreadExp(tableLit->values.objects())) {
+								transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Return);
 								return;
 							}
 						}
@@ -3305,6 +3315,14 @@ private:
 				str_list temp;
 				transformExpListLow(valueList, temp);
 				out.push_back(indent() + "return "s + temp.back() + nlr(returnNode));
+			}
+		} else if (auto tableBlock = returnNode->valueList.as<TableBlock_t>()) {
+			const auto& values = tableBlock->values.objects();
+			if (hasSpreadExp(values)) {
+				transformSpreadTable(values, out, ExpUsage::Return);
+			} else {
+				transformTable(values, out);
+				out.back() = indent() + "return "s + out.back() + nlr(returnNode);
 			}
 		} else {
 			out.push_back(indent() + "return"s + nll(returnNode));
@@ -4495,23 +4513,15 @@ private:
 		out.push_back(_parser.toString(num));
 	}
 
-	bool hasSpreadExp(TableLit_t* table) {
-		for (auto item : table->values.objects()) {
+	bool hasSpreadExp(const node_container& items) {
+		for (auto item : items) {
 			if (ast_is<SpreadExp_t>(item)) return true;
 		}
 		return false;
 	}
 
-	void transformTableLit(TableLit_t* table, str_list& out) {
-		if (hasSpreadExp(table)) {
-			transformSpreadTableLit(table, out, ExpUsage::Closure);
-		} else {
-			transformTable(table, table->values.objects(), out);
-		}
-	}
-
-	void transformSpreadTableLit(TableLit_t* table, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		auto x = table;
+	void transformSpreadTable(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		auto x = values.front();
 		switch (usage) {
 			case ExpUsage::Closure:
 				_enableReturn.push(true);
@@ -4527,19 +4537,19 @@ private:
 		str_list temp;
 		std::string tableVar = getUnusedName("_tab_"sv);
 		forceAddToScope(tableVar);
-		auto it = table->values.objects().begin();
+		auto it = values.begin();
 		if (ast_is<SpreadExp_t>(*it)) {
 			temp.push_back(indent() + "local "s + tableVar + " = { }"s + nll(x));
 		} else {
 			auto initialTab = x->new_ptr<TableLit_t>();
-			while (it != table->values.objects().end() && !ast_is<SpreadExp_t>(*it)) {
+			while (it != values.end() && !ast_is<SpreadExp_t>(*it)) {
 				initialTab->values.push_back(*it);
 				++it;
 			}
-			transformTable(table, initialTab->values.objects(), temp);
+			transformTable(initialTab->values.objects(), temp);
 			temp.back() = indent() + "local "s + tableVar + " = "s + temp.back() + nll(*it);
 		}
-		for (; it != table->values.objects().end(); ++it) {
+		for (; it != values.end(); ++it) {
 			auto item = *it;
 			switch (item->getId()) {
 				case id<SpreadExp_t>(): {
@@ -4623,7 +4633,7 @@ private:
 				case id<Exp_t>(): {
 					bool lastVarArg = false;
 					BLOCK_START
-					BREAK_IF(item != table->values.back());
+					BREAK_IF(item != values.back());
 					auto value = singleValueFrom(item);
 					BREAK_IF(!value);
 					auto chainValue = value->item.as<ChainValue_t>();
@@ -4642,6 +4652,66 @@ private:
 						assign->values.push_back(item);
 						transformAssignment(assignment, temp);
 					}
+					break;
+				}
+				case id<TableBlockIndent_t>(): {
+					auto tbIndent = static_cast<TableBlockIndent_t*>(item);
+					auto tableBlock = item->new_ptr<TableBlock_t>();
+					tableBlock->values.dup(tbIndent->values);
+					auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
+					auto assign = assignment->action.to<Assign_t>();
+					assign->values.clear();
+					assign->values.push_back(tableBlock);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<TableBlock_t>(): {
+					auto assignment = toAst<ExpListAssign_t>(tableVar + "[]=nil"s, item);
+					auto assign = assignment->action.to<Assign_t>();
+					assign->values.clear();
+					assign->values.push_back(item);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<meta_variable_pair_t>(): {
+					auto metaVarPair = static_cast<meta_variable_pair_t*>(item);
+					auto nameStr = _parser.toString(metaVarPair->name);
+					auto assignment = toAst<ExpListAssign_t>(tableVar + '.' + nameStr + "#="s + nameStr, item);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<meta_normal_pair_t>(): {
+					auto metaNormalPair = static_cast<meta_normal_pair_t*>(item);
+					auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
+					auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
+					auto key = metaNormalPair->key.get();
+					switch (key->getId()) {
+						case id<Name_t>(): {
+							auto dotItem = x->new_ptr<DotChainItem_t>();
+							dotItem->name.set(key);
+							chainValue->items.push_back(dotItem);
+							break;
+						}
+						case id<Exp_t>(): {
+							auto dotItem = toAst<DotChainItem_t>(".#"sv, key);
+							chainValue->items.push_back(dotItem);
+							chainValue->items.push_back(key);
+							break;
+						}
+						default: YUEE("AST node mismatch", key); break;
+					}
+					auto assign = assignment->action.to<Assign_t>();
+					assign->values.clear();
+					assign->values.push_back(metaNormalPair->value);
+					transformAssignment(assignment, temp);
+					break;
+				}
+				case id<default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<default_pair_t*>(item)->defVal));
+					break;
+				}
+				case id<meta_default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<meta_default_pair_t*>(item)->defVal));
 					break;
 				}
 				default: YUEE("AST node mismatch", item); break;
@@ -4679,6 +4749,123 @@ private:
 				break;
 			default:
 				break;
+		}
+	}
+
+	void transformTable(const node_container& values, str_list& out) {
+		if (values.empty()) {
+			out.push_back("{ }"s);
+			return;
+		}
+		auto x = values.front();
+		str_list temp;
+		incIndentOffset();
+		auto metatable = x->new_ptr<simple_table_t>();
+		ast_sel<false, Exp_t, TableBlock_t> metatableItem;
+		for (auto item : values) {
+			bool isMetamethod = false;
+			switch (item->getId()) {
+				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure); break;
+				case id<variable_pair_t>(): transform_variable_pair(static_cast<variable_pair_t*>(item), temp); break;
+				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(item), temp, false); break;
+				case id<TableBlockIndent_t>(): transformTableBlockIndent(static_cast<TableBlockIndent_t*>(item), temp); break;
+				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(item), temp); break;
+				case id<meta_variable_pair_t>(): {
+					isMetamethod = true;
+					auto mp = static_cast<meta_variable_pair_t*>(item);
+					if (metatableItem) {
+						throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->name));
+					}
+					auto name = _parser.toString(mp->name);
+					_buf << "__"sv << name << ':' << name;
+					auto newPair = toAst<normal_pair_t>(clearBuf(), item);
+					metatable->pairs.push_back(newPair);
+					break;
+				}
+				case id<meta_normal_pair_t>(): {
+					isMetamethod = true;
+					auto mp = static_cast<meta_normal_pair_t*>(item);
+					auto newPair = item->new_ptr<normal_pair_t>();
+					if (mp->key) {
+						if (metatableItem) {
+							throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->key));
+						}
+						switch (mp->key->getId()) {
+							case id<Name_t>(): {
+								auto key = _parser.toString(mp->key);
+								_buf << "__"sv << key;
+								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+								newPair->key.set(newKey);
+								break;
+							}
+							case id<Exp_t>():
+								newPair->key.set(mp->key);
+								break;
+							default: YUEE("AST node mismatch", mp->key); break;
+						}
+						newPair->value.set(mp->value);
+						metatable->pairs.push_back(newPair);
+					} else {
+						if (!metatable->pairs.empty()) {
+							throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->value));
+						}
+						metatableItem.set(mp->value);
+					}
+					break;
+				}
+				case id<default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<default_pair_t*>(item)->defVal));
+					break;
+				}
+				case id<meta_default_pair_t>(): {
+					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<meta_default_pair_t*>(item)->defVal));
+					break;
+				}
+				default: YUEE("AST node mismatch", item); break;
+			}
+			if (!isMetamethod) {
+				temp.back() = indent() + (item == values.back() ? temp.back() : temp.back() + ',') + nll(item);
+			}
+		}
+		if (metatable->pairs.empty() && !metatableItem) {
+			out.push_back('{' + nll(x) + join(temp));
+			decIndentOffset();
+			out.back() += (indent() + '}');
+		} else {
+			auto tabStr = globalVar("setmetatable"sv, x);
+			tabStr += '(';
+			if (temp.empty()) {
+				decIndentOffset();
+				tabStr += "{ }"sv;
+			} else {
+				tabStr += ('{' + nll(x) + join(temp));
+				decIndentOffset();
+				tabStr += (indent() + '}');
+			}
+			tabStr += ", "sv;
+			str_list tmp;
+			if (!metatable->pairs.empty()) {
+				transform_simple_table(metatable, tmp);
+			} else switch (metatableItem->getId()) {
+				case id<Exp_t>():
+					transformExp(static_cast<Exp_t*>(metatableItem.get()), tmp, ExpUsage::Closure);
+					break;
+				case id<TableBlock_t>():
+					transformTableBlock(static_cast<TableBlock_t*>(metatableItem.get()), tmp);
+					break;
+			}
+			tabStr += tmp.back();
+			tabStr += ')';
+			out.push_back(tabStr);
+		}
+	}
+
+	void transformTableLit(TableLit_t* table, str_list& out) {
+		const auto& values = table->values.objects();
+		if (hasSpreadExp(values)) {
+			transformSpreadTable(values, out, ExpUsage::Closure);
+		} else {
+			transformTable(values, out);
 		}
 	}
 
@@ -6079,115 +6266,8 @@ private:
 		}
 	}
 
-	void transformTable(ast_node* table, const node_container& pairs, str_list& out) {
-		if (pairs.empty()) {
-			out.push_back("{ }"s);
-			return;
-		}
-		str_list temp;
-		incIndentOffset();
-		auto metatable = table->new_ptr<simple_table_t>();
-		ast_sel<false, Exp_t, TableBlock_t> metatableItem;
-		for (auto pair : pairs) {
-			bool isMetamethod = false;
-			switch (pair->getId()) {
-				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(pair), temp, ExpUsage::Closure); break;
-				case id<variable_pair_t>(): transform_variable_pair(static_cast<variable_pair_t*>(pair), temp); break;
-				case id<normal_pair_t>(): transform_normal_pair(static_cast<normal_pair_t*>(pair), temp, false); break;
-				case id<TableBlockIndent_t>(): transformTableBlockIndent(static_cast<TableBlockIndent_t*>(pair), temp); break;
-				case id<TableBlock_t>(): transformTableBlock(static_cast<TableBlock_t*>(pair), temp); break;
-				case id<meta_variable_pair_t>(): {
-					isMetamethod = true;
-					auto mp = static_cast<meta_variable_pair_t*>(pair);
-					if (metatableItem) {
-						throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->name));
-					}
-					auto name = _parser.toString(mp->name);
-					_buf << "__"sv << name << ':' << name;
-					auto newPair = toAst<normal_pair_t>(clearBuf(), pair);
-					metatable->pairs.push_back(newPair);
-					break;
-				}
-				case id<meta_normal_pair_t>(): {
-					isMetamethod = true;
-					auto mp = static_cast<meta_normal_pair_t*>(pair);
-					auto newPair = pair->new_ptr<normal_pair_t>();
-					if (mp->key) {
-						if (metatableItem) {
-							throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->key));
-						}
-						switch (mp->key->getId()) {
-							case id<Name_t>(): {
-								auto key = _parser.toString(mp->key);
-								_buf << "__"sv << key;
-								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
-								newPair->key.set(newKey);
-								break;
-							}
-							case id<Exp_t>():
-								newPair->key.set(mp->key);
-								break;
-							default: YUEE("AST node mismatch", mp->key); break;
-						}
-						newPair->value.set(mp->value);
-						metatable->pairs.push_back(newPair);
-					} else {
-						if (!metatable->pairs.empty()) {
-							throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->value));
-						}
-						metatableItem.set(mp->value);
-					}
-					break;
-				}
-				case id<default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid use of default value"sv, static_cast<default_pair_t*>(pair)->defVal));
-					break;
-				}
-				case id<meta_default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid use of default value"sv, static_cast<meta_default_pair_t*>(pair)->defVal));
-					break;
-				}
-				default: YUEE("AST node mismatch", pair); break;
-			}
-			if (!isMetamethod) {
-				temp.back() = indent() + (pair == pairs.back() ? temp.back() : temp.back() + ',') + nll(pair);
-			}
-		}
-		if (metatable->pairs.empty() && !metatableItem) {
-			out.push_back('{' + nll(table) + join(temp));
-			decIndentOffset();
-			out.back() += (indent() + '}');
-		} else {
-			auto tabStr = globalVar("setmetatable"sv, table);
-			tabStr += '(';
-			if (temp.empty()) {
-				decIndentOffset();
-				tabStr += "{ }"sv;
-			} else {
-				tabStr += ('{' + nll(table) + join(temp));
-				decIndentOffset();
-				tabStr += (indent() + '}');
-			}
-			tabStr += ", "sv;
-			str_list tmp;
-			if (!metatable->pairs.empty()) {
-				transform_simple_table(metatable, tmp);
-			} else switch (metatableItem->getId()) {
-				case id<Exp_t>():
-					transformExp(static_cast<Exp_t*>(metatableItem.get()), tmp, ExpUsage::Closure);
-					break;
-				case id<TableBlock_t>():
-					transformTableBlock(static_cast<TableBlock_t*>(metatableItem.get()), tmp);
-					break;
-			}
-			tabStr += tmp.back();
-			tabStr += ')';
-			out.push_back(tabStr);
-		}
-	}
-
 	void transform_simple_table(simple_table_t* table, str_list& out) {
-		transformTable(table, table->pairs.objects(), out);
+		transformTable(table->pairs.objects(), out);
 	}
 
 	void transformTblComprehension(TblComprehension_t* comp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
@@ -6284,11 +6364,16 @@ private:
 	}
 
 	void transformTableBlockIndent(TableBlockIndent_t* table, str_list& out) {
-		transformTable(table, table->values.objects(), out);
+		transformTable(table->values.objects(), out);
 	}
 
 	void transformTableBlock(TableBlock_t* table, str_list& out) {
-		transformTable(table, table->values.objects(), out);
+		const auto& values = table->values.objects();
+		if (hasSpreadExp(values)) {
+			transformSpreadTable(values, out, ExpUsage::Closure);
+		} else {
+			transformTable(values, out);
+		}
 	}
 
 	void transformDo(Do_t* doNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {

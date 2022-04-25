@@ -49,6 +49,19 @@ do
 		else
 			b
 
+do
+	return
+		:value
+		itemA: 123
+		itemB: "abc"
+
+do
+	return
+		* 1
+		* 2
+		* ...three
+		* 4
+
 _ = -> a\b
 do a\b
 

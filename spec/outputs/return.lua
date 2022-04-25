@@ -86,6 +86,30 @@ do
 		end
 	end
 end
+do
+	return {
+		value = value,
+		itemA = 123,
+		itemB = "abc"
+	}
+end
+do
+	local _tab_0 = {
+		1,
+		2
+	}
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(three) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
+	end
+	_tab_0[#_tab_0 + 1] = 4
+	return _tab_0
+end
 _ = function()
 	local _base_0 = a
 	local _fn_0 = _base_0.b

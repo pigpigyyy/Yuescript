@@ -527,4 +527,65 @@ do
 	_tab_0["else"] = false
 	specializedB = _tab_0
 end
+local parts = {
+	"shoulders",
+	"knees"
+}
+local lyrics
+do
+	local _tab_0 = {
+		"head"
+	}
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(parts) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
+	end
+	_tab_0[#_tab_0 + 1] = "and"
+	_tab_0[#_tab_0 + 1] = "toes"
+	lyrics = _tab_0
+end
+local tbBlock = {
+	sub = (function(...)
+		local _tab_0 = {
+			value = value
+		}
+		local _idx_0 = 1
+		for _key_0, _value_0 in pairs(items) do
+			if _idx_0 == _key_0 then
+				_tab_0[#_tab_0 + 1] = _value_0
+				_idx_0 = _idx_0 + 1
+			else
+				_tab_0[_key_0] = _value_0
+			end
+		end
+		for _index_0 = 1, select('#', ...) do
+			_tab_0[#_tab_0 + 1] = select(_index_0, ...)
+		end
+		return _tab_0
+	end)(...)
+}
+func((function(...)
+	local _tab_0 = { }
+	local _idx_0 = 1
+	for _key_0, _value_0 in pairs(items) do
+		if _idx_0 == _key_0 then
+			_tab_0[#_tab_0 + 1] = _value_0
+			_idx_0 = _idx_0 + 1
+		else
+			_tab_0[_key_0] = _value_0
+		end
+	end
+	_tab_0.value = value
+	_tab_0[#_tab_0 + 1] = ...
+	_tab_0.k = v
+	for _index_0 = 1, select('#', ...) do
+		_tab_0[#_tab_0 + 1] = select(_index_0, ...)
+	end
+	return _tab_0
+end)(...))
 return nil

@@ -118,14 +118,14 @@ export yuescript = "月之脚本"
 
 &emsp;Use Yuescript module in Lua:
 
-* **Case 1**
+* **Case 1**  
 Require "your_yuescript_entry.yue" in Lua.
 ```Lua
 require("yue")("your_yuescript_entry")
 ```
 &emsp;And this code still works when you compile "your_yuescript_entry.yue"  to "your_yuescript_entry.lua" in the same path. In the rest Yuescript files just use the normal **require** or **import**. The code line numbers in error messages will also be handled correctly.
 
-* **Case 2**
+* **Case 2**  
 Require Yuescript module and rewite message by hand.
 ```lua
 local yue = require("yue")
@@ -136,7 +136,7 @@ end, function(err)
 end)
 ```
 
-* **Case 3**
+* **Case 3**  
 Use the Yuescript compiler function in Lua.
 ```lua
 local yue = require("yue")
@@ -174,12 +174,12 @@ Usage: yue [options|files|directories] ...
    Execute without options to enter REPL, type symbol '$'
    in a single line to start/stop multi-line mode
 ```
-&emsp;&emsp;Use cases:
-&emsp;&emsp;Recursively compile every Yuescript file with extension **.yue** under current path:  **yue .**
-&emsp;&emsp;Compile and save results to a target path:  **yue -t /target/path/ .**
-&emsp;&emsp;Compile and reserve debug info:  **yue -l .**
-&emsp;&emsp;Compile and generate minified codes:  **yue -m .**
-&emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**
+&emsp;&emsp;Use cases:  
+&emsp;&emsp;Recursively compile every Yuescript file with extension **.yue** under current path:  **yue .**  
+&emsp;&emsp;Compile and save results to a target path:  **yue -t /target/path/ .**  
+&emsp;&emsp;Compile and reserve debug info:  **yue -l .**  
+&emsp;&emsp;Compile and generate minified codes:  **yue -m .**  
+&emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**  
 &emsp;&emsp;Execute a Yuescript file:  **yue -e main.yue**
 
 ## Macro
@@ -606,6 +606,45 @@ tb =
 </pre>
 </YueDisplay>
 
+### Spread Table
+
+You can concatenate array tables or hash tables using spread operator `...` before expressions in table literals.
+
+```moonscript
+parts =
+	* "shoulders"
+	* "knees"
+lyrics =
+	* "head"
+	* ...parts
+	* "and"
+	* "toes"
+
+copy = {...other}
+
+a = {1, 2, 3, x: 1}
+b = {4, 5, y: 1}
+merge = {...a, ...b}
+```
+<YueDisplay>
+<pre>
+parts =
+	* "shoulders"
+	* "knees"
+lyrics =
+	* "head"
+	* ...parts
+	* "and"
+	* "toes"
+
+copy = {...other}
+
+a = {1, 2, 3, x: 1}
+a = {4, 5, y: 1}
+merge = {...a, ...b}
+</pre>
+</YueDisplay>
+
 ## Module
 
 ### Import
@@ -978,6 +1017,17 @@ You can write default values while doing destructuring like:
 <YueDisplay>
 <pre>
 {:name = "nameless", :job = "jobless"} = person
+</pre>
+</YueDisplay>
+
+You can use `_` as placeholder when doing a list destructuring:
+
+```moonscript
+{_, two, _, four} = items
+```
+<YueDisplay>
+<pre>
+{_, two, _, four} = items
 </pre>
 </YueDisplay>
 

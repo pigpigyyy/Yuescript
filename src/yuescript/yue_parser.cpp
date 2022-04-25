@@ -28,9 +28,8 @@ std::unordered_set<std::string> Keywords = {
 	"or", "repeat", "return", "then", "true",
 	"until", "while", // Lua keywords
 	"as", "class", "continue", "export", "extends",
-	"from", "global", "import", "is", "macro",
-	"switch", "try", "unless", "using", "when",
-	"with" // Yue keywords
+	"from", "global", "import", "macro", "switch",
+	"try", "unless", "using", "when", "with" // Yue keywords
 };
 
 YueParser::YueParser() {
@@ -219,7 +218,7 @@ YueParser::YueParser() {
 
 	BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
 
-	Return = key("return") >> -ExpListLow;
+	Return = key("return") >> -(TableBlock | ExpListLow);
 
 	WithExp = ExpList >> -Assign;
 
@@ -556,7 +555,7 @@ YueParser::YueParser() {
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);
-	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (Exp | TableBlock));
+	KeyValueLine = CheckIndent >> (KeyValueList >> -sym(',') | TableBlockIndent | Space >> expr('*') >> (SpreadExp | Exp | TableBlock));
 
 	FnArgDef = (Variable | SelfName >> -existential_op) >> -(sym('=') >> Space >> Exp);
 

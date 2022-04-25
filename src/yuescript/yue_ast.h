@@ -221,9 +221,11 @@ AST_NODE(ExpList)
 	AST_MEMBER(ExpList, &sep, &exprs)
 AST_END(ExpList)
 
+class TableBlock_t;
+
 AST_NODE(Return)
 	bool allowBlockMacroReturn = false;
-	ast_ptr<false, ExpListLow_t> valueList;
+	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
 	AST_MEMBER(Return, &valueList)
 AST_END(Return)
 
@@ -628,7 +630,7 @@ AST_END(TableBlockIndent)
 
 AST_NODE(TableBlock)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, default_pair_t,
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, SpreadExp_t, default_pair_t,
 		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
 	AST_MEMBER(TableBlock, &sep, &values)
 AST_END(TableBlock)
