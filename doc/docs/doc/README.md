@@ -417,7 +417,7 @@ merge = {...a, ...b}
 
 The **#** operator can be used as a shortcut for metatable manipulation.
 
-* **Metatable Creation**
+* **Metatable Creation**  
 Create normal table with  key **#** or metamethod key that ends with **#**.
 
 ```moonscript
@@ -453,7 +453,7 @@ close _ = close#: -> print "out of scope"
 </pre>
 </YueDisplay>
 
-* **Metatable Accessing**
+* **Metatable Accessing**  
 Accessing metatable with key **#** or metamethod key that ends with **#**.
 
 ```moonscript
@@ -476,7 +476,7 @@ print tb.item
 </pre>
 </YueDisplay>
 
-* **Metatable Destructure**
+* **Metatable Destructure**  
 Destruct metatable with metamethod key that ends with **#**.
 
 ```moonscript

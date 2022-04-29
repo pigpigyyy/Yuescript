@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.15"sv;
+const std::string_view version = "0.10.16"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4244,6 +4244,8 @@ private:
 		} else {
 			codes = lua_tostring(L, -1);
 		}
+		Utils::trim(codes);
+		Utils::replace(codes, "\r\n"sv, "\n"sv);
 		return {type, codes, std::move(localVars)};
 	}
 
@@ -4266,10 +4268,19 @@ private:
 				std::string err = lua_tostring(L, -1);
 				throw std::logic_error(_info.errorMessage(err, x));
 			}
+			if (!codes.empty()) {
+				if (_config.reserveLineNumber) {
+					codes.insert(0, nll(chainValue).substr(1));
+				}
+				codes.append(nlr(chainValue));
+			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else if (type == "text"sv) {
 			if (!isBlock) {
 				throw std::logic_error(_info.errorMessage("text macro can only be placed where block macro is allowed"sv, x));
+			}
+			if (!codes.empty()) {
+				codes.append(_newLine);
 			}
 			return {nullptr, nullptr, std::move(codes), std::move(localVars)};
 		} else {
@@ -4370,15 +4381,7 @@ private:
 			std::string luaCodes;
 			str_list localVars;
 			std::tie(node, codes, luaCodes, localVars) = expandMacro(chainValue, usage, allowBlockMacroReturn);
-			Utils::replace(luaCodes, "\r\n"sv, "\n"sv);
-			Utils::trim(luaCodes);
 			if (!node) {
-				if (!luaCodes.empty()) {
-					if (_config.reserveLineNumber) {
-						luaCodes.insert(0, nll(chainValue).substr(1));
-					}
-					luaCodes.append(nlr(chainValue));
-				}
 				out.push_back(luaCodes);
 				if (!localVars.empty()) {
 					for (const auto& var : localVars) {
