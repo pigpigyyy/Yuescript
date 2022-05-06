@@ -2,6 +2,49 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.10.17
+
+### Added Features
+
+* Yuescript to AST function (`yue.to_ast`)
+   ```moonscript
+   yue.p yue.to_ast "print 123"
+   ```
+   Prints:
+   ```
+   {
+     [1] = "file"
+     [2] = {
+       [1] = "callable"
+       [2] = "print"
+     }
+     [3] = {
+       [1] = "invoke_args"
+       [2] = "123"
+     }
+   }
+   ```
+
+## v0.10.16
+
+### Fixed Issues
+
+* Prevent text mode macros from inserting line numbers into generated code.
+  ```moonscript
+  macro text = (code) -> {
+    :code
+    type: "text"
+  }
+
+  $text[["hi"]]
+  nil
+  ```
+  Compiles to:
+  ```
+  print "hi"
+  return nil -- 8
+  ```
+
 ## v0.10.15
 
 ### Fixed Issues
