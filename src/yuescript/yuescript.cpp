@@ -5,7 +5,9 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
 #include "yuescript/yue_compiler.h"
+#include "yuescript/yue_parser.h"
 
 #if defined(YUE_BUILD_AS_DLL)
 #define YUE_API __declspec(dllexport)
@@ -130,8 +132,87 @@ static int yuetolua(lua_State* L) {
 	return 3;
 }
 
+static int yuetoast(lua_State* L) {
+	size_t size = 0;
+	const char* input = luaL_checklstring(L, 1, &size);
+	int flattenLevel = 2;
+	if (lua_isnoneornil(L, 2) == 0) {
+		flattenLevel = static_cast<int>(luaL_checkinteger(L, 2));
+		flattenLevel = std::max(std::min(2, flattenLevel), 0);
+	}
+	yue::YueParser parser;
+	auto info = parser.parse<yue::File_t>({input, size});
+	if (info.node) {
+		lua_createtable(L, 0, 0);
+		int cacheIndex = lua_gettop(L);
+		auto getName = [&](yue::ast_node* node) {
+			int id = node->getId();
+			lua_rawgeti(L, cacheIndex, id);
+			if (lua_isnil(L, -1) != 0) {
+				lua_pop(L, 1);
+				auto name = node->getName();
+				lua_pushlstring(L, &name.front(), name.length());
+				lua_pushvalue(L, -1);
+				lua_rawseti(L, cacheIndex, id);
+			}
+		};
+		std::function<void(yue::ast_node*)> visit;
+		visit = [&](yue::ast_node* node) {
+			int count = 0;
+			bool hasSep = false;
+			node->visitChild([&](yue::ast_node* child) {
+				if (yue::ast_is<yue::Seperator_t>(child)) {
+					hasSep = true;
+					return false;
+				}
+				count++;
+				visit(child);
+				return false;
+			});
+			switch (count) {
+				case 0: {
+					lua_createtable(L, 2, 0);
+					getName(node);
+					lua_rawseti(L, -2, 1);
+					auto str = parser.toString(node);
+					yue::Utils::trim(str);
+					lua_pushlstring(L, str.c_str(), str.length());
+					lua_rawseti(L, -2, 2);
+					break;
+				}
+				case 1: {
+					if (flattenLevel > 1 || (flattenLevel == 1 && !hasSep)) {
+						getName(node);
+						lua_rawseti(L, -2, 1);
+						break;
+					}
+				}
+				default: {
+					lua_createtable(L, count + 1, 0);
+					getName(node);
+					lua_rawseti(L, -2, 1);
+					for (int i = count, j = 2; i >= 1; i--, j++) {
+						lua_pushvalue(L, -1 - i);
+						lua_rawseti(L, -2, j);
+					}
+					lua_insert(L, -1 - count);
+					lua_pop(L, count);
+					break;
+				}
+			}
+		};
+		visit(info.node);
+		return 1;
+	} else {
+		lua_pushnil(L);
+		lua_pushlstring(L, info.error.c_str(), info.error.length());
+		return 2;
+	}
+}
+
 static const luaL_Reg yuelib[] = {
 	{"to_lua", yuetolua},
+	{"to_ast", yuetoast},
 	{"version", nullptr},
 	{"options", nullptr},
 	{"load_stacktraceplus", nullptr},
