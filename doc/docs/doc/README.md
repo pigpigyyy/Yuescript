@@ -1237,6 +1237,7 @@ some_string = "Here is a string
   that has a line break in it."
 
 -- You can mix expressions into string literals using #{} syntax.
+-- String interpolation is only available in double quoted strings.
 print "I am #{math.random! * 100}% sure."
 ```
 <YueDisplay>
@@ -1245,6 +1246,7 @@ some_string = "Here is a string
   that has a line break in it."
 
 -- You can mix expressions into string literals using #{} syntax.
+-- String interpolation is only available in double quoted strings.
 print "I am #{math.random! * 100}% sure."
 </pre>
 </YueDisplay>
