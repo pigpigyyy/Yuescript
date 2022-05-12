@@ -8,7 +8,10 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
 
 * Yuescript to AST function (`yue.to_ast`)
    ```moonscript
-   yue.p yue.to_ast "print 123"
+   yue.p yue.to_ast(
+     "print 123"
+     2 --[[ast flatten level, can only be 0, 1, 2]]
+   )
    ```
    Prints:
    ```
@@ -35,13 +38,13 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
     :code
     type: "text"
   }
-
-  $text[["hi"]]
+  
+  $text[[#!yue -e]]
   nil
   ```
   Compiles to:
   ```
-  print "hi"
+  #!yue -e
   return nil -- 8
   ```
 
