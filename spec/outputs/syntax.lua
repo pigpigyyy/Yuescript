@@ -176,6 +176,7 @@ x = x + (10 + 3)
 local j = j - "hello"
 y = y * 2
 y = y / 100
+y = y // 100
 local m = m % 2
 local hello = hello .. "world"
 self.__class.something = self.__class.something + 10

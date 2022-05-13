@@ -322,6 +322,7 @@ YueParser::YueParser() {
 		expr("+") |
 		expr("-") |
 		expr("*") |
+		expr("//") |
 		expr("/") |
 		expr("%") |
 		expr("or") |
