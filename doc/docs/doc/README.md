@@ -1222,6 +1222,21 @@ catch err
 </pre>
 </YueDisplay>
 
+## Attributes
+
+The syntax support for Lua 5.4 attributes.
+
+```moonscript
+const a = 123
+close _ = close#: -> print "Out of scope."
+```
+<YueDisplay>
+<pre>
+const a = 123
+close _ = close#: -> print "Out of scope."
+</pre>
+</YueDisplay>
+
 ::: warning NOTICE
 The rest of the document is describing mostly the same syntax taken from Moonscript. So you may as well refer to the [Moonscript Reference](http://moonscript.org/reference) to get the same explanation.
 :::
