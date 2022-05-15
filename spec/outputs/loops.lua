@@ -187,6 +187,7 @@ for i = 1, 10 do
 end
 local a = 1
 repeat
+	local _cond_0
 	local _continue_0 = false
 	repeat
 		a = a + 1
@@ -198,12 +199,32 @@ repeat
 			break
 		end
 		print(a)
+		_cond_0 = a == 10
 		_continue_0 = true
 	until true
 	if not _continue_0 then
 		break
 	end
-until a == 10
+until _cond_0
+x = 0
+repeat
+	local _cond_0
+	local _continue_0 = false
+	repeat
+		x = x + 1
+		y = x
+		if x < 5 then
+			_continue_0 = true
+			break
+		end
+		print(y)
+		_cond_0 = y == 10
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
+	end
+until _cond_0
 a = 3
 while not (a == 0) do
 	a = a - 1

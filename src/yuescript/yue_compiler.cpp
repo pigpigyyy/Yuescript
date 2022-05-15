@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.19"sv;
+const std::string_view version = "0.10.20"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5257,9 +5257,8 @@ private:
 		}
 	}
 
-	void transformLoopBody(ast_node* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
-		str_list temp;
-		bool withContinue = traversal::Stop == body->traverse([&](ast_node* node) {
+	bool hasContinueStatement(ast_node* body) {
+		return traversal::Stop == body->traverse([&](ast_node* node) {
 			if (auto stmt = ast_cast<Statement_t>(node)) {
 				if (stmt->content.is<BreakLoop_t>()) {
 					return _parser.toString(stmt->content) == "continue"sv ?
@@ -5268,10 +5267,20 @@ private:
 					return traversal::Continue;
 				}
 				return traversal::Return;
+			} else switch (node->getId()) {
+				case id<FunLit_t>():
+				case id<Invoke_t>():
+				case id<InvokeArgs_t>():
+					return traversal::Return;
 			}
 			return traversal::Continue;
 		});
+	}
+
+	void transformLoopBody(ast_node* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		str_list temp;
 		bool extraDo = false;
+		bool withContinue = hasContinueStatement(body);
 		if (withContinue) {
 			if (auto block = ast_cast<Block_t>(body)) {
 				if (!block->statements.empty()) {
@@ -5314,6 +5323,65 @@ private:
 			temp.back().append(indent() + appendContent);
 		}
 		out.push_back(join(temp));
+	}
+
+	std::string transformRepeatBody(Repeat_t* repeatNode, str_list& out) {
+		str_list temp;
+		bool extraDo = false;
+		auto body = repeatNode->body->content.get();
+		bool withContinue = hasContinueStatement(body);
+		std::string conditionVar;
+		if (withContinue) {
+			if (auto block = ast_cast<Block_t>(body)) {
+				if (!block->statements.empty()) {
+					auto stmt = static_cast<Statement_t*>(block->statements.back());
+					if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
+						extraDo = _parser.toString(breakLoop) == "break"sv;
+					}
+				}
+			}
+			conditionVar = getUnusedName("_cond_");
+			forceAddToScope(conditionVar);
+			auto continueVar = getUnusedName("_continue_"sv);
+			forceAddToScope(continueVar);
+			_continueVars.push(continueVar);
+			_buf << indent() << "local "sv << conditionVar << nll(body);
+			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
+			_buf << indent() << "repeat"sv << nll(body);
+			pushScope();
+			if (extraDo) {
+				_buf << indent() << "do"sv << nll(body);
+				pushScope();
+			}
+			temp.push_back(clearBuf());
+		}
+		transform_plain_body(body, temp, ExpUsage::Common);
+		if (withContinue) {
+			{
+				auto assignment = toAst<ExpListAssign_t>(conditionVar + "=nil"s, body);
+				auto assign = assignment->action.to<Assign_t>();
+				assign->values.clear();
+				assign->values.push_back(repeatNode->condition);
+				transformAssignment(assignment, temp);
+				auto assignCond = std::move(temp.back());
+				temp.pop_back();
+				temp.back().append(assignCond);
+			}
+			if (extraDo) {
+				popScope();
+				_buf << indent() << "end"sv << nll(body);
+			}
+			_buf << indent() << _continueVars.top() << " = true"sv << nll(body);
+			popScope();
+			_buf << indent() << "until true"sv << nlr(body);
+			_buf << indent() << "if not "sv << _continueVars.top() << " then"sv << nlr(body);
+			_buf << indent(1) << "break"sv << nlr(body);
+			_buf << indent() << "end"sv << nlr(body);
+			temp.push_back(clearBuf());
+			_continueVars.pop();
+		}
+		out.push_back(join(temp));
+		return conditionVar;
 	}
 
 	void transformFor(For_t* forNode, str_list& out) {
@@ -6838,8 +6906,12 @@ private:
 	void transformRepeat(Repeat_t* repeat, str_list& out) {
 		str_list temp;
 		pushScope();
-		transformLoopBody(repeat->body->content, temp, Empty, ExpUsage::Common);
-		transformExp(repeat->condition, temp, ExpUsage::Closure);
+		auto condVar = transformRepeatBody(repeat, temp);
+		if (condVar.empty()) {
+			transformExp(repeat->condition, temp, ExpUsage::Closure);
+		} else {
+			temp.push_back(condVar);
+		}
 		popScope();
 		_buf << indent() << "repeat"sv << nll(repeat);
 		_buf << temp.front();
