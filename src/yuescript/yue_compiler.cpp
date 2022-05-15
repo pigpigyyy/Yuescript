@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.18"sv;
+const std::string_view version = "0.10.19"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2005,6 +2005,9 @@ private:
 						auto value = tab->new_ptr<Value_t>();
 						value->item.set(simpleValue);
 						auto pairs = destructFromExp(newExp(value, expr));
+						if (pairs.empty()) {
+							throw std::logic_error(_info.errorMessage("expect items to be destructured"sv, tab));
+						}
 						destruct.items = std::move(pairs);
 						if (!varDefOnly) {
 							if (*j == nullNode) {
@@ -6589,12 +6592,13 @@ private:
 	}
 
 	void transformImportAs(ImportAs_t* import, str_list& out) {
-		auto x = import;
+		ast_node* x = import;
 		if (!import->target) {
 			auto name = moduleNameFrom(import->literal);
 			import->target.set(toAst<Variable_t>(name, x));
 		}
 		if (ast_is<import_all_macro_t, ImportTabLit_t>(import->target)) {
+			x = import->target.get();
 			bool importAllMacro = import->target.is<import_all_macro_t>();
 			std::list<std::pair<std::string,std::string>> macroPairs;
 			auto newTab = x->new_ptr<ImportTabLit_t>();
