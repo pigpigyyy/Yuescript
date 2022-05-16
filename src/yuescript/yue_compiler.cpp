@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.22"sv;
+const std::string_view version = "0.10.23"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -202,7 +202,12 @@ private:
 	std::stack<VarArgState> _varArgs;
 	std::stack<bool> _enableReturn;
 	std::stack<std::string> _withVars;
-	std::stack<std::string> _continueVars;
+	struct ContinueVar
+	{
+		std::string var;
+		ast_ptr<false, ExpListAssign_t> condAssign;
+	};
+	std::stack<ContinueVar> _continueVars;
 	std::list<std::unique_ptr<input>> _codeCache;
 	std::unordered_map<std::string,std::pair<int,int>> _globals;
 	std::ostringstream _buf;
@@ -5352,7 +5357,7 @@ private:
 			}
 			auto continueVar = getUnusedName("_continue_"sv);
 			addToScope(continueVar);
-			_continueVars.push(continueVar);
+			_continueVars.push({continueVar, nullptr});
 			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
 			_buf << indent() << "repeat"sv << nll(body);
 			pushScope();
@@ -5371,10 +5376,10 @@ private:
 			if (!appendContent.empty()) {
 				_buf << indent() << appendContent;
 			}
-			_buf << indent() << _continueVars.top() << " = true"sv << nll(body);
+			_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
 			popScope();
 			_buf << indent() << "until true"sv << nlr(body);
-			_buf << indent() << "if not "sv << _continueVars.top() << " then"sv << nlr(body);
+			_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
 			_buf << indent(1) << "break"sv << nlr(body);
 			_buf << indent() << "end"sv << nlr(body);
 			temp.push_back(clearBuf());
@@ -5404,7 +5409,13 @@ private:
 			forceAddToScope(conditionVar);
 			auto continueVar = getUnusedName("_continue_"sv);
 			forceAddToScope(continueVar);
-			_continueVars.push(continueVar);
+			{
+				auto assignment = toAst<ExpListAssign_t>(conditionVar + "=nil"s, repeatNode->condition);
+				auto assign = assignment->action.to<Assign_t>();
+				assign->values.clear();
+				assign->values.push_back(repeatNode->condition);
+				_continueVars.push({continueVar, assignment.get()});
+			}
 			_buf << indent() << "local "sv << conditionVar << " = false"sv << nll(body);
 			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
 			_buf << indent() << "repeat"sv << nll(body);
@@ -5418,11 +5429,7 @@ private:
 		transform_plain_body(body, temp, ExpUsage::Common);
 		if (withContinue) {
 			{
-				auto assignment = toAst<ExpListAssign_t>(conditionVar + "=nil"s, body);
-				auto assign = assignment->action.to<Assign_t>();
-				assign->values.clear();
-				assign->values.push_back(repeatNode->condition);
-				transformAssignment(assignment, temp);
+				transformAssignment(_continueVars.top().condAssign, temp);
 				auto assignCond = std::move(temp.back());
 				temp.pop_back();
 				temp.back().append(assignCond);
@@ -5431,10 +5438,10 @@ private:
 				popScope();
 				_buf << indent() << "end"sv << nll(body);
 			}
-			_buf << indent() << _continueVars.top() << " = true"sv << nll(body);
+			_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
 			popScope();
 			_buf << indent() << "until true"sv << nlr(body);
-			_buf << indent() << "if not "sv << _continueVars.top() << " then"sv << nlr(body);
+			_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
 			_buf << indent(1) << "break"sv << nlr(body);
 			_buf << indent() << "end"sv << nlr(body);
 			temp.push_back(clearBuf());
@@ -7176,7 +7183,13 @@ private:
 			return;
 		}
 		if (_continueVars.empty()) throw std::logic_error(_info.errorMessage("continue is not inside a loop"sv, breakLoop));
-		_buf << indent() << _continueVars.top() << " = true"sv << nll(breakLoop);
+		auto& item = _continueVars.top();
+		if (item.condAssign) {
+			str_list temp;
+			transformAssignment(item.condAssign, temp);
+			_buf << temp.back();
+		}
+		_buf << indent() << item.var << " = true"sv << nll(breakLoop);
 		_buf << indent() << "break"sv << nll(breakLoop);
 		out.push_back(clearBuf());
 	}

@@ -192,6 +192,7 @@ repeat
 	repeat
 		a = a + 1
 		if a == 5 then
+			_cond_0 = a == 10
 			_continue_0 = true
 			break
 		end
@@ -214,6 +215,7 @@ repeat
 		x = x + 1
 		y = x
 		if x < 5 then
+			_cond_0 = y == 10
 			_continue_0 = true
 			break
 		end
