@@ -187,7 +187,7 @@ for i = 1, 10 do
 end
 local a = 1
 repeat
-	local _cond_0
+	local _cond_0 = false
 	local _continue_0 = false
 	repeat
 		a = a + 1
@@ -208,7 +208,7 @@ repeat
 until _cond_0
 x = 0
 repeat
-	local _cond_0
+	local _cond_0 = false
 	local _continue_0 = false
 	repeat
 		x = x + 1

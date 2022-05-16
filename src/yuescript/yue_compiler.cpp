@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.20"sv;
+const std::string_view version = "0.10.21"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -924,6 +924,66 @@ private:
 				if (!local->defined) {
 					local->defined = true;
 					transformLocalDef(local, out);
+				}
+			} else if (auto attrib = statement->content.as<LocalAttrib_t>()) {
+				auto appendix = statement->appendix.get();
+				switch (appendix->item->getId()) {
+					case id<if_line_t>(): {
+						auto if_line = static_cast<if_line_t*>(appendix->item.get());
+						auto ifNode = x->new_ptr<If_t>();
+						ifNode->type.set(if_line->type);
+						ifNode->nodes.push_back(if_line->condition);
+
+						auto expList = x->new_ptr<ExpList_t>();
+						for (auto val : attrib->assign->values.objects()) {
+							switch (val->getId()) {
+								case id<If_t>():
+								case id<Switch_t>():
+								case id<With_t>(): {
+									auto simpleValue = x->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(val);
+									auto value = x->new_ptr<Value_t>();
+									value->item.set(simpleValue);
+									auto exp = newExp(value, x);
+									expList->exprs.push_back(exp);
+									break;
+								}
+								case id<TableBlock_t>(): {
+									auto tableBlock = static_cast<TableBlock_t*>(val);
+									auto tabLit = x->new_ptr<TableLit_t>();
+									tabLit->values.dup(tableBlock->values);
+									auto simpleValue = x->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(tabLit);
+									auto value = x->new_ptr<Value_t>();
+									value->item.set(simpleValue);
+									auto exp = newExp(value, x);
+									expList->exprs.push_back(exp);
+									break;
+								}
+								case id<Exp_t>(): {
+									expList->exprs.push_back(val);
+									break;
+								}
+								default: YUEE("AST node mismatch", val); break;
+							}
+						}
+						auto expListAssign = x->new_ptr<ExpListAssign_t>();
+						expListAssign->expList.set(expList);
+						auto stmt = x->new_ptr<Statement_t>();
+						stmt->content.set(expListAssign);
+						ifNode->nodes.push_back(stmt);
+
+						statement->appendix.set(nullptr);
+						attrib->assign->values.clear();
+						attrib->assign->values.push_back(ifNode);
+						transformStatement(statement, out);
+						return;
+					}
+					case id<CompInner_t>(): {
+						throw std::logic_error(_info.errorMessage("for-loop line decorator is not supported here"sv, appendix->item.get()));
+						break;
+					}
+					default: YUEE("AST node mismatch", appendix->item.get()); break;
 				}
 			}
 			auto appendix = statement->appendix.get();
@@ -5345,7 +5405,7 @@ private:
 			auto continueVar = getUnusedName("_continue_"sv);
 			forceAddToScope(continueVar);
 			_continueVars.push(continueVar);
-			_buf << indent() << "local "sv << conditionVar << nll(body);
+			_buf << indent() << "local "sv << conditionVar << " = false"sv << nll(body);
 			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
 			_buf << indent() << "repeat"sv << nll(body);
 			pushScope();

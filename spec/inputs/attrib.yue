@@ -14,6 +14,14 @@ do
 	close f = with io.open "file.txt"
 		\write "Hello"
 
+do
+	const a = 1 if true
+	close b = (if x then 1) unless false
+	const c = (switch x
+		when "abc" then 998) if true
+	close d =
+		:value if a ?? b
+
 macro defer = (item)-> "close _ = #{item}"
 macro defer_f = (func)-> "close _ = setmetatable {},__close:#{func}"
 
