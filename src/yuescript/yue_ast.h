@@ -639,7 +639,7 @@ AST_END(TableBlock, "table_block"sv)
 
 AST_NODE(class_member_list)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, variable_pair_t, normal_pair_t> values;
+	ast_sel_list<true, variable_pair_t, normal_pair_t, meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(class_member_list, &sep, &values)
 AST_END(class_member_list, "class_member_list"sv)
 

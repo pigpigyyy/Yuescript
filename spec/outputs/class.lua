@@ -1146,4 +1146,34 @@ do
 	self.field2 = self.field1 + 1
 	Example = _class_0
 end
+do
+	local _class_0
+	local _base_0 = {
+		__mul = function(self, y)
+			return self.x * y
+		end,
+		["dsd-dsd"] = 123,
+		add = add,
+		__add = add
+	}
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
+	end
+	_class_0 = setmetatable({
+		__init = function(self, x)
+			self.x = x
+		end,
+		__base = _base_0,
+		__name = "Foo"
+	}, {
+		__index = _base_0,
+		__call = function(cls, ...)
+			local _self_0 = setmetatable({ }, _base_0)
+			cls.__init(_self_0, ...)
+			return _self_0
+		end
+	})
+	_base_0.__class = _class_0
+	Foo = _class_0
+end
 return nil

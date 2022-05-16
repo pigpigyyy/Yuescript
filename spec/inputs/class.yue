@@ -232,7 +232,14 @@ class extends lapis.Application
 class A using B, C, D, {value: 123}
 
 class Example
-  @field1 = 1
-  @field2 = @field1 + 1
+	@field1 = 1
+	@field2 = @field1 + 1
+
+class Foo
+	new: (x) => @x = x
+	mul#: (y) => @x * y
+	["dsd-dsd"]#: 123
+	:add
+	:add#
 
 nil

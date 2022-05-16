@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.21"sv;
+const std::string_view version = "0.10.22"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -5985,6 +5985,30 @@ private:
 		size_t count = 0;
 		for (auto keyValue : class_member_list->values.objects()) {
 			MemType type = MemType::Common;
+			ast_ptr<false, ast_node> ref;
+			switch (keyValue->getId()) {
+				case id<meta_variable_pair_t>(): {
+					auto mtPair = static_cast<meta_variable_pair_t*>(keyValue);
+					auto nameStr = _parser.toString(mtPair->name);
+					ref.set(toAst<normal_pair_t>("__"s + nameStr + ':' + nameStr, keyValue));
+					keyValue = ref.get();
+					break;
+				}
+				case id<meta_normal_pair_t>(): {
+					auto mtPair = static_cast<meta_normal_pair_t*>(keyValue);
+					auto normal_pair = keyValue->new_ptr<normal_pair_t>();
+					if (auto name = mtPair->key.as<Name_t>()) {
+						auto nameStr = _parser.toString(name);
+						normal_pair->key.set(toAst<KeyName_t>("__"s + nameStr, keyValue));
+					} else {
+						normal_pair->key.set(mtPair->key);
+					}
+					normal_pair->value.set(mtPair->value);
+					ref.set(normal_pair);
+					keyValue = ref.get();
+					break;
+				}
+			}
 			BLOCK_START
 			auto normal_pair = ast_cast<normal_pair_t>(keyValue);
 			BREAK_IF(!normal_pair);
