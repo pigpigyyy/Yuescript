@@ -4,7 +4,7 @@ c = key1: true, :add#, key2: true
 w = [name]#:123, ["new"]#:(val)=> {val}
 w.#["new"] w.#[name]
 
-close _ = close#: -> print "out of scope"
+do close _ = close#: -> print "out of scope"
 
 d, e = a.close, a.close#
 

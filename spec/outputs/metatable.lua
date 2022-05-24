@@ -25,11 +25,13 @@ local w = setmetatable({ }, {
 	end
 })
 getmetatable(w)["new"](getmetatable(w)[name])
-local _ <close> = setmetatable({ }, {
-	__close = function()
-		return print("out of scope")
-	end
-})
+do
+	local _ <close> = setmetatable({ }, {
+		__close = function()
+			return print("out of scope")
+		end
+	})
+end
 local d, e = a.close, getmetatable(a).__close
 local f = getmetatable(a):__close(1)
 getmetatable(a).__add = function(x, y)
@@ -63,7 +65,7 @@ end
 setmetatable(a.b, { })
 x.abc = 123
 setmetatable(func(), mt)
-_ = extra
+local _ = extra
 setmetatable(b.c, mt)
 a, d, e = 1, "abc"
 local is_same = getmetatable(a).__index == getmetatable(a).__index
