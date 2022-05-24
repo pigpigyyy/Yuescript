@@ -3,7 +3,7 @@ sidebar: auto
 ---
 
 # Yuescript
-<img src="/image/yuescript.svg" width="300" height="300" alt="logo"/>
+<img src="/image/yuescript.svg" width="300px" height="300px" alt="logo"/>
 
 ## Introduction
 

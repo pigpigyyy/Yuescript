@@ -23,11 +23,16 @@ module.exports = {
 		['meta', { property: 'og:description', content: description }],
 		// Should probably have a og:url but I'm not sure how to add that without it being the same on all pages
 		['meta', { property: 'og:type', content: 'website' }],
-		['meta', { property: 'og:image', content: 'https://yuescript.org/image/yuescript.png' }],
-		['meta', { property: 'og:image:secure_url', content: 'https://yuescript.org/image/yuescript.png' }],
+		['meta', { property: 'og:image', content: '/image/yuescript.png' }],
+		['meta', { property: 'og:image:secure_url', content: '/image/yuescript.png' }],
 		['meta', { property: 'og:image:type', content: 'image/png' }],
 		['meta', { property: 'og:image:width', content: '1200' }],
 		['meta', { property: 'og:image:height', content: '1200' }],
+		['link', { rel: 'icon', href: '/image/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' }],
+		['link', { rel: 'icon', href: '/image/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' }],
+		['link', { rel: 'apple-touch-icon', href: '/image/favicon/apple-touch-icon-180x180.png', sizes: '180x180', type: 'image/png' }],
+		['link', { rel: 'android-chrome', href: '/image/favicon/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
+		['link', { rel: 'android-chrome', href: '/image/favicon/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }],
 		['script', {}, `window.global = window;`],
 		['script', {}, `
 			var Module = {
