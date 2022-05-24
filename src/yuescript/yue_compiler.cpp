@@ -60,7 +60,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.23"sv;
+const std::string_view version = "0.10.24"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -7158,15 +7158,9 @@ private:
 		}
 #else // YUE_NO_ATTRIB
 		attrib = " <"s + attrib + '>';
-		if (attrib == "<const>"sv) {
-			for (auto& var : vars) {
-				markVarConst(var);
-				var.append(attrib);
-			}
-		} else {
-			for (auto& var : vars) {
-				var.append(attrib);
-			}
+		for (auto& var : vars) {
+			markVarConst(var);
+			var.append(attrib);
 		}
 #endif // YUE_NO_ATTRIB
 		str_list temp;
