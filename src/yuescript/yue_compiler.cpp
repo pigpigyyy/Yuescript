@@ -34,10 +34,6 @@ extern "C" {
 	#endif // LUA_COMPAT_5_1
 #endif // LUA_VERSION_NUM
 
-#if LUA_VERSION_NUM < 504
-	#define YUE_NO_ATTRIB
-#endif // LUA_VERSION_NUM
-
 #endif // YUE_NO_MACRO
 
 namespace yue {
@@ -60,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.24"sv;
+const std::string_view version = "0.10.25"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -7148,21 +7144,11 @@ private:
 			forceAddToScope(var);
 			vars.push_back(var);
 		}
-#ifdef YUE_NO_ATTRIB
-		if (attrib == "const"sv) {
-			for (auto& var : vars) {
-				markVarConst(var);
-			}
-		} else {
-			throw std::logic_error(_info.errorMessage("attribute '"s + attrib + "' is not supported", localAttrib->attrib));
-		}
-#else // YUE_NO_ATTRIB
 		attrib = " <"s + attrib + '>';
 		for (auto& var : vars) {
 			markVarConst(var);
 			var.append(attrib);
 		}
-#endif // YUE_NO_ATTRIB
 		str_list temp;
 		for (auto item : localAttrib->assign->values.objects()) {
 			transformAssignItem(item, temp);
