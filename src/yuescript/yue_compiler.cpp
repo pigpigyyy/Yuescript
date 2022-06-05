@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.10.25"sv;
+const std::string_view version = "0.11.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {

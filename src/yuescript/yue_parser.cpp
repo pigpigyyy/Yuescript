@@ -305,7 +305,7 @@ YueParser::YueParser() {
 	catch_block = Break >> *EmptyLine >> CheckIndent >> Space >> key("catch") >> Space >> Variable >> InBlock;
 	Try = Space >> key("try") >> (InBlock | Exp) >> -catch_block;
 
-	Comprehension = sym('[') >> Exp >> Space >> CompInner >> sym(']');
+	Comprehension = sym('[') >> not_('[') >> Exp >> Space >> CompInner >> sym(']');
 	comp_value = sym(',') >> Exp;
 	TblComprehension = sym('{') >> Exp >> -comp_value >> Space >> CompInner >> sym('}');
 
@@ -446,7 +446,7 @@ YueParser::YueParser() {
 	chain_with_colon = +ChainItem >> -ColonChain;
 	ChainItems = chain_with_colon | ColonChain;
 
-	Index = symx('[') >> Exp >> sym(']');
+	Index = symx('[') >> not_('[') >> Exp >> sym(']');
 	ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
 	DotChainItem = symx('.') >> (Name >> not_('#') | Metatable | Metamethod);
 	ColonChainItem = (expr('\\') | expr("::")) >> ((LuaKeyword | Name) >> not_('#') | Metamethod);
@@ -455,7 +455,7 @@ YueParser::YueParser() {
 
 	default_value = true_();
 	Slice =
-		symx('[') >>
+		symx('[') >> not_('[') >>
 		(Exp | default_value) >>
 		sym(',') >>
 		(Exp | default_value) >>
@@ -537,7 +537,7 @@ YueParser::YueParser() {
 
 	normal_pair = (
 		KeyName |
-		sym('[') >> Exp >> sym(']') |
+		sym('[') >> not_('[') >> Exp >> sym(']') |
 		Space >> DoubleString |
 		Space >> SingleString |
 		Space >> LuaString
@@ -549,7 +549,7 @@ YueParser::YueParser() {
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
 
-	meta_normal_pair = Space >> -(Name | symx('[') >> Exp >> sym(']')) >> expr("#:") >>
+	meta_normal_pair = Space >> -(Name | symx('[') >> not_('[') >> Exp >> sym(']')) >> expr("#:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
 	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | Space >> -Name >> expr("#:") >> Seperator >> Exp) >> sym('=') >> Exp;

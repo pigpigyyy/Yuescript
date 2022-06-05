@@ -17,6 +17,7 @@ local txt = [[
 nil
 Fail to compile
 ]]
+txt[ [[abc]]] = [["#{i}" for i = 1, 10] for i = 1, 10]]
 local oo = ""
 local x = "\\"
 x = "a\\b"

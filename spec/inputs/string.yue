@@ -33,6 +33,8 @@ nil
 Fail to compile
 ]]
 
+txt[ [[abc]]] = [["#{i}" for i = 1, 10] for i = 1, 10]]
+
 oo = ""
 
 x = "\\"
