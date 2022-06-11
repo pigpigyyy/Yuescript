@@ -1281,13 +1281,6 @@ private:
 				temp.push_back(clearBuf());
 			} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
 				chainValue->items.pop_back();
-				if (chainValue->items.empty()) {
-					if (_withVars.empty()) {
-						throw std::logic_error(_info.errorMessage("short table appending must be called within a with block"sv, x));
-					} else {
-						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
-					}
-				}
 				auto varName = singleVariableFrom(chainValue);
 				bool isScoped = false;
 				if (varName.empty() || !isLocal(varName)) {
