@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.11.0"sv;
+const std::string_view version = "0.11.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -806,8 +806,10 @@ private:
 					case id<SelfName_t>():
 						return true;
 				}
-			} else if (firstItem->getId() == id<DotChainItem_t>()) {
-				return true;
+			} else switch (firstItem->getId()) {
+				case id<DotChainItem_t>():
+				case id<Exp_t>():
+					return true;
 			}
 		} else {
 			if (std::find_if(chainItems.begin(), chainItems.end(), [](ast_node* node) {
@@ -1055,6 +1057,7 @@ private:
 			case id<BreakLoop_t>(): transformBreakLoop(static_cast<BreakLoop_t*>(content), out); break;
 			case id<Label_t>(): transformLabel(static_cast<Label_t*>(content), out); break;
 			case id<Goto_t>(): transformGoto(static_cast<Goto_t*>(content), out); break;
+			case id<ShortTabAppending_t>(): transformShortTabAppending(static_cast<ShortTabAppending_t*>(content), out); break;
 			case id<LocalAttrib_t>(): transformLocalAttrib(static_cast<LocalAttrib_t*>(content), out); break;
 			case id<PipeBody_t>(): throw std::logic_error(_info.errorMessage("pipe chain must be following a value"sv, x)); break;
 			case id<ExpListAssign_t>(): {
@@ -1278,6 +1281,13 @@ private:
 				temp.push_back(clearBuf());
 			} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
 				chainValue->items.pop_back();
+				if (chainValue->items.empty()) {
+					if (_withVars.empty()) {
+						throw std::logic_error(_info.errorMessage("short table appending must be called within a with block"sv, x));
+					} else {
+						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
+					}
+				}
 				auto varName = singleVariableFrom(chainValue);
 				bool isScoped = false;
 				if (varName.empty() || !isLocal(varName)) {
@@ -3797,6 +3807,7 @@ private:
 			switch (chainList.front()->getId()) {
 				case id<DotChainItem_t>():
 				case id<ColonChainItem_t>():
+				case id<Exp_t>():
 					if (_withVars.empty()) {
 						throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, chainList.front()));
 					} else {
@@ -3943,8 +3954,9 @@ private:
 		switch (x->getId()) {
 			case id<DotChainItem_t>():
 			case id<ColonChainItem_t>():
+			case id<Exp_t>():
 				if (_withVars.empty()) {
-					throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
+					throw std::logic_error(_info.errorMessage("short dot/colon and indexing syntax must be called within a with block"sv, x));
 				} else {
 					temp.push_back(_withVars.top());
 				}
@@ -4440,7 +4452,7 @@ private:
 	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false) {
 		if (isMacroChain(chainValue)) {
 #ifndef YUE_NO_MACRO
-			ast_ptr<false,ast_node> node;
+			ast_ptr<false, ast_node> node;
 			std::unique_ptr<input> codes;
 			std::string luaCodes;
 			str_list localVars;
@@ -7180,6 +7192,15 @@ private:
 
 	void transformGoto(Goto_t* gotoNode, str_list& out) {
 		out.push_back(indent() + "goto "s + _parser.toString(gotoNode->label) + nll(gotoNode));
+	}
+
+	void transformShortTabAppending(ShortTabAppending_t* tab, str_list& out) {
+		if (_withVars.empty()) {
+			throw std::logic_error(_info.errorMessage("short table appending syntax must be called within a with block"sv, tab));
+		}
+		auto assignment = toAst<ExpListAssign_t>(_withVars.top() + "[]=nil"s, tab);
+		assignment->action.set(tab->assign);
+		transformAssignment(assignment, out);
 	}
 };
 

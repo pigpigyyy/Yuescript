@@ -123,6 +123,20 @@ do
 		y = .end.of.function
 
 do
+	with tb
+		[1] = [2]?\func!
+		["%a-b-c%"] = 123
+		[ [[x y z]]] = [var]
+		print [ [3]]
+		with [4]
+			[1] = 1
+		[] = "abc"
+		[] =
+			type: "hello"
+			* name: "xyz"
+				value: 998
+
+do
 	global mask
 	with? mask = SolidRect width: w, height: h, color: 0x66000000
 		.touchEnabled = true

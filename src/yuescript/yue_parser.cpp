@@ -216,6 +216,8 @@ YueParser::YueParser() {
 
 	Goto = key("goto") >> Space >> LabelName;
 
+	ShortTabAppending = expr("[]") >> Assign;
+
 	BreakLoop = (expr("break") | expr("continue")) >> not_(AlphaNum);
 
 	Return = key("return") >> -(TableBlock | ExpListLow);
@@ -335,7 +337,7 @@ YueParser::YueParser() {
 
 	Update = Space >> update_op >> expr("=") >> Exp;
 
-	Assignable = AssignableChain | Space >> Variable | Space >> SelfName;
+	Assignable = Space >> (AssignableChain | Variable | SelfName);
 
 	unary_value = unary_operator >> *(Space >> unary_operator) >> Value;
 
@@ -382,16 +384,16 @@ YueParser::YueParser() {
 		return true;
 	});
 
-	chain_line = CheckIndent >> (chain_item | Space >> (chain_dot_chain | ColonChain)) >> -InvokeArgs;
+	chain_line = CheckIndent >> Space >> (chain_dot_chain | ColonChain) >> -InvokeArgs;
 	chain_block = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		return st->noChainBlockStack.empty() || !st->noChainBlockStack.top();
 	}) >> +SpaceBreak >> Advance >> ensure(
 		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
-	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;
+	ChainValue = Space >> Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;
 
 	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-	Value = SimpleValue | simple_table | ChainValue | String;
+	Value = SimpleValue | simple_table | ChainValue | Space >> String;
 
 	single_string_inner = expr("\\'") | "\\\\" | not_(expr('\'')) >> Any;
 	SingleString = symx('\'') >> *single_string_inner >> symx('\'');
@@ -400,7 +402,7 @@ YueParser::YueParser() {
 	double_string_inner = +(not_(interp) >> double_string_plain);
 	double_string_content = double_string_inner | interp;
 	DoubleString = symx('"') >> Seperator >> *double_string_content >> symx('"');
-	String = Space >> (DoubleString | SingleString | LuaString);
+	String = DoubleString | SingleString | LuaString;
 
 	lua_string_open = '[' >> *expr('=') >> '[';
 	lua_string_close = ']' >> *expr('=') >> ']';
@@ -423,7 +425,7 @@ YueParser::YueParser() {
 	LuaString = LuaStringOpen >> -Break >> LuaStringContent >> LuaStringClose;
 
 	Parens = symx('(') >> *SpaceBreak >> Exp >> *SpaceBreak >> sym(')');
-	Callable = Space >> (Variable | SelfName | MacroName | VarArg | Parens);
+	Callable = Variable | SelfName | MacroName | VarArg | Parens;
 	FnArgsExpList = Exp >> *((Break | sym(',')) >> White >> Exp);
 
 	FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
@@ -435,11 +437,10 @@ YueParser::YueParser() {
 	existential_op = expr('?') >> not_(expr('?'));
 	table_appending_op = expr("[]");
 	chain_call = (Callable | String) >> -existential_op >> ChainItems;
-	chain_item = and_(set(".\\")) >> ChainItems;
+	chain_index_chain = Index >> -existential_op >> -ChainItems;
 	chain_dot_chain = DotChainItem >> -existential_op >> -ChainItems;
 
-	Chain = chain_call | chain_item |
-		Space >> (chain_dot_chain | ColonChain);
+	Chain = chain_call | chain_dot_chain | ColonChain | chain_index_chain;
 
 	AssignableChain = Seperator >> Chain;
 
@@ -631,8 +632,8 @@ YueParser::YueParser() {
 	Statement = Space >> (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
-		MacroInPlace | BreakLoop | Label | Goto | LocalAttrib |
-		Backcall | PipeBody | ExpListAssign
+		MacroInPlace | BreakLoop | Label | Goto | ShortTabAppending |
+		LocalAttrib | Backcall | PipeBody | ExpListAssign
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 

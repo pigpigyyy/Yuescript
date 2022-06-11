@@ -197,6 +197,11 @@ AST_NODE(Goto)
 	AST_MEMBER(Goto, &label)
 AST_END(Goto, "goto"sv)
 
+AST_NODE(ShortTabAppending)
+	ast_ptr<true, Assign_t> assign;
+	AST_MEMBER(ShortTabAppending, &assign)
+AST_END(ShortTabAppending, "short_table_appending"sv)
+
 class FnArgsDef_t;
 
 AST_LEAF(fn_arrow_back)
@@ -804,8 +809,8 @@ AST_END(statement_sep, "statement_sep"sv)
 AST_NODE(Statement)
 	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
 	Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
-	BreakLoop_t, Label_t, Goto_t, Backcall_t, LocalAttrib_t,
-	PipeBody_t, ExpListAssign_t> content;
+	BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
+	Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;
 	AST_MEMBER(Statement, &content, &appendix, &needSep)

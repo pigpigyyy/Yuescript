@@ -165,6 +165,32 @@ do
 end
 do
 	do
+		local _with_0 = tb
+		do
+			local _obj_0 = _with_0[2]
+			if _obj_0 ~= nil then
+				_with_0[1] = _obj_0:func()
+			end
+		end
+		_with_0["%a-b-c%"] = 123
+		_with_0[ [[x y z]]] = _with_0[var]
+		print(_with_0[_with_0[3]])
+		do
+			local _with_1 = _with_0[4]
+			_with_1[1] = 1
+		end
+		_with_0[#_with_0 + 1] = "abc"
+		_with_0[#_with_0 + 1] = {
+			type = "hello",
+			{
+				name = "xyz",
+				value = 998
+			}
+		}
+	end
+end
+do
+	do
 		local _with_0 = SolidRect({
 			width = w,
 			height = h,

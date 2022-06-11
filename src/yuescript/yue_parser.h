@@ -158,7 +158,7 @@ private:
 	rule FnArgs;
 	rule macro_args_def;
 	rule chain_call;
-	rule chain_item;
+	rule chain_index_chain;
 	rule ChainItems;
 	rule chain_dot_chain;
 	rule ColonChain;
@@ -220,6 +220,7 @@ private:
 	AST_RULE(Import)
 	AST_RULE(Label)
 	AST_RULE(Goto)
+	AST_RULE(ShortTabAppending)
 	AST_RULE(fn_arrow_back)
 	AST_RULE(Backcall)
 	AST_RULE(PipeBody)
