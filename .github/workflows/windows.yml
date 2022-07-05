@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1
+        uses: microsoft/setup-msbuild@v1.0.2
       - name: Windows build
         run: |
           msbuild win-build\Yuescript.sln /p:Configuration=release /p:Platform=x86
