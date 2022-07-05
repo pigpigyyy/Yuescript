@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.11.1"sv;
+const std::string_view version = "0.12.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -104,19 +104,55 @@ public:
 		DEFER(clear());
 		if (_info.node) {
 			try {
+				auto block = _info.node.to<File_t>()->block.get();
+				if (_info.exportMacro) {
+					for (auto _stmt : block->statements.objects()) {
+						auto stmt = static_cast<Statement_t*>(_stmt);
+						switch (stmt->content->getId()) {
+							case id<MacroInPlace_t>():
+							case id<Macro_t>():
+								break;
+							case id<Import_t>():
+							case id<Export_t>():
+								if (auto importNode = stmt->content.as<Import_t>()) {
+									if (auto importAs = importNode->content.as<ImportAs_t>()) {
+										if (importAs->target.is<import_all_macro_t>()) {
+											break;
+										} else if (auto tab = importAs->target.as<ImportTabLit_t>()) {
+											bool macroImportingOnly = true;
+											for (auto item : tab->items.objects()) {
+												if (!ast_is<
+														MacroName_t,
+														macro_name_pair_t,
+														import_all_macro_t>(item)) {
+													macroImportingOnly = false;
+												}
+											}
+											if (macroImportingOnly) break;
+										}
+									}
+								} else if (auto exportNode = stmt->content.as<Export_t>()) {
+									if (exportNode->target.is<Macro_t>()) break;
+								}
+							default:
+								throw std::logic_error(_info.errorMessage("macro exporting module only accepts macro definition, macro importing and macro expansion in place", stmt));
+								break;
+						}
+					}
+				}
 				str_list out;
 				pushScope();
 				_enableReturn.push(_info.moduleName.empty());
 				_varArgs.push({true, false});
-				transformBlock(_info.node.to<File_t>()->block, out,
+				transformBlock(block, out,
 					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
 					nullptr, true);
 				popScope();
 				if (config.lintGlobalVariable) {
 					globals = std::make_unique<GlobalVars>();
 					for (const auto& var : _globals) {
-						int line,col;
-						std::tie(line,col) = var.second;
+						int line, col;
+						std::tie(line, col) = var.second;
 						globals->push_back({var.first, line, col});
 					}
 				}
@@ -205,7 +241,7 @@ private:
 	};
 	std::stack<ContinueVar> _continueVars;
 	std::list<std::unique_ptr<input>> _codeCache;
-	std::unordered_map<std::string,std::pair<int,int>> _globals;
+	std::unordered_map<std::string,std::pair<int, int>> _globals;
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
 	const std::string _newLine = "\n";
@@ -286,7 +322,7 @@ private:
 			}
 		}
 		decltype(_scopes.back().allows.get()) allows = nullptr;
-		for (auto it  = _scopes.rbegin(); it != _scopes.rend(); ++it) {
+		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			if (it->allows) allows = it->allows.get();
 		}
 		bool checkShadowScopeOnly = false;
@@ -1281,6 +1317,13 @@ private:
 				temp.push_back(clearBuf());
 			} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
 				chainValue->items.pop_back();
+				if (chainValue->items.empty()) {
+					if (_withVars.empty()) {
+						throw std::logic_error(_info.errorMessage("short table appending must be called within a with block"sv, x));
+					} else {
+						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
+					}
+				}
 				auto varName = singleVariableFrom(chainValue);
 				bool isScoped = false;
 				if (varName.empty() || !isLocal(varName)) {
@@ -3045,7 +3088,7 @@ private:
 				}
 			}
 		}
-		if (isRoot && !_info.moduleName.empty()) {
+		if (isRoot && !_info.moduleName.empty() && !_info.exportMacro) {
 			block->statements.push_front(toAst<Statement_t>(_info.moduleName + (_info.exportDefault ? "=nil"s : "={}"s), block));
 		}
 		switch (usage) {
@@ -3125,7 +3168,7 @@ private:
 		} else {
 			out.push_back(Empty);
 		}
-		if (isRoot && !_info.moduleName.empty()) {
+		if (isRoot && !_info.moduleName.empty() && !_info.exportMacro) {
 			out.back().append(indent() + "return "s + _info.moduleName + nlr(block));
 		}
 	}

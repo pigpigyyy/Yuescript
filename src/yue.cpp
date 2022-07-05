@@ -498,6 +498,9 @@ int main(int narg, const char** args) {
 						if (!targetPath.empty()) {
 							fs::create_directories(targetFile.parent_path());
 						}
+						if (result.codes.empty()) {
+							return std::tuple{0, targetFile.string(), std::string("Built "sv) + file.first + '\n'};
+						}
 						std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
 						if (output) {
 							const auto& codes = result.codes;

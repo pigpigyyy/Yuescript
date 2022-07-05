@@ -532,7 +532,11 @@ YueParser::YueParser() {
 			return true;
 		}
 	}) >> ExpList >> -Assign)
-	| Space >> Macro) >> not_(Space >> statement_appendix);
+	| Space >> pl::user(Macro, [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->exportMacro = true;
+		return true;
+	})) >> not_(Space >> statement_appendix);
 
 	variable_pair = sym(':') >> Variable >> not_('#');
 
@@ -664,6 +668,7 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 		if (state.exportCount > 0) {
 			res.moduleName = std::move(state.moduleName);
 			res.exportDefault = state.exportDefault;
+			res.exportMacro = state.exportMacro;
 		}
 	} catch (const std::logic_error& err) {
 		res.error = err.what();

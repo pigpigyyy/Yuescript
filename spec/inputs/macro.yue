@@ -3,7 +3,7 @@ $ ->
 
 import "macro-export" as {
 	$, -- import all macros
-	$config:$myconfig, -- rename macro $config to $myconfig
+	$config: $myconfig, -- rename macro $config to $myconfig
 }
 
 import "macro-todo" as $

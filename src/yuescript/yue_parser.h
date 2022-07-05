@@ -28,6 +28,7 @@ struct ParseInfo {
 	std::string error;
 	std::unique_ptr<input> codes;
 	bool exportDefault = false;
+	bool exportMacro = false;
 	std::string moduleName;
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;
 };
@@ -72,6 +73,7 @@ protected:
 			indents.push(0);
 		}
 		bool exportDefault = false;
+		bool exportMacro = false;
 		int exportCount = 0;
 		int moduleFix = 0;
 		size_t stringOpen = 0;

@@ -1,15 +1,22 @@
+$ -> package.path = "?.lua;./spec/inputs/?.lua"
+
+import "macro-todo" as $
+
+import "macro-todo" as {$, :$todo}
+
 export macro config = (debugging = true)->
 	global debugMode = debugging == "true"
 	global debugMacro = true
 	""
 
-export macro showMacro = (name,res)->
-	if debugMacro
-		"do
-		txt = #{res}
-		print '[macro '..#{name}..']'
-		print txt
-		txt"
+export macro showMacro = (name, res)->
+	if debugMacro then "
+do
+	txt = #{res}
+	print '[macro ' .. #{name} .. ']'
+	print txt
+	txt
+"
 	else
 		res
 
@@ -25,5 +32,7 @@ export macro assert = (cond)->
 	else
 		"#{cond}"
 
-$config!
+$ ->
+	global debugMode = true
+	global debugMacro = true
 
