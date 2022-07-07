@@ -24,6 +24,16 @@ if $and f1!
 if $and f1!, f2!, f3!
 	print "OK"
 
+item = $copy(
+	@
+	{pos: {}, flags: flags::tonumber!}
+	id
+	connections
+	pos.x
+	pos.y
+	pos.z
+)
+
 macro in = (target, ...)->
 	values = [value for value in *{...}]
 	$showMacro "in", table.concat ["#{target} == #{item}" for item in *values], " or "

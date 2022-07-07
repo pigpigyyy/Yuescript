@@ -6,6 +6,25 @@ end
 if (f1() and f2() and f3()) then
 	print("OK")
 end
+local item
+do
+	local _src_, _dst_
+	do
+		_dst_ = {
+			pos = { },
+			flags = flags:tonumber()
+		}
+		do
+			_src_ = self
+			_dst_.id = _src_.id
+			_dst_.connections = _src_.connections
+			_dst_.pos.x = _src_.pos.x
+			_dst_.pos.y = _src_.pos.y
+			_dst_.pos.z = _src_.pos.z
+		end
+		item = _dst_
+	end
+end
 if (x == "Apple" or x == "Pig" or x == "Dog") then
 	print("exist")
 end
@@ -258,7 +277,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(261));
+print("current line: " .. tostring(271));
 -- TODO
 do
 	print(1)

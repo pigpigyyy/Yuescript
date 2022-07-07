@@ -32,6 +32,20 @@ export macro assert = (cond)->
 	else
 		"#{cond}"
 
+export macro copy = (src, dst, ...)->
+	assert(
+		src != "_src_" and src != "_dst_" and dst != "_src_" and dst != "_dst_"
+		"copy targets can not be _src_ or _dst_"
+	)
+	"
+do
+	local _src_, _dst_
+	with _dst_ = #{dst}
+		with _src_ = #{src}
+#{table.concat (for field in *{...}
+		"			_dst_.#{field} = _src_.#{field}"), "\n"}
+"
+
 $ ->
 	global debugMode = true
 	global debugMacro = true
