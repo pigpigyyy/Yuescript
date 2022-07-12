@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.13.0"sv;
+const std::string_view version = "0.13.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -7121,8 +7121,8 @@ private:
 		for (auto branch_ : branches) {
 			auto branch = static_cast<SwitchCase_t*>(branch_);
 			if (auto value = singleValueFrom(branch->valueList);
-				value->item.is<simple_table_t>() ||
-					value->getByPath<SimpleValue_t, TableLit_t>()) {
+				value && (value->item.is<simple_table_t>() ||
+					value->getByPath<SimpleValue_t, TableLit_t>())) {
 				if (!firstBranch) {
 					temp.push_back(indent() + "else"s + nll(branch));
 					pushScope();
