@@ -237,7 +237,7 @@ YueParser::YueParser() {
 
 	exp_not_tab = not_(simple_table | TableLit) >> Exp;
 
-	SwitchList = Seperator >> Exp >> *(sym(',') >> exp_not_tab);
+	SwitchList = Seperator >> (and_(simple_table | TableLit) >> Exp | exp_not_tab >> *(sym(',') >> exp_not_tab));
 	Switch = Space >> key("switch") >> disable_do(Exp) >> -(Space >> key("do"))
 		>> -Space >> Break >> SwitchBlock;
 
