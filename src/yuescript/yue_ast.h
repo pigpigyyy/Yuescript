@@ -249,8 +249,14 @@ AST_NODE(With)
 	AST_MEMBER(With, &eop, &valueList, &assigns, &body)
 AST_END(With, "with"sv)
 
+AST_NODE(SwitchList)
+	ast_ptr<true, Seperator_t> sep;
+	ast_list<true, Exp_t> exprs;
+	AST_MEMBER(SwitchList, &sep, &exprs)
+AST_END(SwitchList, "switch_list"sv)
+
 AST_NODE(SwitchCase)
-	ast_ptr<true, ExpList_t> valueList;
+	ast_ptr<true, SwitchList_t> valueList;
 	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(SwitchCase, &valueList, &body)
 AST_END(SwitchCase, "switch_case"sv)

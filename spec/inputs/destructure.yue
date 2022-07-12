@@ -181,3 +181,6 @@ do
 do
 	{_, a, _, b} = tb -- list placeholder
 
+do
+	{x: a.b = 1, y: a.c = 2} = x.x.x
+

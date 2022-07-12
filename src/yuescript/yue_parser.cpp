@@ -225,7 +225,7 @@ YueParser::YueParser() {
 	WithExp = ExpList >> -Assign;
 
 	With = Space >> key("with") >> -existential_op >> disable_do_chain_arg_table_block(WithExp) >> plain_body_with("do");
-	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(ExpList)) >> plain_body_with("then");
+	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(SwitchList)) >> plain_body_with("then");
 	SwitchElse = Space >> key("else") >> plain_body;
 
 	SwitchBlock = *EmptyLine >>
@@ -235,6 +235,9 @@ YueParser::YueParser() {
 		-(Break >> *EmptyLine >> CheckIndent >> SwitchElse) >>
 		PopIndent;
 
+	exp_not_tab = not_(simple_table | TableLit) >> Exp;
+
+	SwitchList = Seperator >> Exp >> *(sym(',') >> exp_not_tab);
 	Switch = Space >> key("switch") >> disable_do(Exp) >> -(Space >> key("do"))
 		>> -Space >> Break >> SwitchBlock;
 
@@ -550,14 +553,14 @@ YueParser::YueParser() {
 	symx(':') >> not_(':') >>
 	(Exp | TableBlock | +SpaceBreak >> Exp);
 
-	default_pair = (sym(':') >> Variable >> not_('#') >> Seperator | KeyName >> symx(':') >> Seperator >> Exp | Exp >> Seperator) >> sym('=') >> Exp;
+	default_pair = (sym(':') >> Variable >> not_('#') >> Seperator | KeyName >> symx(':') >> Seperator >> exp_not_tab | exp_not_tab >> Seperator) >> sym('=') >> Exp;
 
 	meta_variable_pair = sym(':') >> Variable >> expr('#');
 
 	meta_normal_pair = Space >> -(Name | symx('[') >> not_('[') >> Exp >> sym(']')) >> expr("#:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
-	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | Space >> -Name >> expr("#:") >> Seperator >> Exp) >> sym('=') >> Exp;
+	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | Space >> -Name >> expr("#:") >> Seperator >> exp_not_tab) >> sym('=') >> Exp;
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);

@@ -58,7 +58,91 @@ switch hi
 
 switch hi
 	when 3+1, hello!, (-> 4)!
-		yello
+		_ = yello
 	else
 		print "cool"
+
+do
+	dict = {
+		{}
+		{1, 2, 3}
+		a: b: c: 1
+		x: y: z: 1
+	}
+
+	switch dict
+		when {
+				first
+				{one, two, three}
+				a: b: :c
+				x: y: :z
+			}
+			print first, one, two, three, c, z
+
+do
+	items =
+		* x: 100
+			y: 200
+		* width: 300
+			height: 400
+		* false
+
+	for item in *items
+		switch item
+			when :x, :y
+				print "Vec2 #{x}, #{y}"
+			when :width, :height
+				print "Size #{width}, #{height}"
+			when false
+				print "None"
+			when __class: cls
+				switch cls
+					when ClassA
+						print "Object A"
+					when ClassB
+						print "Object B"
+			when #: mt
+				print "A table with metatable"
+			else
+				print "item not accepted!"
+
+do
+	tb = {}
+	switch tb
+		when {:a = 1, :b = 2}
+			print a, b
+
+do
+	tb = x: "abc"
+	switch tb
+		when :x, :y
+			print "x: #{x} with y: #{y}"
+		when :x
+			print "x: #{x} only"
+
+do
+	matched = switch tb
+		when 1
+			"1"
+		when :x
+			x
+		when false
+			"false"
+		else
+			nil
+
+do
+	return switch tb
+		when nil
+			"invalid"
+		when :a, :b
+			"#{a + b}"
+		when 1, 2, 3, 4, 5
+			"number 1 - 5"
+		when {:alwaysMatch = "fallback"}
+			alwaysMatch
+		else
+			"should not reach here"
+
+nil
 

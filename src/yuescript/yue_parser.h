@@ -188,6 +188,7 @@ private:
 	rule pipe_exp;
 	rule expo_value;
 	rule expo_exp;
+	rule exp_not_tab;
 	rule empty_line_stop;
 	rule Line;
 	rule Shebang;
@@ -230,6 +231,7 @@ private:
 	AST_RULE(ExpList)
 	AST_RULE(Return)
 	AST_RULE(With)
+	AST_RULE(SwitchList)
 	AST_RULE(SwitchCase)
 	AST_RULE(Switch)
 	AST_RULE(assignment)

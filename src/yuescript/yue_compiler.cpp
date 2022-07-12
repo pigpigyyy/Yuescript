@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.12.0"sv;
+const std::string_view version = "0.13.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -283,15 +283,15 @@ private:
 	};
 
 	struct DestructItem {
-		bool isVariable = false;
-		std::string name;
+		ast_ptr<true, Exp_t> target;
+		std::string targetVar;
 		std::string structure;
 		ast_ptr<true, Exp_t> defVal;
-		bool isMetatable = false;
 	};
 
 	struct Destructure {
-		std::string value;
+		ast_ptr<true, ast_node> value;
+		std::string valueVar;
 		std::list<DestructItem> items;
 	};
 
@@ -562,6 +562,13 @@ private:
 				}
 				break;
 			}
+			case id<SwitchList_t>(): {
+				auto expList = static_cast<SwitchList_t*>(item);
+				if (expList->exprs.size() == 1) {
+					exp = static_cast<Exp_t*>(expList->exprs.front());
+				}
+				break;
+			}
 			case id<unary_exp_t>(): {
 				auto unary = static_cast<unary_exp_t*>(item);
 				if (unary->expos.size() == 1) {
@@ -800,7 +807,7 @@ private:
 		return Empty;
 	}
 
-	std::string singleVariableFrom(ast_node* expList) {
+	std::string singleVariableFrom(ast_node* expList, bool accessing) {
 		if (!ast_is<Exp_t, ExpList_t>(expList)) return Empty;
 		BLOCK_START
 		auto value = singleValueFrom(expList);
@@ -809,9 +816,16 @@ private:
 		BREAK_IF(!chainValue);
 		BREAK_IF(chainValue->items.size() != 1);
 		auto callable = ast_cast<Callable_t>(chainValue->items.front());
-		BREAK_IF(!callable || !(callable->item.is<Variable_t>() || callable->getByPath<SelfName_t,self_t>()));
+		BREAK_IF(!callable || !(callable->item.is<Variable_t>() || callable->getByPath<SelfName_t, self_t>()));
 		str_list tmp;
-		transformCallable(callable, tmp);
+		if (accessing) {
+			transformCallable(callable, tmp);
+		} else {
+			bool lintGlobal = _config.lintGlobalVariable;
+			_config.lintGlobalVariable = false;
+			transformCallable(callable, tmp);
+			_config.lintGlobalVariable = lintGlobal;
+		}
 		return tmp.back();
 		BLOCK_END
 		return Empty;
@@ -1173,7 +1187,7 @@ private:
 		_config.lintGlobalVariable = false;
 		if (!assignment->action.is<Assign_t>()) return vars;
 		for (auto exp : assignment->expList->exprs.objects()) {
-			auto var = singleVariableFrom(exp);
+			auto var = singleVariableFrom(exp, true);
 			vars.push_back(var.empty() ? Empty : var);
 		}
 		_config.lintGlobalVariable = lintGlobal;
@@ -1185,7 +1199,7 @@ private:
 		bool lintGlobal = _config.lintGlobalVariable;
 		_config.lintGlobalVariable = false;
 		for (auto exp : with->valueList->exprs.objects()) {
-			auto var = singleVariableFrom(exp);
+			auto var = singleVariableFrom(exp, true);
 			vars.push_back(var.empty() ? Empty : var);
 		}
 		_config.lintGlobalVariable = lintGlobal;
@@ -1241,13 +1255,15 @@ private:
 	}
 
 	std::string getDestrucureDefine(ExpListAssign_t* assignment) {
-		auto info = extractDestructureInfo(assignment, true);
+		auto info = extractDestructureInfo(assignment, true, false);
 		if (!info.first.empty()) {
 			for (const auto& destruct : info.first) {
 				str_list defs;
 				for (const auto& item : destruct.items) {
-					if (item.isVariable && addToScope(item.name)) {
-						defs.push_back(item.name);
+					if (!item.targetVar.empty()) {
+						if (addToScope(item.targetVar)) {
+							defs.push_back(item.targetVar);
+						}
 					}
 				}
 				if (!defs.empty()) _buf << indent() << "local "sv << join(defs,", "sv);
@@ -1282,7 +1298,18 @@ private:
 		return nullptr;
 	}
 
-	void transformAssignment(ExpListAssign_t* assignment, str_list& out) {
+	ast_ptr<false, ExpListAssign_t> assignmentFrom(Exp_t* target, ast_node* value, ast_node* x) {
+		auto assignment = x->new_ptr<ExpListAssign_t>();
+		auto assignList = x->new_ptr<ExpList_t>();
+		assignList->exprs.push_back(target);
+		assignment->expList.set(assignList);
+		auto assign = x->new_ptr<Assign_t>();
+		assign->values.push_back(value);
+		assignment->action.set(assign);
+		return assignment;
+	}
+
+	void transformAssignment(ExpListAssign_t* assignment, str_list& out, bool optionalDestruct = false) {
 		checkAssignable(assignment->expList);
 		BLOCK_START
 		auto assign = ast_cast<Assign_t>(assignment->action);
@@ -1516,7 +1543,7 @@ private:
 			}
 		}
 		BLOCK_END
-		auto info = extractDestructureInfo(assignment, false);
+		auto info = extractDestructureInfo(assignment, false, optionalDestruct);
 		if (info.first.empty()) {
 			transformAssignmentCommon(assignment, out);
 		} else {
@@ -1524,126 +1551,165 @@ private:
 			if (info.second) {
 				transformAssignmentCommon(info.second, temp);
 			}
+			auto x = assignment;
 			for (auto& destruct : info.first) {
-				std::list<std::pair<std::string, std::string>> leftPairs;
+				std::list<std::pair<ast_ptr<true, Exp_t>, ast_ptr<true, Exp_t>>> leftPairs;
+				bool extraScope = false;
 				if (destruct.items.size() == 1) {
 					auto& pair = destruct.items.front();
-					if (!pair.isVariable && pair.defVal) {
-						auto objVar = getUnusedName("_obj_"sv);
-						leftPairs.push_back({pair.name, objVar});
-						pair.name = objVar;
-						pair.isVariable = true;
-					}
-					if (pair.isMetatable) {
-						if (pair.isVariable) {
-							checkConst(pair.name, assignment);
-							if (addToScope(pair.name)) {
-								_buf << indent() << "local "sv << pair.name << nll(assignment);
+					if (pair.targetVar.empty() && pair.defVal) {
+						extraScope = true;
+						auto objVar = getUnusedName("_tmp_"sv);
+						auto objExp = toAst<Exp_t>(objVar, pair.target);
+						leftPairs.push_back({pair.target, objExp.get()});
+						pair.target.set(objExp);
+						pair.targetVar = objVar;
+					} else if (auto val = singleValueFrom(destruct.value); val->item.is<ChainValue_t>()) {
+						auto chainValue = static_cast<ChainValue_t*>(val->item.get());
+						int added = 0;
+						if (!pair.structure.empty()) {
+							auto appendChain = toAst<ChainValue_t>("x"s + pair.structure, x);
+							appendChain->items.pop_front();
+							for (auto item : appendChain->items.objects()) {
+								chainValue->items.push_back(item);
+								added++;
 							}
 						}
-						bool isLocalValue = isLocal(destruct.value);
-						std::string objVar;
-						if (isLocalValue) {
-							objVar = destruct.value;
-						} else {
-							_buf << indent() << "do"sv << nll(assignment);
-							pushScope();
-							objVar = getUnusedName("_obj_"sv);
-							addToScope(objVar);
-							_buf << indent() << "local "sv << objVar << " = "sv << destruct.value << nll(assignment);
+						auto newAssignment = assignmentFrom(pair.target, destruct.value, x);
+						transformAssignment(newAssignment, temp);
+						while (added > 0) {
+							chainValue->items.pop_back();
+							added--;
+						}
+						if (pair.defVal) {
+							auto stmt = toAst<Statement_t>(pair.targetVar + "=nil if "s + pair.targetVar + "==nil", pair.defVal);
+							auto defAssign = stmt->content.as<ExpListAssign_t>();
+							auto assign = defAssign->action.as<Assign_t>();
+							assign->values.clear();
+							assign->values.push_back(pair.defVal);
+							transformStatement(stmt, temp);
+						}
+						continue;
+					}
+					if (extraScope) {
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+					}
+					if (!pair.targetVar.empty()) {
+						checkConst(pair.targetVar, x);
+						if (addToScope(pair.targetVar)) {
+							_buf << indent() << "local "sv << pair.targetVar << nll(x);
 							temp.push_back(clearBuf());
 						}
-						auto valueExp = toAst<Exp_t>(objVar + pair.structure, assignment);
-						transformExp(valueExp, temp, ExpUsage::Closure);
-						_buf << indent() << pair.name << " = "sv << temp.back() << nll(assignment);
-						if (!isLocalValue) {
-							popScope();
-							_buf << indent() << "end"sv << nlr(assignment);
-						}
-						temp.back() = clearBuf();
+					}
+					bool isLocalValue = isLocal(destruct.valueVar);
+					std::string objVar;
+					if (isLocalValue) {
+						objVar = destruct.valueVar;
 					} else {
-						_buf << indent();
-						if (pair.isVariable) {
-							checkConst(pair.name, assignment);
-							if (addToScope(pair.name)) _buf << "local "sv;
-						}
-						_buf << pair.name << " = "sv << destruct.value << pair.structure << nll(assignment);
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+						objVar = getUnusedName("_obj_"sv);
+						auto newAssignment = assignmentFrom(toAst<Exp_t>(objVar, x), destruct.value, x);
+						transformAssignment(newAssignment, temp);
+					}
+					auto valueExp = toAst<Exp_t>(objVar + pair.structure, x);
+					auto newAssignment = assignmentFrom(pair.target, valueExp, x);
+					transformAssignment(newAssignment, temp);
+					if (!isLocalValue) {
+						popScope();
+						_buf << indent() << "end"sv << nlr(x);
 						temp.push_back(clearBuf());
 					}
-				} else if (_parser.match<Name_t>(destruct.value) && isLocal(destruct.value)) {
-					str_list defs, names, values;
-					bool isMetatable = false;
-					for (auto& item : destruct.items) {
-						if (item.isVariable) {
-							checkConst(item.name, assignment);
-							if (addToScope(item.name)) defs.push_back(item.name);
-						} else if (item.defVal) {
-							auto objVar = getUnusedName("_obj_"sv);
-							addToScope(objVar);
-							defs.push_back(objVar);
-							leftPairs.push_back({item.name, objVar});
-							item.name = objVar;
-						}
-						if (item.isMetatable) isMetatable = true;
-						names.push_back(item.name);
-						values.push_back(item.structure);
-					}
-					for (auto& v : values) v.insert(0, destruct.value);
-					if (isMetatable) {
-						auto newExpList = toAst<ExpList_t>(join(values, ","sv), assignment);
-						transformExpList(newExpList, temp);
-					} else {
-						temp.push_back(join(values, ", "sv));
-					}
-					if (defs.empty()) {
-						_buf << indent() << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
-					} else {
-						_buf << indent() << "local "sv;
-						if (defs.size() != names.size()) {
-							_buf << join(defs, ", "sv) << nll(assignment) << indent();
-						}
-						_buf << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
-					}
-					temp.back() = clearBuf();
 				} else {
-					str_list defs, names, values;
-					bool isMetatable = false;
+					str_list values, defs;
+					std::list<Exp_t*> names;
+					pushScope();
 					for (auto& item : destruct.items) {
-						if (item.isVariable) {
-							checkConst(item.name, assignment);
-							if (addToScope(item.name)) defs.push_back(item.name);
+						if (!item.targetVar.empty()) {
+							if (!isDefined(item.targetVar)) {
+								defs.push_back(item.targetVar);
+							}
 						} else if (item.defVal) {
-							auto objVar = getUnusedName("_obj_"sv);
+							extraScope = true;
+							auto objVar = getUnusedName("_tmp_"sv);
 							addToScope(objVar);
-							defs.push_back(objVar);
-							leftPairs.push_back({item.name, objVar});
-							item.name = objVar;
+							auto objExp = toAst<Exp_t>(objVar, item.target);
+							leftPairs.push_back({item.target, objExp.get()});
+							item.target.set(objExp);
+							item.targetVar = objVar;
 						}
-						if (item.isMetatable) isMetatable = true;
-						names.push_back(item.name);
+						names.push_back(item.target);
 						values.push_back(item.structure);
 					}
-					if (!defs.empty()) _buf << indent() << "local "sv << join(defs,", "sv) << nll(assignment);
-					_buf << indent() << "do"sv << nll(assignment);
-					pushScope();
-					auto objVar = getUnusedName("_obj_"sv);
-					addToScope(objVar);
-					for (auto& v : values) v.insert(0, objVar);
-					if (isMetatable) {
-						auto newExpList = toAst<ExpList_t>(join(values, ","sv), assignment);
-						transformExpList(newExpList, temp);
-					} else {
-						temp.push_back(join(values, ", "sv));
-					}
-					_buf << indent() << "local "sv << objVar << " = "sv << destruct.value << nll(assignment);
-					_buf << indent() << join(names, ", "sv) << " = "sv << temp.back() << nll(assignment);
 					popScope();
-					_buf << indent() << "end"sv << nll(assignment);
-					temp.back() = clearBuf();
+					if (_parser.match<Name_t>(destruct.valueVar) && isLocal(destruct.valueVar)) {
+						for (auto& v : values) {
+							v.insert(0, destruct.valueVar);
+						}
+						if (extraScope) {
+							if (!defs.empty()) {
+								for (const auto& def : defs) {
+									checkConst(def, x);
+									addToScope(def);
+								}
+								temp.push_back(indent() + "local "s + join(defs, ", "sv) + nll(x));
+							}
+							temp.push_back(indent() + "do"s + nll(x));
+							pushScope();
+						}
+					} else {
+						if (!defs.empty()) {
+							for (const auto& def : defs) {
+								checkConst(def, x);
+								addToScope(def);
+							}
+							temp.push_back(indent() + "local "s + join(defs, ", "sv) + nll(x));
+						}
+						extraScope = true;
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+						auto valVar = getUnusedName("_obj_"sv);
+						auto targetVar = toAst<Exp_t>(valVar, destruct.value);
+						auto newAssignment = assignmentFrom(targetVar, destruct.value, destruct.value);
+						transformAssignment(newAssignment, temp);
+						for (auto& v : values) {
+							v.insert(0, valVar);
+						}
+					}
+					if (optionalDestruct) {
+						while (!names.empty()) {
+							auto name = names.front();
+							names.pop_front();
+							auto value = values.front();
+							values.pop_front();
+							auto valueList = toAst<ExpList_t>(value, x);
+							auto newAssignment = x->new_ptr<ExpListAssign_t>();
+							auto assignList = x->new_ptr<ExpList_t>();
+							assignList->exprs.push_back(name);
+							newAssignment->expList.set(assignList);
+							auto assign = x->new_ptr<Assign_t>();
+							assign->values.dup(valueList->exprs);
+							newAssignment->action.set(assign);
+							transformAssignment(newAssignment, temp);
+						}
+					} else {
+						auto valueList = toAst<ExpList_t>(join(values, ","sv), x);
+						auto newAssignment = x->new_ptr<ExpListAssign_t>();
+						auto assignList = x->new_ptr<ExpList_t>();
+						for (auto name : names) {
+							assignList->exprs.push_back(name);
+						}
+						newAssignment->expList.set(assignList);
+						auto assign = x->new_ptr<Assign_t>();
+						assign->values.dup(valueList->exprs);
+						newAssignment->action.set(assign);
+						transformAssignment(newAssignment, temp);
+					}
 				}
 				for (const auto& item : destruct.items) {
 					if (item.defVal) {
-						auto stmt = toAst<Statement_t>(item.name + "=nil if "s + item.name + "==nil", item.defVal);
+						auto stmt = toAst<Statement_t>(item.targetVar + "=nil if "s + item.targetVar + "==nil", item.defVal);
 						auto defAssign = stmt->content.as<ExpListAssign_t>();
 						auto assign = defAssign->action.as<Assign_t>();
 						assign->values.clear();
@@ -1652,9 +1718,14 @@ private:
 					}
 				}
 				for (const auto& item : leftPairs) {
-					_buf << indent() << item.first << " = "sv << item.second << nll(assignment);
+					auto newAssignment = assignmentFrom(item.first, item.second, x);
+					transformAssignment(newAssignment, temp);
 				}
-				temp.push_back(clearBuf());
+				if (extraScope) {
+					popScope();
+					_buf << indent() << "end"sv << nlr(x);
+					temp.push_back(clearBuf());
+				}
 			}
 			out.push_back(join(temp));
 		}
@@ -1671,8 +1742,9 @@ private:
 		}
 	}
 
-	std::list<DestructItem> destructFromExp(ast_node* node) {
+	std::list<DestructItem> destructFromExp(ast_node* node, bool optional) {
 		const node_container* tableItems = nullptr;
+		auto sep = optional ? "?"s : Empty;
 		switch (node->getId()) {
 			case id<Exp_t>(): {
 				auto item = singleValueFrom(node)->item.get();
@@ -1713,27 +1785,18 @@ private:
 					auto item = value->item.get();
 					if (ast_is<simple_table_t>(item) ||
 						item->getByPath<TableLit_t>()) {
-						auto subPairs = destructFromExp(pair);
+						auto subPairs = destructFromExp(pair, optional);
 						for (auto& p : subPairs) {
-							pairs.push_back({p.isVariable, p.name,
-								'[' + std::to_string(index) + ']' + p.structure,
-								p.defVal, p.isMetatable});
+							pairs.push_back({p.target, p.targetVar,
+								'[' + std::to_string(index) + ']' + sep + p.structure,
+								p.defVal});
 						}
 					} else {
-						bool lintGlobal = _config.lintGlobalVariable;
-						_config.lintGlobalVariable = false;
 						auto exp = static_cast<Exp_t*>(pair);
-						auto varName = singleVariableFrom(exp);
+						auto varName = singleVariableFrom(exp, false);
 						if (varName == "_"sv) break;
-						bool isVariable = !varName.empty();
-						if (!isVariable) {
-							str_list temp;
-							transformExp(exp, temp, ExpUsage::Closure);
-							varName = std::move(temp.back());
-						}
-						_config.lintGlobalVariable = lintGlobal;
 						pairs.push_back({
-							isVariable,
+							exp,
 							varName,
 							'[' + std::to_string(index) + ']',
 							nullptr
@@ -1744,11 +1807,7 @@ private:
 				case id<variable_pair_t>(): {
 					auto vp = static_cast<variable_pair_t*>(pair);
 					auto name = _parser.toString(vp->name);
-					if (LuaKeywords.find(name) != LuaKeywords.end()) {
-						pairs.push_back({true, name, "[\""s + name + "\"]"s, nullptr});
-					} else {
-						pairs.push_back({true, name, '.' + name, nullptr});
-					}
+					pairs.push_back({toAst<Exp_t>(name, vp).get(), name, '.' + name, nullptr});
 					break;
 				}
 				case id<normal_pair_t>(): {
@@ -1769,29 +1828,19 @@ private:
 						auto item = singleValueFrom(exp)->item.get();
 						if (ast_is<simple_table_t>(item) ||
 							item->getByPath<TableLit_t>()) {
-							auto subPairs = destructFromExp(exp);
+							auto subPairs = destructFromExp(exp, optional);
 							for (auto& p : subPairs) {
 								pairs.push_back({
-									p.isVariable,
-									p.name,
-									keyName + p.structure,
-									p.defVal,
-									p.isMetatable
+									p.target,
+									p.targetVar,
+									keyName + sep + p.structure,
+									p.defVal
 								});
 							}
 						} else {
-							bool lintGlobal = _config.lintGlobalVariable;
-							_config.lintGlobalVariable = false;
-							auto varName = singleVariableFrom(exp);
-							bool isVariable = !varName.empty();
-							if (!isVariable) {
-								str_list temp;
-								transformExp(exp, temp, ExpUsage::Closure);
-								varName = std::move(temp.back());
-							}
-							_config.lintGlobalVariable = lintGlobal;
+							auto varName = singleVariableFrom(exp, false);
 							pairs.push_back({
-								isVariable,
+								exp,
 								varName,
 								keyName,
 								nullptr
@@ -1800,14 +1849,13 @@ private:
 						break;
 					}
 					if (np->value.is<TableBlock_t>()) {
-						auto subPairs = destructFromExp(np->value);
+						auto subPairs = destructFromExp(np->value, optional);
 						for (auto& p : subPairs) {
 							pairs.push_back({
-								p.isVariable,
-								p.name,
-								keyName + p.structure,
-								p.defVal,
-								p.isMetatable
+								p.target,
+								p.targetVar,
+								keyName + sep + p.structure,
+								p.defVal
 							});
 						}
 					}
@@ -1816,14 +1864,13 @@ private:
 				case id<TableBlockIndent_t>(): {
 					auto tb = static_cast<TableBlockIndent_t*>(pair);
 					++index;
-					auto subPairs = destructFromExp(tb);
+					auto subPairs = destructFromExp(tb, optional);
 					for (auto& p : subPairs) {
 						pairs.push_back({
-							p.isVariable,
-							p.name,
-							'[' + std::to_string(index) + ']' + p.structure,
-							p.defVal,
-							p.isMetatable
+							p.target,
+							p.targetVar,
+							'[' + std::to_string(index) + ']' + sep + p.structure,
+							p.defVal
 						});
 					}
 					break;
@@ -1841,18 +1888,9 @@ private:
 							item->getByPath<TableLit_t>()) {
 							throw std::logic_error(_info.errorMessage("invalid use of default value"sv, dp->defVal));
 						} else {
-							bool lintGlobal = _config.lintGlobalVariable;
-							_config.lintGlobalVariable = false;
-							auto varName = singleVariableFrom(exp);
-							bool isVariable = !varName.empty();
-							if (!isVariable) {
-								str_list temp;
-								transformExp(exp, temp, ExpUsage::Closure);
-								varName = std::move(temp.back());
-							}
-							_config.lintGlobalVariable = lintGlobal;
+							auto varName = singleVariableFrom(exp, false);
 							pairs.push_back({
-								isVariable,
+								exp,
 								varName,
 								'[' + std::to_string(index) + ']',
 								dp->defVal
@@ -1872,27 +1910,18 @@ private:
 							keyName = "."s + keyName;
 						}
 					}
-					if (auto exp = dp->value.as<Exp_t>()) {
+					if (auto exp = dp->value.get()) {
 						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
-						bool lintGlobal = _config.lintGlobalVariable;
-						_config.lintGlobalVariable = false;
-						auto varName = singleVariableFrom(exp);
-						bool isVariable = !varName.empty();
-						if (!isVariable) {
-							str_list temp;
-							transformExp(exp, temp, ExpUsage::Closure);
-							varName = std::move(temp.back());
-						}
-						_config.lintGlobalVariable = lintGlobal;
+						auto varName = singleVariableFrom(exp, false);
 						pairs.push_back({
-							isVariable,
+							exp,
 							varName,
 							keyName,
 							dp->defVal
 						});
 					} else {
 						pairs.push_back({
-							true,
+							toAst<Exp_t>(valueStr, dp).get(),
 							valueStr,
 							keyName,
 							dp->defVal
@@ -1910,8 +1939,7 @@ private:
 						newPair->key.set(newKey);
 						if (newPair->value) {
 							newPair->value.set(mp->value);
-						}
-						else {
+						} else {
 							newPair->value.set(toAst<Exp_t>(key, mp->key));
 						}
 					} else {
@@ -1959,14 +1987,13 @@ private:
 			simpleValue->value.set(subMetaDestruct);
 			auto value = subMetaDestruct->new_ptr<Value_t>();
 			value->item.set(simpleValue);
-			auto subPairs = destructFromExp(newExp(value, subMetaDestruct));
+			auto subPairs = destructFromExp(newExp(value, subMetaDestruct), optional);
 			for (const auto& p : subPairs) {
 				pairs.push_back({
-					p.isVariable,
-					p.name,
-					".#"s + p.structure,
-					p.defVal,
-					true
+					p.target,
+					p.targetVar,
+					".#"s + sep + p.structure,
+					p.defVal
 				});
 			}
 		}
@@ -1974,7 +2001,7 @@ private:
 	}
 
 	std::pair<std::list<Destructure>, ast_ptr<false, ExpListAssign_t>>
-		extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly) {
+		extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly, bool optional) {
 		auto x = assignment;
 		std::list<Destructure> destructs;
 		if (!assignment->action.is<Assign_t>()) return {destructs, nullptr};
@@ -1993,10 +2020,10 @@ private:
 			while (values.size() < size) values.emplace_back(nullNode);
 		}
 		using iter = node_container::iterator;
-		std::vector<std::pair<iter,iter>> destructPairs;
+		std::vector<std::pair<iter, iter>> destructPairs;
 		ast_list<false, ast_node> valueItems;
-		if (!varDefOnly) pushScope();
 		str_list temp;
+		pushScope();
 		for (auto i = exprs.begin(), j = values.begin(); i != exprs.end(); ++i, ++j) {
 			auto expr = *i;
 			auto value = singleValueFrom(expr);
@@ -2019,7 +2046,7 @@ private:
 				} else {
 					throw std::logic_error(_info.errorMessage("can not destructure a nil value"sv, destructNode));
 				}
-				destructPairs.push_back({i,j});
+				destructPairs.push_back({i, j});
 				auto subDestruct = destructNode->new_ptr<TableLit_t>();
 				auto subMetaDestruct = destructNode->new_ptr<TableLit_t>();
 				const node_container* dlist = nullptr;
@@ -2103,15 +2130,14 @@ private:
 					if (!tab->values.empty()) {
 						auto& destruct = destructs.emplace_back();
 						if (!varDefOnly) {
-							transformAssignItem(valueItems.back(), temp);
-							destruct.value = std::move(temp.back());
-							temp.pop_back();
+							destruct.value = valueItems.back();
+							destruct.valueVar = singleVariableFrom(destruct.value, false);
 						}
 						auto simpleValue = tab->new_ptr<SimpleValue_t>();
 						simpleValue->value.set(tab);
 						auto value = tab->new_ptr<Value_t>();
 						value->item.set(simpleValue);
-						auto pairs = destructFromExp(newExp(value, expr));
+						auto pairs = destructFromExp(newExp(value, expr), optional);
 						if (pairs.empty()) {
 							throw std::logic_error(_info.errorMessage("expect items to be destructured"sv, tab));
 						}
@@ -2122,18 +2148,34 @@ private:
 									item.structure.clear();
 								}
 							} else if (tab == subMetaDestruct.get()) {
-								destruct.value.insert(0, globalVar("getmetatable"sv, tab) + '(');
-								destruct.value.append(")"sv);
+								auto p = destruct.value.get();
+								auto chainValue = toAst<ChainValue_t>("getmetatable()", p);
+								static_cast<Invoke_t*>(chainValue->items.back())->args.push_back(destruct.value);
+								auto value = p->new_ptr<Value_t>();
+								value->item.set(chainValue);
+								auto exp = newExp(value, p);
+								destruct.value.set(exp);
+								destruct.valueVar.clear();
 							} else if (destruct.items.size() == 1 && !singleValueFrom(*j)) {
-								destruct.value.insert(0, "("sv);
-								destruct.value.append(")"sv);
+								auto p = destruct.value.get();
+								auto parens = p->new_ptr<Parens_t>();
+								parens->expr.set(p);
+								auto callable = p->new_ptr<Callable_t>();
+								callable->item.set(parens);
+								auto chainValue = p->new_ptr<ChainValue_t>();
+								chainValue->items.push_back(callable);
+								auto value = p->new_ptr<Value_t>();
+								value->item.set(chainValue);
+								auto exp = newExp(value, p);
+								destruct.value.set(exp);
+								destruct.valueVar.clear();
 							}
 						}
 					}
 				}
 			}
 		}
-		if (!varDefOnly) popScope();
+		popScope();
 		for (const auto& p : destructPairs) {
 			exprs.erase(p.first);
 			values.erase(p.second);
@@ -2211,7 +2253,7 @@ private:
 					BLOCK_START
 					auto exp = ast_cast<Exp_t>(item);
 					BREAK_IF(!exp);
-					auto var = singleVariableFrom(exp);
+					auto var = singleVariableFrom(exp, true);
 					BREAK_IF(!var.empty());
 					auto upVar = getUnusedName("_update_"sv);
 					auto newAssignment = x->new_ptr<ExpListAssign_t>();
@@ -2373,15 +2415,12 @@ private:
 		if (asmt) {
 			ast_ptr<false, ast_node> exp = asmt->expList->exprs.front();
 			auto x = exp;
-			bool lintGlobal = _config.lintGlobalVariable;
-			_config.lintGlobalVariable = false;
-			auto var = singleVariableFrom(exp);
-			_config.lintGlobalVariable = lintGlobal;
+			auto var = singleVariableFrom(exp, false);
 			if (var.empty() || isGlobal(var)) {
 				storingValue = true;
 				auto desVar = getUnusedName("_des_"sv);
 				if (asmt->assign->values.objects().size() == 1) {
-					auto var = singleVariableFrom(asmt->assign->values.objects().front());
+					auto var = singleVariableFrom(asmt->assign->values.objects().front(), true);
 					if (!var.empty() && isLocal(var)) {
 						desVar = var;
 						storingValue = false;
@@ -2524,10 +2563,7 @@ private:
 						}
 						bool findPlaceHolder = false;
 						for (auto a : args->objects()) {
-							bool lintGlobal = _config.lintGlobalVariable;
-							_config.lintGlobalVariable = false;
-							auto name = singleVariableFrom(a);
-							_config.lintGlobalVariable = lintGlobal;
+							auto name = singleVariableFrom(a, false);
 							if (name == "_"sv) {
 								if (!findPlaceHolder) {
 									args->swap(a, arg);
@@ -2643,7 +2679,7 @@ private:
 			funcStart = &temp.emplace_back();
 			pushScope();
 		}
-		auto objVar = singleVariableFrom(left);
+		auto objVar = singleVariableFrom(left, true);
 		auto prepareValue = [&](bool forAssignment = false) {
 			if (objVar.empty() || !isLocal(objVar)) {
 				if (forAssignment) {
@@ -2953,10 +2989,7 @@ private:
 					}
 					bool findPlaceHolder = false;
 					for (auto a : args->objects()) {
-						bool lintGlobal = _config.lintGlobalVariable;
-						_config.lintGlobalVariable = false;
-						auto name = singleVariableFrom(a);
-						_config.lintGlobalVariable = lintGlobal;
+						auto name = singleVariableFrom(a, false);
 						if (name == "_"sv) {
 							if (!findPlaceHolder) {
 								args->swap(a, arg);
@@ -3040,14 +3073,14 @@ private:
 							any->decls.push_back(var);
 						}
 					}
-					auto info = extractDestructureInfo(assignment, true);
+					auto info = extractDestructureInfo(assignment, true, false);
 					if (!info.first.empty()) {
 						for (const auto& destruct : info.first)
 							for (const auto& item : destruct.items)
-								if (item.isVariable) {
-									if (std::isupper(item.name[0]) && capital) { capital->decls.push_back(item.name);
+								if (!item.targetVar.empty()) {
+									if (std::isupper(item.targetVar[0]) && capital) { capital->decls.push_back(item.targetVar);
 									} else if (any) {
-										any->decls.push_back(item.name);
+										any->decls.push_back(item.targetVar);
 									}
 								}
 					}
@@ -4043,7 +4076,7 @@ private:
 							auto value = x->new_ptr<Value_t>();
 							value->item.set(chainValue);
 							auto exp = newExp(value, x);
-							callVar = singleVariableFrom(exp);
+							callVar = singleVariableFrom(exp, true);
 							if (callVar.empty()) {
 								callVar = getUnusedName("_call_"s);
 								auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -4672,7 +4705,7 @@ private:
 					std::string indexVar = getUnusedName("_idx_"sv);
 					std::string keyVar = getUnusedName("_key_"sv);
 					std::string valueVar = getUnusedName("_value_"sv);
-					auto objVar = singleVariableFrom(spread->exp);
+					auto objVar = singleVariableFrom(spread->exp, true);
 					if (objVar.empty()) {
 						objVar = getUnusedName("_obj_");
 						auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, item);
@@ -5146,7 +5179,7 @@ private:
 		switch (loopTarget->getId()) {
 			case id<star_exp_t>(): {
 				auto star_exp = static_cast<star_exp_t*>(loopTarget);
-				auto listVar = singleVariableFrom(star_exp->value);
+				auto listVar = singleVariableFrom(star_exp->value, true);
 				if (!isLocal(listVar)) listVar.clear();
 				auto indexVar = getUnusedName("_index_"sv);
 				varAfter.push_back(indexVar);
@@ -5816,7 +5849,7 @@ private:
 			assignItem = std::move(temp.back());
 			temp.pop_back();
 		} else if (expList) {
-			auto name = singleVariableFrom(expList);
+			auto name = singleVariableFrom(expList, true);
 			if (!name.empty()) {
 				className = '\"' + name + '\"';
 			}
@@ -5834,12 +5867,12 @@ private:
 					if (auto assignment = assignmentFrom(statement)) {
 						auto names = transformAssignDefs(assignment->expList.get(), DefOp::Mark);
 						varDefs.insert(varDefs.end(), names.begin(), names.end());
-						auto info = extractDestructureInfo(assignment, true);
+						auto info = extractDestructureInfo(assignment, true, false);
 						if (!info.first.empty()) {
 							for (const auto& destruct : info.first)
 								for (const auto& item : destruct.items)
-									if (item.isVariable && addToScope(item.name))
-										varDefs.push_back(item.name);
+									if (!item.targetVar.empty() && addToScope(item.targetVar))
+										varDefs.push_back(item.targetVar);
 						}
 						BLOCK_START
 						auto assign = assignment->action.as<Assign_t>();
@@ -6193,7 +6226,7 @@ private:
 			auto vars = getAssignVars(with);
 			if (vars.front().empty() || isGlobal(vars.front())) {
 				if (with->assigns->values.objects().size() == 1) {
-					auto var = singleVariableFrom(with->assigns->values.objects().front());
+					auto var = singleVariableFrom(with->assigns->values.objects().front(), true);
 					if (!var.empty() && isLocal(var)) {
 						withVar = var;
 					}
@@ -6239,7 +6272,7 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		} else {
-			withVar = singleVariableFrom(with->valueList);
+			withVar = singleVariableFrom(with->valueList, true);
 			if (withVar.empty() || !isLocal(withVar)) {
 				withVar = getUnusedName("_with_"sv);
 				auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -6265,11 +6298,11 @@ private:
 						if (!names.empty()) {
 							return traversal::Stop;
 						}
-						auto info = extractDestructureInfo(assignment, true);
+						auto info = extractDestructureInfo(assignment, true, false);
 						if (!info.first.empty()) {
 							for (const auto& destruct : info.first)
 								for (const auto& item : destruct.items)
-									if (item.isVariable && !isDefined(item.name))
+									if (!item.targetVar.empty() && !isDefined(item.targetVar))
 										return traversal::Stop;
 						}
 						BLOCK_START
@@ -6417,12 +6450,12 @@ private:
 			assignment->action.set(exportNode->assign);
 			transformAssignment(assignment, out);
 			str_list names = transformAssignDefs(expList, DefOp::Get);
-			auto info = extractDestructureInfo(assignment, true);
+			auto info = extractDestructureInfo(assignment, true, false);
 			if (!info.first.empty()) {
 				for (const auto& destruct : info.first)
 					for (const auto& item : destruct.items)
-						if (item.isVariable)
-							names.push_back(item.name);
+						if (!item.targetVar.empty())
+							names.push_back(item.targetVar);
 			}
 			if (_info.exportDefault) {
 				out.back().append(indent() + _info.moduleName + " = "s + names.back() + nlr(exportNode));
@@ -6699,7 +6732,7 @@ private:
 	void transformImportFrom(ImportFrom_t* import, str_list& out) {
 		str_list temp;
 		auto x = import;
-		auto objVar = singleVariableFrom(import->exp);
+		auto objVar = singleVariableFrom(import->exp, true);
 		ast_ptr<false, ExpListAssign_t> objAssign;
 		if (objVar.empty()) {
 			objVar = getUnusedName("_obj_"sv);
@@ -7065,7 +7098,7 @@ private:
 			pushScope();
 		}
 		bool extraScope = false;
-		auto objVar = singleVariableFrom(switchNode->target);
+		auto objVar = singleVariableFrom(switchNode->target, true);
 		if (objVar.empty() || !isLocal(objVar)) {
 			if (usage == ExpUsage::Common || usage == ExpUsage::Assignment) {
 				extraScope = true;
@@ -7082,29 +7115,99 @@ private:
 			transformAssignment(assignment, temp);
 		}
 		const auto& branches = switchNode->branches.objects();
+		int addScope = 0;
+		bool firstBranch = true;
+		std::string tabCheckVar;
 		for (auto branch_ : branches) {
 			auto branch = static_cast<SwitchCase_t*>(branch_);
-			temp.push_back(indent() + (branches.front() == branch ? "if"s : "elseif"s));
-			str_list tmp;
-			const auto& exprs = branch->valueList->exprs.objects();
-			for (auto exp_ : exprs) {
-				auto exp = static_cast<Exp_t*>(exp_);
-				transformExp(exp, tmp, ExpUsage::Closure);
-				if (!singleValueFrom(exp)) {
-					tmp.back() = '(' + tmp.back() + ')';
+			if (auto value = singleValueFrom(branch->valueList);
+				value->item.is<simple_table_t>() ||
+					value->getByPath<SimpleValue_t, TableLit_t>()) {
+				if (!firstBranch) {
+					temp.push_back(indent() + "else"s + nll(branch));
+					pushScope();
+					addScope++;
 				}
-				temp.back().append(' ' + tmp.back() + " == "s +
-					(exp == exprs.back() ? objVar : objVar + " or"s));
+				if (tabCheckVar.empty()) {
+					if (!extraScope) {
+						temp.push_back(indent() + "do"s + nll(branch));
+						pushScope();
+						extraScope = true;
+					}
+					tabCheckVar = getUnusedName("_tab_");
+					forceAddToScope(tabCheckVar);
+					temp.push_back(indent() + "local "s + tabCheckVar + " = \"table\" == "s + globalVar("type", branch) + '(' + objVar + ')' + nll(branch));
+				}
+				std::string matchVar;
+				bool lastBranch = branches.back() == branch_;
+				if (!lastBranch) {
+					matchVar = getUnusedName("_match_");
+					forceAddToScope(matchVar);
+					temp.push_back(indent() + "local "s + matchVar + " = false"s + nll(branch));
+				}
+				temp.back().append(indent() + "if "s + tabCheckVar + " then"s + nll(branch));
+				pushScope();
+				auto assignment = assignmentFrom(static_cast<Exp_t*>(branch->valueList->exprs.front()), toAst<Exp_t>(objVar, branch), branch);
+				auto info = extractDestructureInfo(assignment, true, false);
+				transformAssignment(assignment, temp, true);
+				temp.push_back(indent() + "if"s);
+				bool firstItem = true;
+				for (const auto& destruct : info.first) {
+					for (const auto& item : destruct.items) {
+						str_list tmp;
+						transformExp(item.target, tmp, ExpUsage::Closure);
+						temp.back().append((firstItem ? " " : " and "s) + tmp.back() + " ~= nil"s);
+						if (firstItem) firstItem = false;
+					}
+				}
+				temp.back().append(" then"s + nll(branch));
+				pushScope();
+				transform_plain_body(branch->body, temp, usage, assignList);
+				if (!lastBranch) {
+					temp.push_back(indent() + matchVar + " = true"s + nll(branch));
+				}
+				popScope();
+				if (!lastBranch) {
+					temp.push_back(indent() + "end"s + nll(branch));
+					popScope();
+					temp.push_back(indent() + "end"s + nll(branch));
+					temp.push_back(indent() + "if not "s + matchVar + " then"s + nll(branch));
+					pushScope();
+					addScope++;
+				} else {
+					temp.push_back(indent() + "end"s + nll(branch));
+					popScope();
+				}
+				firstBranch = true;
+			} else {
+				temp.push_back(indent() + (firstBranch ? "if"s : "elseif"s));
+				firstBranch = false;
+				str_list tmp;
+				const auto& exprs = branch->valueList->exprs.objects();
+				for (auto exp_ : exprs) {
+					auto exp = static_cast<Exp_t*>(exp_);
+					transformExp(exp, tmp, ExpUsage::Closure);
+					if (!singleValueFrom(exp)) {
+						tmp.back() = '(' + tmp.back() + ')';
+					}
+					temp.back().append(' ' + tmp.back() + " == "s +
+						(exp == exprs.back() ? objVar : objVar + " or"s));
+				}
+				temp.back().append(" then"s + nll(branch));
+				pushScope();
+				transform_plain_body(branch->body, temp, usage, assignList);
+				popScope();
 			}
-			temp.back().append(" then"s + nll(branch));
-			pushScope();
-			transform_plain_body(branch->body, temp, usage, assignList);
-			popScope();
 		}
 		if (switchNode->lastBranch) {
 			temp.push_back(indent() + "else"s + nll(switchNode->lastBranch));
 			pushScope();
 			transform_plain_body(switchNode->lastBranch, temp, usage, assignList);
+			popScope();
+		}
+		while (addScope > 0) {
+			addScope--;
+			temp.push_back(indent() + "end"s + nlr(switchNode));
 			popScope();
 		}
 		temp.push_back(indent() + "end"s + nlr(switchNode));

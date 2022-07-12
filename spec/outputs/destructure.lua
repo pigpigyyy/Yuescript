@@ -229,12 +229,12 @@ do
 	do
 		local _obj_0 = person
 		name, job = _obj_0.name, _obj_0.job
-	end
-	if name == nil then
-		name = "nameless"
-	end
-	if job == nil then
-		job = "jobless"
+		if name == nil then
+			name = "nameless"
+		end
+		if job == nil then
+			job = "jobless"
+		end
 	end
 	local request
 	request = function(url, options)
@@ -261,29 +261,29 @@ do
 	do
 		local _obj_0 = tb
 		value1, key3 = _obj_0.key1.key2, _obj_0.key3
-	end
-	if value1 == nil then
-		value1 = 123
-	end
-	if key3 == nil then
-		key3 = "abc"
+		if value1 == nil then
+			value1 = 123
+		end
+		if key3 == nil then
+			key3 = "abc"
+		end
 	end
 	local mt, call, add
 	do
 		local _obj_0 = getmetatable(tb)
 		mt, call, add = _obj_0, getmetatable(_obj_0).__call, getmetatable(_obj_0).__add
-	end
-	if mt == nil then
-		mt = {
-			__index = {
-				abc = 123
+		if mt == nil then
+			mt = {
+				__index = {
+					abc = 123
+				}
 			}
-		}
-	end
-	if call == nil then
-		call = (function()
-			return { }
-		end)
+		end
+		if call == nil then
+			call = (function()
+				return { }
+			end)
+		end
 	end
 	local _obj_0 = tb
 	local mtx, y, zItem = getmetatable(_obj_0.x), _obj_0.y, _obj_0.z
@@ -296,27 +296,33 @@ do
 			return nil
 		end
 	end
-	local _obj_1 = getmetatable(tb).func
-	if _obj_1 == nil then
+	do
+		local _tmp_0
 		do
-			local _obj_2 = item
-			if _obj_2 ~= nil then
-				_obj_1 = _obj_2.defVal
+			local _obj_1 = getmetatable(tb)
+			_tmp_0 = _obj_1.func
+		end
+		if _tmp_0 == nil then
+			do
+				local _obj_1 = item
+				if _obj_1 ~= nil then
+					_tmp_0 = _obj_1.defVal
+				end
 			end
 		end
-	end
-	a.b(function()
+		a.b(function()
 			return 123
-		end).c = _obj_1
+		end).c = _tmp_0
+	end
 end
 do
 	local mt, subFunc
 	do
 		local _obj_0 = getmetatable(tb.x)
 		mt, subFunc = _obj_0, _obj_0.__sub
-	end
-	if mt == nil then
-		mt = { }
+		if mt == nil then
+			mt = { }
+		end
 	end
 end
 do
@@ -324,27 +330,28 @@ do
 	do
 		local _obj_0 = tb
 		mt, subFunc = getmetatable(_obj_0.x), getmetatable(_obj_0.x).__sub
-	end
-	if mt == nil then
-		mt = { }
+		if mt == nil then
+			mt = { }
+		end
 	end
 end
 do
-	local a, b, _obj_0
+	local a, b
 	do
-		local _obj_1 = tb
-		a, b, _obj_0 = _obj_1[1], _obj_1[2], _obj_1.c[1]
+		local _obj_0 = tb
+		local _tmp_0
+		a, b, _tmp_0 = _obj_0[1], _obj_0[2], _obj_0.c[1]
+		if a == nil then
+			a = 1
+		end
+		if b == nil then
+			b = 2
+		end
+		if _tmp_0 == nil then
+			_tmp_0 = 3
+		end
+		d.e = _tmp_0
 	end
-	if a == nil then
-		a = 1
-	end
-	if b == nil then
-		b = 2
-	end
-	if _obj_0 == nil then
-		_obj_0 = 3
-	end
-	d.e = _obj_0
 	local _list_0 = tuples
 	for _index_0 = 1, #_list_0 do
 		local _des_0 = _list_0[_index_0]
@@ -363,5 +370,19 @@ do
 	do
 		local _obj_0 = tb
 		a, b = _obj_0[2], _obj_0[4]
+	end
+end
+do
+	do
+		local _obj_0 = x.x.x
+		local _tmp_0, _tmp_1 = _obj_0.x, _obj_0.y
+		if _tmp_0 == nil then
+			_tmp_0 = 1
+		end
+		if _tmp_1 == nil then
+			_tmp_1 = 2
+		end
+		a.b = _tmp_0
+		a.c = _tmp_1
 	end
 end
