@@ -21,7 +21,7 @@ namespace yue {
 extern const std::string_view version;
 extern const std::string_view extension;
 
-using Options = std::unordered_map<std::string,std::string>;
+using Options = std::unordered_map<std::string, std::string>;
 
 struct YueConfig {
 	bool lintGlobalVariable = false;

@@ -2,7 +2,7 @@ $ ->
 	import "yue" as {:options}
 	if options.tl_enabled
 		options.target_extension = "tl"
-	package.path ..= "?.lua;./spec/lib/?.lua"
+	package.path ..= ";./spec/lib/?.lua"
 
 macro to_lua = (code)->
 	"require('yue').to_lua(#{code}, reserve_line_number:false, same_module:true)"

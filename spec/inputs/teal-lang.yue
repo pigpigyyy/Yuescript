@@ -1,7 +1,4 @@
-$ ->
-	package.path = "?.lua;./spec/inputs/?.lua"
-
-import "macro-teal" as {$}
+import "macro-teal" as $
 
 $local "a:{string:number}", {value:123}
 $local "b:number", a.value

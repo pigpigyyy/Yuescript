@@ -59,13 +59,17 @@ local function find_modulepath(name)
 	local name_path = name:match("[\\/]") and name or name:gsub("%.", dirsep)
 	local file_exist, file_path
 	local tried = {}
-	for path in package.path:gmatch("[^;]+") do
-		file_path = path:gsub("?", name_path):gsub("%.lua$", suffix)
-		file_exist = yue.file_exist(file_path)
-		if file_exist then
-			break
-		else
-			tried[#tried + 1] = file_path
+	local paths = {package.path, yue.options.path}
+	for i = 1, #paths do
+		local yue_path = paths[i]
+		for path in yue_path:gmatch("[^;]+") do
+			file_path = path:gsub("?", name_path):gsub("%.lua$", suffix)
+			file_exist = yue.file_exist(file_path)
+			if file_exist then
+				break
+			else
+				tried[#tried + 1] = file_path
+			end
 		end
 	end
 	if file_exist then

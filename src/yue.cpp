@@ -272,6 +272,7 @@ int main(int narg, const char** args) {
 	bool dumpCompileTime = false;
 	std::string targetPath;
 	std::string resultFile;
+	std::string workPath;
 	std::list<std::pair<std::string,std::string>> files;
 	for (int i = 1; i < narg; ++i) {
 		std::string arg = args[i];
@@ -414,10 +415,11 @@ int main(int narg, const char** args) {
 				yue::Utils::trim(value);
 				config.options[key] = value;
 			} else {
-				config.options[argStr] = '1';
+				config.options[argStr] = "";
 			}
 		} else {
 			if (fs::is_directory(arg)) {
+				workPath = arg;
 				for (auto item : fs::recursive_directory_iterator(arg)) {
 					if (!item.is_directory()) {
 						auto ext = item.path().extension().string();
@@ -428,6 +430,7 @@ int main(int narg, const char** args) {
 					}
 				}
 			} else {
+				workPath = fs::path(arg).parent_path().string();
 				files.emplace_back(arg, arg);
 			}
 		}
@@ -450,6 +453,9 @@ int main(int narg, const char** args) {
 					std::istreambuf_iterator<char>());
 				auto conf = config;
 				conf.module = file.first;
+				if (!workPath.empty()) {
+					conf.options["path"] = (fs::path(workPath) / "?.lua").string();
+				}
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
 					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
@@ -467,7 +473,7 @@ int main(int narg, const char** args) {
 						return std::tuple{0, file.first, buf.str()};
 					} else {
 						std::ostringstream buf;
-						buf << "Fail to compile: "sv << file.first << ".\n"sv;
+						buf << "Failed to compile: "sv << file.first << ".\n"sv;
 						buf << result.error << '\n';
 						return std::tuple{1, file.first, buf.str()};
 					}
@@ -511,17 +517,17 @@ int main(int narg, const char** args) {
 							output.write(codes.c_str(), codes.size());
 							return std::tuple{0, targetFile.string(), std::string("Built "sv) + file.first + '\n'};
 						} else {
-							return std::tuple{1, std::string(), std::string("Fail to write file: "sv) + targetFile.string() + '\n'};
+							return std::tuple{1, std::string(), std::string("Failed to write file: "sv) + targetFile.string() + '\n'};
 						}
 					}
 				} else {
 					std::ostringstream buf;
-					buf << "Fail to compile: "sv << file.first << ".\n";
+					buf << "Failed to compile: "sv << file.first << ".\n";
 					buf << result.error << '\n';
 					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {
-				return std::tuple{1, std::string(), std::string("Fail to read file: "sv) + file.first + ".\n"};
+				return std::tuple{1, std::string(), std::string("Failed to read file: "sv) + file.first + ".\n"};
 			}
 		});
 		results.push_back(std::move(task));
@@ -568,7 +574,7 @@ int main(int narg, const char** args) {
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						ret = 2;
 						std::string err = lua_tostring(L, -1);
-						errs.push_back(std::string("Fail to minify: "sv) + file + '\n' + err + '\n');
+						errs.push_back(std::string("Failed to minify: "sv) + file + '\n' + err + '\n');
 					} else {
 						size_t size = 0;
 						const char* minifiedCodes = lua_tolstring(L, -1, &size);
@@ -583,7 +589,7 @@ int main(int narg, const char** args) {
 					}
 				} else {
 					ret = 2;
-					errs.push_back(std::string("Fail to minify: "sv) + file + '\n');
+					errs.push_back(std::string("Failed to minify: "sv) + file + '\n');
 				}
 			} else {
 				std::cout << msg;

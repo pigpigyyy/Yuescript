@@ -266,7 +266,7 @@ test: release
 	@mkdir -p $(TEST_OUTPUT)
 	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
-	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) -tl_enabled=true
+	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) -tl_enabled
 	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(TEST_OUTPUT)/teal-lang.lua
 	@echo -en "Compile time: "
 	@$(END_TIME)
@@ -279,7 +279,7 @@ test: release
 gen: release
 	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
-	@./$(BIN_NAME) $(TEST_INPUT) -t $(GEN_OUTPUT) -tl_enabled=true
+	@./$(BIN_NAME) $(TEST_INPUT) -t $(GEN_OUTPUT) -tl_enabled
 	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(GEN_OUTPUT)/teal-lang.lua
 	@echo -en "Compile time: "
 	@$(END_TIME)

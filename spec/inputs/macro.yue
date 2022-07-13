@@ -1,6 +1,3 @@
-$ ->
-	package.path = "?.lua;./spec/inputs/?.lua"
-
 import "macro-export" as {
 	$, -- import all macros
 	$config: $myconfig, -- rename macro $config to $myconfig

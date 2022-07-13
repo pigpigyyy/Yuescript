@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.13.2"sv;
+const std::string_view version = "0.13.3"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -6887,13 +6887,23 @@ private:
 				DEFER(lua_settop(L, top));
 				pushYue("find_modulepath"sv); // cur find_modulepath
 				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
-				if (lua_pcall(L, 1, 1, 0) != 0) {
+				if (lua_pcall(L, 1, 2, 0) != 0) {
 					std::string err = lua_tostring(L, -1);
 					throw std::logic_error(_info.errorMessage("failed to resolve module path\n"s + err, x));
 				}
-				if (lua_isnil(L, -1) != 0) {
-					throw std::logic_error(_info.errorMessage("failed to find module '"s + moduleName + '\'', x));
+				if (lua_isnil(L, -2) != 0) {
+					str_list files;
+					if (lua_istable(L, -1) != 0) {
+						int size = static_cast<int>(lua_objlen(L, -1));
+						for (int i = 0; i < size; i++) {
+							lua_rawgeti(L, -1, i + 1);
+							files.push_back("no file \""s + lua_tostring(L, -1) + "\""s);
+							lua_pop(L, 1);
+						}
+					}
+					throw std::logic_error(_info.errorMessage("module '"s + moduleName + "\' not found:\n\t"s + join(files, "\n\t"sv), x));
 				}
+				lua_pop(L, 1);
 				std::string moduleFullName = lua_tostring(L, -1);
 				lua_pop(L, 1); // cur
 				if (!isModuleLoaded(moduleFullName)) {

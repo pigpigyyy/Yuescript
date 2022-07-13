@@ -1,5 +1,3 @@
-$ -> package.path = "?.lua;./spec/inputs/?.lua"
-
 import "macro-todo" as $
 
 import "macro-todo" as {$, :$todo}
