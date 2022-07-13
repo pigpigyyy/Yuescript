@@ -2,6 +2,66 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.13.4
+
+### Added Features
+
+* Added update syntax support for `var //= 5`.
+* Added metamethod syntax support for class block.
+   ```moonscript
+   class Foo
+     new: (x) => @x = x
+     mul#: (y) => @x * y
+     ["abc"]#: 123
+     :add
+     :add#
+   ```
+* Added support `with` block access with `[key]` syntax.
+   ```moonscript
+   with tb
+     [1] = [2]\func!
+     print [3]
+     with [abc]
+       [4] = 1
+     [] = "abc"
+   ```
+
+* Added table pattern matching syntax.
+   ```moonscript
+   items =
+     * x: 100
+       y: 200
+     * width: 300
+       height: 400
+
+   for item in *items
+     switch item
+       when :x, :y
+         print "Vec2 #{x}, #{y}"
+       when :width, :height
+         print "size #{width}, #{height}"
+   ```
+
+### Fixed Issues
+
+* Fix `import X as {_}` generates invalid Lua code.
+* Fix attribute syntax with line decorator compiles to unexpected codes.
+   ```moonscript
+   const a = 1 if true
+   ```
+   now compiles to:
+   ```lua
+   local a <const> = (function()
+     if true then
+       return 1
+     end
+   end)()
+   ```
+* Fix continue in `repeat` loop gives invalid code.
+* Fix variables with attributes "const" and "close" should both get constant check in compiler.
+* Fix ambiguous syntax starting with `[[`. Expressions starting with `[[` will now be always treated like raw strings other than nested list comprehensions.
+* Fix module can export both macros and normal values. The macro exporting module can now only allow macro definition, macro importing and macro expansion in place for better compiler performance.
+
 ## v0.10.17
 
 ### Added Features

@@ -2343,19 +2343,23 @@ for item in *items
 You can use default values to optionally destructure the table for some fields.
 
 ```moonscript
-item = x: 100
+item = {}
+
+{pos: {:x = 50, :y = 200}} = item -- get error: attempt to index a nil value (field 'pos')
 
 switch item
-  when {:x, :y = 200}
-    print "Vec2 #{x}, #{y}" -- table matching will pass
+  when {pos: {:x = 50, :y = 200}}
+    print "Vec2 #{x}, #{y}" -- table destructuring will still pass
 ```
 <YueDisplay>
 <pre>
-item = x: 100
+item = {}
+
+{pos: {:x = 50, :y = 200}} = item -- get error: attempt to index a nil value (field 'pos')
 
 switch item
-  when {:x, :y = 200}
-    print "Vec2 #{x}, #{y}" -- table matching will pass
+  when {pos: {:x = 50, :y = 200}}
+    print "Vec2 #{x}, #{y}" -- table destructuring will still pass
 </pre>
 </YueDisplay>
 
