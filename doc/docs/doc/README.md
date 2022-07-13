@@ -311,7 +311,7 @@ end
 
 ### Export Macro
 
-Macro functions can be exported from a module and get imported in another module. It is recommanded to export macro functions in a single file to speed up compilation.
+Macro functions can be exported from a module and get imported in another module. You have to put export macro functions in a single file to be used, and only macro definition, macro importing and macro expansion in place can be put into the macro exporting module.
 ```moonscript
 -- file: utils.yue
 export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
@@ -342,6 +342,20 @@ import "utils" as {
 }
 {1, 2, 3} |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
 ]]
+</pre>
+</YueDisplay>
+
+### Builtin Macro
+
+There are some builtin macros but you can override them by declaring macros with the same names.
+```moonscript
+print $FILE -- get string of current module name
+print $LINE -- get number 2
+```
+<YueDisplay>
+<pre>
+print $FILE -- get string of current module name
+print $LINE -- get number 2
 </pre>
 </YueDisplay>
 
@@ -1236,10 +1250,6 @@ const a = 123
 close _ = close#: -> print "Out of scope."
 </pre>
 </YueDisplay>
-
-::: warning NOTICE
-The rest of the document is describing mostly the same syntax taken from Moonscript. So you may as well refer to the [Moonscript Reference](http://moonscript.org/reference) to get the same explanation.
-:::
 
 ## Literals
 
@@ -2295,6 +2305,60 @@ msg = switch math.random(1, 5)
 
 It is worth noting the order of the case comparison expression. The case’s expression is on the left hand side. This can be useful if the case’s expression wants to overwrite how the comparison is done by defining an eq metamethod.
 
+### Table Matching
+
+You can do table matching in a switch when clause, if the table can be destructured by a specific structure and get non-nil values.
+
+```moonscript
+items =
+  * x: 100
+    y: 200
+  * width: 300
+    height: 400
+
+for item in *items
+  switch item
+    when :x, :y
+      print "Vec2 #{x}, #{y}"
+    when :width, :height
+      print "size #{width}, #{height}"
+```
+<YueDisplay>
+<pre>
+items =
+  * x: 100
+    y: 200
+  * width: 300
+    height: 400
+
+for item in *items
+  switch item
+    when :x, :y
+      print "Vec2 #{x}, #{y}"
+    when :width, :height
+      print "size #{width}, #{height}"
+</pre>
+</YueDisplay>
+
+You can use default values to optionally destructure the table for some fields.
+
+```moonscript
+item = x: 100
+
+switch item
+  when {:x, :y = 200}
+    print "Vec2 #{x}, #{y}" -- table matching will pass
+```
+<YueDisplay>
+<pre>
+item = x: 100
+
+switch item
+  when {:x, :y = 200}
+    print "Vec2 #{x}, #{y}" -- table matching will pass
+</pre>
+</YueDisplay>
+
 ## Object Oriented Programming
 
 In these examples, the generated Lua code may appear overwhelming. It is best to focus on the meaning of the Yuescript code at first, then look into the Lua code if you wish to know the implementation details.
@@ -2717,6 +2781,51 @@ x = class
 x = class
 </pre>
 </YueDisplay>
+
+### Class Mixing
+
+You can do mixing with keyword `using` to copy functions from either a plain table or a predefined class object into your new class. When doing mixing with a plain table, you can override the class indexing function (metamethod `__index`) to your customized implementation. When doing mixing with an existing class object, the class object's metamethods won't be copied.
+
+```moonscript
+MyIndex = __index: var: 1
+
+class X using MyIndex
+  func: =>
+    print 123
+
+x = X!
+print x.var
+
+class Y using X
+
+y = Y!
+y\func!
+
+assert y.__class.__parent ~= X -- X is not parent of Y
+```
+<YueDisplay>
+<pre>
+MyIndex = __index: var: 1
+
+class X using MyIndex
+  func: =>
+    print 123
+
+x = X!
+print x.var
+
+class Y using X
+
+y = Y!
+y\func!
+
+assert y.__class.__parent ~= X -- X is not parent of Y
+</pre>
+</YueDisplay>
+
+::: warning NOTICE
+The rest of the document is describing mostly the same syntax taken from Moonscript. So you may as well refer to the [Moonscript Reference](http://moonscript.org/reference) to get the same explanation.
+:::
 
 ## With Statement
 

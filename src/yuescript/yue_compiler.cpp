@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.13.3"sv;
+const std::string_view version = "0.13.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1582,12 +1582,22 @@ private:
 							added--;
 						}
 						if (pair.defVal) {
-							auto stmt = toAst<Statement_t>(pair.targetVar + "=nil if "s + pair.targetVar + "==nil", pair.defVal);
-							auto defAssign = stmt->content.as<ExpListAssign_t>();
-							auto assign = defAssign->action.as<Assign_t>();
-							assign->values.clear();
-							assign->values.push_back(pair.defVal);
-							transformStatement(stmt, temp);
+							bool isNil = false;
+							if (auto v1 = singleValueFrom(pair.defVal)) {
+								if (auto v2 = v1->item.as<SimpleValue_t>()) {
+									if (auto v3 = v2->value.as<const_value_t>()) {
+										isNil = _parser.toString(v3) == "nil"sv;
+									}
+								}
+							}
+							if (!isNil) {
+								auto stmt = toAst<Statement_t>(pair.targetVar + "=nil if "s + pair.targetVar + "==nil", pair.defVal);
+								auto defAssign = stmt->content.as<ExpListAssign_t>();
+								auto assign = defAssign->action.as<Assign_t>();
+								assign->values.clear();
+								assign->values.push_back(pair.defVal);
+								transformStatement(stmt, temp);
+							}
 						}
 						continue;
 					}
@@ -1709,12 +1719,22 @@ private:
 				}
 				for (const auto& item : destruct.items) {
 					if (item.defVal) {
-						auto stmt = toAst<Statement_t>(item.targetVar + "=nil if "s + item.targetVar + "==nil", item.defVal);
-						auto defAssign = stmt->content.as<ExpListAssign_t>();
-						auto assign = defAssign->action.as<Assign_t>();
-						assign->values.clear();
-						assign->values.push_back(item.defVal);
-						transformStatement(stmt, temp);
+						bool isNil = false;
+						if (auto v1 = singleValueFrom(item.defVal)) {
+							if (auto v2 = v1->item.as<SimpleValue_t>()) {
+								if (auto v3 = v2->value.as<const_value_t>()) {
+									isNil = _parser.toString(v3) == "nil"sv;
+								}
+							}
+						}
+						if (!isNil) {
+							auto stmt = toAst<Statement_t>(item.targetVar + "=nil if "s + item.targetVar + "==nil", item.defVal);
+							auto defAssign = stmt->content.as<ExpListAssign_t>();
+							auto assign = defAssign->action.as<Assign_t>();
+							assign->values.clear();
+							assign->values.push_back(item.defVal);
+							transformStatement(stmt, temp);
+						}
 					}
 				}
 				for (const auto& item : leftPairs) {
@@ -7160,32 +7180,34 @@ private:
 				auto assignment = assignmentFrom(static_cast<Exp_t*>(branch->valueList->exprs.front()), toAst<Exp_t>(objVar, branch), branch);
 				auto info = extractDestructureInfo(assignment, true, false);
 				transformAssignment(assignment, temp, true);
-				temp.push_back(indent() + "if"s);
-				bool firstItem = true;
+				str_list conds;
 				for (const auto& destruct : info.first) {
 					for (const auto& item : destruct.items) {
-						str_list tmp;
-						transformExp(item.target, tmp, ExpUsage::Closure);
-						temp.back().append((firstItem ? " " : " and "s) + tmp.back() + " ~= nil"s);
-						if (firstItem) firstItem = false;
+						if (!item.defVal) {
+							transformExp(item.target, conds, ExpUsage::Closure);
+							conds.back().append(" ~= nil"s);
+						}
 					}
 				}
-				temp.back().append(" then"s + nll(branch));
-				pushScope();
-				transform_plain_body(branch->body, temp, usage, assignList);
+				if (!conds.empty()) {
+					temp.push_back(indent() + "if "s + join(conds, " and "sv) + " then"s + nll(branch));
+					pushScope();
+				}
 				if (!lastBranch) {
 					temp.push_back(indent() + matchVar + " = true"s + nll(branch));
 				}
-				popScope();
-				if (!lastBranch) {
+				transform_plain_body(branch->body, temp, usage, assignList);
+				if (!conds.empty()) {
+					popScope();
 					temp.push_back(indent() + "end"s + nll(branch));
+				}
+				if (!lastBranch) {
 					popScope();
 					temp.push_back(indent() + "end"s + nll(branch));
 					temp.push_back(indent() + "if not "s + matchVar + " then"s + nll(branch));
 					pushScope();
 					addScope++;
 				} else {
-					temp.push_back(indent() + "end"s + nll(branch));
 					popScope();
 				}
 				firstBranch = true;

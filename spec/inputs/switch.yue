@@ -139,10 +139,10 @@ do
 			"#{a + b}"
 		when 1, 2, 3, 4, 5
 			"number 1 - 5"
-		when {:alwaysMatch = "fallback"}
-			alwaysMatch
+		when {:matchAnyTable = "fallback"}
+			matchAnyTable
 		else
-			"should not reach here"
+			"should not reach here unless it is not a table"
 
 nil
 

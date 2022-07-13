@@ -182,8 +182,8 @@ do
 				local x = item.x
 				local y = item.y
 				if x ~= nil and y ~= nil then
-					print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 					_match_0 = true
+					print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 				end
 			end
 			if not _match_0 then
@@ -192,8 +192,8 @@ do
 					local width = item.width
 					local height = item.height
 					if width ~= nil and height ~= nil then
-						print("Size " .. tostring(width) .. ", " .. tostring(height))
 						_match_1 = true
+						print("Size " .. tostring(width) .. ", " .. tostring(height))
 					end
 				end
 				if not _match_1 then
@@ -204,12 +204,12 @@ do
 						if _tab_0 then
 							local cls = item.__class
 							if cls ~= nil then
+								_match_2 = true
 								if ClassA == cls then
 									print("Object A")
 								elseif ClassB == cls then
 									print("Object B")
 								end
-								_match_2 = true
 							end
 						end
 						if not _match_2 then
@@ -241,9 +241,7 @@ do
 			if b == nil then
 				b = 2
 			end
-			if a ~= nil and b ~= nil then
-				print(a, b)
-			end
+			print(a, b)
 		end
 	end
 end
@@ -258,8 +256,8 @@ do
 			local x = tb.x
 			local y = tb.y
 			if x ~= nil and y ~= nil then
-				print("x: " .. tostring(x) .. " with y: " .. tostring(y))
 				_match_0 = true
+				print("x: " .. tostring(x) .. " with y: " .. tostring(y))
 			end
 		end
 		if not _match_0 then
@@ -284,8 +282,8 @@ do
 			if _tab_0 then
 				local x = _exp_0.x
 				if x ~= nil then
-					matched = x
 					_match_0 = true
+					matched = x
 				end
 			end
 			if not _match_0 then
@@ -310,8 +308,8 @@ do
 				local a = _exp_0.a
 				local b = _exp_0.b
 				if a ~= nil and b ~= nil then
-					return tostring(a + b)
 					_match_0 = true
+					return tostring(a + b)
 				end
 			end
 			if not _match_0 then
@@ -319,15 +317,13 @@ do
 					return "number 1 - 5"
 				else
 					if _tab_0 then
-						local alwaysMatch = _exp_0.alwaysMatch
-						if alwaysMatch == nil then
-							alwaysMatch = "fallback"
+						local matchAnyTable = _exp_0.matchAnyTable
+						if matchAnyTable == nil then
+							matchAnyTable = "fallback"
 						end
-						if alwaysMatch ~= nil then
-							return alwaysMatch
-						end
+						return matchAnyTable
 					else
-						return "should not reach here"
+						return "should not reach here unless it is not a table"
 					end
 				end
 			end
