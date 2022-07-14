@@ -56,7 +56,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.13.4"sv;
+const std::string_view version = "0.13.5"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2012,7 +2012,7 @@ private:
 				pairs.push_back({
 					p.target,
 					p.targetVar,
-					".#"s + sep + p.structure,
+					".#"s + (p.structure.empty() ? Empty : sep + p.structure),
 					p.defVal
 				});
 			}

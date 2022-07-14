@@ -144,5 +144,10 @@ do
 		else
 			"should not reach here unless it is not a table"
 
+do
+	switch y
+		when {x: #:mt}
+			print mt
+
 nil
 
