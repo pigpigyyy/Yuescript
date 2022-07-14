@@ -108,10 +108,20 @@ do
 
 do
 	tb = {}
+
 	switch tb
 		when {:a = 1, :b = 2}
 			print a, b
 
+	switch tb
+		when {:a, :b = 2}
+			print "partially matched", a, b
+
+	switch tb
+		when {:a, :b}
+			print a, b
+		else
+			print "not matched"
 do
 	tb = x: "abc"
 	switch tb

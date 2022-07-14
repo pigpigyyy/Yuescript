@@ -247,6 +247,34 @@ do
 			print(a, b)
 		end
 	end
+	do
+		local _tab_0 = "table" == type(tb)
+		if _tab_0 then
+			local a = tb.a
+			local b = tb.b
+			if b == nil then
+				b = 2
+			end
+			if a ~= nil then
+				print("partially matched", a, b)
+			end
+		end
+	end
+	do
+		local _tab_0 = "table" == type(tb)
+		local _match_0 = false
+		if _tab_0 then
+			local a = tb.a
+			local b = tb.b
+			if a ~= nil and b ~= nil then
+				_match_0 = true
+				print(a, b)
+			end
+		end
+		if not _match_0 then
+			print("not matched")
+		end
+	end
 end
 do
 	local tb = {
