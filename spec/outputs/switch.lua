@@ -213,12 +213,15 @@ do
 							end
 						end
 						if not _match_2 then
+							local _match_3 = false
 							if _tab_0 then
 								local mt = getmetatable(item)
 								if mt ~= nil then
+									_match_3 = true
 									print("A table with metatable")
 								end
-							else
+							end
+							if not _match_3 then
 								print("item not accepted!")
 							end
 						end
@@ -316,13 +319,16 @@ do
 				if 1 == _exp_0 or 2 == _exp_0 or 3 == _exp_0 or 4 == _exp_0 or 5 == _exp_0 then
 					return "number 1 - 5"
 				else
+					local _match_1 = false
 					if _tab_0 then
 						local matchAnyTable = _exp_0.matchAnyTable
 						if matchAnyTable == nil then
 							matchAnyTable = "fallback"
 						end
+						_match_1 = true
 						return matchAnyTable
-					else
+					end
+					if not _match_1 then
 						return "should not reach here unless it is not a table"
 					end
 				end

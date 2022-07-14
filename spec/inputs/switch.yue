@@ -146,7 +146,7 @@ do
 
 do
 	switch y
-		when {x: #:mt}
+		when {x: #: mt}
 			print mt
 
 nil
