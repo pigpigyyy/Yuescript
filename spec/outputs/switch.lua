@@ -330,4 +330,22 @@ do
 		end
 	end
 end
+do
+	do
+		local _exp_0 = y
+		local _tab_0 = "table" == type(_exp_0)
+		if _tab_0 then
+			local mt = (function()
+				local _obj_0 = _exp_0.x
+				if _obj_0 ~= nil then
+					return getmetatable(_obj_0)
+				end
+				return nil
+			end)()
+			if mt ~= nil then
+				print(mt)
+			end
+		end
+	end
+end
 return nil
