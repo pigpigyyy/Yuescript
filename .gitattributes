@@ -1,3 +1,4 @@
 src/3rdParty/* linguist-vendored
 spec/lib/* linguist-vendored
+win-build/* linguist-vendored
 
