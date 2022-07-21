@@ -113,6 +113,7 @@ int main(int narg, const char** args) {
 "   -s       Use spaces in generated codes instead of tabs\n"
 "   -p       Write output to standard out\n"
 "   -b       Dump compile time (doesn't write output)\n"
+"   -g       Dump global variables used in NAME LINE COLUMN\n"
 "   -l       Write line numbers from source codes\n"
 "   -v       Print version\n"
 #ifndef YUE_COMPILER_ONLY
@@ -270,6 +271,7 @@ int main(int narg, const char** args) {
 	config.useSpaceOverTab = false;
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
+	bool lintGlobal = false;
 	std::string targetPath;
 	std::string resultFile;
 	std::string workPath;
@@ -380,6 +382,9 @@ int main(int narg, const char** args) {
 			config.reserveLineNumber = true;
 		} else if (arg == "-p"sv) {
 			writeToFile = false;
+		} else if (arg == "-g"sv) {
+			writeToFile = false;
+			lintGlobal = true;
 		} else if (arg == "-t"sv) {
 			++i;
 			if (i < narg) {
@@ -478,10 +483,19 @@ int main(int narg, const char** args) {
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
+				conf.lintGlobalVariable = lintGlobal;
 				auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
 				if (result.error.empty()) {
 					if (!writeToFile) {
-						return std::tuple{0, file.first, result.codes + '\n'};
+						if (lintGlobal) {
+							std::ostringstream buf;
+							for (const auto& global : *result.globals) {
+								buf << global.name << ' ' << global.line << ' ' << global.col << '\n';
+							}
+							return std::tuple{0, file.first, buf.str() + '\n'};
+						} else {
+							return std::tuple{0, file.first, result.codes + '\n'};
+						}
 					} else {
 						std::string targetExtension("lua"sv);
 						if (result.options) {

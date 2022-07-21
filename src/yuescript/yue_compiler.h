@@ -12,6 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string_view>
 #include <tuple>
 #include <list>
+#include <vector>
 #include <memory>
 #include <unordered_map>
 #include <functional>
@@ -40,7 +41,7 @@ struct GlobalVar {
 	int col;
 };
 
-using GlobalVars = std::list<GlobalVar>;
+using GlobalVars = std::vector<GlobalVar>;
 
 struct CompileInfo {
 	std::string codes;

@@ -155,6 +155,16 @@ public:
 						std::tie(line, col) = var.second;
 						globals->push_back({var.first, line, col});
 					}
+					std::sort(globals->begin(), globals->end(), [](const GlobalVar& varA, const GlobalVar& varB)
+					{
+						if (varA.line < varB.line) {
+							return true;
+						} else if (varA.line == varB.line) {
+							return varA.col < varB.col;
+						} else {
+							return false;
+						}
+					});
 				}
 #ifndef YUE_NO_MACRO
 				if (L) {
