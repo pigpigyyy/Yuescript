@@ -11,25 +11,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace pl = parserlib;
 
 namespace yue {
-using namespace std::string_view_literals;
 
 std::unordered_set<std::string> LuaKeywords = {
-	"and", "break", "do", "else", "elseif",
-	"end", "false", "for", "function", "goto",
-	"if", "in", "local", "nil", "not",
-	"or", "repeat", "return", "then", "true",
-	"until", "while"
+	"and"s, "break"s, "do"s, "else"s, "elseif"s,
+	"end"s, "false"s, "for"s, "function"s, "goto"s,
+	"if"s, "in"s, "local"s, "nil"s, "not"s,
+	"or"s, "repeat"s, "return"s, "then"s, "true"s,
+	"until"s, "while"s
 };
 
 std::unordered_set<std::string> Keywords = {
-	"and", "break", "do", "else", "elseif",
-	"end", "false", "for", "function", "goto",
-	"if", "in", "local", "nil", "not",
-	"or", "repeat", "return", "then", "true",
-	"until", "while", // Lua keywords
-	"as", "class", "continue", "export", "extends",
-	"from", "global", "import", "macro", "switch",
-	"try", "unless", "using", "when", "with" // Yue keywords
+	"and"s, "break"s, "do"s, "else"s, "elseif"s,
+	"end"s, "false"s, "for"s, "function"s, "goto"s,
+	"if"s, "in"s, "local"s, "nil"s, "not"s,
+	"or"s, "repeat"s, "return"s, "then"s, "true"s,
+	"until"s, "while"s, // Lua keywords
+	"as"s, "class"s, "continue"s, "export"s, "extends"s,
+	"from"s, "global"s, "import"s, "macro"s, "switch"s,
+	"try"s, "unless"s, "using"s, "when"s, "with"s // Yue keywords
 };
 
 YueParser::YueParser() {
@@ -86,7 +85,7 @@ YueParser::YueParser() {
 		if (isValid) {
 			if (st->buffer == st->moduleName) {
 				st->moduleFix++;
-				st->moduleName = std::string("_module_"sv) + std::to_string(st->moduleFix);
+				st->moduleName = "_module_"s + std::to_string(st->moduleFix);
 			}
 		}
 		st->buffer.clear();
@@ -179,10 +178,15 @@ YueParser::YueParser() {
 
 	local_flag = expr('*') | expr('^');
 	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
-	Attrib = (expr("const") | expr("close")) >> not_(AlphaNum);
 	Local = key("local") >> (Space >> local_flag | local_values);
 
-	LocalAttrib = Attrib >> NameList >> Assign;
+	const_attrib = key("const");
+	close_attrib = key("close");
+	local_const_item = (Space >> Variable | simple_table | TableLit);
+	LocalAttrib = (
+		const_attrib >> Seperator >> local_const_item >> *(sym(',') >> local_const_item) |
+		close_attrib >> Seperator >> Space >> Variable >> *(sym(',') >> Space >> Variable)
+	) >> Assign;
 
 	colon_import_name = sym('\\') >> Space >> Variable;
 	ImportName = colon_import_name | Space >> Variable;
@@ -754,6 +758,10 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 		++it;
 	}
 	auto line = Converter{}.to_bytes(std::wstring(begin, end));
+	while (col < static_cast<int>(line.size())
+			&& (line[col] == ' ' || line[col] == '\t')) {
+		col++;
+	}
 	Utils::replace(line, "\t"sv, " "sv);
 	std::ostringstream buf;
 	buf << loc->m_begin.m_line << ": "sv << msg <<

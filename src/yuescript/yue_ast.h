@@ -118,25 +118,28 @@ AST_NODE(Local)
 	AST_MEMBER(Local, &item)
 AST_END(Local, "local"sv)
 
+AST_LEAF(const_attrib)
+AST_END(const_attrib, "const"sv)
+
+AST_LEAF(close_attrib)
+AST_END(close_attrib, "close"sv)
+
+class simple_table_t;
+class TableLit_t;
 class Assign_t;
 
-AST_LEAF(Attrib)
-AST_END(Attrib, "attrib"sv)
-
 AST_NODE(LocalAttrib)
-	ast_ptr<true, Attrib_t> attrib;
-	ast_ptr<true, NameList_t> nameList;
+	ast_sel<true, const_attrib_t, close_attrib_t> attrib;
+	ast_ptr<true, Seperator_t> sep;
+	ast_sel_list<true, Variable_t, simple_table_t, TableLit_t> leftList;
 	ast_ptr<true, Assign_t> assign;
-	AST_MEMBER(LocalAttrib, &attrib, &nameList, &assign)
+	AST_MEMBER(LocalAttrib, &attrib, &sep, &leftList, &assign)
 AST_END(LocalAttrib, "local_attrib"sv)
 
 AST_NODE(colon_import_name)
 	ast_ptr<true, Variable_t> name;
 	AST_MEMBER(colon_import_name, &name)
 AST_END(colon_import_name, "colon_import_name"sv)
-
-class Exp_t;
-class TableLit_t;
 
 AST_LEAF(import_literal_inner)
 AST_END(import_literal_inner, "import_literal_inner"sv)
@@ -146,6 +149,8 @@ AST_NODE(ImportLiteral)
 	ast_sel_list<true, import_literal_inner_t> inners;
 	AST_MEMBER(ImportLiteral, &sep, &inners)
 AST_END(ImportLiteral, "import_literal"sv)
+
+class Exp_t;
 
 AST_NODE(ImportFrom)
 	ast_ptr<true, Seperator_t> sep;
@@ -499,7 +504,6 @@ class String_t;
 class const_value_t;
 class ClassDecl_t;
 class unary_value_t;
-class TableLit_t;
 class FunLit_t;
 
 AST_NODE(SimpleValue)

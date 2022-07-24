@@ -187,18 +187,18 @@ k = {
 	["hello"] = "world",
 	["one"] = "zone"
 }
-local f = "one", {
+local f1, f2, f3 = "one", {
 	["two"] = three
 }, "four"
-f = {
+f1, f2 = {
 	["two"] = three
 }, "four"
-f = {
+f1 = {
 	"one",
 	["two"] = three,
 	"four"
 }
-local j = "one", {
+local j1, j2, j3, j4 = "one", {
 	["two"] = three,
 	["four"] = five
 }, 6, 7

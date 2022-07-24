@@ -26,7 +26,7 @@ do
 		local _obj_0 = yeah
 		a, b, c, d = _obj_0.a, _obj_0.b, _obj_0.c, _obj_0.d
 	end
-	local _ = two
+	b = two
 	a = one[1]
 	c = nil
 	b = one[1]
@@ -56,7 +56,10 @@ do
 	end
 	do
 		a = tbl
-		b, c = _.b, _.c
+		do
+			local _obj_0 = _
+			b, c = _obj_0.b, _obj_0.c
+		end
 	end
 	do
 		b = _
@@ -384,5 +387,23 @@ do
 		end
 		a.b = _tmp_0
 		a.c = _tmp_1
+	end
+end
+do
+	local width, height
+	do
+		local _obj_0 = View.size
+		width, height = _obj_0.width, _obj_0.height
+	end
+	local x, y
+	do
+		local _obj_0 = point
+		x, y = _obj_0.x, _obj_0.y
+		if x == nil then
+			x = 0.0
+		end
+		if y == nil then
+			y = 0.0
+		end
 	end
 end

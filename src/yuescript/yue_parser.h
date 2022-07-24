@@ -21,6 +21,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_ast.h"
 
 namespace yue {
+using namespace std::string_view_literals;
+using namespace std::string_literals;
 using namespace parserlib;
 
 struct ParseInfo {
@@ -77,7 +79,7 @@ protected:
 		int exportCount = 0;
 		int moduleFix = 0;
 		size_t stringOpen = 0;
-		std::string moduleName = "_module_0";
+		std::string moduleName = "_module_0"s;
 		std::string buffer;
 		std::stack<int> indents;
 		std::stack<bool> noDoStack;
@@ -189,6 +191,7 @@ private:
 	rule expo_value;
 	rule expo_exp;
 	rule exp_not_tab;
+	rule local_const_item;
 	rule empty_line_stop;
 	rule Line;
 	rule Shebang;
@@ -209,8 +212,9 @@ private:
 	AST_RULE(NameList)
 	AST_RULE(local_flag)
 	AST_RULE(local_values)
-	AST_RULE(Attrib)
 	AST_RULE(Local)
+	AST_RULE(const_attrib)
+	AST_RULE(close_attrib)
 	AST_RULE(LocalAttrib);
 	AST_RULE(colon_import_name)
 	AST_RULE(import_literal_inner)

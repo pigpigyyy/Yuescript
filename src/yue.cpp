@@ -21,6 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string_view>
 #include <memory>
 using namespace std::string_view_literals;
+using namespace std::string_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
@@ -91,10 +92,10 @@ static const char luaminifyCodes[] =
 
 static void pushLuaminify(lua_State* L) {
 	if (luaL_loadbuffer(L, luaminifyCodes, sizeof(luaminifyCodes) / sizeof(luaminifyCodes[0]) - 1, "=(luaminify)") != 0) {
-		std::string err = std::string("failed to load luaminify module.\n") + lua_tostring(L, -1);
+		std::string err = "failed to load luaminify module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	} else if (lua_pcall(L, 0, 1, 0) != 0) {
-		std::string err = std::string("failed to init luaminify module.\n") + lua_tostring(L, -1);
+		std::string err = "failed to init luaminify module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	}
 }
@@ -209,7 +210,7 @@ int main(int narg, const char** args) {
 			DEFER(lua_settop(L, top));
 			pushYue(L, "loadstring"sv);
 			lua_pushlstring(L, codes.c_str(), codes.size());
-			lua_pushstring(L, (std::string("=(repl ") + std::to_string(count) + ')').c_str());
+			lua_pushstring(L, ("=(repl "s + std::to_string(count) + ')').c_str());
 			pushOptions(L, -1);
 			const std::string_view Err = "\033[35m"sv, Val = "\033[33m"sv, Stop = "\033[0m\n"sv;
 			if (lua_pcall(L, 3, 2, 0) != 0) {
@@ -218,7 +219,7 @@ int main(int narg, const char** args) {
 			}
 			if (lua_isnil(L, -2) != 0) {
 				std::string err = lua_tostring(L, -1);
-				auto modName = std::string("(repl "sv) + std::to_string(count) + "):";
+				auto modName = "(repl "s + std::to_string(count) + "):"s;
 				if (err.substr(0, modName.size()) == modName) {
 					err = err.substr(modName.size());
 				}
@@ -409,8 +410,8 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
-		} else if (arg.size() > 1 && arg.substr(0, 1) == "-"sv && arg.substr(1, 1) != "-"sv) {
-			auto argStr = arg.substr(1);
+		} else if (arg.size() > 2 && arg.substr(0, 2) == "--"sv && arg.substr(2, 1) != "-"sv) {
+			auto argStr = arg.substr(2);
 			yue::Utils::trim(argStr);
 			size_t idx = argStr.find('=');
 			if (idx != std::string::npos) {
@@ -420,7 +421,7 @@ int main(int narg, const char** args) {
 				yue::Utils::trim(value);
 				config.options[key] = value;
 			} else {
-				config.options[argStr] = "";
+				config.options[argStr] = std::string();
 			}
 		} else {
 			if (fs::is_directory(arg)) {
@@ -459,7 +460,13 @@ int main(int narg, const char** args) {
 				auto conf = config;
 				conf.module = file.first;
 				if (!workPath.empty()) {
-					conf.options["path"] = (fs::path(workPath) / "?.lua").string();
+					auto it = conf.options.find("path");
+					if (it != conf.options.end()) {
+						it->second += ';';
+						it->second += (fs::path(workPath) / "?.lua"sv).string();
+					} else {
+						conf.options["path"] = (fs::path(workPath) / "?.lua"sv).string();
+					}
 				}
 				if (dumpCompileTime) {
 					auto start = std::chrono::high_resolution_clock::now();
@@ -499,7 +506,7 @@ int main(int narg, const char** args) {
 					} else {
 						std::string targetExtension("lua"sv);
 						if (result.options) {
-							auto it = result.options->find("target_extension");
+							auto it = result.options->find("target_extension"s);
 							if (it != result.options->end()) {
 								targetExtension = it->second;
 							}
@@ -519,19 +526,19 @@ int main(int narg, const char** args) {
 							fs::create_directories(targetFile.parent_path());
 						}
 						if (result.codes.empty()) {
-							return std::tuple{0, targetFile.string(), std::string("Built "sv) + file.first + '\n'};
+							return std::tuple{0, targetFile.string(), "Built "s + file.first + '\n'};
 						}
 						std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
 						if (output) {
 							const auto& codes = result.codes;
 							if (config.reserveLineNumber) {
-								auto head = std::string("-- [yue]: "sv) + file.first + '\n';
+								auto head = "-- [yue]: "s + file.first + '\n';
 								output.write(head.c_str(), head.size());
 							}
 							output.write(codes.c_str(), codes.size());
-							return std::tuple{0, targetFile.string(), std::string("Built "sv) + file.first + '\n'};
+							return std::tuple{0, targetFile.string(), "Built "s + file.first + '\n'};
 						} else {
-							return std::tuple{1, std::string(), std::string("Failed to write file: "sv) + targetFile.string() + '\n'};
+							return std::tuple{1, std::string(), "Failed to write file: "s + targetFile.string() + '\n'};
 						}
 					}
 				} else {
@@ -541,7 +548,7 @@ int main(int narg, const char** args) {
 					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {
-				return std::tuple{1, std::string(), std::string("Failed to read file: "sv) + file.first + ".\n"};
+				return std::tuple{1, std::string(), "Failed to read file: "s + file.first + ".\n"};
 			}
 		});
 		results.push_back(std::move(task));
@@ -588,7 +595,7 @@ int main(int narg, const char** args) {
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						ret = 2;
 						std::string err = lua_tostring(L, -1);
-						errs.push_back(std::string("Failed to minify: "sv) + file + '\n' + err + '\n');
+						errs.push_back("Failed to minify: "s + file + '\n' + err + '\n');
 					} else {
 						size_t size = 0;
 						const char* minifiedCodes = lua_tolstring(L, -1, &size);
@@ -603,7 +610,7 @@ int main(int narg, const char** args) {
 					}
 				} else {
 					ret = 2;
-					errs.push_back(std::string("Failed to minify: "sv) + file + '\n');
+					errs.push_back("Failed to minify: "s + file + '\n');
 				}
 			} else {
 				std::cout << msg;

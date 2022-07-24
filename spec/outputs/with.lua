@@ -54,7 +54,7 @@ do
 end
 do
 	do
-		local _with_0 = a, b
+		local _with_0 = a
 		print(_with_0.world)
 	end
 	local mod

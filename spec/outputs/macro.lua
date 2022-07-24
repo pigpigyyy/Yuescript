@@ -282,7 +282,8 @@ print("current line: " .. tostring(268));
 do
 	print(1)
 end
-_ = function()
+local _1
+_1 = function()
 	print(1)
 	local _accum_0 = { }
 	local _len_0 = 1

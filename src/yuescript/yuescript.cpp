@@ -9,6 +9,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
 
+using namespace std::string_literals;
+
 #if defined(YUE_BUILD_AS_DLL)
 #define YUE_API __declspec(dllexport)
 #else
@@ -25,12 +27,12 @@ static const char yuescriptCodes[] =
 
 static void init_yuescript(lua_State* L) {
 	if (luaL_loadbuffer(L, yuescriptCodes, sizeof(yuescriptCodes) / sizeof(yuescriptCodes[0]) - 1, "=(yuescript)") != 0) {
-		std::string err = std::string("failed to load yuescript module.\n") + lua_tostring(L, -1);
+		std::string err = "failed to load yuescript module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	} else {
 		lua_insert(L, -2);
 		if (lua_pcall(L, 1, 0, 0) != 0) {
-			std::string err = std::string("failed to init yuescript module.\n") + lua_tostring(L, -1);
+			std::string err = "failed to init yuescript module.\n"s + lua_tostring(L, -1);
 			luaL_error(L, err.c_str());
 		}
 	}
@@ -41,10 +43,10 @@ static const char stpCodes[] =
 
 static int init_stacktraceplus(lua_State* L) {
 	if (luaL_loadbuffer(L, stpCodes, sizeof(stpCodes) / sizeof(stpCodes[0]) - 1, "=(stacktraceplus)") != 0) {
-		std::string err = std::string("failed to load stacktraceplus module.\n") + lua_tostring(L, -1);
+		std::string err = "failed to load stacktraceplus module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	} else if (lua_pcall(L, 0, 1, 0) != 0) {
-		std::string err = std::string("failed to init stacktraceplus module.\n") + lua_tostring(L, -1);
+		std::string err = "failed to init stacktraceplus module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
 	}
 	return 1;

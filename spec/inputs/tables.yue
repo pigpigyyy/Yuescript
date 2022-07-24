@@ -152,12 +152,12 @@ k = { "hello": 'world', "hat": "zat" }
 please "hello": "world"
 k = "hello": "world", "one": "zone"
 
-f = "one", "two": three, "four"
-f = "two": three, "four"
-f = { "one", "two": three, "four" }
+f1, f2, f3 = "one", "two": three, "four"
+f1, f2 = "two": three, "four"
+f1 = { "one", "two": three, "four" }
 
 
-j = "one", "two": three, "four": five, 6, 7
+j1, j2, j3, j4 = "one", "two": three, "four": five, 6, 7
 
 heroine =
 	name: "Christina"

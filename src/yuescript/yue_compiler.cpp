@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vector>
 #include <memory>
 #include <set>
+#include <optional>
 
 #include "yuescript/yue_parser.h"
 #include "yuescript/yue_compiler.h"
@@ -37,9 +38,6 @@ extern "C" {
 #endif // YUE_NO_MACRO
 
 namespace yue {
-using namespace std::string_view_literals;
-using namespace std::string_literals;
-using namespace parserlib;
 
 #define BLOCK_START do {
 #define BLOCK_END } while (false);
@@ -56,7 +54,7 @@ using namespace parserlib;
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.13.6"sv;
+const std::string_view version = "0.14.0"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1266,8 +1264,8 @@ private:
 
 	std::string getDestrucureDefine(ExpListAssign_t* assignment) {
 		auto info = extractDestructureInfo(assignment, true, false);
-		if (!info.first.empty()) {
-			for (const auto& destruct : info.first) {
+		if (!info.destructures.empty()) {
+			for (const auto& destruct : info.destructures) {
 				str_list defs;
 				for (const auto& item : destruct.items) {
 					if (!item.targetVar.empty()) {
@@ -1319,11 +1317,30 @@ private:
 		return assignment;
 	}
 
+	void markDestructureConst(ExpListAssign_t* assignment) {
+		auto info = extractDestructureInfo(assignment, true, false);
+		for (auto& destruct : info.destructures) {
+			for (auto& item : destruct.items) {
+				if (item.targetVar.empty()) {
+					throw std::logic_error(_info.errorMessage("can only declare variable as const"sv, item.target));
+				}
+				markVarConst(item.targetVar);
+			}
+		}
+	}
+
 	void transformAssignment(ExpListAssign_t* assignment, str_list& out, bool optionalDestruct = false) {
 		checkAssignable(assignment->expList);
 		BLOCK_START
 		auto assign = ast_cast<Assign_t>(assignment->action);
 		BREAK_IF(!assign);
+		if (assignment->expList->exprs.size() < assign->values.size()) {
+			auto num = assignment->expList->exprs.size();
+			_buf << "no more than "sv << num << " right value"sv;
+			if (num > 1) _buf << 's';
+			_buf << " required"sv;
+			throw std::logic_error(_info.errorMessage(clearBuf(), assign->values.front()));
+		}
 		auto x = assignment;
 		const auto& exprs = assignment->expList->exprs.objects();
 		const auto& values = assign->values.objects();
@@ -1554,15 +1571,15 @@ private:
 		}
 		BLOCK_END
 		auto info = extractDestructureInfo(assignment, false, optionalDestruct);
-		if (info.first.empty()) {
+		if (info.destructures.empty()) {
 			transformAssignmentCommon(assignment, out);
 		} else {
 			str_list temp;
-			if (info.second) {
-				transformAssignmentCommon(info.second, temp);
+			if (info.assignment) {
+				transformAssignmentCommon(info.assignment, temp);
 			}
 			auto x = assignment;
-			for (auto& destruct : info.first) {
+			for (auto& destruct : info.destructures) {
 				std::list<std::pair<ast_ptr<true, Exp_t>, ast_ptr<true, Exp_t>>> leftPairs;
 				bool extraScope = false;
 				if (destruct.items.size() == 1) {
@@ -2030,24 +2047,22 @@ private:
 		return pairs;
 	}
 
-	std::pair<std::list<Destructure>, ast_ptr<false, ExpListAssign_t>>
-		extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly, bool optional) {
+	struct DestructureInfo {
+		std::list<Destructure> destructures;
+		ast_ptr<false, ExpListAssign_t> assignment;
+	};
+
+	DestructureInfo extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly, bool optional) {
 		auto x = assignment;
 		std::list<Destructure> destructs;
 		if (!assignment->action.is<Assign_t>()) return {destructs, nullptr};
 		auto exprs = assignment->expList->exprs.objects();
 		auto values = assignment->action.to<Assign_t>()->values.objects();
 		size_t size = std::max(exprs.size(), values.size());
-		ast_list<false, ast_node> cache;
-		if (exprs.size() < size) {
-			auto var = toAst<Exp_t>("_"sv, x);
-			cache.push_back(var);
-			while (exprs.size() < size) exprs.emplace_back(var);
-		}
-		ast_ptr<false, Exp_t> nullNode;
+		ast_ptr<false, Exp_t> nil;
 		if (values.size() < size) {
-			nullNode = toAst<Exp_t>("nil"sv, x);
-			while (values.size() < size) values.emplace_back(nullNode);
+			nil = toAst<Exp_t>("nil"sv, x);
+			while (values.size() < size) values.emplace_back(nil);
 		}
 		using iter = node_container::iterator;
 		std::vector<std::pair<iter, iter>> destructPairs;
@@ -2059,11 +2074,11 @@ private:
 			auto value = singleValueFrom(expr);
 			ast_node* destructNode = value->getByPath<SimpleValue_t, TableLit_t>();
 			if (destructNode || (destructNode = value->item.as<simple_table_t>())) {
-				if (*j != nullNode) {
+				if (*j != nil) {
 					if (auto ssVal = simpleSingleValueFrom(*j)) {
 						switch (ssVal->value->getId()) {
 							case id<const_value_t>():
-								throw std::logic_error(_info.errorMessage("can not destructure a const value"sv, ssVal->value));
+								throw std::logic_error(_info.errorMessage("can not destructure a constant"sv, ssVal->value));
 								break;
 							case id<Num_t>():
 								throw std::logic_error(_info.errorMessage("can not destructure a number"sv, ssVal->value));
@@ -2074,7 +2089,7 @@ private:
 						}
 					}
 				} else {
-					throw std::logic_error(_info.errorMessage("can not destructure a nil value"sv, destructNode));
+					throw std::logic_error(_info.errorMessage("an explicit destructure target required"sv, destructNode));
 				}
 				destructPairs.push_back({i, j});
 				auto subDestruct = destructNode->new_ptr<TableLit_t>();
@@ -2173,7 +2188,7 @@ private:
 						}
 						destruct.items = std::move(pairs);
 						if (!varDefOnly) {
-							if (*j == nullNode) {
+							if (*j == nil) {
 								for (auto& item : destruct.items) {
 									item.structure.clear();
 								}
@@ -3104,8 +3119,8 @@ private:
 						}
 					}
 					auto info = extractDestructureInfo(assignment, true, false);
-					if (!info.first.empty()) {
-						for (const auto& destruct : info.first)
+					if (!info.destructures.empty()) {
+						for (const auto& destruct : info.destructures)
 							for (const auto& item : destruct.items)
 								if (!item.targetVar.empty()) {
 									if (std::isupper(item.targetVar[0]) && capital) { capital->decls.push_back(item.targetVar);
@@ -3114,8 +3129,8 @@ private:
 									}
 								}
 					}
-					if (info.second) {
-						auto defs = transformAssignDefs(info.second->expList, DefOp::Get);
+					if (info.assignment) {
+						auto defs = transformAssignDefs(info.assignment->expList, DefOp::Get);
 						for (const auto& def : defs) {
 							if (std::isupper(def[0]) && capital) { capital->decls.push_back(def);
 							} else if (any) {
@@ -3234,6 +3249,49 @@ private:
 		if (isRoot && !_info.moduleName.empty() && !_info.exportMacro) {
 			out.back().append(indent() + "return "s + _info.moduleName + nlr(block));
 		}
+	}
+
+	std::optional<std::string> getOption(std::string_view key) {
+#ifndef YUE_NO_MACRO
+		if (L) {
+			int top = lua_gettop(L);
+			DEFER(lua_settop(L, top));
+			pushYue("options"sv); // options
+			lua_pushlstring(L, &key.front(), key.size());
+			lua_gettable(L, -2);
+			if (lua_isstring(L, -1) != 0) {
+				size_t size = 0;
+				const char* str = lua_tolstring(L, -1, &size);
+				return std::string(str, size);
+			}
+		}
+#endif // YUE_NO_MACRO
+		auto it = _config.options.find(std::string(key));
+		if (it != _config.options.end()) {
+			return it->second;
+		}
+		return std::nullopt;
+	}
+
+	int getLuaTarget(ast_node* x) {
+		if (auto target = getOption("target")) {
+			if (target.value() == "5.1"sv) {
+				return 501;
+			} else if (target.value() == "5.2"sv) {
+				return 502;
+			} else if (target.value() == "5.3"sv) {
+				return 503;
+			} else if (target.value() == "5.4"sv) {
+				return 504;
+			} else {
+				throw std::logic_error(_info.errorMessage("get invalid Lua target \""s + target.value() + "\", should be 5.1, 5.2, 5.3 or 5.4"s, x));
+			}
+		}
+#ifndef YUE_NO_MACRO
+		return LUA_VERSION_NUM;
+#else
+		return 504;
+#endif // YUE_NO_MACRO
 	}
 
 #ifndef YUE_NO_MACRO
@@ -5898,8 +5956,8 @@ private:
 						auto names = transformAssignDefs(assignment->expList.get(), DefOp::Mark);
 						varDefs.insert(varDefs.end(), names.begin(), names.end());
 						auto info = extractDestructureInfo(assignment, true, false);
-						if (!info.first.empty()) {
-							for (const auto& destruct : info.first)
+						if (!info.destructures.empty()) {
+							for (const auto& destruct : info.destructures)
 								for (const auto& item : destruct.items)
 									if (!item.targetVar.empty() && addToScope(item.targetVar))
 										varDefs.push_back(item.targetVar);
@@ -6329,8 +6387,8 @@ private:
 							return traversal::Stop;
 						}
 						auto info = extractDestructureInfo(assignment, true, false);
-						if (!info.first.empty()) {
-							for (const auto& destruct : info.first)
+						if (!info.destructures.empty()) {
+							for (const auto& destruct : info.destructures)
 								for (const auto& item : destruct.items)
 									if (!item.targetVar.empty() && !isDefined(item.targetVar))
 										return traversal::Stop;
@@ -6481,8 +6539,8 @@ private:
 			transformAssignment(assignment, out);
 			str_list names = transformAssignDefs(expList, DefOp::Get);
 			auto info = extractDestructureInfo(assignment, true, false);
-			if (!info.first.empty()) {
-				for (const auto& destruct : info.first)
+			if (!info.destructures.empty()) {
+				for (const auto& destruct : info.destructures)
 					for (const auto& item : destruct.items)
 						if (!item.targetVar.empty())
 							names.push_back(item.targetVar);
@@ -6848,6 +6906,7 @@ private:
 			temp.push_back(indent() + "end"s + nlr(import));
 		}
 		out.push_back(join(temp));
+		markDestructureConst(assignment);
 	}
 
 	std::string moduleNameFrom(ImportLiteral_t* literal) {
@@ -7013,6 +7072,12 @@ private:
 		assignment->expList.set(assignList);
 		assignment->action.set(assign);
 		transformAssignment(assignment, out);
+		if (auto var = ast_cast<Variable_t>(target)) {
+			auto moduleName = _parser.toString(var);
+			markVarConst(moduleName);
+		} else {
+			markDestructureConst(assignment);
+		}
 	}
 
 	void transformImport(Import_t* import, str_list& out) {
@@ -7191,7 +7256,7 @@ private:
 				auto info = extractDestructureInfo(assignment, true, false);
 				transformAssignment(assignment, temp, true);
 				str_list conds;
-				for (const auto& destruct : info.first) {
+				for (const auto& destruct : info.destructures) {
 					for (const auto& item : destruct.items) {
 						if (!item.defVal) {
 							transformExp(item.target, conds, ExpUsage::Closure);
@@ -7334,23 +7399,84 @@ private:
 
 	void transformLocalAttrib(LocalAttrib_t* localAttrib, str_list& out) {
 		auto x = localAttrib;
-		auto attrib = _parser.toString(localAttrib->attrib);
-		str_list vars;
-		for (auto name : localAttrib->nameList->names.objects()) {
-			auto var = _parser.toString(name);
-			forceAddToScope(var);
-			vars.push_back(var);
+		if (x->leftList.size() < x->assign->values.size()) {
+			throw std::logic_error(_info.errorMessage("number of right values should not be greater than left values"sv, x->assign->values.front()));
 		}
-		attrib = " <"s + attrib + '>';
-		for (auto& var : vars) {
-			markVarConst(var);
-			var.append(attrib);
+		auto listA = x->new_ptr<NameList_t>();
+		auto assignA = x->new_ptr<Assign_t>();
+		auto listB = x->new_ptr<ExpList_t>();
+		auto assignB = x->new_ptr<Assign_t>();
+		auto i = x->leftList.objects().begin();
+		auto ie = x->leftList.objects().end();
+		auto j = x->assign->values.objects().begin();
+		auto je = x->assign->values.objects().end();
+		while (i != ie) {
+			if (ast_is<Variable_t>(*i)) {
+				listA->names.push_back(*i);
+				if (j != je) assignA->values.push_back(*j);
+			} else {
+				auto item = *i;
+				auto value = item->new_ptr<Value_t>();
+				switch (item->getId()) {
+					case id<simple_table_t>():
+						value->item.set(item);
+						break;
+					case id<TableLit_t>(): {
+						auto simpleValue = item->new_ptr<SimpleValue_t>();
+						simpleValue->value.set(item);
+						value->item.set(simpleValue);
+						break;
+					}
+					default: YUEE("AST node mismatch", item); break;
+				}
+				auto exp = newExp(value, item);
+				listB->exprs.push_back(exp);
+				if (j != je) assignB->values.push_back(*j);
+			}
+			++i;
+			if (j != je) ++j;
 		}
-		str_list temp;
-		for (auto item : localAttrib->assign->values.objects()) {
-			transformAssignItem(item, temp);
+		if (!listA->names.empty()) {
+			str_list vars;
+			for (auto name : listA->names.objects()) {
+				auto var = _parser.toString(name);
+				forceAddToScope(var);
+				vars.push_back(var);
+			}
+			if (getLuaTarget(x) >= 504) {
+				std::string attrib;
+				if (localAttrib->attrib.is<const_attrib_t>()) {
+					attrib = " <const>"s;
+				} else if (localAttrib->attrib.is<close_attrib_t>()) {
+					attrib = " <close>"s;
+				} else {
+					YUEE("AST node mismatch", localAttrib->attrib);
+				}
+				for (auto& var : vars) {
+					markVarConst(var);
+					var.append(attrib);
+				}
+			} else {
+				if (localAttrib->attrib.is<close_attrib_t>()) {
+					throw std::logic_error(_info.errorMessage("close attribute is not available when not targeting Lua 5.4 or higher version"sv, x));
+				}
+				for (auto& var : vars) {
+					markVarConst(var);
+				}
+			}
+			str_list temp;
+			for (auto item : assignA->values.objects()) {
+				transformAssignItem(item, temp);
+			}
+			out.push_back(indent() + "local "s + join(vars, ", "sv) + " = "s + join(temp, ", "sv) + nll(x));
 		}
-		out.push_back(indent() + "local "s + join(vars, ", "sv) + " = "s + join(temp, ", "sv) + nll(x));
+		if (!listB->exprs.empty()) {
+			auto assignment = x->new_ptr<ExpListAssign_t>();
+			assignment->expList.set(listB);
+			assignment->action.set(assignB);
+			transformAssignment(assignment, out);
+			markDestructureConst(assignment);
+		}
 	}
 
 	void transformBreakLoop(BreakLoop_t* breakLoop, str_list& out) {
@@ -7372,10 +7498,16 @@ private:
 	}
 
 	void transformLabel(Label_t* label, str_list& out) {
+		if (getLuaTarget(label) < 502) {
+			throw std::logic_error(_info.errorMessage("label statement is not available when not targeting Lua 5.2 or higher version"sv, label));
+		}
 		out.push_back(indent() + "::"s + _parser.toString(label->label) + "::"s + nll(label));
 	}
 
 	void transformGoto(Goto_t* gotoNode, str_list& out) {
+		if (getLuaTarget(gotoNode) < 502) {
+			throw std::logic_error(_info.errorMessage("goto statement is not available when not targeting Lua 5.2 or higher version"sv, gotoNode));
+		}
 		out.push_back(indent() + "goto "s + _parser.toString(gotoNode->label) + nll(gotoNode));
 	}
 

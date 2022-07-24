@@ -55,7 +55,7 @@ f switch a
 f [i for i = 1,10]
 f for i = 1,10 do i
 f {k,v for k,v in pairs tb}
-f for k,v in pairs tb do k,v
+f for k,v in pairs tb do {k,v}
 f while a do true
 f with a
 	.b = 123
@@ -70,7 +70,7 @@ _ = "#{switch a
 _ = "#{[i for i = 1,10]}"
 _ = "#{for i = 1,10 do i}"
 _ = "#{{k,v for k,v in pairs tb}}"
-_ = "#{for k,v in pairs tb do k,v}"
+_ = "#{for k,v in pairs tb do {k,v}}"
 _ = "#{while a do true}"
 _ = "#{with a
 	.b = 123}"

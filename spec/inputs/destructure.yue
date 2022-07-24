@@ -11,7 +11,7 @@ do
 
 	{:a,:b,:c,:d} = yeah
 
-	{a} = one, two
+	{a}, b = one, two
 	{b}, c = one
 	{d}, e = one, two
 
@@ -184,3 +184,6 @@ do
 do
 	{x: a.b = 1, y: a.c = 2} = x.x.x
 
+do
+	const :width, :height = View.size
+	const {:x = 0.0, :y = 0.0} = point

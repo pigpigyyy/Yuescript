@@ -56,10 +56,10 @@ something("else")
 _ = something([[hey]]) * 2
 _ = something([======[hey]======]) * 2
 _ = something[ [======[hey]======]] * 2
-_ = something('else'), 2
-_ = something("else"), 2
-_ = something([[else]]), 2
-_ = something[ [[else]]], 2
+_, _ = something('else'), 2
+_, _ = something("else"), 2
+_, _ = something([[else]]), 2
+_, _ = something[ [[else]]], 2
 something('else', 2)
 something("else", 2)
 something([[else]], 2)
@@ -165,7 +165,7 @@ x = #{
 		2
 	}
 }
-_ = hello, world
+_, _ = hello, world
 something:hello(what)(a, b)
 something:hello(what)
 something.hello:world(a, b)

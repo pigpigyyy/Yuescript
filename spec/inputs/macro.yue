@@ -279,7 +279,7 @@ do
 
 macro skip = -> "while false do break"
 
-_ = ->
+_1 = ->
 	print 1
 	<- $skip
 	print 2

@@ -94,7 +94,7 @@ do
 	b = getmetatable(require("m")).__a
 	local _obj_0 = require("m")
 	local f = _obj_0.e
-	b = getmetatable(_obj_0).__a
+	c = getmetatable(_obj_0).__a
 	local d = require("m").c
 	local g, i
 	do

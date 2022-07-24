@@ -45,7 +45,7 @@ do
 --
 
 do
-	with a, b -- b is lost
+	with a -- only one value allowed
 		print .world
 
 	mod = with _M = {}

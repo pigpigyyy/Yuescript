@@ -134,7 +134,10 @@ f((function()
 	local _accum_0 = { }
 	local _len_0 = 1
 	for k, v in pairs(tb) do
-		_accum_0[_len_0] = k, v
+		_accum_0[_len_0] = {
+			k,
+			v
+		}
 		_len_0 = _len_0 + 1
 	end
 	return _accum_0
@@ -232,7 +235,10 @@ _ = tostring((function()
 	local _accum_0 = { }
 	local _len_0 = 1
 	for k, v in pairs(tb) do
-		_accum_0[_len_0] = k, v
+		_accum_0[_len_0] = {
+			k,
+			v
+		}
 		_len_0 = _len_0 + 1
 	end
 	return _accum_0

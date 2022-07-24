@@ -65,7 +65,6 @@ end
 setmetatable(a.b, { })
 x.abc = 123
 setmetatable(func(), mt)
-local _ = extra
 setmetatable(b.c, mt)
 a, d, e = 1, "abc"
 local is_same = getmetatable(a).__index == getmetatable(a).__index
