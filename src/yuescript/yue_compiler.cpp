@@ -7458,7 +7458,7 @@ private:
 				}
 			} else {
 				if (localAttrib->attrib.is<close_attrib_t>()) {
-					throw std::logic_error(_info.errorMessage("close attribute is not available when not targeting Lua 5.4 or higher version"sv, x));
+					throw std::logic_error(_info.errorMessage("close attribute is not available when not targeting Lua version 5.4 or higher"sv, x));
 				}
 				for (auto& var : vars) {
 					markVarConst(var);
@@ -7499,14 +7499,14 @@ private:
 
 	void transformLabel(Label_t* label, str_list& out) {
 		if (getLuaTarget(label) < 502) {
-			throw std::logic_error(_info.errorMessage("label statement is not available when not targeting Lua 5.2 or higher version"sv, label));
+			throw std::logic_error(_info.errorMessage("label statement is not available when not targeting Lua version 5.2 or higher"sv, label));
 		}
 		out.push_back(indent() + "::"s + _parser.toString(label->label) + "::"s + nll(label));
 	}
 
 	void transformGoto(Goto_t* gotoNode, str_list& out) {
 		if (getLuaTarget(gotoNode) < 502) {
-			throw std::logic_error(_info.errorMessage("goto statement is not available when not targeting Lua 5.2 or higher version"sv, gotoNode));
+			throw std::logic_error(_info.errorMessage("goto statement is not available when not targeting Lua version 5.2 or higher"sv, gotoNode));
 		}
 		out.push_back(indent() + "goto "s + _parser.toString(gotoNode->label) + nll(gotoNode));
 	}
