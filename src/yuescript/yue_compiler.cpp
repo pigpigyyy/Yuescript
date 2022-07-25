@@ -1336,9 +1336,11 @@ private:
 		BREAK_IF(!assign);
 		if (assignment->expList->exprs.size() < assign->values.size()) {
 			auto num = assignment->expList->exprs.size();
-			_buf << "no more than "sv << num << " right value"sv;
-			if (num > 1) _buf << 's';
-			_buf << " required"sv;
+			if (num > 1) {
+				_buf << "no more than "sv << num << " right values expected, got "sv << assign->values.size();
+			} else {
+				_buf << "only one right value expected, got "sv << assign->values.size();
+			}
 			throw std::logic_error(_info.errorMessage(clearBuf(), assign->values.front()));
 		}
 		auto x = assignment;
@@ -7400,7 +7402,13 @@ private:
 	void transformLocalAttrib(LocalAttrib_t* localAttrib, str_list& out) {
 		auto x = localAttrib;
 		if (x->leftList.size() < x->assign->values.size()) {
-			throw std::logic_error(_info.errorMessage("number of right values should not be greater than left values"sv, x->assign->values.front()));
+			auto num = x->leftList.size();
+			if (num > 1) {
+				_buf << "no more than "sv << num << " right values expected, got "sv << x->assign->values.size();
+			} else {
+				_buf << "only one right value expected, got "sv << x->assign->values.size();
+			}
+			throw std::logic_error(_info.errorMessage(clearBuf(), x->assign->values.front()));
 		}
 		auto listA = x->new_ptr<NameList_t>();
 		auto assignA = x->new_ptr<Assign_t>();
