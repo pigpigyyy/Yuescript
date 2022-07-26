@@ -21,3 +21,10 @@ end
 _ = function()
 	local hello = hello or 2
 end
+do
+	local a = { };
+	_(function()
+		local x, y = a[1], a[2]
+	end)
+end
+return nil

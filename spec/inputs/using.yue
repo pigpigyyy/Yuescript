@@ -20,3 +20,10 @@ _ = (a,e,f using a,b,c, hello) ->
 
 _ = (using nil) ->
 	hello or= 2
+
+do
+	a = {}
+	(using nil) <- _
+	{x, y} = a
+
+nil

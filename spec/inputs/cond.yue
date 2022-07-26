@@ -158,7 +158,7 @@ do
 ----------------
 
 a = 12
-a,c,b = "cool" if something
+a,c,b = "cool", nil, nil if something
 
 
 

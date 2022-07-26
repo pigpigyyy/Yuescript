@@ -251,7 +251,7 @@ end
 local a = 12
 local c, b
 if something then
-	a, c, b = "cool"
+	a, c, b = "cool", nil, nil
 end
 local j
 if 1 then

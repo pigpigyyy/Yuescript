@@ -8,20 +8,20 @@ _ = ->
 
 		a,b,c,d = 1,2,3,4
 
-		hello[232], (5+5)[121], hello, x[99] = 100, 200, 300
+		hello[232], (5+5)[121], hello, x[99] = 100, 200, 300, 400
 
 		joop = 12
 
 joop = 2345
 
 a, b = if hello
-	"hello"
+	"hello", nil
 else
 	"nothing", "yeah"
 
 
 a, b = if hello
-	if yeah then "one", "two" else "mmhh"
+	if yeah then "one", "two" else "mmhh", nil
 else
 	print "the other"
 	"nothing", "yeah"
@@ -31,3 +31,47 @@ c, d = 1, 2 if true
 x = (do
 	f!
 	123) if f = getHandler!
+
+(using nil) <- _
+
+a.# = do
+	print 123
+	{}
+
+do
+	{a, b} = switch c
+		when "a"
+			tb
+		when "b"
+			f!
+
+a[] = if x
+	1
+else
+	2
+
+do
+	a, b[] = if x
+		switch y
+			when 1
+				f!
+
+do
+	a, {b} = if x
+		f!
+	else
+		123, tb
+
+do
+	a, b[], c, d.add# = if x
+		switch y
+			when 1
+				f!
+	elseif x2
+		if y2
+			f1!
+	else
+		print "hello"
+		do
+			print 123
+			1, f2!

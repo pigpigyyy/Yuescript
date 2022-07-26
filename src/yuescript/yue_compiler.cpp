@@ -54,7 +54,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.14.1"sv;
+const std::string_view version = "0.14.2"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1355,13 +1355,31 @@ private:
 			}
 			throw std::logic_error(_info.errorMessage(clearBuf(), values.front()));
 		}
+		bool checkValuesLater = false;
 		if (exprs.size() > values.size()) {
 			BLOCK_START
+			switch (values.back()->getId()) {
+				case id<If_t>():
+				case id<Switch_t>():
+					checkValuesLater = true;
+					break;
+			}
+			BREAK_IF(checkValuesLater);
 			auto value = singleValueFrom(values.back());
 			BREAK_IF(!value);
+			if (auto val = value->item.as<SimpleValue_t>()) {
+				switch (val->value->getId()) {
+					case id<If_t>():
+					case id<Switch_t>():
+					case id<Do_t>():
+					case id<Try_t>():
+						checkValuesLater = true;
+						break;
+				}
+				BREAK_IF(checkValuesLater);
+			}
 			auto chainValue = value->item.as<ChainValue_t>();
-			BREAK_IF(!chainValue);
-			if (!ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
+			if (!chainValue || !ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
 				_buf << exprs.size() << " right values expected, got "sv << values.size();
 				throw std::logic_error(_info.errorMessage(clearBuf(), values.front()));
 			}
@@ -1430,96 +1448,107 @@ private:
 			return;
 			BLOCK_END
 		}
-		auto vit = values.begin();
-		for (auto it = exprs.begin(); it != exprs.end(); ++it) {
-			BLOCK_START
-			auto value = singleValueFrom(*it);
-			BREAK_IF(!value);
-			auto chainValue = value->item.as<ChainValue_t>();
-			BREAK_IF(!chainValue);
-			str_list temp;
-			if (auto dot = ast_cast<DotChainItem_t>(chainValue->items.back())) {
-				BREAK_IF(!dot->name.is<Metatable_t>());
-				str_list args;
-				chainValue->items.pop_back();
-				if (chainValue->items.empty()) {
-					if (_withVars.empty()) {
-						throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
+		if (!checkValuesLater) {
+			auto vit = values.begin();
+			for (auto it = exprs.begin(); it != exprs.end(); ++it) {
+				BLOCK_START
+				auto value = singleValueFrom(*it);
+				BREAK_IF(!value);
+				auto chainValue = value->item.as<ChainValue_t>();
+				BREAK_IF(!chainValue);
+				str_list temp;
+				if (auto dot = ast_cast<DotChainItem_t>(chainValue->items.back())) {
+					BREAK_IF(!dot->name.is<Metatable_t>());
+					str_list args;
+					auto tmpChain = chainValue->new_ptr<ChainValue_t>();
+					tmpChain->items.dup(chainValue->items);
+					tmpChain->items.pop_back();
+					if (tmpChain->items.empty()) {
+						if (_withVars.empty()) {
+							throw std::logic_error(_info.errorMessage("short dot/colon syntax must be called within a with block"sv, x));
+						} else {
+							args.push_back(_withVars.top());
+						}
 					} else {
-						args.push_back(_withVars.top());
+						auto value = tmpChain->new_ptr<Value_t>();
+						value->item.set(tmpChain);
+						transformExp(newExp(value, tmpChain), args, ExpUsage::Closure);
 					}
-				} else {
-					transformExp(static_cast<Exp_t*>(*it), args, ExpUsage::Closure);
-				}
-				if (vit != values.end()) transformAssignItem(*vit, args);
-				else args.push_back("nil"s);
-				_buf << indent() << globalVar("setmetatable"sv, x) << '(' << join(args, ", "sv) << ')' << nll(x);
-				temp.push_back(clearBuf());
-			} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
-				chainValue->items.pop_back();
-				if (chainValue->items.empty()) {
-					if (_withVars.empty()) {
-						throw std::logic_error(_info.errorMessage("short table appending must be called within a with block"sv, x));
-					} else {
-						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
+					if (vit == values.end()) {
+						throw std::logic_error(_info.errorMessage("right value missing"sv, values.front()));
 					}
-				}
-				auto varName = singleVariableFrom(chainValue);
-				bool isScoped = false;
-				if (varName.empty() || !isLocal(varName)) {
-					isScoped = true;
-					temp.push_back(indent() + "do"s + nll(x));
-					pushScope();
-					auto objVar = getUnusedName("_obj_"sv);
+					transformAssignItem(*vit, args);
+					_buf << indent() << globalVar("setmetatable"sv, x) << '(' << join(args, ", "sv) << ')' << nll(x);
+					temp.push_back(clearBuf());
+				} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
+					auto tmpChain = chainValue->new_ptr<ChainValue_t>();
+					tmpChain->items.dup(chainValue->items);
+					tmpChain->items.pop_back();
+					if (tmpChain->items.empty()) {
+						if (_withVars.empty()) {
+							throw std::logic_error(_info.errorMessage("short table appending must be called within a with block"sv, x));
+						} else {
+							tmpChain->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
+						}
+					}
+					auto varName = singleVariableFrom(tmpChain);
+					bool isScoped = false;
+					if (varName.empty() || !isLocal(varName)) {
+						isScoped = true;
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+						auto objVar = getUnusedName("_obj_"sv);
+						auto newAssignment = x->new_ptr<ExpListAssign_t>();
+						newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
+						auto assign = x->new_ptr<Assign_t>();
+						auto value = tmpChain->new_ptr<Value_t>();
+						value->item.set(tmpChain);
+						assign->values.push_back(newExp(value, tmpChain));
+						newAssignment->action.set(assign);
+						transformAssignment(newAssignment, temp);
+						varName = objVar;
+					}
 					auto newAssignment = x->new_ptr<ExpListAssign_t>();
-					newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
+					newAssignment->expList.set(toAst<ExpList_t>(varName + "[#"s + varName + "+1]"s, x));
 					auto assign = x->new_ptr<Assign_t>();
-					assign->values.push_back(*it);
+					if (vit == values.end()) {
+						throw std::logic_error(_info.errorMessage("right value missing"sv, values.front()));
+					}
+					assign->values.push_back(*vit);
 					newAssignment->action.set(assign);
 					transformAssignment(newAssignment, temp);
-					varName = objVar;
-				}
+					if (isScoped) {
+						popScope();
+						temp.push_back(indent() + "end"s + nlr(x));
+					}
+				} else break;
+				auto newExpList = x->new_ptr<ExpList_t>();
+				auto newAssign = x->new_ptr<Assign_t>();
 				auto newAssignment = x->new_ptr<ExpListAssign_t>();
-				newAssignment->expList.set(toAst<ExpList_t>(varName + "[#"s + varName + "+1]"s, x));
-				auto assign = x->new_ptr<Assign_t>();
-				if (vit != values.end()) {
-					assign->values.push_back(*vit);
-				} else {
-					assign->values.push_back(toAst<Exp_t>("nil"sv, *vit));
+				newAssignment->expList.set(newExpList);
+				newAssignment->action.set(newAssign);
+				for (auto exp : exprs) {
+					if (exp != *it) newExpList->exprs.push_back(exp);
 				}
-				newAssignment->action.set(assign);
+				for (auto value : values) {
+					if (value != *vit) newAssign->values.push_back(value);
+				}
+				if (newExpList->exprs.empty() && newAssign->values.empty()) {
+					out.push_back(join(temp));
+					return;
+				}
+				if (newExpList->exprs.size() < newAssign->values.size()) {
+					auto exp = toAst<Exp_t>("_"sv, x);
+					while (newExpList->exprs.size() < newAssign->values.size()) {
+						newExpList->exprs.push_back(exp);
+					}
+				}
 				transformAssignment(newAssignment, temp);
-				if (isScoped) {
-					popScope();
-					temp.push_back(indent() + "end"s + nlr(x));
-				}
-			} else break;
-			auto newExpList = x->new_ptr<ExpList_t>();
-			auto newAssign = x->new_ptr<Assign_t>();
-			auto newAssignment = x->new_ptr<ExpListAssign_t>();
-			newAssignment->expList.set(newExpList);
-			newAssignment->action.set(newAssign);
-			for (auto exp : exprs) {
-				if (exp != *it) newExpList->exprs.push_back(exp);
-			}
-			for (auto value : values) {
-				if (value != *vit) newAssign->values.push_back(value);
-			}
-			if (newExpList->exprs.empty() && newAssign->values.empty()) {
 				out.push_back(join(temp));
 				return;
+				BLOCK_END
+				if (vit != values.end()) ++vit;
 			}
-			if (newExpList->exprs.size() < newAssign->values.size()) {
-				auto exp = toAst<Exp_t>("_"sv, x);
-				while (newExpList->exprs.size() < newAssign->values.size()) {
-					newExpList->exprs.push_back(exp);
-				}
-			}
-			transformAssignment(newAssignment, temp);
-			out.push_back(join(temp));
-			return;
-			BLOCK_END
-			if (vit != values.end()) ++vit;
 		}
 		BREAK_IF(assign->values.objects().size() != 1);
 		auto value = assign->values.objects().back();
@@ -1530,12 +1559,11 @@ private:
 		}
 		switch (value->getId()) {
 			case id<If_t>(): {
-				auto expList = assignment->expList.get();
-				str_list temp;
-				auto defs = transformAssignDefs(expList, DefOp::Mark);
-				if (!defs.empty()) temp.push_back(toLocalDecl(defs) + nll(expList));
-				transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList);
-				out.push_back(join(temp));
+				auto ifNode = static_cast<If_t*>(value);
+				auto assignList = assignment->expList.get();
+				std::string preDefine = getPreDefineLine(assignment);
+				transformIf(ifNode, out, ExpUsage::Assignment, assignList);
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<Switch_t>(): {

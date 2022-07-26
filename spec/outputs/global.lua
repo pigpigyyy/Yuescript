@@ -1,5 +1,5 @@
 do
-	a, b, c = 223, 343
+	a, b, c = 223, 343, nil
 	cool = "dad"
 end
 do
@@ -29,7 +29,7 @@ do
 end
 do
 	local d
-	a, b, c, d = "hello"
+	a, b, c, d = "hello", nil, nil, nil
 end
 do
 	local What

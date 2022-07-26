@@ -24,7 +24,7 @@ do
 
 x.abc, a.b.# = 123, {}
 func!.# = mt --, extra
-a, b.c.#, d, e = 1, mt, "abc"
+a, b.c.#, d, e = 1, mt, "abc", nil
 
 is_same = a.#.__index == a.index#
 

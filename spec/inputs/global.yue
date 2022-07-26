@@ -1,6 +1,6 @@
 
 do
-	global a,b,c = 223, 343
+	global a,b,c = 223, 343, nil
 	global cool = "dad"
 
 do
@@ -9,7 +9,7 @@ do
 
 do
 	global a,b,c
-	a,b,c,d = "hello"
+	a,b,c,d = "hello", nil, nil, nil
 
 
 do
