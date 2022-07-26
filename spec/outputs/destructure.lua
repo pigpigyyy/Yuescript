@@ -407,3 +407,24 @@ do
 		end
 	end
 end
+do
+	local x1, x2, x3, d, e
+	local b
+	do
+		local _obj_0, _obj_1, _obj_2, _obj_3, _obj_4 = f()
+		do
+			local _obj_5 = a
+			_obj_5[#_obj_5 + 1] = _obj_0
+		end
+		setmetatable(c, _obj_4)
+		x1, x2, x3, d, e = 1, 2, 3, _obj_1, _obj_3
+		b = _obj_2[1]
+	end
+	local y1, y4
+	local y2, y3
+	do
+		local _obj_0, _obj_1 = f2()
+		y1, y4 = f1(), _obj_1
+		y2, y3 = _obj_0.y2, _obj_0.y3
+	end
+end

@@ -2,7 +2,7 @@ do
 	local a
 	local a, b, c
 	local g
-	b, g = 23232
+	b, g = 23232, nil
 end
 do
 	local x = 1212

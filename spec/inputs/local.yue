@@ -3,7 +3,7 @@ do
 	local a
 	local a,b,c
 
-	b,g = 23232
+	b,g = 23232,nil
 
 
 do

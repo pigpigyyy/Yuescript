@@ -1,6 +1,6 @@
 local a = 1 + 2 * 3 / 6
 local bunch, go, here
-a, bunch, go, here = another, world
+a, bunch, go, here = another, world, nil, nil
 func(arg1, arg2, another, arg3)
 local we
 here, we = function() end, yeah

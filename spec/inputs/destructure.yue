@@ -12,7 +12,7 @@ do
 	{:a,:b,:c,:d} = yeah
 
 	{a}, b = one, two
-	{b}, c = one
+	{b}, c = one, nil
 	{d}, e = one, two
 
 	x, {y} = one, two
@@ -22,7 +22,7 @@ do
 
 	{a, :b, c, :d, e, :f, g} = tbl
 
-	do :a, :b, c = tbl
+	do :a, :b, c = tbl, nil
 
 	do a, :b, :c = tbl, _
 
@@ -187,3 +187,7 @@ do
 do
 	const :width, :height = View.size
 	const {:x = 0.0, :y = 0.0} = point
+
+do
+	x1, x2, x3, a[], d, {b}, e, c.# = 1, 2, 3, f!
+	y1, :y2, :y3, y4 = f1!, f2!

@@ -446,7 +446,7 @@ int main(int narg, const char** args) {
 		return 0;
 	}
 	if (!resultFile.empty() && files.size() > 1) {
-		std::cout << "Error: -o can not be used with multiple input files.\n"sv;
+		std::cout << "Error: -o can not be used with multiple input files\n"sv;
 		std::cout << help;
 	}
 	std::list<std::future<std::tuple<int,std::string,std::string>>> results;
@@ -485,7 +485,7 @@ int main(int narg, const char** args) {
 						return std::tuple{0, file.first, buf.str()};
 					} else {
 						std::ostringstream buf;
-						buf << "Failed to compile: "sv << file.first << ".\n"sv;
+						buf << "Failed to compile: "sv << file.first << '\n';
 						buf << result.error << '\n';
 						return std::tuple{1, file.first, buf.str()};
 					}
@@ -543,12 +543,12 @@ int main(int narg, const char** args) {
 					}
 				} else {
 					std::ostringstream buf;
-					buf << "Failed to compile: "sv << file.first << ".\n";
+					buf << "Failed to compile: "sv << file.first << '\n';
 					buf << result.error << '\n';
 					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {
-				return std::tuple{1, std::string(), "Failed to read file: "s + file.first + ".\n"};
+				return std::tuple{1, std::string(), "Failed to read file: "s + file.first + '\n'};
 			}
 		});
 		results.push_back(std::move(task));

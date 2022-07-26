@@ -54,7 +54,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.14.0"sv;
+const std::string_view version = "0.14.1"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -979,8 +979,8 @@ private:
 		auto x = statement;
 		if (statement->appendix) {
 			if (auto assignment = assignmentFrom(statement)) {
-				auto preDefine = getPredefine(assignment);
-				if (!preDefine.empty()) out.push_back(preDefine + nll(statement));
+				auto preDefine = getPreDefineLine(assignment);
+				if (!preDefine.empty()) out.push_back(preDefine);
 			} else if (auto local = statement->content.as<Local_t>()) {
 				if (!local->defined) {
 					local->defined = true;
@@ -1257,13 +1257,16 @@ private:
 		return defs;
 	}
 
-	std::string getPredefine(const str_list& defs) {
+	std::string toLocalDecl(const str_list& defs) {
 		if (defs.empty()) return Empty;
 		return indent() + "local "s + join(defs, ", "sv);
 	}
 
 	std::string getDestrucureDefine(ExpListAssign_t* assignment) {
 		auto info = extractDestructureInfo(assignment, true, false);
+		if (info.assignment) {
+			_buf << getPreDefineLine(info.assignment);
+		}
 		if (!info.destructures.empty()) {
 			for (const auto& destruct : info.destructures) {
 				str_list defs;
@@ -1280,11 +1283,17 @@ private:
 		return clearBuf();
 	}
 
-	std::string getPredefine(ExpListAssign_t* assignment) {
+	std::string getPreDefine(ExpListAssign_t* assignment) {
 		auto preDefine = getDestrucureDefine(assignment);
 		if (preDefine.empty()) {
-			preDefine = getPredefine(transformAssignDefs(assignment->expList, DefOp::Mark));
+			preDefine = toLocalDecl(transformAssignDefs(assignment->expList, DefOp::Mark));
 		}
+		return preDefine;
+	}
+
+	std::string getPreDefineLine(ExpListAssign_t* assignment) {
+		auto preDefine = getPreDefine(assignment);
+		if (!preDefine.empty()) preDefine += nll(assignment);
 		return preDefine;
 	}
 
@@ -1334,18 +1343,93 @@ private:
 		BLOCK_START
 		auto assign = ast_cast<Assign_t>(assignment->action);
 		BREAK_IF(!assign);
-		if (assignment->expList->exprs.size() < assign->values.size()) {
-			auto num = assignment->expList->exprs.size();
-			if (num > 1) {
-				_buf << "no more than "sv << num << " right values expected, got "sv << assign->values.size();
-			} else {
-				_buf << "only one right value expected, got "sv << assign->values.size();
-			}
-			throw std::logic_error(_info.errorMessage(clearBuf(), assign->values.front()));
-		}
 		auto x = assignment;
-		const auto& exprs = assignment->expList->exprs.objects();
+		const auto& exprs = x->expList->exprs.objects();
 		const auto& values = assign->values.objects();
+		if (exprs.size() < values.size()) {
+			auto num = exprs.size();
+			if (num > 1) {
+				_buf << "no more than "sv << num << " right values expected, got "sv << values.size();
+			} else {
+				_buf << "only one right value expected, got "sv << values.size();
+			}
+			throw std::logic_error(_info.errorMessage(clearBuf(), values.front()));
+		}
+		if (exprs.size() > values.size()) {
+			BLOCK_START
+			auto value = singleValueFrom(values.back());
+			BREAK_IF(!value);
+			auto chainValue = value->item.as<ChainValue_t>();
+			BREAK_IF(!chainValue);
+			if (!ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
+				_buf << exprs.size() << " right values expected, got "sv << values.size();
+				throw std::logic_error(_info.errorMessage(clearBuf(), values.front()));
+			}
+			auto newAssign = assign->new_ptr<Assign_t>();
+			newAssign->values.dup(assign->values);
+			auto i = exprs.begin();
+			auto j = values.begin();
+			auto je = --values.end();
+			while (j != je) {
+				++i; ++j;
+			}
+			bool holdItem = false;
+			for (auto it = i; it != exprs.end(); ++it) {
+				BLOCK_START
+				auto value = singleValueFrom(*it);
+				BREAK_IF(!value);
+				if (value->item.is<simple_table_t>() ||
+					value->getByPath<SimpleValue_t, TableLit_t>()) {
+					holdItem = true;
+					break;
+				}
+				auto chainValue = value->item.as<ChainValue_t>();
+				BREAK_IF(!chainValue);
+				str_list temp;
+				if (auto dot = ast_cast<DotChainItem_t>(chainValue->items.back())) {
+					BREAK_IF(!dot->name.is<Metatable_t>());
+					holdItem = true;
+				} else if (ast_is<table_appending_op_t>(chainValue->items.back())) {
+					holdItem = true;
+				}
+				BLOCK_END
+				if (holdItem) {
+					break;
+				}
+			}
+			BREAK_IF(!holdItem);
+			pushScope();
+			std::list<ast_ptr<false, Exp_t>> extraExprs;
+			for (; i != exprs.end(); ++i) {
+				auto var = getUnusedName("_obj_"sv);
+				addToScope(var);
+				extraExprs.push_back(toAst<Exp_t>(var, *i));
+			}
+			popScope();
+			ast_ptr<true, ast_node> funcCall = values.back();
+			assign->values.pop_back();
+			auto preAssignment = funcCall->new_ptr<ExpListAssign_t>();
+			auto preAssign = funcCall->new_ptr<Assign_t>();
+			preAssign->values.push_back(funcCall);
+			preAssignment->action.set(preAssign);
+			auto preExplist = funcCall->new_ptr<ExpList_t>();
+			for (const auto& item : extraExprs) {
+				preExplist->exprs.push_back(item.get());
+				assign->values.push_back(item.get());
+			}
+			preAssignment->expList.set(preExplist);
+			str_list temp;
+			temp.push_back(getPreDefineLine(assignment));
+			temp.push_back(indent() + "do"s + nll(assignment));
+			pushScope();
+			transformAssignmentCommon(preAssignment, temp);
+			transformAssignment(assignment, temp);
+			popScope();
+			temp.push_back(indent() + "end"s + nll(assignment));
+			out.push_back(join(temp));
+			return;
+			BLOCK_END
+		}
 		auto vit = values.begin();
 		for (auto it = exprs.begin(); it != exprs.end(); ++it) {
 			BLOCK_START
@@ -1398,7 +1482,11 @@ private:
 				auto newAssignment = x->new_ptr<ExpListAssign_t>();
 				newAssignment->expList.set(toAst<ExpList_t>(varName + "[#"s + varName + "+1]"s, x));
 				auto assign = x->new_ptr<Assign_t>();
-				assign->values.push_back(*vit);
+				if (vit != values.end()) {
+					assign->values.push_back(*vit);
+				} else {
+					assign->values.push_back(toAst<Exp_t>("nil"sv, *vit));
+				}
 				newAssignment->action.set(assign);
 				transformAssignment(newAssignment, temp);
 				if (isScoped) {
@@ -1445,7 +1533,7 @@ private:
 				auto expList = assignment->expList.get();
 				str_list temp;
 				auto defs = transformAssignDefs(expList, DefOp::Mark);
-				if (!defs.empty()) temp.push_back(getPredefine(defs) + nll(expList));
+				if (!defs.empty()) temp.push_back(toLocalDecl(defs) + nll(expList));
 				transformIf(static_cast<If_t*>(value), temp, ExpUsage::Assignment, expList);
 				out.push_back(join(temp));
 				return;
@@ -1453,76 +1541,76 @@ private:
 			case id<Switch_t>(): {
 				auto switchNode = static_cast<Switch_t*>(value);
 				auto assignList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformSwitch(switchNode, out, ExpUsage::Assignment, assignList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<With_t>(): {
 				auto withNode = static_cast<With_t*>(value);
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformWith(withNode, out, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<Do_t>(): {
 				auto expList = assignment->expList.get();
 				auto doNode = static_cast<Do_t*>(value);
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformDo(doNode, out, ExpUsage::Assignment, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<Comprehension_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Assignment, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<TblComprehension_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Assignment, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<For_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformForInPlace(static_cast<For_t*>(value), out, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<ForEach_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformForEachInPlace(static_cast<ForEach_t*>(value), out, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<ClassDecl_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformClassDecl(static_cast<ClassDecl_t*>(value), out, ExpUsage::Assignment, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<While_t>(): {
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPredefine(assignment);
+				std::string preDefine = getPreDefineLine(assignment);
 				transformWhileInPlace(static_cast<While_t*>(value), out, expList);
-				out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+				out.back().insert(0, preDefine);
 				return;
 			}
 			case id<TableLit_t>(): {
 				auto tableLit = static_cast<TableLit_t*>(value);
 				if (hasSpreadExp(tableLit->values.objects())) {
 					auto expList = assignment->expList.get();
-					std::string preDefine = getPredefine(assignment);
+					std::string preDefine = getPreDefineLine(assignment);
 					transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Assignment, expList);
-					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+					out.back().insert(0, preDefine);
 					return;
 				}
 			}
@@ -1530,9 +1618,9 @@ private:
 				auto tableBlock = static_cast<TableBlock_t*>(value);
 				if (hasSpreadExp(tableBlock->values.objects())) {
 					auto expList = assignment->expList.get();
-					std::string preDefine = getPredefine(assignment);
+					std::string preDefine = getPreDefineLine(assignment);
 					transformSpreadTable(tableBlock->values.objects(), out, ExpUsage::Assignment, expList);
-					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+					out.back().insert(0, preDefine);
 					return;
 				}
 			}
@@ -1556,9 +1644,9 @@ private:
 			switch (type) {
 				case ChainType::HasEOP:
 				case ChainType::EndWithColon: {
-					std::string preDefine = getPredefine(assignment);
+					std::string preDefine = getPreDefineLine(assignment);
 					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
-					out.back().insert(0, preDefine.empty() ? Empty : preDefine + nll(assignment));
+					out.back().insert(0, preDefine);
 					return;
 				}
 				case ChainType::HasKeyword:
@@ -2090,8 +2178,6 @@ private:
 								break;
 						}
 					}
-				} else {
-					throw std::logic_error(_info.errorMessage("an explicit destructure target required"sv, destructNode));
 				}
 				destructPairs.push_back({i, j});
 				auto subDestruct = destructNode->new_ptr<TableLit_t>();
@@ -2318,17 +2404,17 @@ private:
 				chain->items.dup(tmpChain->items);
 				auto op = _parser.toString(update->op);
 				if (op == "??"sv) {
-					auto defs = getPredefine(assignment);
+					auto defs = getPreDefineLine(assignment);
+					temp.push_back(defs);
 					auto rightExp = x->new_ptr<Exp_t>();
 					rightExp->pipeExprs.dup(leftExp->pipeExprs);
 					rightExp->opValues.dup(leftExp->opValues);
 					rightExp->nilCoalesed.set(update->value);
 					transformNilCoalesedExp(rightExp, temp, ExpUsage::Assignment, assignment->expList, true);
-					if (!defs.empty()) temp.back().insert(0, defs + nll(x));
 					out.push_back(join(temp));
 					return;
 				}
-				auto defs = getPredefine(assignment);
+				auto defs = getPreDefine(assignment);
 				transformValue(leftValue, temp);
 				auto left = std::move(temp.back());
 				temp.pop_back();
@@ -2364,7 +2450,7 @@ private:
 					for (auto value : assign->values.objects()) {
 						transformAssignItem(value, temp);
 					}
-					std::string preDefine = getPredefine(defs);
+					std::string preDefine = toLocalDecl(defs);
 					for (const auto& def : defs) {
 						addToScope(def);
 					}
@@ -2377,7 +2463,7 @@ private:
 						out.push_back(preDefine + " = "s + join(temp, ", "sv) + nll(assignment));
 					}
 				} else {
-					std::string preDefine = getPredefine(defs);
+					std::string preDefine = toLocalDecl(defs);
 					for (const auto& def : defs) {
 						addToScope(def);
 					}
@@ -2779,9 +2865,7 @@ private:
 				bool extraScope = false;
 				if (!nilBranchOnly) {
 					assign->values.push_back(exp);
-					std::string& predefine = temp.emplace_back();
-					auto defs = getPredefine(assignment);
-					if (!defs.empty()) predefine = defs + nll(x);
+					temp.push_back(getPreDefineLine(assignment));
 					extraScope = prepareValue(true);
 					_buf << indent() << "if "sv << objVar << " ~= nil then"sv << nll(x);
 					temp.push_back(clearBuf());
@@ -2796,8 +2880,7 @@ private:
 				} else {
 					assign->values.clear();
 					assign->values.push_back(exp->nilCoalesed);
-					auto defs = getPredefine(assignment);
-					if (!defs.empty()) temp.push_back(defs + nll(x));
+					temp.push_back(getPreDefineLine(assignment));
 					transformExp(left, temp, ExpUsage::Closure);
 					_buf << indent() << "if "sv << temp.back() << " == nil then"sv << nll(x);
 					temp.pop_back();
@@ -6891,7 +6974,7 @@ private:
 			}
 		}
 		if (objAssign) {
-			auto preDef = getPredefine(transformAssignDefs(expList, DefOp::Mark));
+			auto preDef = toLocalDecl(transformAssignDefs(expList, DefOp::Mark));
 			if (!preDef.empty()) {
 				temp.push_back(preDef + nll(import));
 			}
@@ -7350,7 +7433,7 @@ private:
 					defs.push_back(decl);
 				}
 			}
-			auto preDefine = getPredefine(defs);
+			auto preDefine = toLocalDecl(defs);
 			if (!preDefine.empty()) {
 				out.push_back(preDefine + nll(local));
 			}
