@@ -1109,6 +1109,7 @@ enum KEY_ACTION {
     CTRL_T = 20,        /* Ctrl-t */
     CTRL_U = 21,        /* Ctrl+u */
     CTRL_W = 23,        /* Ctrl+w */
+    CTRL_Z = 26,        /* Ctrl+z */
     ESC = 27,           /* Escape */
     BACKSPACE =  127    /* Backspace */
 };
@@ -2165,6 +2166,7 @@ inline int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, int buflen, con
         case 8:     /* ctrl-h */
             linenoiseEditBackspace(&l);
             break;
+        case CTRL_Z:
         case CTRL_D:     /* ctrl-d, remove char at right of cursor, or if the
                             line is empty, act as end-of-file. */
             if (l.len > 0) {
