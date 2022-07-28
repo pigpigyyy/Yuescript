@@ -54,7 +54,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.14.2"sv;
+const std::string_view version = "0.14.3"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -4830,6 +4830,9 @@ private:
 		str_list temp;
 		for (auto _op : unary_value->ops.objects()) {
 			std::string op = _parser.toString(_op);
+			if (op == "~"sv && getLuaTarget(_op) < 503) {
+				throw std::logic_error(_info.errorMessage("bitwise operator is not available when not targeting Lua version 5.3 or higher"sv, _op));
+			}
 			temp.push_back(op == "not"sv ? op + ' ' : op);
 		}
 		transformValue(unary_value->value, temp);
@@ -4844,6 +4847,9 @@ private:
 		std::string unary_op;
 		for (auto _op : unary_exp->ops.objects()) {
 			std::string op = _parser.toString(_op);
+			if (op == "~"sv && getLuaTarget(_op) < 503) {
+				throw std::logic_error(_info.errorMessage("bitwise operator is not available when not targeting Lua version 5.3 or higher"sv, _op));
+			}
 			unary_op.append(op == "not"sv ? op + ' ' : op);
 		}
 		str_list temp;
@@ -5798,6 +5804,19 @@ private:
 
 	void transformBinaryOperator(BinaryOperator_t* node, str_list& out) {
 		auto op = _parser.toString(node);
+		if (op == "&"sv ||
+			op == "~"sv ||
+			op == "|"sv ||
+			op == ">>"sv ||
+			op == "<<"sv) {
+			if (getLuaTarget(node) < 503) {
+				throw std::logic_error(_info.errorMessage("bitwise operator is not available when not targeting Lua version 5.3 or higher"sv, node));
+			}
+		} else if (op == "//"sv) {
+			if (getLuaTarget(node) < 503) {
+				throw std::logic_error(_info.errorMessage("floor division is not available when not targeting Lua version 5.3 or higher"sv, node));
+			}
+		}
 		out.push_back(op == "!="sv ? "~="s : op);
 	}
 
