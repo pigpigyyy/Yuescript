@@ -2431,6 +2431,7 @@ private:
 				chain->items.clear();
 				chain->items.dup(tmpChain->items);
 				auto op = _parser.toString(update->op);
+				checkOperatorAvailable(op, update->op);
 				if (op == "??"sv) {
 					auto defs = getPreDefineLine(assignment);
 					temp.push_back(defs);
@@ -5802,8 +5803,7 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transformBinaryOperator(BinaryOperator_t* node, str_list& out) {
-		auto op = _parser.toString(node);
+	void checkOperatorAvailable(const std::string& op, ast_node* node) {
 		if (op == "&"sv ||
 			op == "~"sv ||
 			op == "|"sv ||
@@ -5817,6 +5817,11 @@ private:
 				throw std::logic_error(_info.errorMessage("floor division is not available when not targeting Lua version 5.3 or higher"sv, node));
 			}
 		}
+	}
+
+	void transformBinaryOperator(BinaryOperator_t* node, str_list& out) {
+		auto op = _parser.toString(node);
+		checkOperatorAvailable(op, node);
 		out.push_back(op == "!="sv ? "~="s : op);
 	}
 

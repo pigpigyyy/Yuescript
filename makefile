@@ -192,10 +192,11 @@ endif
 	@$(END_TIME)
 
 .PHONY: wasm
-wasm:
+wasm: clean
 	@$(MAKE) generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib' -C $(SRC_PATH)/3rdParty/lua
 	@mkdir -p doc/docs/.vuepress/public/js
 	@emcc $(SRC_PATH)/yue_wasm.cpp $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/parser.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/3rdParty/lua/liblua.a -s WASM=1 -O2 -o doc/docs/.vuepress/public/js/yuescript.js -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty/lua -std=c++17 --bind -fexceptions
+	@${MAKE} clean
 
 # Debug build for gdb debugging
 .PHONY: debug
