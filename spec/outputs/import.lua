@@ -1,16 +1,16 @@
 local hello = yeah.hello
-local world
+local holla, world
 do
 	local _obj_0 = table["cool"]
-	hello, world = _obj_0.hello, _obj_0.world
+	holla, world = _obj_0.holla, _obj_0.world
 end
-local a, b, c = items.a, (function()
+local x, y, z = items.x, (function()
 	local _base_0 = items
-	local _fn_0 = _base_0.b
+	local _fn_0 = _base_0.y
 	return _fn_0 and function(...)
 		return _fn_0(_base_0, ...)
 	end
-end)(), items.c
+end)(), items.z
 local master, ghost
 do
 	local _obj_0 = find("mytable")
@@ -22,8 +22,6 @@ do
 		end
 	end)()
 end
-local yumm
-a, yumm = 3434, "hello"
 local _table_0 = 232
 local something
 do
@@ -44,19 +42,19 @@ if indent then
 	end
 end
 do
-	a, b, c = z.a, z.b, z.c
+	local a, b, c = z.a, z.b, z.c
 end
 do
-	a, b, c = z.a, z.b, z.c
+	local a, b, c = z.a, z.b, z.c
 end
 do
-	a, b, c = z.a, z.b, z.c
+	local a, b, c = z.a, z.b, z.c
 end
 do
-	a, b, c = z.a, z.b, z.c
+	local a, b, c = z.a, z.b, z.c
 end
 do
-	a, b, c = z.a, z.b, z.c
+	local a, b, c = z.a, z.b, z.c
 end
 do
 	local module = require('module')
@@ -91,10 +89,10 @@ do
 	end
 end
 do
-	b = getmetatable(require("m")).__a
+	local b = getmetatable(require("m")).__a
 	local _obj_0 = require("m")
 	local f = _obj_0.e
-	c = getmetatable(_obj_0).__a
+	local c = getmetatable(_obj_0).__a
 	local d = require("m").c
 	local g, i
 	do

@@ -54,7 +54,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.14.3"sv;
+const std::string_view version = "0.14.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -7043,7 +7043,10 @@ private:
 			temp.push_back(indent() + "end"s + nlr(import));
 		}
 		out.push_back(join(temp));
-		markDestructureConst(assignment);
+		auto vars = getAssignVars(assignment);
+		for (const auto& var : vars) {
+			markVarConst(var);
+		}
 	}
 
 	std::string moduleNameFrom(ImportLiteral_t* literal) {
