@@ -571,68 +571,6 @@ readFile "example.txt"
 </pre>
 </YueDisplay>
 
-### Backcall
-
-Backcalls are used for unnesting callbacks. They are defined using arrows pointed to the left as the last parameter by default filling in a function call. All the syntax is mostly the same as regular arrow functions except that it is just pointing the other way and the function body does not require indent.
-
-```moonscript
-<- f
-print "hello"
-```
-<YueDisplay>
-<pre>
-<- f
-print "hello"
-</pre>
-</YueDisplay>
-
-Fat arrow functions are also available.
-
-```moonscript
-<= f
-print @value
-```
-<YueDisplay>
-<pre>
-<= f
-print @value
-</pre>
-</YueDisplay>
-
-You can specify a placeholder for where you want the backcall function to go as a parameter.
-
-```moonscript
-(x) <- map _, {1, 2, 3}
-x * 2
-```
-<YueDisplay>
-<pre>
-(x) <- map _, {1, 2, 3}
-x * 2
-</pre>
-</YueDisplay>
-
-If you wish to have further code after your backcalls, you can set them aside with a do statement.
-
-```moonscript
-result, msg = do
-  (data) <- readAsync "filename.txt"
-  print data
-  (info) <- processAsync data
-  check info
-print result, msg
-```
-<YueDisplay>
-<pre>
-result, msg = do
-  (data) <- readAsync "filename.txt"
-  print data
-  (info) <- processAsync data
-  check info
-print result, msg
-</pre>
-</YueDisplay>
-
 ### Nil Coalescing
 
 The nil-coalescing operator **??** returns the value of its left-hand operand if it isn't **nil**; otherwise, it evaluates the right-hand operand and returns its result. The **??** operator doesn't evaluate its right-hand operand if the left-hand operand evaluates to non-nil.
@@ -1652,6 +1590,68 @@ if func 1, 2, 3,
     "world"
   print "hello"
   print "I am inside if"
+</pre>
+</YueDisplay>
+
+## Backcalls
+
+Backcalls are used for unnesting callbacks. They are defined using arrows pointed to the left as the last parameter by default filling in a function call. All the syntax is mostly the same as regular arrow functions except that it is just pointing the other way and the function body does not require indent.
+
+```moonscript
+<- f
+print "hello"
+```
+<YueDisplay>
+<pre>
+<- f
+print "hello"
+</pre>
+</YueDisplay>
+
+Fat arrow functions are also available.
+
+```moonscript
+<= f
+print @value
+```
+<YueDisplay>
+<pre>
+<= f
+print @value
+</pre>
+</YueDisplay>
+
+You can specify a placeholder for where you want the backcall function to go as a parameter.
+
+```moonscript
+(x) <- map _, {1, 2, 3}
+x * 2
+```
+<YueDisplay>
+<pre>
+(x) <- map _, {1, 2, 3}
+x * 2
+</pre>
+</YueDisplay>
+
+If you wish to have further code after your backcalls, you can set them aside with a do statement.
+
+```moonscript
+result, msg = do
+  (data) <- readAsync "filename.txt"
+  print data
+  (info) <- processAsync data
+  check info
+print result, msg
+```
+<YueDisplay>
+<pre>
+result, msg = do
+  (data) <- readAsync "filename.txt"
+  print data
+  (info) <- processAsync data
+  check info
+print result, msg
 </pre>
 </YueDisplay>
 
@@ -2888,10 +2888,6 @@ y\func!
 assert y.__class.__parent ~= X -- X is not parent of Y
 </pre>
 </YueDisplay>
-
-::: warning NOTICE
-The rest of the document is describing mostly the same syntax taken from Moonscript. So you may as well refer to the [Moonscript Reference](http://moonscript.org/reference) to get the same explanation.
-:::
 
 ## With Statement
 
