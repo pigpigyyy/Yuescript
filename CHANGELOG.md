@@ -2,6 +2,30 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.14.5
+
+### Added Features
+
+* Added -g option for Yuescript CMD tool.
+* Added option `--target=5.1` to generate Lua 5.1 compatible codes.
+* Added const destructuring and imported item is now const by default.
+   ```moonscript
+   const :width, :height = View.size
+   const {:x = 0.0, :y = 0.0} = point
+   import a from b
+   -- report compiler error when doing width = nil or x = nil or a = nil
+   ```
+* Added left and right side item numbers check in assignments.
+   ```moonscript
+   a, b, c = 1 -- report error instead of implicitly assigning nil to extra variables
+   a, b, c = f! -- expecting function call to return multiple values is accepted
+   a = 1, 2 -- report error instead of ignoring extra values
+   ```
+
+### Fixed Issues
+
+* Fix missing checks and issues related to doing destrucuring to if/switch expressions that returns values in multiple clauses.
+
 ## v0.13.4
 
 ### Added Features
@@ -33,7 +57,7 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
        y: 200
      * width: 300
        height: 400
-
+   
    for item in *items
      switch item
        when :x, :y
