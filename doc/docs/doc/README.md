@@ -542,6 +542,7 @@ with? io.open "test.txt", "w"
 ### Piping
 
 Instead of a series of nested function calls, you can pipe values with operator **|>**.
+
 ```moonscript
 "hello" |> print
 1 |> print 2 -- insert pipe item as the first argument
@@ -560,7 +561,6 @@ readFile "example.txt"
 "hello" |> print
 1 |> print 2 -- insert pipe item as the first argument
 2 |> print 1, _, 3 -- pipe with a placeholder
-
 -- pipe expression in multiline
 readFile "example.txt"
   |> extract language, {}
@@ -568,6 +568,68 @@ readFile "example.txt"
   |> emit
   |> render
   |> print
+</pre>
+</YueDisplay>
+
+### Backcall
+
+Backcalls are used for unnesting callbacks. They are defined using arrows pointed to the left as the last parameter by default filling in a function call. All the syntax is mostly the same as regular arrow functions except that it is just pointing the other way and the function body does not require indent.
+
+```moonscript
+<- f
+print "hello"
+```
+<YueDisplay>
+<pre>
+<- f
+print "hello"
+</pre>
+</YueDisplay>
+
+Fat arrow functions are also available.
+
+```moonscript
+<= f
+print @value
+```
+<YueDisplay>
+<pre>
+<= f
+print @value
+</pre>
+</YueDisplay>
+
+You can specify a placeholder for where you want the backcall function to go as a parameter.
+
+```moonscript
+(x) <- map _, {1, 2, 3}
+x * 2
+```
+<YueDisplay>
+<pre>
+(x) <- map _, {1, 2, 3}
+x * 2
+</pre>
+</YueDisplay>
+
+If you wish to have further code after your backcalls, you can set them aside with a do statement.
+
+```moonscript
+result, msg = do
+  (data) <- readAsync "filename.txt"
+  print data
+  (info) <- processAsync data
+  check info
+print result, msg
+```
+<YueDisplay>
+<pre>
+result, msg = do
+  (data) <- readAsync "filename.txt"
+  print data
+  (info) <- processAsync data
+  check info
+print result, msg
 </pre>
 </YueDisplay>
 
