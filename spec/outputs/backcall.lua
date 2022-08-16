@@ -130,4 +130,20 @@ do
 	end)
 end
 alert("hi")
+local x, y, z
+do
+	x = (a) < -b
+end
+do
+	x, y, z = b(function(a) end)
+end
+do
+	x, y, z = b(function(a) end)
+end
+do
+	x = a <= b
+end
+do
+	x, y, z = b(function(self, a) end)
+end
 return nil
