@@ -9,8 +9,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_compiler.h"
 
 extern "C" {
-#include "lua.h"
 #include "lauxlib.h"
+#include "lua.h"
 #include "lualib.h"
 int luaopen_yue(lua_State* L);
 } // extern "C"
@@ -23,15 +23,14 @@ static void openlibs(void* state) {
 	lua_pop(L, 1);
 }
 
-#define YUE_ARGS nullptr,openlibs
+#define YUE_ARGS nullptr, openlibs
 
 #include <string_view>
 using namespace std::string_view_literals;
 #include <emscripten/bind.h>
 using namespace emscripten;
 
-struct YueResult
-{
+struct YueResult {
 	std::string codes;
 	std::string err;
 };
@@ -47,8 +46,8 @@ YueResult tolua(const std::string& codes, bool reserveLineNumber = true, bool im
 
 std::string version() { return std::string(yue::version); }
 
-#define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
-#define DEFER(code) _DEFER(code,__LINE__)
+#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { code; })
+#define DEFER(code) _DEFER(code, __LINE__)
 
 void pushYue(lua_State* L, std::string_view name) {
 	lua_getglobal(L, "package"); // package
@@ -167,4 +166,3 @@ EMSCRIPTEN_BINDINGS(yue) {
 	function("exec", &exec);
 	function("version", &version);
 }
-

@@ -8,14 +8,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #pragma once
 
-#include <string>
-#include <unordered_set>
-#include <stack>
 #include <algorithm>
 #include <list>
-#include <sstream>
-#include <string_view>
 #include <memory>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <unordered_set>
 
 #include "yuescript/ast.hpp"
 #include "yuescript/yue_ast.h"
@@ -35,7 +35,7 @@ struct ParseInfo {
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;
 };
 
-template<typename T>
+template <typename T>
 struct identity { typedef T type; };
 
 #define AST_RULE(type) \
@@ -50,7 +50,7 @@ class YueParser {
 public:
 	YueParser();
 
-	template<class AST>
+	template <class AST>
 	ParseInfo parse(std::string_view codes) {
 		return parse(codes, getRule<AST>());
 	}
@@ -338,8 +338,8 @@ private:
 };
 
 namespace Utils {
-	void replace(std::string& str, std::string_view from, std::string_view to);
-	void trim(std::string& str);
-};
+void replace(std::string& str, std::string_view from, std::string_view to);
+void trim(std::string& str);
+} // namespace Utils
 
 } // namespace yue

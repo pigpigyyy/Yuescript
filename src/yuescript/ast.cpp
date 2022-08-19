@@ -13,11 +13,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include "yuescript/ast.hpp"
 
-
 namespace parserlib {
 
-
-traversal ast_node::traverse(const std::function<traversal (ast_node*)>& func) {
+traversal ast_node::traverse(const std::function<traversal(ast_node*)>& func) {
 	return func(this);
 }
 
@@ -45,27 +43,25 @@ ast_node* ast_node::getByTypeIds(int* begin, int* end) {
 	return current;
 }
 
-bool ast_node::visitChild(const std::function<bool (ast_node*)>&) {
+bool ast_node::visitChild(const std::function<bool(ast_node*)>&) {
 	return false;
 }
 
-	
 /** Asks all members to construct themselves from the stack.
 	The members are asked to construct themselves in reverse order.
 	from a node stack.
 	@param st stack.
 */
-void ast_container::construct(ast_stack &st) {
-	for(ast_member_vector::reverse_iterator it = m_members.rbegin();
-		it != m_members.rend();
-		++it)
-	{
+void ast_container::construct(ast_stack& st) {
+	for (ast_member_vector::reverse_iterator it = m_members.rbegin();
+		 it != m_members.rend();
+		 ++it) {
 		ast_member* member = *it;
 		member->construct(st);
 	}
 }
 
-traversal ast_container::traverse(const std::function<traversal (ast_node*)>& func) {
+traversal ast_container::traverse(const std::function<traversal(ast_node*)>& func) {
 	traversal action = func(this);
 	switch (action) {
 		case traversal::Stop: return traversal::Stop;
@@ -96,7 +92,7 @@ traversal ast_container::traverse(const std::function<traversal (ast_node*)>& fu
 	return traversal::Continue;
 }
 
-bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
+bool ast_container::visitChild(const std::function<bool(ast_node*)>& func) {
 	const auto& members = this->members();
 	for (auto member : members) {
 		switch (member->get_type()) {
@@ -121,7 +117,6 @@ bool ast_container::visitChild(const std::function<bool (ast_node*)>& func) {
 	return false;
 }
 
-
 /** parses the given input.
 	@param i input.
 	@param g root rule of grammar.
@@ -143,5 +138,4 @@ ast_node* parse(input& i, rule& g, error_list& el, void* ud) {
 	return st.front();
 }
 
-
-} //namespace parserlib
+} // namespace parserlib

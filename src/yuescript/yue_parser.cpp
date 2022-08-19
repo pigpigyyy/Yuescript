@@ -17,8 +17,7 @@ std::unordered_set<std::string> LuaKeywords = {
 	"end"s, "false"s, "for"s, "function"s, "goto"s,
 	"if"s, "in"s, "local"s, "nil"s, "not"s,
 	"or"s, "repeat"s, "return"s, "then"s, "true"s,
-	"until"s, "while"s
-};
+	"until"s, "while"s};
 
 std::unordered_set<std::string> Keywords = {
 	"and"s, "break"s, "do"s, "else"s, "elseif"s,
@@ -31,6 +30,7 @@ std::unordered_set<std::string> Keywords = {
 	"try"s, "unless"s, "using"s, "when"s, "with"s // Yue keywords
 };
 
+// clang-format off
 YueParser::YueParser() {
 	plain_space = *set(" \t");
 	Break = nl(-expr('\r') >> '\n');
@@ -55,14 +55,14 @@ YueParser::YueParser() {
 		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
 		-(-set("uU") >> set("lL") >> set("lL"))
 	) | (
-		+range('0', '9') >> -set("uU") >> set("lL") >> set("lL")
-	) | (
-		(
-			+range('0', '9') >> -('.' >> +range('0', '9'))
-		) | (
-			'.' >> +range('0', '9')
+		+range('0', '9') >> (
+			'.' >> +range('0', '9') >> -(set("eE") >> -expr('-') >> +range('0', '9')) |
+			-set("uU") >> set("lL") >> set("lL") |
+			true_()
 		)
-	) >> -(set("eE") >> -expr('-') >> +range('0', '9'));
+	) | (
+		'.' >> +range('0', '9') >> -(set("eE") >> -expr('-') >> +range('0', '9'))
+	);
 
 	Cut = false_();
 	Seperator = true_();
@@ -652,6 +652,7 @@ YueParser::YueParser() {
 	BlockEnd = Block >> -(+Break >> Space >> and_(Stop)) >> Stop;
 	File = White >> -Shebang >> -Block >> White >> eof();
 }
+// clang-format on
 
 ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	ParseInfo res;
@@ -710,20 +711,20 @@ std::string YueParser::decode(const input& codes) {
 }
 
 namespace Utils {
-	void replace(std::string& str, std::string_view from, std::string_view to) {
-		size_t start_pos = 0;
-		while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-			str.replace(start_pos, from.size(), to);
-			start_pos += to.size();
-		}
-	}
-
-	void trim(std::string& str) {
-		if (str.empty()) return;
-		str.erase(0, str.find_first_not_of(" \t\r\n"));
-		str.erase(str.find_last_not_of(" \t\r\n") + 1);
+void replace(std::string& str, std::string_view from, std::string_view to) {
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.size(), to);
+		start_pos += to.size();
 	}
 }
+
+void trim(std::string& str) {
+	if (str.empty()) return;
+	str.erase(0, str.find_first_not_of(" \t\r\n"));
+	str.erase(str.find_last_not_of(" \t\r\n") + 1);
+}
+} // namespace Utils
 
 std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc) const {
 	const int ASCII = 255;
@@ -753,13 +754,14 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 	}
 	auto line = Converter{}.to_bytes(std::wstring(begin, end));
 	while (col < static_cast<int>(line.size())
-			&& (line[col] == ' ' || line[col] == '\t')) {
+		&& (line[col] == ' ' || line[col] == '\t')) {
 		col++;
 	}
 	Utils::replace(line, "\t"sv, " "sv);
 	std::ostringstream buf;
-	buf << loc->m_begin.m_line << ": "sv << msg <<
-		'\n' << line << '\n' << std::string(col, ' ') << "^"sv;
+	buf << loc->m_begin.m_line << ": "sv << msg << '\n'
+		<< line << '\n'
+		<< std::string(col, ' ') << "^"sv;
 	return buf.str();
 }
 

@@ -14,18 +14,16 @@ namespace parserlib {
 using namespace std::string_view_literals;
 
 #define AST_LEAF(type) \
-COUNTER_INC; \
-class type##_t : public ast_node \
-{ \
-public: \
-	virtual int getId() const override { return COUNTER_READ; }
+	COUNTER_INC; \
+	class type##_t : public ast_node { \
+	public: \
+		virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_NODE(type) \
-COUNTER_INC; \
-class type##_t : public ast_container \
-{ \
-public: \
-	virtual int getId() const override { return COUNTER_READ; }
+	COUNTER_INC; \
+	class type##_t : public ast_container { \
+	public: \
+		virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_MEMBER(type, ...) \
 	type##_t() { \
@@ -34,8 +32,12 @@ public: \
 
 #define AST_END(type, name) \
 	virtual const std::string_view getName() const override { return name; } \
-}; \
-template<> constexpr int id<type##_t>() { return COUNTER_READ; }
+	} \
+	; \
+	template <> \
+	constexpr int id<type##_t>() { return COUNTER_READ; }
+
+// clang-format off
 
 AST_LEAF(Num)
 AST_END(Num, "num"sv)
@@ -848,5 +850,7 @@ AST_NODE(File)
 	ast_ptr<false, Block_t> block;
 	AST_MEMBER(File, &block)
 AST_END(File, "file"sv)
+
+// clang-format on
 
 } // namespace parserlib

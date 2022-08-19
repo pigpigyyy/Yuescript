@@ -8,14 +8,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #pragma once
 
+#include <functional>
+#include <list>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <tuple>
-#include <list>
-#include <vector>
-#include <memory>
 #include <unordered_map>
-#include <functional>
+#include <vector>
 
 namespace yue {
 
@@ -59,6 +59,7 @@ public:
 		bool sameModule = false);
 	virtual ~YueCompiler();
 	CompileInfo compile(std::string_view codes, const YueConfig& config = {});
+
 private:
 	std::unique_ptr<YueCompilerImpl> _compiler;
 };

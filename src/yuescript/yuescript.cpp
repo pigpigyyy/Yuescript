@@ -19,11 +19,12 @@ using namespace std::string_literals;
 
 extern "C" {
 
-#include "lua.h"
 #include "lauxlib.h"
+#include "lua.h"
 
 static const char yuescriptCodes[] =
 #include "yuescript/yuescript.h"
+	;
 
 static void init_yuescript(lua_State* L) {
 	if (luaL_loadbuffer(L, yuescriptCodes, sizeof(yuescriptCodes) / sizeof(yuescriptCodes[0]) - 1, "=(yuescript)") != 0) {
@@ -40,6 +41,7 @@ static void init_yuescript(lua_State* L) {
 
 static const char stpCodes[] =
 #include "yuescript/stacktraceplus.h"
+	;
 
 static int init_stacktraceplus(lua_State* L) {
 	if (luaL_loadbuffer(L, stpCodes, sizeof(stpCodes) / sizeof(stpCodes[0]) - 1, "=(stacktraceplus)") != 0) {
@@ -218,8 +220,7 @@ static const luaL_Reg yuelib[] = {
 	{"version", nullptr},
 	{"options", nullptr},
 	{"load_stacktraceplus", nullptr},
-	{nullptr, nullptr}
-};
+	{nullptr, nullptr}};
 
 YUE_API int luaopen_yue(lua_State* L) {
 #if LUA_VERSION_NUM > 501
@@ -243,4 +244,3 @@ YUE_API int luaopen_yue(lua_State* L) {
 }
 
 } // extern "C"
-

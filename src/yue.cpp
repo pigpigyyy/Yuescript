@@ -9,28 +9,28 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
 
-#include <iostream>
-#include <iomanip>
-#include <cstdlib>
-#include <limits>
-#include <fstream>
 #include <chrono>
+#include <cstdlib>
+#include <fstream>
 #include <future>
-#include <sstream>
-#include <tuple>
-#include <string_view>
+#include <iomanip>
+#include <iostream>
+#include <limits>
 #include <memory>
+#include <sstream>
+#include <string_view>
+#include <tuple>
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
-#if not (defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
-#define _DEFER(code,line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto){code;})
-#define DEFER(code) _DEFER(code,__LINE__)
+#if not(defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
+#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { code; })
+#define DEFER(code) _DEFER(code, __LINE__)
 extern "C" {
-#include "lua.h"
 #include "lauxlib.h"
+#include "lua.h"
 #include "lualib.h"
 int luaopen_yue(lua_State* L);
 } // extern "C"
@@ -81,7 +81,7 @@ void pushOptions(lua_State* L, int lineOffset) {
 #endif // not (defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
 
 #ifndef YUE_NO_MACRO
-#define YUE_ARGS nullptr,openlibs
+#define YUE_ARGS nullptr, openlibs
 #else
 #define YUE_ARGS
 #endif // YUE_NO_MACRO
@@ -90,7 +90,7 @@ void pushOptions(lua_State* L, int lineOffset) {
 static const char luaminifyCodes[] =
 #include "LuaMinify.h"
 
-static void pushLuaminify(lua_State* L) {
+	static void pushLuaminify(lua_State * L) {
 	if (luaL_loadbuffer(L, luaminifyCodes, sizeof(luaminifyCodes) / sizeof(luaminifyCodes[0]) - 1, "=(luaminify)") != 0) {
 		std::string err = "failed to load luaminify module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
@@ -103,27 +103,27 @@ static void pushLuaminify(lua_State* L) {
 
 int main(int narg, const char** args) {
 	const char* help =
-"Usage: yue [options|files|directories] ...\n\n"
-"   -h       Print this message\n"
+		"Usage: yue [options|files|directories] ...\n\n"
+		"   -h       Print this message\n"
 #ifndef YUE_COMPILER_ONLY
-"   -e str   Execute a file or raw codes\n"
-"   -m       Generate minified codes\n"
+		"   -e str   Execute a file or raw codes\n"
+		"   -m       Generate minified codes\n"
 #endif // YUE_COMPILER_ONLY
-"   -t path  Specify where to place compiled files\n"
-"   -o file  Write output to file\n"
-"   -s       Use spaces in generated codes instead of tabs\n"
-"   -p       Write output to standard out\n"
-"   -b       Dump compile time (doesn't write output)\n"
-"   -g       Dump global variables used in NAME LINE COLUMN\n"
-"   -l       Write line numbers from source codes\n"
-"   -v       Print version\n"
+		"   -t path  Specify where to place compiled files\n"
+		"   -o file  Write output to file\n"
+		"   -s       Use spaces in generated codes instead of tabs\n"
+		"   -p       Write output to standard out\n"
+		"   -b       Dump compile time (doesn't write output)\n"
+		"   -g       Dump global variables used in NAME LINE COLUMN\n"
+		"   -l       Write line numbers from source codes\n"
+		"   -v       Print version\n"
 #ifndef YUE_COMPILER_ONLY
-"   --       Read from standard in, print to standard out\n"
-"            (Must be first and only argument)\n\n"
-"   Execute without options to enter REPL, type symbol '$'\n"
-"   in a single line to start/stop multi-line mode\n"
+		"   --       Read from standard in, print to standard out\n"
+		"            (Must be first and only argument)\n\n"
+		"   Execute without options to enter REPL, type symbol '$'\n"
+		"   in a single line to start/stop multi-line mode\n"
 #endif // YUE_COMPILER_ONLY
-;
+		;
 #ifndef YUE_COMPILER_ONLY
 	if (narg == 1) {
 		lua_State* L = luaL_newstate();
@@ -276,7 +276,7 @@ int main(int narg, const char** args) {
 	std::string targetPath;
 	std::string resultFile;
 	std::string workPath;
-	std::list<std::pair<std::string,std::string>> files;
+	std::list<std::pair<std::string, std::string>> files;
 	for (int i = 1; i < narg; ++i) {
 		std::string arg = args[i];
 		if (arg == "--"sv) {
@@ -449,7 +449,7 @@ int main(int narg, const char** args) {
 		std::cout << "Error: -o can not be used with multiple input files\n"sv;
 		std::cout << help;
 	}
-	std::list<std::future<std::tuple<int,std::string,std::string>>> results;
+	std::list<std::future<std::tuple<int, std::string, std::string>>> results;
 	for (const auto& file : files) {
 		auto task = std::async(std::launch::async, [=]() {
 			std::ifstream input(file.first, std::ios::in);
