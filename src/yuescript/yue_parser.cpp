@@ -50,18 +50,21 @@ YueParser::YueParser() {
 	EmptyLine = SpaceBreak;
 	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
+	num_expo = set("eE") >> -expr('-') >> +range('0', '9');
+	lj_num = -set("uU") >> set("lL") >> set("lL");
 	Num = (
 		"0x" >>
 		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
-		-(-set("uU") >> set("lL") >> set("lL"))
+		-lj_num
 	) | (
 		+range('0', '9') >> (
-			'.' >> +range('0', '9') >> -(set("eE") >> -expr('-') >> +range('0', '9')) |
-			-set("uU") >> set("lL") >> set("lL") |
+			'.' >> +range('0', '9') >> -num_expo |
+			num_expo |
+			lj_num |
 			true_()
 		)
 	) | (
-		'.' >> +range('0', '9') >> -(set("eE") >> -expr('-') >> +range('0', '9'))
+		'.' >> +range('0', '9') >> -num_expo
 	);
 
 	Cut = false_();

@@ -101,6 +101,8 @@ private:
 		return Cut;
 	}
 
+	rule num_expo;
+	rule lj_num;
 	rule plain_space;
 	rule Break;
 	rule Any;
