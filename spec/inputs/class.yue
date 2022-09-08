@@ -237,9 +237,9 @@ class Example
 
 class Foo
 	new: (x) => @x = x
-	mul#: (y) => @x * y
-	["dsd-dsd"]#: 123
+	<mul>: (y) => @x * y
+	<"dsd-dsd">: 123
 	:add
-	:add#
+	:<add>
 
 nil

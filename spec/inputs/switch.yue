@@ -101,7 +101,7 @@ do
 						print "Object A"
 					when ClassB
 						print "Object B"
-			when #: mt
+			when <>: mt
 				print "A table with metatable"
 			else
 				print "item not accepted!"
@@ -156,7 +156,7 @@ do
 
 do
 	switch y
-		when {x: #: mt}
+		when {x: <>: mt}
 			print mt
 
 nil

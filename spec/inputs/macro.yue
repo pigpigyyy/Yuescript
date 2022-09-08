@@ -262,7 +262,7 @@ $chainC(
 	Destroy!
 )
 
-macro tb = -> "{'abc', a:123, call#:=> 998}"
+macro tb = -> "{'abc', a:123, <call>:=> 998}"
 print $tb[1], $tb.a, ($tb)!, $tb!
 
 print "current line: #{ $LINE }"

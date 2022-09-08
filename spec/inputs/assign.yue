@@ -34,7 +34,7 @@ x = (do
 
 (using nil) <- _
 
-a.# = do
+a.<> = do
 	print 123
 	{}
 
@@ -63,7 +63,7 @@ do
 		123, tb
 
 do
-	a, b[], c, d.add# = if x
+	a, b[], c, d.<add> = if x
 		switch y
 			when 1
 				f!

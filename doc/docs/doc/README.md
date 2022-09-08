@@ -37,8 +37,8 @@ inventory =
 -- metatable manipulation
 apple =
   size: 15
-  index#: {color: 0x00ffff}
-p apple.color, apple.index# if apple.#?
+  <index>: {color: 0x00ffff}
+p apple.color, apple.<index> if apple.<>?
 
 -- js-like export syntax
 export yuescript = "月之脚本"
@@ -69,8 +69,8 @@ inventory =
 -- metatable manipulation
 apple =
   size: 15
-  index#: {color: 0x00ffff}
-p apple.color, apple.index# if apple.#?
+  <index>: {color: 0x00ffff}
+p apple.color, apple.<index> if apple.<>?
 
 -- js-like export syntax
 export yuescript = "月之脚本"
@@ -429,77 +429,78 @@ merge = {...a, ...b}
 
 ### Metatable
 
-The **#** operator can be used as a shortcut for metatable manipulation.
+The **<>** operator can be used as a shortcut for metatable manipulation.
 
 * **Metatable Creation**  
-Create normal table with  key **#** or metamethod key that ends with **#**.
+Create normal table with empty bracekets **<>** or metamethod key which is surrounded by **<>**.
 
 ```moonscript
 mt = {}
-add = (right)=> #: mt, value: @value + right.value
+add = (right)=> <>: mt, value: @value + right.value
 mt.__add = add
 
-a = #: mt, value: 1
+a = <>: mt, value: 1
  -- set field with variable of the same name
-b = :add#, value: 2
-c = add#: mt.__add, value: 3
+b = :<add>, value: 2
+c = <add>: mt.__add, value: 3
 
 d = a + b + c
 print d.value
 
-close _ = close#: -> print "out of scope"
+close _ = <close>: -> print "out of scope"
 ```
 <YueDisplay>
 <pre>
 mt = {}
-add = (right)=> #: mt, value: @value + right.value
+add = (right)=> <>: mt, value: @value + right.value
 mt.__add = add
 
-a = #: mt, value: 1
+a = <>: mt, value: 1
  -- set field with variable of the same name
-b = :add#, value: 2
-c = add#: mt.__add, value: 3
+b = :<add>, value: 2
+c = <add>: mt.__add, value: 3
 
 d = a + b + c
 print d.value
 
-close _ = close#: -> print "out of scope"
+close _ = <close>: -> print "out of scope"
 </pre>
 </YueDisplay>
 
 * **Metatable Accessing**  
-Accessing metatable with key **#** or metamethod key that ends with **#**.
+Accessing metatable with **<>** or metamethod name surrounded by **<>** or writing some expression in **<>**.
 
 ```moonscript
 -- create with metatable containing field "value"
-tb = ["value"]#: 123
-tb.index# = tb.#
+tb = <"value">: 123
+tb.<index> = tb.<>
 print tb.value
 
-tb.# = __index: {item: "hello"}
+tb.<> = __index: {item: "hello"}
 print tb.item
 ```
 <YueDisplay>
+
 <pre>
 -- create with metatable containing field "value"
-tb = ["value"]#: 123
-tb.index# = tb.#
+tb = <"value">: 123
+tb.<index> = tb.<>
 print tb.value
-tb.# = __index: {item: "hello"}
+tb.<> = __index: {item: "hello"}
 print tb.item
 </pre>
 </YueDisplay>
 
 * **Metatable Destructure**  
-Destruct metatable with metamethod key that ends with **#**.
+Destruct metatable with metamethod key surrounded by **<>**.
 
 ```moonscript
-{item, :new, :close#, index#: getter} = tb
+{item, :new, :<close>, <index>: getter} = tb
 print item, new, close, getter
 ```
 <YueDisplay>
 <pre>
-{item, :new, :close#, index#: getter} = tb
+{item, :new, :<close>, <index>: getter} = tb
 print item, new, close, getter
 </pre>
 </YueDisplay>

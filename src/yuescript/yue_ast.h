@@ -459,18 +459,16 @@ AST_NODE(variable_pair)
 	AST_MEMBER(variable_pair, &name)
 AST_END(variable_pair, "variable_pair"sv)
 
-class DoubleString_t;
-class SingleString_t;
-class LuaString_t;
+class String_t;
 
 AST_NODE(normal_pair)
-	ast_sel<true, KeyName_t, Exp_t, DoubleString_t, SingleString_t, LuaString_t> key;
+	ast_sel<true, KeyName_t, Exp_t, String_t> key;
 	ast_sel<true, Exp_t, TableBlock_t> value;
 	AST_MEMBER(normal_pair, &key, &value)
 AST_END(normal_pair, "normal_pair"sv)
 
 AST_NODE(default_pair)
-	ast_sel<true, Variable_t, KeyName_t, Exp_t> key;
+	ast_sel<true, Variable_t, KeyName_t, Exp_t, String_t> key;
 	ast_ptr<true, Seperator_t> sep;
 	ast_ptr<false, Exp_t> value;
 	ast_ptr<true, Exp_t> defVal;
@@ -483,13 +481,13 @@ AST_NODE(meta_variable_pair)
 AST_END(meta_variable_pair, "meta_variable_pair"sv)
 
 AST_NODE(meta_normal_pair)
-	ast_sel<false, Name_t, Exp_t> key;
+	ast_sel<false, Name_t, Exp_t, String_t> key;
 	ast_sel<true, Exp_t, TableBlock_t> value;
 	AST_MEMBER(meta_normal_pair, &key, &value)
 AST_END(meta_normal_pair, "meta_normal_pair"sv)
 
 AST_NODE(meta_default_pair)
-	ast_sel<false, Variable_t, Name_t> key;
+	ast_sel<false, Variable_t, Name_t, Exp_t, String_t> key;
 	ast_ptr<true, Seperator_t> sep;
 	ast_ptr<false, Exp_t> value;
 	ast_ptr<true, Exp_t> defVal;
@@ -502,7 +500,6 @@ AST_NODE(simple_table)
 	AST_MEMBER(simple_table, &sep, &pairs)
 AST_END(simple_table, "simple_table"sv)
 
-class String_t;
 class const_value_t;
 class ClassDecl_t;
 class unary_value_t;
@@ -560,8 +557,8 @@ AST_LEAF(Metatable)
 AST_END(Metatable, "metatable"sv)
 
 AST_NODE(Metamethod)
-	ast_ptr<true, Name_t> name;
-	AST_MEMBER(Metamethod, &name)
+	ast_sel<true, Name_t, Exp_t, String_t> item;
+	AST_MEMBER(Metamethod, &item)
 AST_END(Metamethod, "metamethod"sv)
 
 AST_NODE(DotChainItem)

@@ -351,7 +351,7 @@ YueParser::YueParser() {
 
 	unary_operator =
 		expr('-') >> not_(set(">=") | space_one) |
-		expr('#') >> not_(':') |
+		expr('#') |
 		expr('~') >> not_(expr('=') | space_one) |
 		expr("not") >> not_(AlphaNum);
 	unary_exp = *(Space >> unary_operator) >> expo_exp;
@@ -435,8 +435,9 @@ YueParser::YueParser() {
 	FnArgs = (symx('(') >> *SpaceBreak >> -FnArgsExpList >> *SpaceBreak >> sym(')')) |
 		(sym('!') >> not_(expr('=')));
 
-	Metatable = expr('#');
-	Metamethod = Name >> expr('#');
+	meta_index = Name | Index | String;
+	Metatable = expr('<') >> sym('>');
+	Metamethod = expr('<') >> Space >> meta_index >> sym('>');
 
 	existential_op = expr('?') >> not_(expr('?'));
 	table_appending_op = expr("[]");
@@ -453,8 +454,8 @@ YueParser::YueParser() {
 
 	Index = symx('[') >> not_('[') >> Exp >> sym(']');
 	ChainItem = Invoke >> -existential_op | DotChainItem >> -existential_op | Slice | Index >> -existential_op;
-	DotChainItem = symx('.') >> (Name >> not_('#') | Metatable | Metamethod);
-	ColonChainItem = (expr('\\') | expr("::")) >> ((LuaKeyword | Name) >> not_('#') | Metamethod);
+	DotChainItem = symx('.') >> (Name | Metatable | Metamethod);
+	ColonChainItem = (expr('\\') | expr("::")) >> (LuaKeyword | Name | Metamethod);
 	invoke_chain = Invoke >> -existential_op >> -ChainItems;
 	ColonChain = ColonChainItem >> -existential_op >> -invoke_chain;
 
@@ -542,26 +543,31 @@ YueParser::YueParser() {
 		return true;
 	})) >> not_(Space >> statement_appendix);
 
-	variable_pair = sym(':') >> Variable >> not_('#');
+	variable_pair = sym(':') >> Variable;
 
 	normal_pair = (
 		KeyName |
 		sym('[') >> not_('[') >> Exp >> sym(']') |
-		Space >> DoubleString |
-		Space >> SingleString |
-		Space >> LuaString
+		Space >> String
 	) >>
 	symx(':') >> not_(':') >>
 	(Exp | TableBlock | +SpaceBreak >> Exp);
 
-	default_pair = (sym(':') >> Variable >> not_('#') >> Seperator | KeyName >> symx(':') >> Seperator >> exp_not_tab | exp_not_tab >> Seperator) >> sym('=') >> Exp;
+	default_pair = (
+		sym(':') >> Variable >> Seperator |
+		KeyName >> symx(':') >> not_(':') >> Seperator >> exp_not_tab |
+		Space >> String >> symx(':') >> not_(':') >> Seperator >> exp_not_tab |
+		exp_not_tab >> Seperator) >> sym('=') >> Exp;
 
-	meta_variable_pair = sym(':') >> Variable >> expr('#');
+	meta_variable_pair = sym(":<") >> Space >> Variable >> sym('>');
 
-	meta_normal_pair = Space >> -(Name | symx('[') >> not_('[') >> Exp >> sym(']')) >> expr("#:") >>
+	meta_normal_pair = sym('<') >> Space >> -meta_index >> sym(">:") >>
 		(Exp | TableBlock | +(SpaceBreak) >> Exp);
 
-	meta_default_pair = (sym(':') >> Variable >> expr('#') >> Seperator | Space >> -Name >> expr("#:") >> Seperator >> exp_not_tab) >> sym('=') >> Exp;
+	meta_default_pair = (
+		sym(":<") >> Space >> Variable >> sym('>') >> Seperator |
+		sym('<') >> Space >> -meta_index >> sym(">:") >> Seperator >> exp_not_tab
+	) >> sym('=') >> Exp;
 
 	KeyValue = variable_pair | normal_pair | meta_variable_pair | meta_normal_pair;
 	KeyValueList = KeyValue >> *(sym(',') >> KeyValue);

@@ -172,6 +172,7 @@ private:
 	rule ChainItem;
 	rule chain_line;
 	rule chain_block;
+	rule meta_index;
 	rule Index;
 	rule invoke_chain;
 	rule TableValue;

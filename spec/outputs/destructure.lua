@@ -428,3 +428,64 @@ do
 		y2, y3 = _obj_0.y2, _obj_0.y3
 	end
 end
+do
+	local v1, v2, v3, v4
+	do
+		local _obj_0 = tb
+		local _tmp_0, _tmp_1 = 1 + 1, self.x
+		v1, v2, v3, v4 = _obj_0[ [["abc"]]], _obj_0[_tmp_0][1], _obj_0[_tmp_0][2], _obj_0[_tmp_1]
+		if v1 == nil then
+			v1 = 111
+		end
+		if v2 == nil then
+			v2 = 222
+		end
+		if v3 == nil then
+			v3 = 333
+		end
+		if v4 == nil then
+			v4 = 444
+		end
+	end
+	local v5, v6, v7
+	do
+		local _obj_0 = tb2
+		local _tmp_2, _tmp_3 = func(), func2()
+		v5, v6, v7 = _obj_0['x-y-z'], _obj_0[_tmp_2][_tmp_3], _obj_0[_tmp_2][1]
+	end
+end
+do
+	local _obj_0 = tb
+	local value = _obj_0[name]
+	local value_meta = getmetatable(_obj_0)[name]
+end
+do
+	local tostring, add
+	do
+		local _obj_0 = getmetatable(tb)
+		tostring, add = _obj_0.__tostring, _obj_0.__add
+		if tostring == nil then
+			tostring = (function()
+				return "name"
+			end)
+		end
+	end
+	local _exp_0 = tb
+	do
+		local _tab_0 = "table" == type(_exp_0)
+		if _tab_0 then
+			local name, meta_field
+			do
+				local _obj_0 = getmetatable(_exp_0)
+				name = _obj_0.__name
+				meta_field = _obj_0["123"]
+				if name == nil then
+					name = "item"
+				end
+			end
+			if meta_field ~= nil then
+				return print(name, meta_field)
+			end
+		end
+	end
+end

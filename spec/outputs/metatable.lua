@@ -111,4 +111,37 @@ do
 		ctor, update = _obj_0.new, _obj_0.update
 	end
 end
+local tb = { }
+do
+	do
+		local _obj_0 = getmetatable(tb)
+		f = _obj_0["value" .. tostring(x < y)](_obj_0, 123, ...)
+	end
+	f((function(...)
+		local _obj_0 = getmetatable(tb)
+		return _obj_0['value'](_obj_0, 123, ...)
+	end)(...))
+	do
+		local _obj_0 = getmetatable(tb)
+		_obj_0[ [[		value
+		1
+	]]](_obj_0, 123, ...)
+	end
+	local _obj_0 = getmetatable(tb)
+	return _obj_0["value" .. tostring(x > y)](_obj_0, 123, ...)
+end
+do
+	f = getmetatable(tb):__value(123, ...)
+	f(getmetatable(tb):__value(123, ...))
+	getmetatable(tb):__value(123, ...)
+	return getmetatable(tb):__value(123, ...)
+end
+do
+	f = getmetatable(tb).__value(123, ...)
+	f = getmetatable(tb)["value" .. tostring(x < y)](123, ...)
+	f(getmetatable(tb)['value'](123, ...))
+	getmetatable(tb)[ [[ value
+1]]](123, ...)
+	return getmetatable(tb)["value" .. tostring(x > y)](123, ...)
+end
 return nil
