@@ -210,3 +210,9 @@ do
 		when {:<name> = "item", <"123">: meta_field}
 			print name, meta_field
 
+do
+	tb = {}
+	<[a + b]>: v1, [c!]: v2 = tb
+
+nil
+

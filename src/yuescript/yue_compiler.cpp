@@ -59,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.1"sv;
+const std::string_view version = "0.15.2"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1856,6 +1856,11 @@ private:
 						}
 					}
 					if (destruct.inlineAssignment) {
+						if (!extraScope) {
+							extraScope = true;
+							temp.push_back(indent() + "do"s + nll(x));
+							pushScope();
+						}
 						transformAssignment(destruct.inlineAssignment, temp);
 					}
 					if (optionalDestruct) {

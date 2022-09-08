@@ -470,8 +470,8 @@ do
 			end)
 		end
 	end
-	local _exp_0 = tb
 	do
+		local _exp_0 = tb
 		local _tab_0 = "table" == type(_exp_0)
 		if _tab_0 then
 			local name, meta_field
@@ -484,8 +484,23 @@ do
 				end
 			end
 			if meta_field ~= nil then
-				return print(name, meta_field)
+				print(name, meta_field)
 			end
 		end
 	end
 end
+do
+	local tb = { }
+	local _obj_0 = tb
+	do
+		local _tmp_0 = c()
+		local v2 = _obj_0[_tmp_0]
+	end
+	local v1
+	do
+		local _obj_1 = getmetatable(_obj_0)
+		local _tmp_1 = a + b
+		v1 = _obj_1[_tmp_1]
+	end
+end
+return nil
