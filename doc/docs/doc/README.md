@@ -69,8 +69,8 @@ inventory =
 -- metatable manipulation
 apple =
   size: 15
-  <index>: {color: 0x00ffff}
-p apple.color, apple.<index> if apple.<>?
+  &lt;index&gt;: {color: 0x00ffff}
+p apple.color, apple.&lt;index&gt; if apple.&lt;&gt;?
 
 -- js-like export syntax
 export yuescript = "月之脚本"
@@ -452,18 +452,18 @@ close _ = <close>: -> print "out of scope"
 <YueDisplay>
 <pre>
 mt = {}
-add = (right)=> <>: mt, value: @value + right.value
+add = (right)=> &lt;&gt;: mt, value: @value + right.value
 mt.__add = add
 
-a = <>: mt, value: 1
+a = &lt;&gt;: mt, value: 1
  -- set field with variable of the same name
-b = :<add>, value: 2
-c = <add>: mt.__add, value: 3
+b = :&lt;add&gt;, value: 2
+c = &lt;add&gt;: mt.__add, value: 3
 
 d = a + b + c
 print d.value
 
-close _ = <close>: -> print "out of scope"
+close _ = &lt;close&gt;: -> print "out of scope"
 </pre>
 </YueDisplay>
 
@@ -483,10 +483,10 @@ print tb.item
 
 <pre>
 -- create with metatable containing field "value"
-tb = <"value">: 123
-tb.<index> = tb.<>
+tb = &lt;"value"&gt;: 123
+tb.&lt;index&gt; = tb.&lt;&gt;
 print tb.value
-tb.<> = __index: {item: "hello"}
+tb.&lt;&gt; = __index: {item: "hello"}
 print tb.item
 </pre>
 </YueDisplay>
@@ -500,7 +500,7 @@ print item, new, close, getter
 ```
 <YueDisplay>
 <pre>
-{item, :new, :<close>, <index>: getter} = tb
+{item, :new, :&lt;close&gt;, &lt;index&gt;: getter} = tb
 print item, new, close, getter
 </pre>
 </YueDisplay>
