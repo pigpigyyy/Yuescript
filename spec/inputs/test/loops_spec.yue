@@ -6,3 +6,18 @@ describe "loops", ->
 			x
 
 		assert.same output, { 2,4,6 }
+	
+	it "continue in repeat", ->
+		output = {}
+		a = 0
+		repeat
+			a += 1
+			if a == 3
+				continue
+			if a == 5
+				break
+			output[] = a
+		until a == 8
+
+		assert.same output, { 1,2,4 }
+
