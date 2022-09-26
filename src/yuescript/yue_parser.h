@@ -195,7 +195,7 @@ private:
 	rule expo_exp;
 	rule exp_not_tab;
 	rule local_const_item;
-	rule empty_line_stop;
+	rule empty_line_break;
 	rule yue_comment;
 	rule yue_line_comment;
 	rule yue_multiline_comment;

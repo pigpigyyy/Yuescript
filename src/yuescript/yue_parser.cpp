@@ -659,20 +659,20 @@ YueParser::YueParser() {
 
 	Body = InBlock | Space >> Statement;
 
-	empty_line_stop = (
+	empty_line_break = (
 		check_indent >> (MultiLineComment >> Space | Comment) |
 		advance >> ensure(MultiLineComment >> Space | Comment, PopIndent) |
-		plain_space) >> and_(Stop);
+		plain_space) >> and_(Break);
 
 	Line =
 		CheckIndent >> Statement |
 		Advance >> ensure(Space >> and_(PipeOperator) >> Statement, PopIndent) |
-		empty_line_stop;
+		empty_line_break;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
-	BlockEnd = Block >> Stop;
-	File = -Shebang >> -Block >> Stop;
+	BlockEnd = Block >> White >> Stop;
+	File = -Shebang >> -Block >> White >> Stop;
 }
 // clang-format on
 
