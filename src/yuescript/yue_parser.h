@@ -196,6 +196,9 @@ private:
 	rule exp_not_tab;
 	rule local_const_item;
 	rule empty_line_stop;
+	rule yue_comment;
+	rule yue_line_comment;
+	rule yue_multiline_comment;
 	rule Line;
 	rule Shebang;
 
@@ -334,6 +337,8 @@ private:
 	AST_RULE(statement_appendix)
 	AST_RULE(statement_sep)
 	AST_RULE(Statement)
+	AST_RULE(YueLineComment)
+	AST_RULE(YueMultilineComment)
 	AST_RULE(Body)
 	AST_RULE(Block)
 	AST_RULE(BlockEnd)

@@ -59,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.2"sv;
+const std::string_view version = "0.15.3"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -109,8 +109,8 @@ public:
 			try {
 				auto block = _info.node.to<File_t>()->block.get();
 				if (_info.exportMacro) {
-					for (auto _stmt : block->statements.objects()) {
-						auto stmt = static_cast<Statement_t*>(_stmt);
+					for (auto stmt_ : block->statements.objects()) {
+						auto stmt = static_cast<Statement_t*>(stmt_);
 						switch (stmt->content->getId()) {
 							case id<MacroInPlace_t>():
 							case id<Macro_t>():

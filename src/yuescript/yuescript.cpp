@@ -175,27 +175,39 @@ static int yuetoast(lua_State* L) {
 			});
 			switch (count) {
 				case 0: {
-					lua_createtable(L, 2, 0);
+					lua_createtable(L, 4, 0);
 					getName(node);
 					lua_rawseti(L, -2, 1);
+					lua_pushinteger(L, node->m_begin.m_line);
+					lua_rawseti(L, -2, 2);
+					lua_pushinteger(L, node->m_begin.m_col);
+					lua_rawseti(L, -2, 3);
 					auto str = parser.toString(node);
 					yue::Utils::trim(str);
 					lua_pushlstring(L, str.c_str(), str.length());
-					lua_rawseti(L, -2, 2);
+					lua_rawseti(L, -2, 4);
 					break;
 				}
 				case 1: {
 					if (flattenLevel > 1 || (flattenLevel == 1 && !hasSep)) {
 						getName(node);
 						lua_rawseti(L, -2, 1);
+						lua_pushinteger(L, node->m_begin.m_line);
+						lua_rawseti(L, -2, 2);
+						lua_pushinteger(L, node->m_begin.m_col);
+						lua_rawseti(L, -2, 3);
 						break;
 					}
 				}
 				default: {
-					lua_createtable(L, count + 1, 0);
+					lua_createtable(L, count + 3, 0);
 					getName(node);
 					lua_rawseti(L, -2, 1);
-					for (int i = count, j = 2; i >= 1; i--, j++) {
+					lua_pushinteger(L, node->m_begin.m_line);
+					lua_rawseti(L, -2, 2);
+					lua_pushinteger(L, node->m_begin.m_col);
+					lua_rawseti(L, -2, 3);
+					for (int i = count, j = 4; i >= 1; i--, j++) {
 						lua_pushvalue(L, -1 - i);
 						lua_rawseti(L, -2, j);
 					}

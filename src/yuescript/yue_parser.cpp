@@ -78,8 +78,8 @@ YueParser::YueParser() {
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
 	#define disable_do_chain_arg_table_block(patt) (DisableDoChainArgTableBlock >> ((patt) >> EnableDoChainArgTableBlock | EnableDoChainArgTableBlock >> Cut))
 	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
-	#define plain_body_with(str) (-(Space >> key(str)) >> InBlock | Space >> key(str) >> Statement)
-	#define plain_body (InBlock | Statement)
+	#define plain_body_with(str) (-(Space >> key(str)) >> InBlock | Space >> key(str) >> Space >> Statement)
+	#define plain_body (InBlock | Space >> Statement)
 
 	Variable = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -177,7 +177,7 @@ YueParser::YueParser() {
 		return true;
 	});
 
-	InBlock = +SpaceBreak >> Advance >> ensure(Block, PopIndent);
+	InBlock = Space >> +(plain_space >> Break) >> Advance >> ensure(Block, PopIndent);
 
 	local_flag = expr('*') | expr('^');
 	local_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
@@ -503,7 +503,7 @@ YueParser::YueParser() {
 		-(+SpaceBreak >> Advance >> ensure(KeyValueList >> -sym(',') >> *(+SpaceBreak >> KeyValueLine), PopIndent)));
 
 	class_member_list = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-	ClassLine = CheckIndent >> (class_member_list | Statement) >> -sym(',');
+	ClassLine = CheckIndent >> (class_member_list | Space >> Statement) >> -sym(',');
 	ClassBlock = +SpaceBreak >> Advance >> Seperator >> ClassLine >> *(+SpaceBreak >> ClassLine) >> PopIndent;
 
 	ClassDecl =
@@ -641,9 +641,15 @@ YueParser::YueParser() {
 
 	if_line = Space >> IfType >> IfCond;
 
+	YueLineComment = *(not_(set("\r\n")) >> Any);
+	yue_line_comment = expr("--") >> YueLineComment >> and_(Stop);
+	YueMultilineComment = multi_line_content;
+	yue_multiline_comment = multi_line_open >> YueMultilineComment >> multi_line_close;
+	yue_comment = check_indent >> (yue_multiline_comment >> *(set(" \t") | yue_multiline_comment) >> -yue_line_comment | yue_line_comment) >> and_(Break);
+
 	statement_appendix = (if_line | CompInner) >> Space;
 	statement_sep = and_(*SpaceBreak >> CheckIndent >> Space >> (set("($'\"") | expr("[[") | expr("[=")));
-	Statement = Space >> (
+	Statement = Seperator >> -(yue_comment >> *(Break >> yue_comment) >> Break >> CheckIndent) >> Space >> (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		MacroInPlace | BreakLoop | Label | Goto | ShortTabAppending |
@@ -651,15 +657,22 @@ YueParser::YueParser() {
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
-	Body = InBlock | Statement;
+	Body = InBlock | Space >> Statement;
 
-	empty_line_stop = Space >> and_(Break);
-	Line = and_(check_indent >> Space >> not_(PipeOperator)) >> Statement | Advance >> ensure(and_(Space >> PipeOperator) >> Statement, PopIndent) | empty_line_stop;
+	empty_line_stop = (
+		check_indent >> (MultiLineComment >> Space | Comment) |
+		advance >> ensure(MultiLineComment >> Space | Comment, PopIndent) |
+		plain_space) >> and_(Stop);
+
+	Line =
+		CheckIndent >> Statement |
+		Advance >> ensure(Space >> and_(PipeOperator) >> Statement, PopIndent) |
+		empty_line_stop;
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
-	BlockEnd = Block >> -(+Break >> Space >> and_(Stop)) >> Stop;
-	File = White >> -Shebang >> -Block >> White >> eof();
+	BlockEnd = Block >> Stop;
+	File = -Shebang >> -Block >> Stop;
 }
 // clang-format on
 

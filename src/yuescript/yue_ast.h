@@ -815,14 +815,25 @@ AST_END(statement_appendix, "statement_appendix"sv)
 AST_LEAF(statement_sep)
 AST_END(statement_sep, "statement_sep"sv)
 
+AST_LEAF(YueLineComment)
+AST_END(YueLineComment, "comment"sv)
+
+AST_LEAF(YueMultilineComment)
+AST_END(YueMultilineComment, "comment"sv)
+
 AST_NODE(Statement)
-	ast_sel<true, Import_t, While_t, Repeat_t, For_t, ForEach_t,
-	Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
-	BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
-	Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t> content;
+	ast_ptr<true, Seperator_t> sep;
+	ast_sel_list<false, YueLineComment_t, YueMultilineComment_t> comments;
+	ast_sel<true,
+		Import_t, While_t, Repeat_t, For_t, ForEach_t,
+		Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
+		BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
+		BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
+		Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t
+	> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;
-	AST_MEMBER(Statement, &content, &appendix, &needSep)
+	AST_MEMBER(Statement, &sep, &comments, &content, &appendix, &needSep)
 AST_END(Statement, "statement"sv)
 
 class Block_t;
