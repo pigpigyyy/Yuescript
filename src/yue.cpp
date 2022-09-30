@@ -120,6 +120,9 @@ int main(int narg, const char** args) {
 #ifndef YUE_COMPILER_ONLY
 		"   --       Read from standard in, print to standard out\n"
 		"            (Must be first and only argument)\n\n"
+		"   --target=version  Specify the Lua version that codes will be generated to\n"
+		"                     (version can only be 5.1, 5.2, 5.3 or 5.4)\n"
+		"   --path=path_str   Append an extra Lua search path string to package.path\n\n"
 		"   Execute without options to enter REPL, type symbol '$'\n"
 		"   in a single line to start/stop multi-line mode\n"
 #endif // YUE_COMPILER_ONLY
