@@ -828,7 +828,6 @@ AST_NODE(Statement)
 		Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
 		BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
-		BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
 		Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t
 	> content;
 	ast_ptr<false, statement_appendix_t> appendix;

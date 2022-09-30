@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <optional>
 
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
@@ -59,7 +60,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.3"sv;
+const std::string_view version = "0.15.4"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -146,11 +147,30 @@ public:
 				str_list out;
 				pushScope();
 				_enableReturn.push(_info.moduleName.empty());
+				_gotoScopes.push(0);
+				_gotoScope = 1;
 				_varArgs.push({true, false});
 				transformBlock(block, out,
 					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
 					nullptr, true);
 				popScope();
+				if (!gotos.empty()) {
+					for (const auto& gotoNode : gotos) {
+						bool noLabel = true;
+						BLOCK_START
+						BREAK_IF(static_cast<int>(_labels.size()) <= gotoNode.scope);
+						BREAK_IF(_labels[gotoNode.scope] == std::nullopt);
+						const auto& scope = _labels[gotoNode.scope].value();
+						auto it = scope.find(gotoNode.label);
+						BREAK_IF(it == scope.end());
+						BREAK_IF(gotoNode.level < it->second.level);
+						noLabel = false;
+						BLOCK_END
+						if (noLabel) {
+							throw std::logic_error(_info.errorMessage("no visible label '"s + gotoNode.label + "' for <goto>"s, gotoNode.ptr->label));
+						}
+					}
+				}
 				if (config.lintGlobalVariable) {
 					globals = std::make_unique<GlobalVars>();
 					for (const auto& var : _globals) {
@@ -256,6 +276,20 @@ private:
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
 	const std::string _newLine = "\n";
+	int _gotoScope = 0;
+	std::stack<int> _gotoScopes;
+	struct LabelNode {
+		int line;
+		int level;
+	};
+	std::vector<std::optional<std::unordered_map<std::string, LabelNode>>> _labels;
+	struct GotoNode {
+		ast_ptr<true, Goto_t> ptr;
+		std::string label;
+		int scope;
+		int level;
+	};
+	std::list<GotoNode> gotos;
 
 	enum class LocalMode {
 		None = 0,
@@ -457,11 +491,28 @@ private:
 	std::string getUnusedName(std::string_view name) const {
 		int index = 0;
 		std::string newName;
+		std::string nameStr(name);
 		do {
-			newName = std::string(name) + std::to_string(index);
+			newName = nameStr + std::to_string(index);
 			index++;
 		} while (isLocal(newName));
 		return newName;
+	}
+
+	std::string getUnusedLabel(std::string_view label) const {
+		int scopeIndex = _gotoScopes.top();
+		if (static_cast<int>(_labels.size()) <= scopeIndex || _labels[scopeIndex] == std::nullopt) {
+			return std::string(label) + '0';
+		}
+		auto& scope = _labels[scopeIndex].value();
+		int index = 0;
+		std::string newLabel;
+		std::string labelStr(label);
+		do {
+			newLabel = labelStr + std::to_string(index);
+			index++;
+		} while (scope.find(newLabel) != scope.end());
+		return newLabel;
 	}
 
 	std::string transformCondExp(Exp_t* cond, bool unless) {
@@ -973,6 +1024,17 @@ private:
 			return true;
 		}
 		return false;
+	}
+
+	void pushFunctionScope() {
+		_enableReturn.push(true);
+		_gotoScopes.push(_gotoScope);
+		_gotoScope++;
+	}
+
+	void popFunctionScope() {
+		_enableReturn.pop();
+		_gotoScopes.pop();
 	}
 
 	void pushAnonVarArg() {
@@ -2642,7 +2704,7 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			_enableReturn.push(true);
+			pushFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
@@ -2765,7 +2827,7 @@ private:
 			*funcStart = anonFuncStart() + nll(nodes.front());
 			temp.push_back(indent() + anonFuncEnd());
 			popAnonVarArg();
-			_enableReturn.pop();
+			popFunctionScope();
 		}
 		out.push_back(join(temp));
 	}
@@ -2928,7 +2990,7 @@ private:
 		}
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			_enableReturn.push(true);
+			pushFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
@@ -2974,7 +3036,7 @@ private:
 					*funcStart = anonFuncStart() + nll(x);
 					temp.push_back(indent() + anonFuncEnd());
 					popAnonVarArg();
-					_enableReturn.pop();
+					popFunctionScope();
 				}
 				break;
 			}
@@ -3091,7 +3153,7 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
-		_enableReturn.push(true);
+		pushFunctionScope();
 		_varArgs.push({false, false});
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -3142,7 +3204,7 @@ private:
 			}
 		}
 		out.push_back(clearBuf());
-		_enableReturn.pop();
+		popFunctionScope();
 		_varArgs.pop();
 	}
 
@@ -3979,7 +4041,7 @@ private:
 			str_list temp;
 			std::string* funcStart = nullptr;
 			if (usage == ExpUsage::Closure) {
-				_enableReturn.push(true);
+				pushFunctionScope();
 				pushAnonVarArg();
 				funcStart = &temp.emplace_back();
 				pushScope();
@@ -4122,7 +4184,7 @@ private:
 					*funcStart = anonFuncStart() + nll(x);
 					temp.push_back(indent() + anonFuncEnd());
 					popAnonVarArg();
-					_enableReturn.pop();
+					popFunctionScope();
 					break;
 				default:
 					break;
@@ -4148,7 +4210,7 @@ private:
 					pushScope();
 					break;
 				case ExpUsage::Closure:
-					_enableReturn.push(true);
+					pushFunctionScope();
 					pushAnonVarArg();
 					funcStart = &temp.emplace_back();
 					pushScope();
@@ -4226,7 +4288,7 @@ private:
 					*funcStart = anonFuncStart() + nll(x);
 					temp.push_back(indent() + anonFuncEnd());
 					popAnonVarArg();
-					_enableReturn.pop();
+					popFunctionScope();
 					break;
 				default:
 					break;
@@ -4283,7 +4345,7 @@ private:
 						str_list temp;
 						std::string* funcStart = nullptr;
 						if (usage == ExpUsage::Closure) {
-							_enableReturn.push(true);
+							pushFunctionScope();
 							pushAnonVarArg();
 							funcStart = &temp.emplace_back();
 							pushScope();
@@ -4326,7 +4388,7 @@ private:
 								*funcStart = anonFuncStart() + nll(x);
 								temp.push_back(indent() + anonFuncEnd());
 								popAnonVarArg();
-								_enableReturn.pop();
+								popFunctionScope();
 								break;
 							}
 							case ExpUsage::Return: {
@@ -5052,7 +5114,7 @@ private:
 		auto x = values.front();
 		switch (usage) {
 			case ExpUsage::Closure:
-				_enableReturn.push(true);
+				pushFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
@@ -5255,7 +5317,7 @@ private:
 				out.back().insert(0, anonFuncStart() + nll(x));
 				out.back().append(indent() + anonFuncEnd());
 				popAnonVarArg();
-				_enableReturn.pop();
+				popFunctionScope();
 				break;
 			}
 			case ExpUsage::Assignment: {
@@ -5447,7 +5509,7 @@ private:
 		auto x = comp;
 		switch (usage) {
 			case ExpUsage::Closure:
-				_enableReturn.push(true);
+				pushFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
@@ -5511,7 +5573,7 @@ private:
 				out.back().insert(0, anonFuncStart() + nll(comp));
 				out.back().append(indent() + anonFuncEnd());
 				popAnonVarArg();
-				_enableReturn.pop();
+				popFunctionScope();
 				break;
 			}
 			case ExpUsage::Assignment: {
@@ -5804,44 +5866,80 @@ private:
 		str_list temp;
 		bool extraDo = false;
 		bool withContinue = hasContinueStatement(body);
+		int target = getLuaTarget(body);
+		std::string extraLabel;
 		if (withContinue) {
-			if (auto block = ast_cast<Block_t>(body)) {
-				if (!block->statements.empty()) {
-					auto stmt = static_cast<Statement_t*>(block->statements.back());
-					if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
-						extraDo = _parser.toString(breakLoop) == "break"sv;
+			if (target < 502) {
+				if (auto block = ast_cast<Block_t>(body)) {
+					if (!block->statements.empty()) {
+						auto stmt = static_cast<Statement_t*>(block->statements.back());
+						if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
+							extraDo = _parser.toString(breakLoop) == "break"sv;
+						}
 					}
 				}
-			}
-			auto continueVar = getUnusedName("_continue_"sv);
-			addToScope(continueVar);
-			_continueVars.push({continueVar, nullptr});
-			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
-			_buf << indent() << "repeat"sv << nll(body);
-			pushScope();
-			if (extraDo) {
-				_buf << indent() << "do"sv << nll(body);
+				auto continueVar = getUnusedName("_continue_"sv);
+				addToScope(continueVar);
+				_continueVars.push({continueVar, nullptr});
+				_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
+				_buf << indent() << "repeat"sv << nll(body);
 				pushScope();
+				if (extraDo) {
+					_buf << indent() << "do"sv << nll(body);
+					pushScope();
+				}
+				temp.push_back(clearBuf());
+			} else {
+				auto continueLabel = getUnusedLabel("_continue_"sv);
+				_continueVars.push({continueLabel, nullptr});
+				transformLabel(toAst<Label_t>("::"s + _continueVars.top().var + "::"s, body), temp);
+				extraLabel = temp.back();
+				temp.pop_back();
 			}
-			temp.push_back(clearBuf());
+			if (auto block = ast_cast<Block_t>(body); body && !block->statements.empty()) {
+				auto last = static_cast<Statement_t*>(block->statements.back());
+				if (last->content.is<Return_t>()) {
+					auto doNode = last->new_ptr<Do_t>();
+					auto newBody = last->new_ptr<Body_t>();
+					auto newStmt = last->new_ptr<Statement_t>();
+					newStmt->content.set(last->content);
+					newBody->content.set(newStmt);
+					doNode->body.set(newBody);
+					auto simpleValue = last->new_ptr<SimpleValue_t>();
+					simpleValue->value.set(doNode);
+					auto expList = last->new_ptr<ExpList_t>();
+					expList->exprs.push_back(newExp(simpleValue, last));
+					auto expListAssign = last->new_ptr<ExpListAssign_t>();
+					expListAssign->expList.set(expList);
+					last->content.set(expListAssign);
+				}
+			}
 		}
 		transform_plain_body(body, temp, usage, assignList);
 		if (withContinue) {
-			if (extraDo) {
+			if (target < 502) {
+				if (extraDo) {
+					popScope();
+					_buf << indent() << "end"sv << nll(body);
+				}
+				if (!appendContent.empty()) {
+					_buf << indent() << appendContent;
+				}
+				_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
 				popScope();
-				_buf << indent() << "end"sv << nll(body);
+				_buf << indent() << "until true"sv << nlr(body);
+				_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
+				_buf << indent(1) << "break"sv << nlr(body);
+				_buf << indent() << "end"sv << nlr(body);
+				temp.push_back(clearBuf());
+				_continueVars.pop();
+			} else {
+				if (!appendContent.empty()) {
+					temp.push_back(indent() + appendContent);
+				}
+				temp.push_back(extraLabel);
+				_continueVars.pop();
 			}
-			if (!appendContent.empty()) {
-				_buf << indent() << appendContent;
-			}
-			_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
-			popScope();
-			_buf << indent() << "until true"sv << nlr(body);
-			_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
-			_buf << indent(1) << "break"sv << nlr(body);
-			_buf << indent() << "end"sv << nlr(body);
-			temp.push_back(clearBuf());
-			_continueVars.pop();
 		} else if (!appendContent.empty()) {
 			temp.back().append(indent() + appendContent);
 		}
@@ -5854,56 +5952,67 @@ private:
 		auto body = repeatNode->body->content.get();
 		bool withContinue = hasContinueStatement(body);
 		std::string conditionVar;
+		std::string extraLabel;
+		ast_ptr<false, ExpListAssign_t> condAssign;
+		int target = getLuaTarget(repeatNode);
 		if (withContinue) {
-			if (auto block = ast_cast<Block_t>(body)) {
-				if (!block->statements.empty()) {
-					auto stmt = static_cast<Statement_t*>(block->statements.back());
-					if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
-						extraDo = _parser.toString(breakLoop) == "break"sv;
+			if (target < 502) {
+				if (auto block = ast_cast<Block_t>(body)) {
+					if (!block->statements.empty()) {
+						auto stmt = static_cast<Statement_t*>(block->statements.back());
+						if (auto breakLoop = ast_cast<BreakLoop_t>(stmt->content)) {
+							extraDo = _parser.toString(breakLoop) == "break"sv;
+						}
 					}
 				}
-			}
-			conditionVar = getUnusedName("_cond_");
-			forceAddToScope(conditionVar);
-			auto continueVar = getUnusedName("_continue_"sv);
-			forceAddToScope(continueVar);
-			{
-				auto assignment = toAst<ExpListAssign_t>(conditionVar + "=nil"s, repeatNode->condition);
-				auto assign = assignment->action.to<Assign_t>();
-				assign->values.clear();
-				assign->values.push_back(repeatNode->condition);
-				_continueVars.push({continueVar, assignment.get()});
-			}
-			_buf << indent() << "local "sv << conditionVar << " = false"sv << nll(body);
-			_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
-			_buf << indent() << "repeat"sv << nll(body);
-			pushScope();
-			if (extraDo) {
-				_buf << indent() << "do"sv << nll(body);
+				conditionVar = getUnusedName("_cond_");
+				forceAddToScope(conditionVar);
+				auto continueVar = getUnusedName("_continue_"sv);
+				forceAddToScope(continueVar);
+				{
+					auto assignment = toAst<ExpListAssign_t>(conditionVar + "=nil"s, repeatNode->condition);
+					auto assign = assignment->action.to<Assign_t>();
+					assign->values.clear();
+					assign->values.push_back(repeatNode->condition);
+					_continueVars.push({continueVar, assignment.get()});
+				}
+				_buf << indent() << "local "sv << conditionVar << " = false"sv << nll(body);
+				_buf << indent() << "local "sv << continueVar << " = false"sv << nll(body);
+				_buf << indent() << "repeat"sv << nll(body);
 				pushScope();
+				if (extraDo) {
+					_buf << indent() << "do"sv << nll(body);
+					pushScope();
+				}
+				temp.push_back(clearBuf());
+			} else {
+				auto continueLabel = getUnusedLabel("_continue_"sv);
+				_continueVars.push({continueLabel, nullptr});
+				transformLabel(toAst<Label_t>("::"s + _continueVars.top().var + "::"s, body), temp);
+				extraLabel = temp.back();
+				temp.pop_back();
 			}
-			temp.push_back(clearBuf());
 		}
 		transform_plain_body(body, temp, ExpUsage::Common);
 		if (withContinue) {
-			{
+			if (target < 502) {
 				transformAssignment(_continueVars.top().condAssign, temp);
-				auto assignCond = std::move(temp.back());
-				temp.pop_back();
-				temp.back().append(assignCond);
-			}
-			if (extraDo) {
+				if (extraDo) {
+					popScope();
+					_buf << indent() << "end"sv << nll(body);
+				}
+				_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
 				popScope();
-				_buf << indent() << "end"sv << nll(body);
+				_buf << indent() << "until true"sv << nlr(body);
+				_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
+				_buf << indent(1) << "break"sv << nlr(body);
+				_buf << indent() << "end"sv << nlr(body);
+				temp.push_back(clearBuf());
+				_continueVars.pop();
+			} else {
+				temp.push_back(extraLabel);
+				_continueVars.pop();
 			}
-			_buf << indent() << _continueVars.top().var << " = true"sv << nll(body);
-			popScope();
-			_buf << indent() << "until true"sv << nlr(body);
-			_buf << indent() << "if not "sv << _continueVars.top().var << " then"sv << nlr(body);
-			_buf << indent(1) << "break"sv << nlr(body);
-			_buf << indent() << "end"sv << nlr(body);
-			temp.push_back(clearBuf());
-			_continueVars.pop();
 		}
 		out.push_back(join(temp));
 		return conditionVar;
@@ -5937,7 +6046,7 @@ private:
 
 	void transformForClosure(For_t* forNode, str_list& out) {
 		str_list temp;
-		_enableReturn.push(true);
+		pushFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -5947,7 +6056,7 @@ private:
 		funcStart = anonFuncStart() + nll(forNode);
 		temp.push_back(indent() + anonFuncEnd());
 		popAnonVarArg();
-		_enableReturn.pop();
+		popFunctionScope();
 		out.push_back(join(temp));
 	}
 
@@ -6026,7 +6135,7 @@ private:
 
 	void transformForEachClosure(ForEach_t* forEach, str_list& out) {
 		str_list temp;
-		_enableReturn.push(true);
+		pushFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -6036,7 +6145,7 @@ private:
 		funcStart = anonFuncStart() + nll(forEach);
 		temp.push_back(indent() + anonFuncEnd());
 		popAnonVarArg();
-		_enableReturn.pop();
+		popFunctionScope();
 		out.push_back(join(temp));
 	}
 
@@ -6202,7 +6311,7 @@ private:
 
 	void transformClassDeclClosure(ClassDecl_t* classDecl, str_list& out) {
 		str_list temp;
-		_enableReturn.push(true);
+		pushFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -6211,7 +6320,7 @@ private:
 		funcStart = anonFuncStart() + nll(classDecl);
 		temp.push_back(indent() + anonFuncEnd());
 		popAnonVarArg();
-		_enableReturn.pop();
+		popFunctionScope();
 		out.push_back(join(temp));
 	}
 
@@ -6611,7 +6720,7 @@ private:
 
 	void transformWithClosure(With_t* with, str_list& out) {
 		str_list temp;
-		_enableReturn.push(true);
+		pushFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -6620,7 +6729,7 @@ private:
 		funcStart = anonFuncStart() + nll(with);
 		temp.push_back(indent() + anonFuncEnd());
 		popAnonVarArg();
-		_enableReturn.pop();
+		popFunctionScope();
 		out.push_back(join(temp));
 	}
 
@@ -6918,7 +7027,7 @@ private:
 	void transformTblComprehension(TblComprehension_t* comp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		switch (usage) {
 			case ExpUsage::Closure:
-				_enableReturn.push(true);
+				pushFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
@@ -6980,7 +7089,7 @@ private:
 				out.back().insert(0, anonFuncStart() + nll(comp));
 				out.back().append(indent() + anonFuncEnd());
 				popAnonVarArg();
-				_enableReturn.pop();
+				popFunctionScope();
 				break;
 			case ExpUsage::Assignment: {
 				out.push_back(clearBuf());
@@ -7025,7 +7134,7 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			_enableReturn.push(true);
+			pushFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 		} else {
@@ -7038,7 +7147,7 @@ private:
 			*funcStart = anonFuncStart() + nll(doNode);
 			temp.push_back(indent() + anonFuncEnd());
 			popAnonVarArg();
-			_enableReturn.pop();
+			popFunctionScope();
 		} else {
 			temp.push_back(indent() + "end"s + nlr(doNode));
 		}
@@ -7445,7 +7554,7 @@ private:
 	void transformWhileClosure(While_t* whileNode, str_list& out) {
 		auto x = whileNode;
 		str_list temp;
-		_enableReturn.push(true);
+		pushFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -7469,7 +7578,7 @@ private:
 		funcStart = anonFuncStart() + nll(whileNode);
 		temp.push_back(indent() + anonFuncEnd());
 		popAnonVarArg();
-		_enableReturn.pop();
+		popFunctionScope();
 		out.push_back(join(temp));
 	}
 
@@ -7507,7 +7616,7 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			_enableReturn.push(true);
+			pushFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
@@ -7631,7 +7740,7 @@ private:
 		}
 		temp.push_back(indent() + "end"s + nlr(switchNode));
 		if (usage == ExpUsage::Closure) {
-			_enableReturn.pop();
+			popFunctionScope();
 			popScope();
 			*funcStart = anonFuncStart() + nll(switchNode);
 			temp.push_back(indent() + anonFuncEnd());
@@ -7798,29 +7907,52 @@ private:
 			return;
 		}
 		if (_continueVars.empty()) throw std::logic_error(_info.errorMessage("continue is not inside a loop"sv, breakLoop));
+		str_list temp;
 		auto& item = _continueVars.top();
 		if (item.condAssign) {
-			str_list temp;
 			transformAssignment(item.condAssign, temp);
-			_buf << temp.back();
 		}
-		_buf << indent() << item.var << " = true"sv << nll(breakLoop);
-		_buf << indent() << "break"sv << nll(breakLoop);
-		out.push_back(clearBuf());
+		if (getLuaTarget(breakLoop) < 502) {
+			if (!temp.empty()) {
+				_buf << temp.back();
+			}
+			_buf << indent() << item.var << " = true"sv << nll(breakLoop);
+			_buf << indent() << "break"sv << nll(breakLoop);
+			out.push_back(clearBuf());
+		} else {
+			transformGoto(toAst<Goto_t>("goto "s + item.var, breakLoop), temp);
+			out.push_back(join(temp));
+		}
 	}
 
 	void transformLabel(Label_t* label, str_list& out) {
 		if (getLuaTarget(label) < 502) {
 			throw std::logic_error(_info.errorMessage("label statement is not available when not targeting Lua version 5.2 or higher"sv, label));
 		}
-		out.push_back(indent() + "::"s + _parser.toString(label->label) + "::"s + nll(label));
+		auto labelStr = _parser.toString(label->label);
+		int currentScope = _gotoScopes.top();
+		if (static_cast<int>(_labels.size()) <= currentScope) {
+			_labels.resize(currentScope + 1, std::nullopt);
+			_labels[currentScope] = std::unordered_map<std::string, LabelNode>();
+		}
+		if (!_labels[currentScope]) {
+			_labels[currentScope] = std::unordered_map<std::string, LabelNode>();
+		}
+		auto& scope = _labels[currentScope].value();
+		if (auto it = scope.find(labelStr); it != scope.end()) {
+			throw std::logic_error(_info.errorMessage("label '"s + labelStr + "' already defined at line "s + std::to_string(it->second.line), label));
+		}
+		scope[labelStr] = {label->m_begin.m_line, static_cast<int>(_scopes.size())};
+		out.push_back(indent() + "::"s + labelStr + "::"s + nll(label));
 	}
 
 	void transformGoto(Goto_t* gotoNode, str_list& out) {
 		if (getLuaTarget(gotoNode) < 502) {
 			throw std::logic_error(_info.errorMessage("goto statement is not available when not targeting Lua version 5.2 or higher"sv, gotoNode));
 		}
-		out.push_back(indent() + "goto "s + _parser.toString(gotoNode->label) + nll(gotoNode));
+		auto labelStr = _parser.toString(gotoNode->label);
+		gotos.push_back({gotoNode, labelStr, _gotoScopes.top(), static_cast<int>(_scopes.size())});
+		out.push_back(indent() + "goto "s + labelStr + nll(gotoNode));
 	}
 
 	void transformShortTabAppending(ShortTabAppending_t* tab, str_list& out) {

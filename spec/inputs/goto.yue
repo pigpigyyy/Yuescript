@@ -10,8 +10,8 @@ do
 	for z = 1, 10 do for y = 1, 10 do for x = 1, 10
 		if x^2 + y^2 == z^2
 			print 'found a Pythagorean triple:', x, y, z
-			goto done
-	::done::
+			goto ok
+	::ok::
 
 do
 	for z = 1, 10

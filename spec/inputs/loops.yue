@@ -111,10 +111,10 @@ until a == 10
 
 x = 0
 repeat
-  x += 1
-  y = x
-  continue if x < 5
-  print y
+	x += 1
+	y = x
+	continue if x < 5
+	print y
 until y == 10
 
 a = 3

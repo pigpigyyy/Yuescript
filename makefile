@@ -282,6 +282,8 @@ gen: release
 	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT) -t $(GEN_OUTPUT) --tl_enabled
 	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(GEN_OUTPUT)/teal-lang.lua
+	@./$(BIN_NAME) $(TEST_INPUT)/loops.yue -o $(GEN_OUTPUT)/5.1/loops.lua --target=5.1
+	@./$(BIN_NAME) $(TEST_INPUT)/test/loops_spec.yue -o $(GEN_OUTPUT)/5.1/test/loops_spec.lua --target=5.1
 	@echo -en "Compile time: "
 	@$(END_TIME)
 

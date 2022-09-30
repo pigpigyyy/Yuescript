@@ -150,47 +150,83 @@ do
 	x = _accum_0
 end
 while true do
-	if false then
-		goto _continue_0
-	end
-	print("yes")
-	if true then
+	local _continue_0 = false
+	repeat
+		if false then
+			_continue_0 = true
+			break
+		end
+		print("yes")
+		if true then
+			break
+		end
+		print("no")
+		_continue_0 = true
+	until true
+	if not _continue_0 then
 		break
 	end
-	print("no")
-	::_continue_0::
 end
 for i = 1, 10 do
 	while true do
-		if not true then
-			goto _continue_1
+		local _continue_0 = false
+		repeat
+			do
+				if not true then
+					_continue_0 = true
+					break
+				end
+				break
+			end
+			_continue_0 = true
+		until true
+		if not _continue_0 then
+			break
 		end
-		break
-		::_continue_1::
 	end
 end
 local a = 1
 repeat
-	a = a + 1
-	if a == 5 then
-		goto _continue_2
-	end
-	if a == 6 then
+	local _cond_0 = false
+	local _continue_0 = false
+	repeat
+		a = a + 1
+		if a == 5 then
+			_cond_0 = a == 10
+			_continue_0 = true
+			break
+		end
+		if a == 6 then
+			break
+		end
+		print(a)
+		_cond_0 = a == 10
+		_continue_0 = true
+	until true
+	if not _continue_0 then
 		break
 	end
-	print(a)
-	::_continue_2::
-until a == 10
+until _cond_0
 x = 0
 repeat
-	x = x + 1
-	y = x
-	if x < 5 then
-		goto _continue_3
+	local _cond_0 = false
+	local _continue_0 = false
+	repeat
+		x = x + 1
+		y = x
+		if x < 5 then
+			_cond_0 = y == 10
+			_continue_0 = true
+			break
+		end
+		print(y)
+		_cond_0 = y == 10
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	print(y)
-	::_continue_3::
-until y == 10
+until _cond_0
 a = 3
 while not (a == 0) do
 	a = a - 1
@@ -212,23 +248,37 @@ while not cond do
 	print("okay")
 end
 for x = 1, 10 do
-	if x > 3 and x < 7 then
-		goto _continue_4
+	local _continue_0 = false
+	repeat
+		if x > 3 and x < 7 then
+			_continue_0 = true
+			break
+		end
+		print(x)
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	print(x)
-	::_continue_4::
 end
 local list
 do
 	local _accum_0 = { }
 	local _len_0 = 1
 	for x = 1, 10 do
-		if x > 3 and x < 7 then
-			goto _continue_5
+		local _continue_0 = false
+		repeat
+			if x > 3 and x < 7 then
+				_continue_0 = true
+				break
+			end
+			_accum_0[_len_0] = x
+			_len_0 = _len_0 + 1
+			_continue_0 = true
+		until true
+		if not _continue_0 then
+			break
 		end
-		_accum_0[_len_0] = x
-		_len_0 = _len_0 + 1
-		::_continue_5::
 	end
 	list = _accum_0
 end
@@ -242,42 +292,80 @@ local _list_2 = {
 }
 for _index_0 = 1, #_list_2 do
 	local a = _list_2[_index_0]
-	if a == 1 then
-		goto _continue_6
+	local _continue_0 = false
+	repeat
+		if a == 1 then
+			_continue_0 = true
+			break
+		end
+		if a == 3 then
+			_continue_0 = true
+			break
+		end
+		print(a)
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	if a == 3 then
-		goto _continue_6
-	end
-	print(a)
-	::_continue_6::
 end
 for x = 1, 10 do
-	if x % 2 == 0 then
-		goto _continue_7
-	end
-	for y = 2, 12 do
-		if y % 3 == 0 then
-			goto _continue_8
+	local _continue_0 = false
+	repeat
+		if x % 2 == 0 then
+			_continue_0 = true
+			break
 		end
-		::_continue_8::
+		for y = 2, 12 do
+			local _continue_1 = false
+			repeat
+				if y % 3 == 0 then
+					_continue_1 = true
+					break
+				end
+				_continue_1 = true
+			until true
+			if not _continue_1 then
+				break
+			end
+		end
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	::_continue_7::
 end
 while true do
-	if false then
-		goto _continue_9
+	local _continue_0 = false
+	repeat
+		do
+			if false then
+				_continue_0 = true
+				break
+			end
+			break
+		end
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	break
-	::_continue_9::
 end
 while true do
-	if false then
-		goto _continue_10
+	local _continue_0 = false
+	repeat
+		if false then
+			_continue_0 = true
+			break
+		end
+		do
+			return 22
+		end
+		_continue_0 = true
+	until true
+	if not _continue_0 then
+		break
 	end
-	do
-		return 22
-	end
-	::_continue_10::
 end
 do
 	local xxx = {

@@ -5,8 +5,8 @@ describe "loops", ->
 			continue if x % 2 == 1
 			x
 
-		assert.same output, { 2,4,6 }
-	
+		assert.same { 2,4,6 }, output
+
 	it "continue in repeat", ->
 		output = {}
 		a = 0
@@ -19,5 +19,5 @@ describe "loops", ->
 			output[] = a
 		until a == 8
 
-		assert.same output, { 1,2,4 }
+		assert.same { 1,2,4 }, output
 
