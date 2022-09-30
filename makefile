@@ -264,11 +264,13 @@ clean:
 # Test Yuescript compiler
 .PHONY: test
 test: release
-	@mkdir -p $(TEST_OUTPUT)
+	@mkdir -p $(TEST_OUTPUT)/5.1/test
 	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
 	@./$(BIN_NAME) $(TEST_INPUT) -t $(TEST_OUTPUT) --tl_enabled
 	@./$(BIN_NAME) $(TEST_INPUT)/teal-lang.yue -o $(TEST_OUTPUT)/teal-lang.lua
+	@./$(BIN_NAME) $(TEST_INPUT)/loops.yue -o $(TEST_OUTPUT)/5.1/loops.lua --target=5.1
+	@./$(BIN_NAME) $(TEST_INPUT)/test/loops_spec.yue -o $(TEST_OUTPUT)/5.1/test/loops_spec.lua --target=5.1
 	@echo -en "Compile time: "
 	@$(END_TIME)
 	@./$(BIN_NAME) -e "$$(printf "r = io.popen('git diff --no-index $(TEST_OUTPUT) $(GEN_OUTPUT) | head -5')\\\\read '*a'\nif r ~= ''\n print r\n os.exit 1")"
