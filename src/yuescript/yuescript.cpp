@@ -103,6 +103,12 @@ static int yuetolua(lua_State* L) {
 			config.module = lua_tostring(L, -1);
 		}
 		lua_pop(L, 1);
+		lua_pushliteral(L, "target");
+		lua_gettable(L, -2);
+		if (lua_isstring(L, -1) != 0) {
+			config.options["target"] = lua_tostring(L, -1);
+		}
+		lua_pop(L, 1);
 	}
 	std::string s(input, size);
 	auto result = yue::YueCompiler(L, nullptr, sameModule).compile(s, config);

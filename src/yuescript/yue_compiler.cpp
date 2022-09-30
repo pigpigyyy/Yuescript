@@ -5862,6 +5862,27 @@ private:
 		});
 	}
 
+	void addDoToLastLineReturn(ast_node* body) {
+		if (auto block = ast_cast<Block_t>(body); body && !block->statements.empty()) {
+			auto last = static_cast<Statement_t*>(block->statements.back());
+			if (last->content.is<Return_t>()) {
+				auto doNode = last->new_ptr<Do_t>();
+				auto newBody = last->new_ptr<Body_t>();
+				auto newStmt = last->new_ptr<Statement_t>();
+				newStmt->content.set(last->content);
+				newBody->content.set(newStmt);
+				doNode->body.set(newBody);
+				auto simpleValue = last->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(doNode);
+				auto expList = last->new_ptr<ExpList_t>();
+				expList->exprs.push_back(newExp(simpleValue, last));
+				auto expListAssign = last->new_ptr<ExpListAssign_t>();
+				expListAssign->expList.set(expList);
+				last->content.set(expListAssign);
+			}
+		}
+	}
+
 	void transformLoopBody(ast_node* body, str_list& out, const std::string& appendContent, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		str_list temp;
 		bool extraDo = false;
@@ -5896,24 +5917,7 @@ private:
 				extraLabel = temp.back();
 				temp.pop_back();
 			}
-			if (auto block = ast_cast<Block_t>(body); body && !block->statements.empty()) {
-				auto last = static_cast<Statement_t*>(block->statements.back());
-				if (last->content.is<Return_t>()) {
-					auto doNode = last->new_ptr<Do_t>();
-					auto newBody = last->new_ptr<Body_t>();
-					auto newStmt = last->new_ptr<Statement_t>();
-					newStmt->content.set(last->content);
-					newBody->content.set(newStmt);
-					doNode->body.set(newBody);
-					auto simpleValue = last->new_ptr<SimpleValue_t>();
-					simpleValue->value.set(doNode);
-					auto expList = last->new_ptr<ExpList_t>();
-					expList->exprs.push_back(newExp(simpleValue, last));
-					auto expListAssign = last->new_ptr<ExpListAssign_t>();
-					expListAssign->expList.set(expList);
-					last->content.set(expListAssign);
-				}
-			}
+			addDoToLastLineReturn(body);
 		}
 		transform_plain_body(body, temp, usage, assignList);
 		if (withContinue) {
@@ -5992,6 +5996,7 @@ private:
 				extraLabel = temp.back();
 				temp.pop_back();
 			}
+			addDoToLastLineReturn(body);
 		}
 		transform_plain_body(body, temp, ExpUsage::Common);
 		if (withContinue) {
