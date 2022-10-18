@@ -678,6 +678,9 @@ YueParser::YueParser() {
 
 ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	ParseInfo res;
+	if (codes.substr(0, 3) == "\xEF\xBB\xBF"sv) {
+		codes = codes.substr(3);
+	}
 	try {
 		res.codes = std::make_unique<input>();
 		*(res.codes) = _converter.from_bytes(&codes.front(), &codes.back() + 1);

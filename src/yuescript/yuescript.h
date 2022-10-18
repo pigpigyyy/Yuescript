@@ -40,7 +40,6 @@ yue.read_file = function(fname)
 	end
 	local text = assert(file:read("*a"))
 	file:close()
-	if string.sub(text, 1, 3) == "\239\187\191" then text = string.sub(text, 4) end
 	return text
 end
 local function get_options(...)
