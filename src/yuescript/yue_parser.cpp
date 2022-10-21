@@ -249,7 +249,7 @@ YueParser::YueParser() {
 		>> -Space >> Break >> SwitchBlock;
 
 	assignment = ExpList >> Assign;
-	IfCond = disable_do_chain_arg_table_block(assignment | Exp);
+	IfCond = disable_chain(disable_arg_table_block(assignment | Exp));
 	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("elseif") >> IfCond >> plain_body_with("then");
 	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("else") >> plain_body;
 	IfType = (expr("if") | expr("unless")) >> not_(AlphaNum);

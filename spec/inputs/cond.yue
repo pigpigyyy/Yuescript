@@ -219,6 +219,13 @@ do
 		:Thing = _M
 		:a, :b = _M
 
+do
+	v = if 1 and do
+			0 ~= 1
+		1
+	else
+		2
+
 nil
 
 

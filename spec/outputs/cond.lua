@@ -335,4 +335,14 @@ do
 		end
 	end
 end
+do
+	local v
+	if 1 and (function()
+		return 0 ~= 1
+	end)() then
+		v = 1
+	else
+		v = 2
+	end
+end
 return nil
