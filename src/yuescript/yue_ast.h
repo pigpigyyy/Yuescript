@@ -798,6 +798,12 @@ AST_NODE(if_line)
 	AST_MEMBER(if_line, &type, &condition)
 AST_END(if_line, "if_line"sv)
 
+AST_NODE(while_line)
+	ast_ptr<true, WhileType_t> type;
+	ast_ptr<true, Exp_t> condition;
+	AST_MEMBER(while_line, &type, &condition)
+AST_END(while_line, "while_line"sv)
+
 AST_LEAF(BreakLoop)
 AST_END(BreakLoop, "break_loop"sv)
 
@@ -808,7 +814,7 @@ AST_NODE(PipeBody)
 AST_END(PipeBody, "pipe_body"sv)
 
 AST_NODE(statement_appendix)
-	ast_sel<true, if_line_t, CompInner_t> item;
+	ast_sel<true, if_line_t, while_line_t, CompInner_t> item;
 	AST_MEMBER(statement_appendix, &item)
 AST_END(statement_appendix, "statement_appendix"sv)
 

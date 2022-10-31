@@ -37,8 +37,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{08a9e377-ecc6-4acb-af99-8f683d5f48a5}</ProjectGuid>
-    <RootNamespace>YuescriptDLL</RootNamespace>
+    <ProjectGuid>{886061ce-6872-4bfa-bb10-fe2f1d428eb4}</ProjectGuid>
+    <RootNamespace>Lua53</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -124,88 +124,60 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug53|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <TargetName>lua53</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release53|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>lua53</TargetName>
     <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>lua53</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug53|Win32'">
+    <TargetName>lua53</TargetName>
+    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <TargetName>lua53</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug53|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>lua53</TargetName>
     <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <TargetName>lua53</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release53|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>lua53</TargetName>
     <OutDir>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\</OutDir>
-    <TargetName>yue</TargetName>
+    <IntDir>$(SolutionDir)..\build\windows\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua51;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug53|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua53;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua53.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -214,20 +186,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua51;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release53|Win32'">
@@ -236,56 +202,38 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua53;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua53.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua51;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug53|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua53;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua53.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -294,20 +242,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua51;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release53|x64'">
@@ -316,37 +258,78 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;YUE_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CRT_SECURE_NO_DEPRECATE;LUA_COMPAT_5_2;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lua53;..\..\src;..\..\src\3rdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua53.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\bin\windows\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\yuescript\ast.cpp" />
-    <ClCompile Include="..\..\src\yuescript\parser.cpp" />
-    <ClCompile Include="..\..\src\yuescript\yuescript.cpp" />
-    <ClCompile Include="..\..\src\yuescript\yue_compiler.cpp" />
-    <ClCompile Include="..\..\src\yuescript\yue_parser.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lapi.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lauxlib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lbaselib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lbitlib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lcode.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lcorolib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lctype.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldblib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldebug.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldo.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldump.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lfunc.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lgc.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\linit.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\liolib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\llex.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lmathlib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lmem.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\loadlib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lobject.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lopcodes.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\loslib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lparser.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lstate.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lstring.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lstrlib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ltable.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ltablib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ltm.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lundump.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lutf8lib.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lvm.c" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lzio.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\yuescript\ast.hpp" />
-    <ClInclude Include="..\..\src\yuescript\parser.hpp" />
-    <ClInclude Include="..\..\src\yuescript\stacktraceplus.h" />
-    <ClInclude Include="..\..\src\yuescript\yuescript.h" />
-    <ClInclude Include="..\..\src\yuescript\yue_ast.h" />
-    <ClInclude Include="..\..\src\yuescript\yue_compiler.h" />
-    <ClInclude Include="..\..\src\yuescript\yue_parser.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lapi.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lauxlib.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lcode.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lctype.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldebug.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ldo.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lfunc.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lgc.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\llex.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\llimits.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lmem.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lobject.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lopcodes.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lparser.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lprefix.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lstate.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lstring.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ltable.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\ltm.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lua.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lua.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\luaconf.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lualib.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lundump.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lvm.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\win-build\Lua53\lzio.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
