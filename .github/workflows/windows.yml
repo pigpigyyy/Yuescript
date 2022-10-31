@@ -17,15 +17,27 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
       - name: Windows build
         run: |
-          msbuild win-build\Yuescript.sln /p:Configuration=release /p:Platform=x86
-          msbuild win-build\Yuescript.sln /p:Configuration=release /p:Platform=x64
+          msbuild win-build\Yuescript.sln /p:Configuration=Release /p:Platform=x86
+          msbuild win-build\Yuescript.sln /p:Configuration=Release /p:Platform=x64
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           (cd bin\windows\Win32\Release && 7z a ..\..\..\..\yue-windows-x86.7z yue.exe && cd ..\..\..\..)
           (cd bin\windows\x64\Release && 7z a ..\..\..\..\yue-windows-x64.7z yue.exe && cd ..\..\..\..)
+      - name: Windows build Lua 5.1 dll
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          msbuild win-build\Yuescript.sln /p:Configuration=Release51 /p:Platform=x86
+          msbuild win-build\Yuescript.sln /p:Configuration=Release51 /p:Platform=x64
           (cd bin\windows\Win32\Release && 7z a ..\..\..\..\yue-windows-x86-lua51-dll.7z yue.dll && cd ..\..\..\..)
           (cd bin\windows\x64\Release && 7z a ..\..\..\..\yue-windows-x64-lua51-dll.7z yue.dll && cd ..\..\..\..)
+      - name: Windows build Lua 5.3 dll
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          msbuild win-build\Yuescript.sln /p:Configuration=Release53 /p:Platform=x86
+          msbuild win-build\Yuescript.sln /p:Configuration=Release53 /p:Platform=x64
+          (cd bin\windows\Win32\Release && 7z a ..\..\..\..\yue-windows-x86-lua53-dll.7z yue.dll && cd ..\..\..\..)
+          (cd bin\windows\x64\Release && 7z a ..\..\..\..\yue-windows-x64-lua53-dll.7z yue.dll && cd ..\..\..\..)
       - name: release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -35,5 +47,7 @@ jobs:
             yue-windows-x64.7z
             yue-windows-x86-lua51-dll.7z
             yue-windows-x64-lua51-dll.7z
+            yue-windows-x86-lua53-dll.7z
+            yue-windows-x64-lua53-dll.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
