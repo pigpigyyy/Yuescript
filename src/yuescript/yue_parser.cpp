@@ -50,21 +50,22 @@ YueParser::YueParser() {
 	EmptyLine = SpaceBreak;
 	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-	num_expo = set("eE") >> -expr('-') >> +range('0', '9');
+	num_expo = set("eE") >> -expr('-') >> num_char;
 	lj_num = -set("uU") >> set("lL") >> set("lL");
+	num_char = range('0', '9') >> *(range('0', '9') | expr('_') >> and_(range('0', '9')));
+	num_char_hex = range('0', '9') | range('a', 'f') | range('A', 'F');
+	num_lit = num_char_hex >> *(num_char_hex | expr('_') >> and_(num_char_hex));
 	Num = (
-		"0x" >>
-		+(range('0', '9') | range('a', 'f') | range('A', 'F')) >>
-		-lj_num
+		"0x" >> +num_lit >> -lj_num
 	) | (
-		+range('0', '9') >> (
-			'.' >> +range('0', '9') >> -num_expo |
+		+num_char >> (
+			'.' >> +num_char >> -num_expo |
 			num_expo |
 			lj_num |
 			true_()
 		)
 	) | (
-		'.' >> +range('0', '9') >> -num_expo
+		'.' >> +num_char >> -num_expo
 	);
 
 	Cut = false_();
@@ -640,6 +641,7 @@ YueParser::YueParser() {
 	ExpListAssign = ExpList >> -(Update | Assign);
 
 	if_line = Space >> IfType >> IfCond;
+	while_line = Space >> WhileType >> Exp;
 
 	YueLineComment = *(not_(set("\r\n")) >> Any);
 	yue_line_comment = expr("--") >> YueLineComment >> and_(Stop);
@@ -647,7 +649,7 @@ YueParser::YueParser() {
 	yue_multiline_comment = multi_line_open >> YueMultilineComment >> multi_line_close;
 	yue_comment = check_indent >> (yue_multiline_comment >> *(set(" \t") | yue_multiline_comment) >> -yue_line_comment | yue_line_comment) >> and_(Break);
 
-	statement_appendix = (if_line | CompInner) >> Space;
+	statement_appendix = (if_line | while_line | CompInner) >> Space;
 	statement_sep = and_(*SpaceBreak >> CheckIndent >> Space >> (set("($'\"") | expr("[[") | expr("[=")));
 	Statement = Seperator >> -(yue_comment >> *(Break >> yue_comment) >> Break >> CheckIndent) >> Space >> (
 		Import | While | Repeat | For | ForEach |

@@ -60,7 +60,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.6"sv;
+const std::string_view version = "0.15.7"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1130,6 +1130,10 @@ private:
 						transformStatement(statement, out);
 						return;
 					}
+					case id<while_line_t>(): {
+						throw std::logic_error(_info.errorMessage("while-loop line decorator is not supported here"sv, appendix->item.get()));
+						break;
+					}
 					case id<CompInner_t>(): {
 						throw std::logic_error(_info.errorMessage("for-loop line decorator is not supported here"sv, appendix->item.get()));
 						break;
@@ -1152,6 +1156,27 @@ private:
 					statement->appendix.set(nullptr);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(ifNode);
+					auto exp = newExp(simpleValue, x);
+					auto expList = x->new_ptr<ExpList_t>();
+					expList->exprs.push_back(exp);
+					auto expListAssign = x->new_ptr<ExpListAssign_t>();
+					expListAssign->expList.set(expList);
+					statement->content.set(expListAssign);
+					break;
+				}
+				case id<while_line_t>(): {
+					auto while_line = static_cast<while_line_t*>(appendix->item.get());
+					auto whileNode = x->new_ptr<While_t>();
+					whileNode->type.set(while_line->type);
+					whileNode->condition.set(while_line->condition);
+
+					auto stmt = x->new_ptr<Statement_t>();
+					stmt->content.set(statement->content);
+					whileNode->body.set(stmt);
+
+					statement->appendix.set(nullptr);
+					auto simpleValue = x->new_ptr<SimpleValue_t>();
+					simpleValue->value.set(whileNode);
 					auto exp = newExp(simpleValue, x);
 					auto expList = x->new_ptr<ExpList_t>();
 					expList->exprs.push_back(exp);
@@ -3445,7 +3470,8 @@ private:
 				BREAK_IF(!last);
 				auto x = last;
 				auto expList = expListFrom(last);
-				BREAK_IF(!expList || (last->appendix && last->appendix->item.is<CompInner_t>()));
+				BREAK_IF(!expList);
+				BREAK_IF(last->appendix && !last->appendix->item.is<if_line_t>());
 				auto expListLow = x->new_ptr<ExpListLow_t>();
 				expListLow->exprs.dup(expList->exprs);
 				auto returnNode = x->new_ptr<Return_t>();
@@ -5100,7 +5126,9 @@ private:
 	}
 
 	void transformNum(Num_t* num, str_list& out) {
-		out.push_back(_parser.toString(num));
+		std::string numStr = _parser.toString(num);
+		numStr.erase(std::remove(numStr.begin(), numStr.end(), '_'), numStr.end());
+		out.push_back(numStr);
 	}
 
 	bool hasSpreadExp(const node_container& items) {

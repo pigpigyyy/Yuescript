@@ -142,6 +142,12 @@ end
 if cool then
 	print("what")
 end
+while not reader:eof() do
+	reader:parse_line()
+end
+while not reader:eof() do
+	reader:parse_line()
+end
 (function(...)
 	local arg = {
 		...

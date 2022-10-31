@@ -142,6 +142,10 @@ if hello then _ = 343
 
 print "what" if cool
 
+reader\parse_line! until reader\eof!
+
+reader\parse_line! while not reader\eof!
+
 ((...)-> arg = {...})!
 
 x = (...) ->

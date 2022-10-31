@@ -101,6 +101,9 @@ private:
 		return Cut;
 	}
 
+	rule num_char;
+	rule num_char_hex;
+	rule num_lit;
 	rule num_expo;
 	rule lj_num;
 	rule plain_space;
@@ -333,6 +336,7 @@ private:
 	AST_RULE(unary_exp)
 	AST_RULE(ExpListAssign)
 	AST_RULE(if_line)
+	AST_RULE(while_line)
 	AST_RULE(BreakLoop)
 	AST_RULE(statement_appendix)
 	AST_RULE(statement_sep)
