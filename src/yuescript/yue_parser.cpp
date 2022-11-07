@@ -634,7 +634,11 @@ YueParser::YueParser() {
 		not_(set("-~")) >> Seperator >>
 		(
 			(Exp >> *(sym(',') >> Exp) >> -invoke_args_with_table) |
-			arg_table_block
+			arg_table_block |
+			pl::user(+space_one >> expr('(') >> Exp >> +(sym(',') >> Exp) >> sym(')'), [](const item_t& item) {
+				throw ParserError("write invoke arguments in parentheses without spaces or space seperated without parentheses", *item.begin, *item.end);
+				return false;
+			})
 		);
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
