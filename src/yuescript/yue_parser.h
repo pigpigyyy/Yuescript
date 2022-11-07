@@ -35,6 +35,18 @@ struct ParseInfo {
 	std::string errorMessage(std::string_view msg, const input_range* loc) const;
 };
 
+class ParserError : public std::logic_error {
+public:
+	explicit ParserError(const std::string& msg, const pos& begin, const pos& end)
+		: std::logic_error(msg)
+		, loc(begin, end) { }
+
+	explicit ParserError(const char* msg, const pos& begin, const pos& end)
+		: std::logic_error(msg)
+		, loc(begin, end) { }
+	input_range loc;
+};
+
 template <typename T>
 struct identity { typedef T type; };
 
@@ -100,6 +112,8 @@ private:
 		assert(false);
 		return Cut;
 	}
+
+	rule invalid_empty_block;
 
 	rule num_char;
 	rule num_char_hex;

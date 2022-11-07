@@ -36,13 +36,6 @@ class _expr;
 class _context;
 class rule;
 
-struct item_t {
-	input_it begin;
-	input_it end;
-	void* user_data;
-};
-typedef std::function<bool(const item_t&)> user_handler;
-
 /// position into the input.
 class pos {
 public:
@@ -65,6 +58,13 @@ public:
 	*/
 	pos(input& i);
 };
+
+struct item_t {
+	pos* begin;
+	pos* end;
+	void* user_data;
+};
+typedef std::function<bool(const item_t&)> user_handler;
 
 /** a grammar expression.
  */

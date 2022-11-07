@@ -71,6 +71,11 @@ YueParser::YueParser() {
 	Cut = false_();
 	Seperator = true_();
 
+	invalid_empty_block = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("must be followed by a statement or an indented block", *item.begin, *item.end);
+		return false;
+	});
+
 	#define sym(str) (Space >> str)
 	#define symx(str) expr(str)
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> Cut)
@@ -79,12 +84,13 @@ YueParser::YueParser() {
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
 	#define disable_do_chain_arg_table_block(patt) (DisableDoChainArgTableBlock >> ((patt) >> EnableDoChainArgTableBlock | EnableDoChainArgTableBlock >> Cut))
 	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
-	#define plain_body_with(str) (-(Space >> key(str)) >> InBlock | Space >> key(str) >> Space >> Statement)
-	#define plain_body (InBlock | Space >> Statement)
+	#define body_with(str) (Space >> (key(str) >> Space >> (InBlock | Statement) | InBlock | invalid_empty_block))
+	#define opt_body_with(str) (Space >> (key(str) >> Space >> (InBlock | Statement) | InBlock))
+	#define body (Space >> (InBlock | Statement | invalid_empty_block))
 
 	Variable = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) st->buffer += static_cast<char>(*it);
 		auto isValid = Keywords.find(st->buffer) == Keywords.end();
 		if (isValid) {
 			if (st->buffer == st->moduleName) {
@@ -98,7 +104,7 @@ YueParser::YueParser() {
 
 	LabelName = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) st->buffer += static_cast<char>(*it);
 		auto isValid = LuaKeywords.find(st->buffer) == LuaKeywords.end();
 		st->buffer.clear();
 		return isValid;
@@ -106,7 +112,7 @@ YueParser::YueParser() {
 
 	LuaKeyword = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin; it != item.end; ++it) st->buffer += static_cast<char>(*it);
+		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) st->buffer += static_cast<char>(*it);
 		auto it = LuaKeywords.find(st->buffer);
 		st->buffer.clear();
 		return it != LuaKeywords.end();
@@ -123,7 +129,7 @@ YueParser::YueParser() {
 
 	check_indent = pl::user(Indent, [](const item_t& item) {
 		int indent = 0;
-		for (input_it i = item.begin; i != item.end; ++i) {
+		for (input_it i = item.begin->m_it; i != item.end->m_it; ++i) {
 			switch (*i) {
 				case ' ': indent++; break;
 				case '\t': indent += 4; break;
@@ -136,7 +142,7 @@ YueParser::YueParser() {
 
 	advance = pl::user(Indent, [](const item_t& item) {
 		int indent = 0;
-		for (input_it i = item.begin; i != item.end; ++i) {
+		for (input_it i = item.begin->m_it; i != item.end->m_it; ++i) {
 			switch (*i) {
 				case ' ': indent++; break;
 				case '\t': indent += 4; break;
@@ -154,7 +160,7 @@ YueParser::YueParser() {
 
 	push_indent = pl::user(Indent, [](const item_t& item) {
 		int indent = 0;
-		for (input_it i = item.begin; i != item.end; ++i) {
+		for (input_it i = item.begin->m_it; i != item.end->m_it; ++i) {
 			switch (*i) {
 				case ' ': indent++; break;
 				case '\t': indent += 4; break;
@@ -232,9 +238,9 @@ YueParser::YueParser() {
 
 	WithExp = ExpList >> -Assign;
 
-	With = Space >> key("with") >> -existential_op >> disable_do_chain_arg_table_block(WithExp) >> plain_body_with("do");
-	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(SwitchList)) >> plain_body_with("then");
-	SwitchElse = Space >> key("else") >> plain_body;
+	With = Space >> key("with") >> -existential_op >> disable_do_chain_arg_table_block(WithExp) >> body_with("do");
+	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(SwitchList)) >> body_with("then");
+	SwitchElse = Space >> key("else") >> body;
 
 	SwitchBlock = *EmptyLine >>
 		Advance >> Seperator >>
@@ -251,24 +257,24 @@ YueParser::YueParser() {
 
 	assignment = ExpList >> Assign;
 	IfCond = disable_chain(disable_arg_table_block(assignment | Exp));
-	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("elseif") >> IfCond >> plain_body_with("then");
-	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("else") >> plain_body;
+	IfElseIf = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("elseif") >> IfCond >> body_with("then");
+	IfElse = -(Break >> *EmptyLine >> CheckIndent) >> Space >> key("else") >> body;
 	IfType = (expr("if") | expr("unless")) >> not_(AlphaNum);
-	If = Space >> IfType >> IfCond >> plain_body_with("then") >> *IfElseIf >> -IfElse;
+	If = Space >> IfType >> IfCond >> opt_body_with("then") >> *IfElseIf >> -IfElse;
 
 	WhileType = (expr("while") | expr("until")) >> not_(AlphaNum);
-	While = WhileType >> disable_do_chain_arg_table_block(Exp) >> plain_body_with("do");
+	While = WhileType >> disable_do_chain_arg_table_block(Exp) >> opt_body_with("do");
 	Repeat = key("repeat") >> Body >> Break >> *EmptyLine >> CheckIndent >> Space >> key("until") >> Exp;
 
 	for_step_value = sym(',') >> Exp;
 	for_args = Space >> Variable >> sym('=') >> Exp >> sym(',') >> Exp >> -for_step_value;
 
-	For = key("for") >> disable_do_chain_arg_table_block(for_args) >> plain_body_with("do");
+	For = key("for") >> disable_do_chain_arg_table_block(for_args) >> opt_body_with("do");
 
 	for_in = star_exp | ExpList;
 
 	ForEach = key("for") >> AssignableNameList >> Space >> key("in") >>
-		disable_do_chain_arg_table_block(for_in) >> plain_body_with("do");
+		disable_do_chain_arg_table_block(for_in) >> opt_body_with("do");
 
 	Do = pl::user(Space >> key("do"), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -413,14 +419,14 @@ YueParser::YueParser() {
 	lua_string_close = ']' >> *expr('=') >> ']';
 
 	LuaStringOpen = pl::user(lua_string_open, [](const item_t& item) {
-		size_t count = std::distance(item.begin, item.end);
+		size_t count = std::distance(item.begin->m_it, item.end->m_it);
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->stringOpen = count;
 		return true;
 	});
 
 	LuaStringClose = pl::user(lua_string_close, [](const item_t& item) {
-		size_t count = std::distance(item.begin, item.end);
+		size_t count = std::distance(item.begin->m_it, item.end->m_it);
 		State* st = reinterpret_cast<State*>(item.user_data);
 		return st->stringOpen == count;
 	});
@@ -655,7 +661,8 @@ YueParser::YueParser() {
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		MacroInPlace | BreakLoop | Label | Goto | ShortTabAppending |
-		LocalAttrib | Backcall | PipeBody | ExpListAssign
+		LocalAttrib | Backcall | PipeBody | ExpListAssign |
+		statement_appendix >> invalid_empty_block
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 
@@ -699,6 +706,9 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 			res.exportDefault = state.exportDefault;
 			res.exportMacro = state.exportMacro;
 		}
+	} catch (const ParserError& err) {
+		res.error = res.errorMessage(err.what(), &err.loc);
+		return res;
 	} catch (const std::logic_error& err) {
 		res.error = err.what();
 		return res;

@@ -381,7 +381,7 @@ public:
 	virtual bool parse_non_term(_context& con) const {
 		pos pos = con.m_pos;
 		if (m_expr->parse_non_term(con)) {
-			item_t item = {pos.m_it, con.m_pos.m_it, con.m_user_data};
+			item_t item = {&pos, &con.m_pos, con.m_user_data};
 			return m_handler(item);
 		}
 		return false;
@@ -391,7 +391,7 @@ public:
 	virtual bool parse_term(_context& con) const {
 		pos pos = con.m_pos;
 		if (m_expr->parse_term(con)) {
-			item_t item = {pos.m_it, con.m_pos.m_it, con.m_user_data};
+			item_t item = {&pos, &con.m_pos, con.m_user_data};
 			return m_handler(item);
 		}
 		return false;
