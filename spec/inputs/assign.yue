@@ -75,3 +75,14 @@ do
 		do
 			print 123
 			1, f2!
+
+do
+	a = b = c = d = 0
+
+do
+	a = b = c = d = f!
+
+do
+	{a} = :b = c.d = e = tab
+
+nil

@@ -827,6 +827,13 @@ AST_END(YueLineComment, "comment"sv)
 AST_LEAF(YueMultilineComment)
 AST_END(YueMultilineComment, "comment"sv)
 
+AST_NODE(ChainAssign)
+	ast_ptr<true, Seperator_t> sep;
+	ast_list<true, Exp_t> exprs;
+	ast_ptr<true, Assign_t> assign;
+	AST_MEMBER(ChainAssign, &sep, &exprs, &assign)
+AST_END(ChainAssign, "chain_assign")
+
 AST_NODE(Statement)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false, YueLineComment_t, YueMultilineComment_t> comments;
@@ -834,7 +841,7 @@ AST_NODE(Statement)
 		Import_t, While_t, Repeat_t, For_t, ForEach_t,
 		Return_t, Local_t, Global_t, Export_t, Macro_t, MacroInPlace_t,
 		BreakLoop_t, Label_t, Goto_t, ShortTabAppending_t,
-		Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t
+		Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t, ChainAssign_t
 	> content;
 	ast_ptr<false, statement_appendix_t> appendix;
 	ast_ptr<false, statement_sep_t> needSep;

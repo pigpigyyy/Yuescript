@@ -59,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.10"sv;
+const std::string_view version = "0.15.11"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1276,6 +1276,7 @@ private:
 				}
 				break;
 			}
+			case id<ChainAssign_t>(): transformChainAssign(static_cast<ChainAssign_t*>(content), out); break;
 			default: YUEE("AST node mismatch", content); break;
 		}
 		if (statement->needSep && !out.empty() && !out.back().empty()) {
@@ -8003,6 +8004,40 @@ private:
 		auto assignment = toAst<ExpListAssign_t>(_withVars.top() + "[]=nil"s, tab);
 		assignment->action.set(tab->assign);
 		transformAssignment(assignment, out);
+	}
+
+	void transformChainAssign(ChainAssign_t* chainAssign, str_list& out) {
+		auto x = chainAssign;
+		str_list temp;
+		auto value = chainAssign->assign->values.front();
+		bool constVal = false;
+		if (auto simpleVal = simpleSingleValueFrom(value)) {
+			constVal = ast_is<const_value_t, Num_t>(simpleVal->value);
+		}
+		if (constVal || !singleVariableFrom(value, false).empty()) {
+			for (auto exp : chainAssign->exprs.objects()) {
+				transformAssignment(assignmentFrom(static_cast<Exp_t*>(exp), value, exp), temp);
+			}
+			out.push_back(join(temp));
+			return;
+		}
+		auto valName = getUnusedName("_tmp_");
+		auto newValue = toAst<Exp_t>(valName, value);
+		ast_list<false, ExpListAssign_t> assignments;
+		for (auto exp : chainAssign->exprs.objects()) {
+			auto assignment = assignmentFrom(static_cast<Exp_t*>(exp), newValue, exp);
+			assignments.push_back(assignment.get());
+			temp.push_back(getPreDefineLine(assignment));
+		}
+		assignments.push_front(assignmentFrom(newValue, value, value));
+		temp.push_back(indent() + "do"s + nll(x));
+		pushScope();
+		for (auto item : assignments.objects()) {
+			transformAssignment(static_cast<ExpListAssign_t*>(item), temp);
+		}
+		popScope();
+		temp.push_back(indent() + "end"s + nll(x));
+		out.push_back(join(temp));
 	}
 };
 

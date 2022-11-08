@@ -650,7 +650,7 @@ YueParser::YueParser() {
 		unary_value | TblComprehension | TableLit | Comprehension |
 		FunLit | Num);
 
-	ExpListAssign = ExpList >> -(Update | Assign);
+	ExpListAssign = ExpList >> -(Update | Assign) >> not_(Space >> expr('='));
 
 	if_line = Space >> IfType >> IfCond;
 	while_line = Space >> WhileType >> Exp;
@@ -661,13 +661,15 @@ YueParser::YueParser() {
 	yue_multiline_comment = multi_line_open >> YueMultilineComment >> multi_line_close;
 	yue_comment = check_indent >> (yue_multiline_comment >> *(set(" \t") | yue_multiline_comment) >> -yue_line_comment | yue_line_comment) >> and_(Break);
 
+	ChainAssign = Seperator >> Exp >> +(sym('=') >> Exp >> Space >> and_('=')) >> Assign;
+
 	statement_appendix = (if_line | while_line | CompInner) >> Space;
 	statement_sep = and_(*SpaceBreak >> CheckIndent >> Space >> (set("($'\"") | expr("[[") | expr("[=")));
 	Statement = Seperator >> -(yue_comment >> *(Break >> yue_comment) >> Break >> CheckIndent) >> Space >> (
 		Import | While | Repeat | For | ForEach |
 		Return | Local | Global | Export | Macro |
 		MacroInPlace | BreakLoop | Label | Goto | ShortTabAppending |
-		LocalAttrib | Backcall | PipeBody | ExpListAssign |
+		LocalAttrib | Backcall | PipeBody | ExpListAssign | ChainAssign |
 		statement_appendix >> empty_block_error
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
@@ -679,7 +681,7 @@ YueParser::YueParser() {
 		advance >> ensure(MultiLineComment >> Space | Comment, PopIndent) |
 		plain_space) >> and_(Break);
 
-	indentation_error = pl::user(not_(PipeOperator), [](const item_t& item) {
+	indentation_error = pl::user(not_(PipeOperator | eof()), [](const item_t& item) {
 		throw ParserError("unexpected indent", *item.begin, *item.end);
 		return false;
 	});

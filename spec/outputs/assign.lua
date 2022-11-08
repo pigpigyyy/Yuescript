@@ -128,4 +128,30 @@ return _(function()
 			end
 		end
 	end
+	do
+		local a = 0
+		local b = 0
+		local c = 0
+		local d = 0
+	end
+	do
+		local a
+		local b
+		local c
+		local d
+		do
+			local _tmp_0 = f()
+			a = _tmp_0
+			b = _tmp_0
+			c = _tmp_0
+			d = _tmp_0
+		end
+	end
+	do
+		local a = tab[1]
+		local b = tab.b
+		c.d = tab
+		local e = tab
+	end
+	return nil
 end)

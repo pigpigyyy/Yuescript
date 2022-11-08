@@ -361,6 +361,7 @@ private:
 	AST_RULE(Statement)
 	AST_RULE(YueLineComment)
 	AST_RULE(YueMultilineComment)
+	AST_RULE(ChainAssign)
 	AST_RULE(Body)
 	AST_RULE(Block)
 	AST_RULE(BlockEnd)
