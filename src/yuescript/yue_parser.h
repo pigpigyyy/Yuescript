@@ -48,7 +48,9 @@ public:
 };
 
 template <typename T>
-struct identity { typedef T type; };
+struct identity {
+	typedef T type;
+};
 
 #define AST_RULE(type) \
 	rule type; \
@@ -113,7 +115,8 @@ private:
 		return Cut;
 	}
 
-	rule invalid_empty_block;
+	rule empty_block_error;
+	rule leading_spaces_error;
 
 	rule num_char;
 	rule num_char_hex;

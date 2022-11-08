@@ -71,7 +71,7 @@ YueParser::YueParser() {
 	Cut = false_();
 	Seperator = true_();
 
-	invalid_empty_block = pl::user(true_(), [](const item_t& item) {
+	empty_block_error = pl::user(true_(), [](const item_t& item) {
 		throw ParserError("must be followed by a statement or an indented block", *item.begin, *item.end);
 		return false;
 	});
@@ -84,9 +84,9 @@ YueParser::YueParser() {
 	#define disable_chain(patt) (DisableChain >> ((patt) >> EnableChain | EnableChain >> Cut))
 	#define disable_do_chain_arg_table_block(patt) (DisableDoChainArgTableBlock >> ((patt) >> EnableDoChainArgTableBlock | EnableDoChainArgTableBlock >> Cut))
 	#define disable_arg_table_block(patt) (DisableArgTableBlock >> ((patt) >> EnableArgTableBlock | EnableArgTableBlock >> Cut))
-	#define body_with(str) (Space >> (key(str) >> Space >> (InBlock | Statement) | InBlock | invalid_empty_block))
+	#define body_with(str) (Space >> (key(str) >> Space >> (InBlock | Statement) | InBlock | empty_block_error))
 	#define opt_body_with(str) (Space >> (key(str) >> Space >> (InBlock | Statement) | InBlock))
-	#define body (Space >> (InBlock | Statement | invalid_empty_block))
+	#define body (Space >> (InBlock | Statement | empty_block_error))
 
 	Variable = pl::user(Name, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -630,15 +630,17 @@ YueParser::YueParser() {
 			SpaceBreak >> Advance >> ArgBlock >> -arg_table_block
 		) | arg_table_block;
 
+	leading_spaces_error = pl::user(+space_one >> expr('(') >> Exp >> +(sym(',') >> Exp) >> sym(')'), [](const item_t& item) {
+		throw ParserError("write invoke arguments in parentheses without leading spaces or leading spaces without parentheses", *item.begin, *item.end);
+		return false;
+	});
+
 	InvokeArgs =
 		not_(set("-~")) >> Seperator >>
 		(
 			(Exp >> *(sym(',') >> Exp) >> -invoke_args_with_table) |
 			arg_table_block |
-			pl::user(+space_one >> expr('(') >> Exp >> +(sym(',') >> Exp) >> sym(')'), [](const item_t& item) {
-				throw ParserError("write invoke arguments in parentheses without spaces or space seperated without parentheses", *item.begin, *item.end);
-				return false;
-			})
+			leading_spaces_error
 		);
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
@@ -666,7 +668,7 @@ YueParser::YueParser() {
 		Return | Local | Global | Export | Macro |
 		MacroInPlace | BreakLoop | Label | Goto | ShortTabAppending |
 		LocalAttrib | Backcall | PipeBody | ExpListAssign |
-		statement_appendix >> invalid_empty_block
+		statement_appendix >> empty_block_error
 	) >> Space >>
 	-statement_appendix >> -statement_sep;
 

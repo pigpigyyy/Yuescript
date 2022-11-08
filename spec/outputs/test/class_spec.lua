@@ -129,6 +129,11 @@ return describe("class", function()
 			local _base_0 = {
 				color = "green"
 			}
+			for _key_0, _val_0 in pairs(_parent_0.__base) do
+				if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+					_base_0[_key_0] = _val_0
+				end
+			end
 			if _base_0.__index == nil then
 				_base_0.__index = _base_0
 			end
@@ -195,6 +200,11 @@ return describe("class", function()
 			local _class_0
 			local _parent_0 = Base
 			local _base_0 = { }
+			for _key_0, _val_0 in pairs(_parent_0.__base) do
+				if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+					_base_0[_key_0] = _val_0
+				end
+			end
 			if _base_0.__index == nil then
 				_base_0.__index = _base_0
 			end
@@ -416,6 +426,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = Base
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -493,6 +508,11 @@ return describe("class", function()
 						return ("%08d"):format(_class_0.__parent.__base.counter(self))
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -568,6 +588,11 @@ return describe("class", function()
 						return _class_0.__parent.counter(self)
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -638,6 +663,11 @@ return describe("class", function()
 						return _class_0.__parent
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -720,6 +750,11 @@ return describe("class", function()
 						end
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -790,6 +825,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = Thing
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -857,6 +897,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = Thing
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -969,6 +1014,11 @@ return describe("class", function()
 						return _class_0.__parent
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1050,6 +1100,11 @@ return describe("class", function()
 						return _class_0.__parent.__base.a(self) + 2
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1094,6 +1149,11 @@ return describe("class", function()
 						return _class_0.__parent.__base.a(self) + 3
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1164,6 +1224,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = One
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1208,6 +1273,11 @@ return describe("class", function()
 						return _class_0.__parent.__base.a(self) + 3
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1252,6 +1322,11 @@ return describe("class", function()
 						return _class_0.__parent.__base.a(self) + 4
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1330,6 +1405,11 @@ return describe("class", function()
 						return _class_0.__parent.__base.doit(self)
 					end
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1404,6 +1484,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = One
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1444,6 +1529,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = Two
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1488,6 +1578,11 @@ return describe("class", function()
 				local _class_0
 				local _parent_0 = Three
 				local _base_0 = { }
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1529,7 +1624,7 @@ return describe("class", function()
 			end
 			return assert.same(8, Four:a())
 		end)
-		return it("super should still work when method wrapped", function()
+		it("super should still work when method wrapped", function()
 			local add_some
 			add_some = function(opts)
 				return function(self)
@@ -1574,6 +1669,11 @@ return describe("class", function()
 						end
 					})
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1626,6 +1726,11 @@ return describe("class", function()
 						end
 					end)()
 				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
 				if _base_0.__index == nil then
 					_base_0.__index = _base_0
 				end
@@ -1663,6 +1768,85 @@ return describe("class", function()
 			end
 			assert.same(1 + 100 + 12, Sub():value())
 			return assert.same(6, OtherSub():value())
+		end)
+		return it("should copy metamethod from super", function()
+			local A
+			do
+				local _class_0
+				local _base_0 = {
+					val = 1,
+					__tostring = function(self)
+						return "Object " .. tostring(self.val)
+					end
+				}
+				if _base_0.__index == nil then
+					_base_0.__index = _base_0
+				end
+				_class_0 = setmetatable({
+					__init = function() end,
+					__base = _base_0,
+					__name = "A"
+				}, {
+					__index = _base_0,
+					__call = function(cls, ...)
+						local _self_0 = setmetatable({ }, _base_0)
+						cls.__init(_self_0, ...)
+						return _self_0
+					end
+				})
+				_base_0.__class = _class_0
+				A = _class_0
+			end
+			local B
+			do
+				local _class_0
+				local _parent_0 = A
+				local _base_0 = {
+					val = 2
+				}
+				for _key_0, _val_0 in pairs(_parent_0.__base) do
+					if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+						_base_0[_key_0] = _val_0
+					end
+				end
+				if _base_0.__index == nil then
+					_base_0.__index = _base_0
+				end
+				setmetatable(_base_0, _parent_0.__base)
+				_class_0 = setmetatable({
+					__init = function(self, ...)
+						return _class_0.__parent.__init(self, ...)
+					end,
+					__base = _base_0,
+					__name = "B",
+					__parent = _parent_0
+				}, {
+					__index = function(cls, name)
+						local val = rawget(_base_0, name)
+						if val == nil then
+							local parent = rawget(cls, "__parent")
+							if parent then
+								return parent[name]
+							end
+						else
+							return val
+						end
+					end,
+					__call = function(cls, ...)
+						local _self_0 = setmetatable({ }, _base_0)
+						cls.__init(_self_0, ...)
+						return _self_0
+					end
+				})
+				_base_0.__class = _class_0
+				if _parent_0.__inherited then
+					_parent_0.__inherited(_parent_0, _class_0)
+				end
+				B = _class_0
+			end
+			local a, b = A(), B()
+			assert.same("Object 1", tostring(a))
+			return assert.same("Object 2", tostring(b))
 		end)
 	end)
 end)

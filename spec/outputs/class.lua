@@ -65,6 +65,11 @@ do
 	local _class_0
 	local _parent_0 = Simple
 	local _base_0 = { }
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -138,6 +143,11 @@ do
 			return _class_0.__parent.__base.cool(self, 120302)
 		end
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -211,6 +221,11 @@ do
 			return assert(_class_0.__parent == Okay)
 		end
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -311,6 +326,11 @@ do
 			end
 		end
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -551,6 +571,11 @@ do
 	local _class_0
 	local _parent_0 = Hello.World
 	local _base_0 = { }
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -641,6 +666,11 @@ do
 	local _class_0
 	local _parent_0 = Hello
 	local _base_0 = { }
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -682,6 +712,11 @@ do
 	local _class_0
 	local _parent_0 = World
 	local _base_0 = { }
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -828,6 +863,11 @@ do
 			}
 		end
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -871,6 +911,11 @@ do
 			return _class_0.__parent.__base.dang(self)
 		end)
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -910,6 +955,11 @@ do
 	local _class_0
 	local _parent_0 = Thing
 	local _base_0 = { }
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end
@@ -1051,6 +1101,11 @@ do
 			}
 		end
 	}
+	for _key_0, _val_0 in pairs(_parent_0.__base) do
+		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+			_base_0[_key_0] = _val_0
+		end
+	end
 	if _base_0.__index == nil then
 		_base_0.__index = _base_0
 	end

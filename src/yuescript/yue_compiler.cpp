@@ -14,7 +14,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <optional>
 
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
@@ -60,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.8"sv;
+const std::string_view version = "0.15.9"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -2122,7 +2121,8 @@ private:
 							keyIndex = key;
 						} else if (auto key = np->key.as<String_t>()) {
 							keyIndex = newExp(key, np->key).get();
-						} else throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, np));
+						} else
+							throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, np));
 					}
 					if (auto exp = np->value.as<Exp_t>()) {
 						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't do destructure value"sv, exp));
@@ -2211,7 +2211,8 @@ private:
 							chain->items.push_back(newExp(key, dp));
 						} else if (auto key = dp->key.as<Exp_t>()) {
 							chain->items.push_back(key);
-						} else throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, dp));
+						} else
+							throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, dp));
 					}
 					if (auto exp = dp->value.get()) {
 						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
@@ -6518,6 +6519,13 @@ private:
 			_buf << '\t' << cls << ',' << mixin << '=' << item << ".__base?,"sv << item << ".__base or "sv << item << '\n';
 			_buf << "\tfor "sv << key << ',' << val << " in pairs "sv << mixin << '\n';
 			_buf << "\t\t"sv << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil and (not "sv << cls << " or not "sv << key << "\\match \"^__\")"sv;
+			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
+		}
+		if (!parentVar.empty()) {
+			auto key = getUnusedName("_key_"sv);
+			auto val = getUnusedName("_val_"sv);
+			_buf << "for "sv << key << ',' << val << " in pairs "sv << parentVar << ".__base"sv << '\n'
+				 << '\t' << baseVar << '[' << key << "]="sv << val << " if "sv << baseVar << '[' << key << "]==nil and "sv << key << "\\match(\"^__\") and not ("sv << key << "==\"__index\" and "sv << val << "=="sv << parentVar << ".__base)"sv;
 			transformBlock(toAst<Block_t>(clearBuf(), x), temp, ExpUsage::Common);
 		}
 		transformAssignment(toAst<ExpListAssign_t>(baseVar + ".__index ?\?= "s + baseVar, classDecl), temp);

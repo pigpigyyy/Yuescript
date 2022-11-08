@@ -293,3 +293,16 @@ describe "class", ->
 			assert.same 1 + 100 + 12, Sub!\value!
 			assert.same 6, OtherSub!\value!
 
+		it "should copy metamethod from super", ->
+			class A
+				val: 1
+				<tostring>: => "Object #{ @val }"
+
+			class B extends A
+				val: 2
+
+			a, b = A!, B!
+
+			assert.same "Object 1", tostring a
+			assert.same "Object 2", tostring b
+
