@@ -59,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.9"sv;
+const std::string_view version = "0.15.10"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {

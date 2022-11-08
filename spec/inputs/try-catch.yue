@@ -34,8 +34,8 @@ catch err
 
 if try func 1
 catch err
-	print err
-		print "OK"
+		print err
+	print "OK"
 
 do
 	if success, result = try func "abc", 123

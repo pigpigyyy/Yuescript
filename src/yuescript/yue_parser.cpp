@@ -679,10 +679,15 @@ YueParser::YueParser() {
 		advance >> ensure(MultiLineComment >> Space | Comment, PopIndent) |
 		plain_space) >> and_(Break);
 
+	indentation_error = pl::user(not_(PipeOperator), [](const item_t& item) {
+		throw ParserError("unexpected indent", *item.begin, *item.end);
+		return false;
+	});
+
 	Line =
 		CheckIndent >> Statement |
-		Advance >> ensure(Space >> and_(PipeOperator) >> Statement, PopIndent) |
-		empty_line_break;
+		empty_line_break |
+		Advance >> ensure(Space >> (indentation_error | Statement), PopIndent);
 	Block = Seperator >> Line >> *(+Break >> Line);
 
 	Shebang = expr("#!") >> *(not_(Stop) >> Any);
