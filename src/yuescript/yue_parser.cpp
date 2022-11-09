@@ -536,7 +536,7 @@ YueParser::YueParser() {
 			throw ParserError("export default has already been declared", *item.begin, *item.end);
 		}
 		if (st->exportCount > 1) {
-			throw ParserError("there are items already been exported", *item.begin, *item.end);
+			throw ParserError("there are items already being exported", *item.begin, *item.end);
 		}
 		st->exportDefault = true;
 		return true;
