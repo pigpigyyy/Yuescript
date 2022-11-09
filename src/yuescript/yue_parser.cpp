@@ -544,7 +544,7 @@ YueParser::YueParser() {
 	| (not_(Space >> export_default) >> pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault && st->exportCount > 1) {
-			throw ParserError("can not export more items when export default has been declared", *item.begin, *item.end);
+			throw ParserError("can not export any more items when 'export default' is declared", *item.begin, *item.end);
 		}
 		return true;
 	}) >> ExpList >> -Assign)

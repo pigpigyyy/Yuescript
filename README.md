@@ -87,16 +87,21 @@ Usage: yue [options|files|directories] ...
 
    -h       Print this message
    -e str   Execute a file or raw codes
+   -m       Generate minified codes
    -t path  Specify where to place compiled files
    -o file  Write output to file
    -s       Use spaces in generated codes instead of tabs
-   -m       Generate minified codes
    -p       Write output to standard out
    -b       Dump compile time (doesn't write output)
+   -g       Dump global variables used in NAME LINE COLUMN
    -l       Write line numbers from source codes
    -v       Print version
    --       Read from standard in, print to standard out
             (Must be first and only argument)
+
+   --target=version  Specify the Lua version that codes will be generated to
+                     (version can only be 5.1, 5.2, 5.3 or 5.4)
+   --path=path_str   Append an extra Lua search path string to package.path
 
    Execute without options to enter REPL, type symbol '$'
    in a single line to start/stop multi-line mode
