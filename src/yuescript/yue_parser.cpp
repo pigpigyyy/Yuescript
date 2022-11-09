@@ -532,17 +532,21 @@ YueParser::YueParser() {
 		return true;
 	}) >> (pl::user(Space >> export_default >> Exp, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		bool isValid = !st->exportDefault && st->exportCount == 1;
+		if (st->exportDefault) {
+			throw ParserError("export default has already been declared", *item.begin, *item.end);
+		}
+		if (st->exportCount > 1) {
+			throw ParserError("there are items already been exported", *item.begin, *item.end);
+		}
 		st->exportDefault = true;
-		return isValid;
+		return true;
 	})
 	| (not_(Space >> export_default) >> pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault && st->exportCount > 1) {
-			return false;
-		} else {
-			return true;
+			throw ParserError("can not export more items when export default has been declared", *item.begin, *item.end);
 		}
+		return true;
 	}) >> ExpList >> -Assign)
 	| Space >> pl::user(Macro, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
@@ -631,7 +635,7 @@ YueParser::YueParser() {
 		) | arg_table_block;
 
 	leading_spaces_error = pl::user(+space_one >> expr('(') >> Exp >> +(sym(',') >> Exp) >> sym(')'), [](const item_t& item) {
-		throw ParserError("write invoke arguments in parentheses without leading spaces or leading spaces without parentheses", *item.begin, *item.end);
+		throw ParserError("write invoke arguments in parentheses without leading spaces or just leading spaces without parentheses", *item.begin, *item.end);
 		return false;
 	});
 
@@ -707,7 +711,7 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 		res.codes = std::make_unique<input>();
 		*(res.codes) = _converter.from_bytes(&codes.front(), &codes.back() + 1);
 	} catch (const std::range_error&) {
-		res.error = "Invalid text encoding."sv;
+		res.error = "invalid text encoding"sv;
 		return res;
 	}
 	error_list errors;

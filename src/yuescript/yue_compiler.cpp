@@ -59,7 +59,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.11"sv;
+const std::string_view version = "0.15.12"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -3769,7 +3769,7 @@ private:
 		if (!_enableReturn.top()) {
 			ast_node* target = returnNode->valueList.get();
 			if (!target) target = returnNode;
-			throw std::logic_error(_info.errorMessage("illegal return statement here"sv, target));
+			throw std::logic_error(_info.errorMessage("can not mix use of return and export statements in module scope"sv, target));
 		}
 		if (auto valueList = returnNode->valueList.as<ExpListLow_t>()) {
 			if (valueList->exprs.size() == 1) {
@@ -8008,8 +8008,11 @@ private:
 
 	void transformChainAssign(ChainAssign_t* chainAssign, str_list& out) {
 		auto x = chainAssign;
-		str_list temp;
 		auto value = chainAssign->assign->values.front();
+		if (chainAssign->assign->values.size() != 1) {
+			throw std::logic_error(_info.errorMessage("only one right value expected"sv, value));
+		}
+		str_list temp;
 		bool constVal = false;
 		if (auto simpleVal = simpleSingleValueFrom(value)) {
 			constVal = ast_is<const_value_t, Num_t>(simpleVal->value);

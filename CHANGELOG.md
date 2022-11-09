@@ -2,6 +2,57 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.15.12
+
+### Added Features
+
+* yue.to_ast(): Reserve comment nodes followed by a statement in AST structures.
+* Added `while` clause line decorator.
+   ```moonscript
+   reader\parse_line! until reader\eof!
+   ```
+  compiles to:
+  ```lua
+   while not reader:eof() do
+     reader:parse_line()
+   end
+  ```
+* Supported underscores in number literal. `1_000_000`, `0xFF_EF_06`
+* Refactored some error messages with details instead of just "syntax error".
+* Added chaining assignment. `a = b = c = 0`
+
+### Fixed Issues
+
+* Change metable accessing operator to `<>` instead of postfix `#`.
+  ```moonscript
+  <>: mt = tb
+  mt = tb.<>
+  a = <>: mt, value: 1
+  b = :<add>, value: 2
+  close _ = <close>: -> print "out of scope"
+  ```
+  compiles to:
+  ```lua
+  local mt = getmetatable(tb)
+  mt = getmetatable(tb)
+  local a = setmetatable({
+    value = 1
+  }, mt)
+  local b = setmetatable({
+    value = 2
+  }, {
+    __add = add
+  })
+  local _ <close> = setmetatable({ }, {
+    __close = function()
+      return print("out of scope")
+    end
+  })
+  ```
+* Refactor `continue` keyword implementation with goto statement when targeting Lua version 5.2 and higher.
+* Skip utf-8 bom in parser.
+* Fixed classes don't inherits metamethods properly.
+
 ## v0.14.5
 
 ### Added Features

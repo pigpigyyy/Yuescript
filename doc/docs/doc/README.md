@@ -671,13 +671,14 @@ tb =
 
 ### Import
 
-The import statement is a syntax sugar for requiring a module or help extracting items from an imported module.
+The import statement is a syntax sugar for requiring a module or help extracting items from an imported module. The imported items are const by default.
 
 ```moonscript
--- used as table destructure
+-- used as table destructuring
 do
-  import C, Ct, Cmt from require "lpeg"
   import insert, concat from table
+  -- report error when assigning to insert, concat
+  import C, Ct, Cmt from require "lpeg"
 
 -- shortcut for requring a module
 do
@@ -686,7 +687,7 @@ do
   import "d-a-s-h-e-s"
   import "module.part"
 
--- requring module with aliasing or table destruction
+-- requring module with aliasing or table destructuring
 do
   import "player" as PlayerModule
   import "lpeg" as :C, :Ct, :Cmt
@@ -694,10 +695,11 @@ do
 ```
 <YueDisplay>
 <pre>
--- used as table destruction
+-- used as table destructuring
 do
-  import C, Ct, Cmt from require "lpeg"
   import insert, concat from table
+  -- report error when assigning to insert, concat
+  import C, Ct, Cmt from require "lpeg"
 
 -- shortcut for requring a module
 do
@@ -706,7 +708,7 @@ do
   import "d-a-s-h-e-s"
   import "module.part"
 
--- requring module with aliasing or table destruction
+-- requring module with aliasing or table destructuring
 do
   import "player" as PlayerModule
   import "lpeg" as :C, :Ct, :Cmt
@@ -840,6 +842,20 @@ x /= 10
 x %= 10
 s ..= "world" -- will add a new local if local variable is not exist
 arg or= "default value"
+</pre>
+</YueDisplay>
+
+### Chaining Assignment
+
+You can do chaining assignment to assign multiple items to hold the same value.
+```moonscript
+a = b = c = d = e = 0
+x = y = z = f!
+```
+<YueDisplay>
+<pre>
+a = b = c = d = e = 0
+x = y = z = f!
 </pre>
 </YueDisplay>
 
@@ -1114,7 +1130,7 @@ else
 </pre>
 </YueDisplay>
 
-If assignment with extra return values.
+If assignment with multiple return values. Only the first value is getting checked, other values are scoped.
 ```moonscript
 if success, result = pcall -> "get result without problems"
   print result -- variable result is scoped
@@ -1246,7 +1262,7 @@ catch err
 
 ## Attributes
 
-The syntax support for Lua 5.4 attributes.
+Syntax support for Lua 5.4 attributes. But you can use still use `const` declaration and get constant check functioning when targeting Lua versions below 5.4.
 
 ```moonscript
 const a = 123
@@ -1281,6 +1297,22 @@ some_string = "Here is a string
 -- You can mix expressions into string literals using #{} syntax.
 -- String interpolation is only available in double quoted strings.
 print "I am #{math.random! * 100}% sure."
+</pre>
+</YueDisplay>
+
+### Number Literals
+
+You can use underscores in a number literal to increase readability.
+
+```moonscript
+integer = 1_000_000
+hex = 0xEF_BB_BF
+```
+<YueDisplay>
+
+<pre>
+integer = 1_000_000
+hex = 0xEF_BB_BF
 </pre>
 </YueDisplay>
 
@@ -2302,6 +2334,21 @@ print "item: ", item for item in *items
 </pre>
 </YueDisplay>
 
+And with while loops:
+
+```moonscript
+game\update! while game\isRunning!
+
+reader\parse_line! until reader\eof!
+```
+<YueDisplay>
+<pre>
+game\update! while game\isRunning!
+
+reader\parse_line! until reader\eof!
+</pre>
+</YueDisplay>
+
 ## Switch
 
 The switch statement is shorthand for writing a series of if statements that check against the same value. Note that the value is only evaluated once. Like if statements, switches can have an else block to handle no matches. Comparison is done with the == operator.
@@ -2974,6 +3021,30 @@ with str = "Hello"
   print "upper:", \upper!
 </pre>
 </YueDisplay>
+
+Accessing special keys with `[]` in a `with` statement.
+
+```moonscript
+with tb
+  [1] = 1
+  print [2]
+  with [abc]
+    [3] = [2]\func!
+    ["key-name"] = value
+  [] = "abc" -- appending to "tb"
+```
+<YueDisplay>
+<pre>
+with tb
+  [1] = 1
+  print [2]
+  with [abc]
+    [3] = [2]\func!
+    ["key-name"] = value
+  [] = "abc" -- appending to "tb"
+</pre>
+</YueDisplay>
+
 
 ## Do
 
