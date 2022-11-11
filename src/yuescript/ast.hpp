@@ -455,8 +455,7 @@ public:
 
 	void dup(const _ast_list& src) {
 		for (ast_node* obj : src.m_objects) {
-			m_objects.push_back(obj);
-			obj->retain();
+			push_back(obj);
 		}
 	}
 

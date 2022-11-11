@@ -9,7 +9,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
 
-#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <future>
@@ -472,19 +471,13 @@ int main(int narg, const char** args) {
 					}
 				}
 				if (dumpCompileTime) {
-					auto start = std::chrono::high_resolution_clock::now();
+					conf.profiling = true;
 					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
-					auto end = std::chrono::high_resolution_clock::now();
 					if (!result.codes.empty()) {
-						std::chrono::duration<double> diff = end - start;
-						start = std::chrono::high_resolution_clock::now();
-						yue::YueParser{}.parse<yue::File_t>(s);
-						end = std::chrono::high_resolution_clock::now();
-						std::chrono::duration<double> parseDiff = end - start;
 						std::ostringstream buf;
 						buf << file.first << " \n"sv;
-						buf << "Parse time:     "sv << std::setprecision(5) << parseDiff.count() * 1000 << " ms\n";
-						buf << "Compile time:   "sv << std::setprecision(5) << (diff.count() - parseDiff.count()) * 1000 << " ms\n\n";
+						buf << "Parse time:     "sv << std::setprecision(5) << result.parseTime * 1000 << " ms\n";
+						buf << "Compile time:   "sv << std::setprecision(5) << result.compileTime * 1000 << " ms\n\n";
 						return std::tuple{0, file.first, buf.str()};
 					} else {
 						std::ostringstream buf;

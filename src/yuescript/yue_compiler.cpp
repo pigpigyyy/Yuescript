@@ -6,6 +6,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.*/
 
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <set>
@@ -59,7 +60,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.12"sv;
+const std::string_view version = "0.15.13"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -98,7 +99,17 @@ public:
 #ifndef YUE_NO_MACRO
 		if (L) passOptions();
 #endif // YUE_NO_MACRO
-		_info = _parser.parse<File_t>(codes);
+		double parseTime = 0.0;
+		double compileTime = 0.0;
+		if (config.profiling) {
+			auto start = std::chrono::high_resolution_clock::now();
+			_info = _parser.parse<File_t>(codes);
+			auto stop = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> diff = stop - start;
+			parseTime = diff.count();
+		} else {
+			_info = _parser.parse<File_t>(codes);
+		}
 		std::unique_ptr<GlobalVars> globals;
 		std::unique_ptr<Options> options;
 		if (!config.options.empty()) {
@@ -149,9 +160,19 @@ public:
 				_gotoScopes.push(0);
 				_gotoScope = 1;
 				_varArgs.push({true, false});
-				transformBlock(block, out,
-					config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
-					nullptr, true);
+				if (_config.profiling) {
+					auto start = std::chrono::high_resolution_clock::now();
+					transformBlock(block, out,
+						config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
+						nullptr, true);
+					auto stop = std::chrono::high_resolution_clock::now();
+					std::chrono::duration<double> diff = stop - start;
+					compileTime = diff.count();
+				} else {
+					transformBlock(block, out,
+						config.implicitReturnRoot ? ExpUsage::Return : ExpUsage::Common,
+						nullptr, true);
+				}
 				popScope();
 				if (!gotos.empty()) {
 					for (const auto& gotoNode : gotos) {
@@ -207,12 +228,12 @@ public:
 					}
 				}
 #endif // YUE_NO_MACRO
-				return {std::move(out.back()), Empty, std::move(globals), std::move(options)};
+				return {std::move(out.back()), Empty, std::move(globals), std::move(options), parseTime, compileTime};
 			} catch (const std::logic_error& error) {
-				return {Empty, error.what(), std::move(globals), std::move(options)};
+				return {Empty, error.what(), std::move(globals), std::move(options), parseTime, compileTime};
 			}
 		} else {
-			return {Empty, std::move(_info.error), std::move(globals), std::move(options)};
+			return {Empty, std::move(_info.error), std::move(globals), std::move(options), parseTime, compileTime};
 		}
 	}
 
@@ -2055,6 +2076,16 @@ private:
 				tableItems = &table->values.objects();
 				break;
 			}
+			case id<TableLit_t>(): {
+				auto table = ast_cast<TableLit_t>(node);
+				tableItems = &table->values.objects();
+				break;
+			}
+			case id<simple_table_t>(): {
+				auto table = ast_cast<simple_table_t>(node);
+				tableItems = &table->pairs.objects();
+				break;
+			}
 			default: YUEE("AST node mismatch", node); break;
 		}
 		if (!tableItems) throw std::logic_error(_info.errorMessage("invalid destructure value"sv, node));
@@ -2063,7 +2094,13 @@ private:
 		auto subMetaDestruct = node->new_ptr<TableLit_t>();
 		for (auto pair : *tableItems) {
 			switch (pair->getId()) {
-				case id<Exp_t>(): {
+				case id<Exp_t>():
+				case id<normal_def_t>(): {
+					Exp_t* defVal = nullptr;
+					if (auto nd = ast_cast<normal_def_t>(pair)) {
+						pair = nd->item.get();
+						defVal = nd->defVal.get();
+					}
 					++index;
 					if (!isAssignable(static_cast<Exp_t*>(pair))) {
 						throw std::logic_error(_info.errorMessage("can't destructure value"sv, pair));
@@ -2087,21 +2124,33 @@ private:
 						pairs.push_back({exp,
 							varName,
 							chain,
-							nullptr});
+							defVal});
 					}
 					break;
 				}
-				case id<variable_pair_t>(): {
+				case id<variable_pair_t>():
+				case id<variable_pair_def_t>(): {
+					Exp_t* defVal = nullptr;
+					if (auto vpd = ast_cast<variable_pair_def_t>(pair)) {
+						pair = vpd->pair.get();
+						defVal = vpd->defVal.get();
+					}
 					auto vp = static_cast<variable_pair_t*>(pair);
 					auto name = _parser.toString(vp->name);
 					auto chain = toAst<ChainValue_t>('.' + name, vp->name);
 					pairs.push_back({toAst<Exp_t>(name, vp).get(),
 						name,
 						chain,
-						nullptr});
+						defVal});
 					break;
 				}
-				case id<normal_pair_t>(): {
+				case id<normal_pair_t>():
+				case id<normal_pair_def_t>(): {
+					Exp_t* defVal = nullptr;
+					if (auto npd = ast_cast<normal_pair_def_t>(pair)) {
+						pair = npd->pair.get();
+						defVal = npd->defVal.get();
+					}
 					auto np = static_cast<normal_pair_t*>(pair);
 					ast_ptr<true, ast_node> keyIndex;
 					if (np->key) {
@@ -2144,7 +2193,7 @@ private:
 							pairs.push_back({exp,
 								varName,
 								chain,
-								nullptr});
+								defVal});
 						}
 						break;
 					}
@@ -2171,97 +2220,28 @@ private:
 					}
 					break;
 				}
-				case id<default_pair_t>(): {
-					auto dp = static_cast<default_pair_t*>(pair);
-					if (auto exp = dp->key.as<Exp_t>()) {
-						++index;
-						if (!isAssignable(static_cast<Exp_t*>(exp))) {
-							throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
-						}
-						auto value = singleValueFrom(exp);
-						auto item = value->item.get();
-						if (ast_is<simple_table_t>(item) || item->getByPath<TableLit_t>()) {
-							throw std::logic_error(_info.errorMessage("invalid use of default value"sv, dp->defVal));
-						} else {
-							auto varName = singleVariableFrom(exp, false);
-							pairs.push_back({exp,
-								varName,
-								toAst<ChainValue_t>('[' + std::to_string(index) + ']', value),
-								dp->defVal});
-						}
-						break;
+				case id<meta_variable_pair_t>():
+				case id<meta_variable_pair_def_t>(): {
+					Exp_t* defVal = nullptr;
+					if (auto mvpd = ast_cast<meta_variable_pair_def_t>(pair)) {
+						pair = mvpd->pair.get();
+						defVal = mvpd->defVal.get();
 					}
-					auto chain = dp->new_ptr<ChainValue_t>();
-					std::string valueStr;
-					if (dp->key) {
-						if (auto key = dp->key->getByPath<Name_t>()) {
-							auto keyName = _parser.toString(key);
-							if (!dp->value) valueStr = keyName;
-							if (LuaKeywords.find(keyName) != LuaKeywords.end()) {
-								chain->items.push_back(toAst<Exp_t>('"' + keyName + '"', key));
-							} else {
-								chain->items.push_back(toAst<DotChainItem_t>('.' + keyName, key));
-							}
-						} else if (auto key = dp->key->getByPath<SelfName_t>()) {
-							auto callable = dp->new_ptr<Callable_t>();
-							callable->item.set(key);
-							auto chainValue = dp->new_ptr<ChainValue_t>();
-							chainValue->items.push_back(callable);
-							chain->items.push_back(newExp(chainValue, dp));
-						} else if (auto key = dp->key.as<String_t>()) {
-							chain->items.push_back(newExp(key, dp));
-						} else if (auto key = dp->key.as<Exp_t>()) {
-							chain->items.push_back(key);
-						} else
-							throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, dp));
-					}
-					if (auto exp = dp->value.get()) {
-						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't destructure value"sv, exp));
-						auto varName = singleVariableFrom(exp, false);
-						pairs.push_back({exp,
-							varName,
-							chain,
-							dp->defVal});
-					} else {
-						pairs.push_back({toAst<Exp_t>(valueStr, dp).get(),
-							valueStr,
-							chain,
-							dp->defVal});
-					}
-					break;
-				}
-				case id<meta_default_pair_t>(): {
-					auto mp = static_cast<meta_default_pair_t*>(pair);
-					auto newPair = pair->new_ptr<default_pair_t>();
-					if (mp->key) {
-						if (!ast_is<Variable_t, Name_t>(mp->key)) {
-							throw std::logic_error(_info.errorMessage("destructuring with metatable accessed by expression is not supported."sv, mp->key));
-						}
-						auto key = _parser.toString(mp->key);
-						_buf << "__"sv << key;
-						auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
-						newPair->key.set(newKey);
-						if (newPair->value) {
-							newPair->value.set(mp->value);
-						} else {
-							newPair->value.set(toAst<Exp_t>(key, mp->key));
-						}
-					} else {
-						newPair->value.set(mp->value);
-					}
-					newPair->defVal.set(mp->defVal);
-					subMetaDestruct->values.push_back(newPair);
-					break;
-				}
-				case id<meta_variable_pair_t>(): {
 					auto mp = static_cast<meta_variable_pair_t*>(pair);
 					auto name = _parser.toString(mp->name);
 					_buf << "__"sv << name << ':' << name;
-					auto newPair = toAst<normal_pair_t>(clearBuf(), pair);
-					subMetaDestruct->values.push_back(newPair);
+					auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), pair);
+					newPairDef->defVal.set(defVal);
+					subMetaDestruct->values.push_back(newPairDef);
 					break;
 				}
-				case id<meta_normal_pair_t>(): {
+				case id<meta_normal_pair_t>():
+				case id<meta_normal_pair_def_t>(): {
+					Exp_t* defVal = nullptr;
+					if (auto mnpd = ast_cast<meta_normal_pair_def_t>(pair)) {
+						pair = mnpd->pair.get();
+						defVal = mnpd->defVal.get();
+					}
 					auto mp = static_cast<meta_normal_pair_t*>(pair);
 					auto newPair = pair->new_ptr<normal_pair_t>();
 					if (mp->key) {
@@ -2280,7 +2260,10 @@ private:
 						}
 					}
 					newPair->value.set(mp->value);
-					subMetaDestruct->values.push_back(newPair);
+					auto newPairDef = mp->new_ptr<normal_pair_def_t>();
+					newPairDef->pair.set(newPair);
+					newPairDef->defVal.set(defVal);
+					subMetaDestruct->values.push_back(newPairDef);
 					break;
 				}
 				default: YUEE("AST node mismatch", pair); break;
@@ -2361,32 +2344,52 @@ private:
 				}
 				for (auto item : *dlist) {
 					switch (item->getId()) {
-						case id<meta_default_pair_t>(): {
-							auto mp = static_cast<meta_default_pair_t*>(item);
-							auto newPair = item->new_ptr<default_pair_t>();
+						case id<meta_variable_pair_def_t>(): {
+							auto mvp = static_cast<meta_variable_pair_def_t*>(item);
+							auto mp = mvp->pair.get();
+							auto name = _parser.toString(mp->name);
+							_buf << "__"sv << name << ':' << name;
+							auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), item);
+							newPairDef->defVal.set(mvp->defVal);
+							subMetaDestruct->values.push_back(newPairDef);
+							break;
+						}
+						case id<meta_normal_pair_def_t>(): {
+							auto mnp = static_cast<meta_normal_pair_def_t*>(item);
+							auto mp = mnp->pair.get();
+							auto newPair = item->new_ptr<normal_pair_t>();
 							if (mp->key) {
-								auto key = _parser.toString(mp->key);
-								_buf << "__"sv << key;
-								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
-								newPair->key.set(newKey);
-								if (newPair->value) {
-									newPair->value.set(mp->value);
-								} else {
-									newPair->value.set(toAst<Exp_t>(key, mp->key));
+								switch (mp->key->getId()) {
+									case id<Name_t>(): {
+										auto key = _parser.toString(mp->key);
+										_buf << "__"sv << key;
+										auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
+										newPair->key.set(newKey);
+										break;
+									}
+									case id<String_t>(): {
+										newPair->key.set(mp->key);
+										break;
+									}
+									case id<Exp_t>():
+										newPair->key.set(mp->key);
+										break;
+									default: YUEE("AST node mismatch", mp->key); break;
 								}
-							} else {
-								newPair->value.set(mp->value);
 							}
-							newPair->defVal.set(mp->defVal);
-							subMetaDestruct->values.push_back(newPair);
+							newPair->value.set(mp->value);
+							auto newPairDef = item->new_ptr<normal_pair_def_t>();
+							newPairDef->pair.set(newPair);
+							newPairDef->defVal.set(mnp->defVal);
+							subMetaDestruct->values.push_back(newPairDef);
 							break;
 						}
 						case id<meta_variable_pair_t>(): {
 							auto mp = static_cast<meta_variable_pair_t*>(item);
 							auto name = _parser.toString(mp->name);
 							_buf << "__"sv << name << ':' << name;
-							auto newPair = toAst<normal_pair_t>(clearBuf(), item);
-							subMetaDestruct->values.push_back(newPair);
+							auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), item);
+							subMetaDestruct->values.push_back(newPairDef);
 							break;
 						}
 						case id<meta_normal_pair_t>(): {
@@ -2414,7 +2417,23 @@ private:
 								}
 							}
 							newPair->value.set(mp->value);
-							subMetaDestruct->values.push_back(newPair);
+							auto newPairDef = item->new_ptr<normal_pair_def_t>();
+							newPairDef->pair.set(newPair);
+							subMetaDestruct->values.push_back(newPairDef);
+							break;
+						}
+						case id<variable_pair_t>(): {
+							auto pair = static_cast<variable_pair_t*>(item);
+							auto newPairDef = item->new_ptr<variable_pair_def_t>();
+							newPairDef->pair.set(pair);
+							subDestruct->values.push_back(newPairDef);
+							break;
+						}
+						case id<normal_pair_t>(): {
+							auto pair = static_cast<normal_pair_t*>(item);
+							auto newPairDef = item->new_ptr<normal_pair_def_t>();
+							newPairDef->pair.set(pair);
+							subDestruct->values.push_back(newPairDef);
 							break;
 						}
 						default:
@@ -5197,14 +5216,28 @@ private:
 					transformForEach(forEach, temp);
 					break;
 				}
-				case id<variable_pair_t>(): {
+				case id<variable_pair_t>():
+				case id<variable_pair_def_t>(): {
+					if (auto pair = ast_cast<variable_pair_def_t>(item)) {
+						if (pair->defVal) {
+							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+						}
+						item = pair->pair.get();
+					}
 					auto variablePair = static_cast<variable_pair_t*>(item);
 					auto nameStr = _parser.toString(variablePair->name);
 					auto assignment = toAst<ExpListAssign_t>(tableVar + '.' + nameStr + '=' + nameStr, item);
 					transformAssignment(assignment, temp);
 					break;
 				}
-				case id<normal_pair_t>(): {
+				case id<normal_pair_t>():
+				case id<normal_pair_def_t>(): {
+					if (auto pair = ast_cast<normal_pair_def_t>(item)) {
+						if (pair->defVal) {
+							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+						}
+						item = pair->pair.get();
+					}
 					auto normalPair = static_cast<normal_pair_t*>(item);
 					auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
 					auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
@@ -5248,10 +5281,18 @@ private:
 					transformAssignment(assignment, temp);
 					break;
 				}
-				case id<Exp_t>(): {
+				case id<Exp_t>():
+				case id<normal_def_t>(): {
+					auto current = item;
+					if (auto pair = ast_cast<normal_def_t>(item)) {
+						if (pair->defVal) {
+							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+						}
+						item = pair->item.get();
+					}
 					bool lastVarArg = false;
 					BLOCK_START
-					BREAK_IF(item != values.back());
+					BREAK_IF(current != values.back());
 					auto value = singleValueFrom(item);
 					BREAK_IF(!value);
 					auto chainValue = value->item.as<ChainValue_t>();
@@ -5291,14 +5332,28 @@ private:
 					transformAssignment(assignment, temp);
 					break;
 				}
-				case id<meta_variable_pair_t>(): {
+				case id<meta_variable_pair_t>():
+				case id<meta_variable_pair_def_t>(): {
+					if (auto pair = ast_cast<meta_variable_pair_def_t>(item)) {
+						if (pair->defVal) {
+							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+						}
+						item = pair->pair.get();
+					}
 					auto metaVarPair = static_cast<meta_variable_pair_t*>(item);
 					auto nameStr = _parser.toString(metaVarPair->name);
 					auto assignment = toAst<ExpListAssign_t>(tableVar + ".<"s + nameStr + ">="s + nameStr, item);
 					transformAssignment(assignment, temp);
 					break;
 				}
-				case id<meta_normal_pair_t>(): {
+				case id<meta_normal_pair_t>():
+				case id<meta_normal_pair_def_t>(): {
+					if (auto pair = ast_cast<meta_normal_pair_def_t>(item)) {
+						if (pair->defVal) {
+							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+						}
+						item = pair->pair.get();
+					}
 					auto metaNormalPair = static_cast<meta_normal_pair_t*>(item);
 					auto assignment = toAst<ExpListAssign_t>(tableVar + "=nil"s, item);
 					auto chainValue = singleValueFrom(ast_to<Exp_t>(assignment->expList->exprs.front()))->item.to<ChainValue_t>();
@@ -5324,14 +5379,6 @@ private:
 					assign->values.clear();
 					assign->values.push_back(metaNormalPair->value);
 					transformAssignment(assignment, temp);
-					break;
-				}
-				case id<default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<default_pair_t*>(item)->defVal));
-					break;
-				}
-				case id<meta_default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<meta_default_pair_t*>(item)->defVal));
 					break;
 				}
 				default: YUEE("AST node mismatch", item); break;
@@ -5381,7 +5428,50 @@ private:
 		incIndentOffset();
 		auto metatable = x->new_ptr<simple_table_t>();
 		ast_sel<false, Exp_t, TableBlock_t> metatableItem;
-		for (auto item : values) {
+		for (auto value : values) {
+			auto item = value;
+			switch (item->getId()) {
+				case id<variable_pair_def_t>(): {
+					auto pair = static_cast<variable_pair_def_t*>(item);
+					if (pair->defVal) {
+						throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+					}
+					item = pair->pair.get();
+					break;
+				}
+				case id<normal_pair_def_t>(): {
+					auto pair = static_cast<normal_pair_def_t*>(item);
+					if (pair->defVal) {
+						throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+					}
+					item = pair->pair.get();
+					break;
+				}
+				case id<meta_variable_pair_def_t>(): {
+					auto pair = static_cast<meta_variable_pair_def_t*>(item);
+					if (pair->defVal) {
+						throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+					}
+					item = pair->pair.get();
+					break;
+				}
+				case id<meta_normal_pair_def_t>(): {
+					auto pair = static_cast<meta_normal_pair_def_t*>(item);
+					if (pair->defVal) {
+						throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+					}
+					item = pair->pair.get();
+					break;
+				}
+				case id<normal_def_t>(): {
+					auto pair = static_cast<normal_def_t*>(item);
+					if (pair->defVal) {
+						throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+					}
+					item = pair->item.get();
+					break;
+				}
+			}
 			bool isMetamethod = false;
 			switch (item->getId()) {
 				case id<Exp_t>(): transformExp(static_cast<Exp_t*>(item), temp, ExpUsage::Closure); break;
@@ -5437,18 +5527,10 @@ private:
 					}
 					break;
 				}
-				case id<default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<default_pair_t*>(item)->defVal));
-					break;
-				}
-				case id<meta_default_pair_t>(): {
-					throw std::logic_error(_info.errorMessage("invalid default value"sv, static_cast<meta_default_pair_t*>(item)->defVal));
-					break;
-				}
 				default: YUEE("AST node mismatch", item); break;
 			}
 			if (!isMetamethod) {
-				temp.back() = indent() + (item == values.back() ? temp.back() : temp.back() + ',') + nll(item);
+				temp.back() = indent() + (value == values.back() ? temp.back() : temp.back() + ',') + nll(value);
 			}
 		}
 		if (metatable->pairs.empty() && !metatableItem) {
@@ -7518,7 +7600,41 @@ private:
 		} else if (auto tabLit = ast_cast<ImportTabLit_t>(target)) {
 			auto simpleValue = x->new_ptr<SimpleValue_t>();
 			auto tableLit = x->new_ptr<TableLit_t>();
-			tableLit->values.dup(tabLit->items);
+			for (auto pair : tabLit->items.objects()) {
+				switch (pair->getId()) {
+					case id<variable_pair_t>(): {
+						auto pairDef = pair->new_ptr<variable_pair_def_t>();
+						pairDef->pair.set(pair);
+						tableLit->values.push_back(pairDef);
+						break;
+					}
+					case id<normal_pair_t>(): {
+						auto pairDef = pair->new_ptr<normal_pair_def_t>();
+						pairDef->pair.set(pair);
+						tableLit->values.push_back(pairDef);
+						break;
+					}
+					case id<Exp_t>(): {
+						auto pairDef = pair->new_ptr<normal_def_t>();
+						pairDef->item.set(pair);
+						tableLit->values.push_back(pairDef);
+						break;
+					}
+					case id<meta_variable_pair_t>(): {
+						auto pairDef = pair->new_ptr<meta_variable_pair_def_t>();
+						pairDef->pair.set(pair);
+						tableLit->values.push_back(pairDef);
+						break;
+					}
+					case id<meta_normal_pair_t>(): {
+						auto pairDef = pair->new_ptr<meta_normal_pair_def_t>();
+						pairDef->pair.set(pair);
+						tableLit->values.push_back(pairDef);
+						break;
+					}
+					default: YUEE("AST node mismatch", pair); break;
+				}
+			}
 			simpleValue->value.set(tableLit);
 			value->item.set(simpleValue);
 		} else {

@@ -459,6 +459,12 @@ AST_NODE(variable_pair)
 	AST_MEMBER(variable_pair, &name)
 AST_END(variable_pair, "variable_pair"sv)
 
+AST_NODE(variable_pair_def)
+	ast_ptr<true, variable_pair_t> pair;
+	ast_ptr<false, Exp_t> defVal;
+	AST_MEMBER(variable_pair_def, &pair, &defVal)
+AST_END(variable_pair_def, "variable_pair_def"sv)
+
 class String_t;
 
 AST_NODE(normal_pair)
@@ -467,18 +473,29 @@ AST_NODE(normal_pair)
 	AST_MEMBER(normal_pair, &key, &value)
 AST_END(normal_pair, "normal_pair"sv)
 
-AST_NODE(default_pair)
-	ast_sel<true, Variable_t, KeyName_t, Exp_t, String_t> key;
+AST_NODE(normal_pair_def)
+	ast_ptr<true, normal_pair_t> pair;
+	ast_ptr<false, Exp_t> defVal;
+	AST_MEMBER(normal_pair_def, &pair, &defVal)
+AST_END(normal_pair_def, "normal_pair_def"sv)
+
+AST_NODE(normal_def)
+	ast_ptr<true, Exp_t> item;
 	ast_ptr<true, Seperator_t> sep;
-	ast_ptr<false, Exp_t> value;
-	ast_ptr<true, Exp_t> defVal;
-	AST_MEMBER(default_pair, &key, &sep, &value, &defVal)
-AST_END(default_pair, "default_pair"sv)
+	ast_ptr<false, Exp_t> defVal;
+	AST_MEMBER(normal_def, &item, &sep, &defVal)
+AST_END(normal_def, "normal_def")
 
 AST_NODE(meta_variable_pair)
 	ast_ptr<true, Variable_t> name;
 	AST_MEMBER(meta_variable_pair, &name)
 AST_END(meta_variable_pair, "meta_variable_pair"sv)
+
+AST_NODE(meta_variable_pair_def)
+	ast_ptr<true, meta_variable_pair_t> pair;
+	ast_ptr<false, Exp_t> defVal;
+	AST_MEMBER(meta_variable_pair_def, &pair, &defVal)
+AST_END(meta_variable_pair_def, "meta_variable_pair_def"sv)
 
 AST_NODE(meta_normal_pair)
 	ast_sel<false, Name_t, Exp_t, String_t> key;
@@ -486,13 +503,11 @@ AST_NODE(meta_normal_pair)
 	AST_MEMBER(meta_normal_pair, &key, &value)
 AST_END(meta_normal_pair, "meta_normal_pair"sv)
 
-AST_NODE(meta_default_pair)
-	ast_sel<false, Variable_t, Name_t, Exp_t, String_t> key;
-	ast_ptr<true, Seperator_t> sep;
-	ast_ptr<false, Exp_t> value;
-	ast_ptr<true, Exp_t> defVal;
-	AST_MEMBER(meta_default_pair, &key, &sep, &value, &defVal)
-AST_END(meta_default_pair, "meta_default_pair"sv)
+AST_NODE(meta_normal_pair_def)
+	ast_ptr<true, meta_normal_pair_t> pair;
+	ast_ptr<false, Exp_t> defVal;
+	AST_MEMBER(meta_normal_pair_def, &pair, &defVal)
+AST_END(meta_normal_pair_def, "meta_normal_pair_def"sv)
 
 AST_NODE(simple_table)
 	ast_ptr<true, Seperator_t> sep;
@@ -620,9 +635,6 @@ AST_END(Value, "value"sv)
 AST_LEAF(default_value)
 AST_END(default_value, "default_value"sv)
 
-class default_pair_t;
-class meta_default_pair_t;
-
 AST_NODE(SpreadExp)
 	ast_ptr<true, Exp_t> exp;
 	AST_MEMBER(SpreadExp, &exp)
@@ -631,23 +643,22 @@ AST_END(SpreadExp, "spread_exp"sv)
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false,
-		variable_pair_t, normal_pair_t, SpreadExp_t, Exp_t, default_pair_t,
-		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
+		variable_pair_def_t, normal_pair_def_t, SpreadExp_t, normal_def_t,
+		meta_variable_pair_def_t, meta_normal_pair_def_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit, "table_lit"sv)
 
 AST_NODE(TableBlockIndent)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false,
-		variable_pair_t, normal_pair_t, TableBlockIndent_t, default_pair_t,
-		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
+		variable_pair_t, normal_pair_t, Exp_t, TableBlockIndent_t,
+		meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableBlockIndent, &sep, &values)
 AST_END(TableBlockIndent, "table_block_indent"sv)
 
 AST_NODE(TableBlock)
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, SpreadExp_t, default_pair_t,
-		meta_variable_pair_t, meta_normal_pair_t, meta_default_pair_t> values;
+	ast_sel_list<false, variable_pair_t, normal_pair_t, TableBlockIndent_t, Exp_t, TableBlock_t, SpreadExp_t, meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableBlock, &sep, &values)
 AST_END(TableBlock, "table_block"sv)
 
