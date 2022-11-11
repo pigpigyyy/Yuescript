@@ -214,5 +214,15 @@ do
 	tb = {}
 	<[a + b]>: v1, [c!]: v2 = tb
 
+do
+	{a: {:<add> = addFunc}, b: {<[fieldName]>: field = 123}} = tb
+	{<"abc">: meta_field = "def", <[[any string]]>: abc = 123, <'str'>: def = {}} = tb
+
+	switch tb
+		when {a: {:<add> = addFunc}, b: {<[fieldName]>: field = 123}}
+			print add, field
+	switch tb
+		when {c: {<"abc">: meta_field = "def"}, <[[any string]]>: {d: abc = 123}, <'str'>: {e: def = {}}}
+			print meta_field, abc, def
 nil
 

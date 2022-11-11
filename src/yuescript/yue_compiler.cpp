@@ -2109,6 +2109,11 @@ private:
 					auto item = value->item.get();
 					if (ast_is<simple_table_t>(item) || item->getByPath<TableLit_t>()) {
 						auto subPairs = destructFromExp(pair, optional);
+						if (!subPairs.empty()) {
+							if (defVal) {
+								throw std::logic_error(_info.errorMessage("default value is not supported here"sv, defVal));
+							}
+						}
 						for (auto& p : subPairs) {
 							if (sep) p.structure->items.push_front(sep);
 							p.structure->items.push_front(
@@ -2171,14 +2176,20 @@ private:
 							keyIndex = key;
 						} else if (auto key = np->key.as<String_t>()) {
 							keyIndex = newExp(key, np->key).get();
-						} else
+						} else {
 							throw std::logic_error(_info.errorMessage("unsupported key for destructuring"sv, np));
+						}
 					}
 					if (auto exp = np->value.as<Exp_t>()) {
 						if (!isAssignable(exp)) throw std::logic_error(_info.errorMessage("can't do destructure value"sv, exp));
 						auto item = singleValueFrom(exp)->item.get();
 						if (ast_is<simple_table_t>(item) || item->getByPath<TableLit_t>()) {
 							auto subPairs = destructFromExp(exp, optional);
+							if (!subPairs.empty()) {
+								if (defVal) {
+									throw std::logic_error(_info.errorMessage("default value is not supported here"sv, defVal));
+								}
+							}
 							for (auto& p : subPairs) {
 								if (keyIndex) {
 									if (sep) p.structure->items.push_front(sep);
@@ -2199,6 +2210,11 @@ private:
 					}
 					if (np->value.is<TableBlock_t>()) {
 						auto subPairs = destructFromExp(np->value, optional);
+						if (!subPairs.empty()) {
+							if (defVal) {
+								throw std::logic_error(_info.errorMessage("default value is not supported here"sv, defVal));
+							}
+						}
 						for (auto& p : subPairs) {
 							if (keyIndex) {
 								if (sep) p.structure->items.push_front(sep);
@@ -2253,6 +2269,7 @@ private:
 								newPair->key.set(newKey);
 								break;
 							}
+							case id<String_t>():
 							case id<Exp_t>():
 								newPair->key.set(mp->key);
 								break;
@@ -5220,7 +5237,7 @@ private:
 				case id<variable_pair_def_t>(): {
 					if (auto pair = ast_cast<variable_pair_def_t>(item)) {
 						if (pair->defVal) {
-							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+							throw std::logic_error(_info.errorMessage("invalid default value here"sv, pair->defVal));
 						}
 						item = pair->pair.get();
 					}
@@ -5234,7 +5251,7 @@ private:
 				case id<normal_pair_def_t>(): {
 					if (auto pair = ast_cast<normal_pair_def_t>(item)) {
 						if (pair->defVal) {
-							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+							throw std::logic_error(_info.errorMessage("invalid default value here"sv, pair->defVal));
 						}
 						item = pair->pair.get();
 					}
@@ -5286,7 +5303,7 @@ private:
 					auto current = item;
 					if (auto pair = ast_cast<normal_def_t>(item)) {
 						if (pair->defVal) {
-							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+							throw std::logic_error(_info.errorMessage("invalid default value here"sv, pair->defVal));
 						}
 						item = pair->item.get();
 					}
@@ -5336,7 +5353,7 @@ private:
 				case id<meta_variable_pair_def_t>(): {
 					if (auto pair = ast_cast<meta_variable_pair_def_t>(item)) {
 						if (pair->defVal) {
-							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+							throw std::logic_error(_info.errorMessage("invalid default value here"sv, pair->defVal));
 						}
 						item = pair->pair.get();
 					}
@@ -5350,7 +5367,7 @@ private:
 				case id<meta_normal_pair_def_t>(): {
 					if (auto pair = ast_cast<meta_normal_pair_def_t>(item)) {
 						if (pair->defVal) {
-							throw std::logic_error(_info.errorMessage("invalid default value"sv, pair->defVal));
+							throw std::logic_error(_info.errorMessage("invalid default value here"sv, pair->defVal));
 						}
 						item = pair->pair.get();
 					}
@@ -5373,6 +5390,9 @@ private:
 							chainValue->items.push_back(key);
 							break;
 						}
+						case id<String_t>():
+							chainValue->items.push_back(key);
+							break;
 						default: YUEE("AST node mismatch", key); break;
 					}
 					auto assign = assignment->action.to<Assign_t>();

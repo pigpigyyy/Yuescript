@@ -503,4 +503,109 @@ do
 		v1 = _obj_1[_tmp_1]
 	end
 end
+do
+	local add, field
+	do
+		local _obj_0 = tb
+		add, field = getmetatable(_obj_0.a).__add, getmetatable(_obj_0.b)[fieldName]
+		if add == nil then
+			add = addFunc
+		end
+		if field == nil then
+			field = 123
+		end
+	end
+	local meta_field, abc, def
+	do
+		local _obj_0 = getmetatable(tb)
+		meta_field, abc, def = _obj_0["abc"], _obj_0[ [[any string]]], _obj_0['str']
+		if meta_field == nil then
+			meta_field = "def"
+		end
+		if abc == nil then
+			abc = 123
+		end
+		if def == nil then
+			def = { }
+		end
+	end
+	do
+		local _exp_0 = tb
+		local _tab_0 = "table" == type(_exp_0)
+		if _tab_0 then
+			do
+				local _obj_0 = _exp_0.a
+				if _obj_0 ~= nil then
+					do
+						local _obj_1 = getmetatable(_obj_0)
+						if _obj_1 ~= nil then
+							add = _obj_1.__add
+						end
+					end
+				end
+			end
+			do
+				local _obj_0 = _exp_0.b
+				if _obj_0 ~= nil then
+					do
+						local _obj_1 = getmetatable(_obj_0)
+						if _obj_1 ~= nil then
+							field = _obj_1[fieldName]
+						end
+					end
+				end
+			end
+			if add == nil then
+				add = addFunc
+			end
+			if field == nil then
+				field = 123
+			end
+			print(add, field)
+		end
+	end
+	do
+		local _exp_0 = tb
+		local _tab_0 = "table" == type(_exp_0)
+		if _tab_0 then
+			local _obj_0 = _exp_0
+			do
+				local _obj_1 = _obj_0.c
+				if _obj_1 ~= nil then
+					do
+						local _obj_2 = getmetatable(_obj_1)
+						if _obj_2 ~= nil then
+							meta_field = _obj_2["abc"]
+						end
+					end
+				end
+			end
+			if meta_field == nil then
+				meta_field = "def"
+			end
+			do
+				local _obj_1 = getmetatable(_obj_0)
+				do
+					local _obj_2 = _obj_1[ [[any string]]]
+					if _obj_2 ~= nil then
+						abc = _obj_2.d
+					end
+				end
+				do
+					local _obj_2 = _obj_1['str']
+					if _obj_2 ~= nil then
+						def = _obj_2.e
+					end
+				end
+				if abc == nil then
+					abc = 123
+				end
+				if def == nil then
+					def = { }
+				end
+			end
+			print(meta_field, abc, def)
+		end
+	end
+end
 return nil
