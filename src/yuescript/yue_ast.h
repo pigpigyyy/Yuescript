@@ -640,11 +640,15 @@ AST_NODE(SpreadExp)
 	AST_MEMBER(SpreadExp, &exp)
 AST_END(SpreadExp, "spread_exp"sv)
 
+class TableBlockIndent_t;
+
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false,
 		variable_pair_def_t, normal_pair_def_t, SpreadExp_t, normal_def_t,
-		meta_variable_pair_def_t, meta_normal_pair_def_t> values;
+		meta_variable_pair_def_t, meta_normal_pair_def_t,
+		variable_pair_t, normal_pair_t, Exp_t, TableBlockIndent_t,
+		meta_variable_pair_t, meta_normal_pair_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit, "table_lit"sv)
 

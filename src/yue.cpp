@@ -146,6 +146,9 @@ static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, con
 			(std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		auto modulePath = srcFile.lexically_relative(workPath);
+		if (modulePath.empty()) {
+			modulePath = srcFile;
+		}
 		conf.module = modulePath.string();
 		if (!workPath.empty()) {
 			auto it = conf.options.find("path");
@@ -205,7 +208,11 @@ public:
 				auto targetFile = getTargetFile(srcFile);
 				if (!targetFile.empty()) {
 					fs::remove(targetFile);
-					std::cout << "Deleted " << targetFile.lexically_relative(workPath).string() << '\n';
+					auto moduleFile = targetFile.lexically_relative(workPath);
+					if (moduleFile.empty()) {
+						moduleFile = targetFile;
+					}
+					std::cout << "Deleted " << moduleFile.string() << '\n';
 				}
 				break;
 			}

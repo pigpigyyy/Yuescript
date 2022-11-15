@@ -270,7 +270,7 @@ clean:
 
 # Test Yuescript compiler
 .PHONY: test
-test: release
+test: debug
 	@mkdir -p $(TEST_OUTPUT)/5.1/test
 	@echo "Compiling Yuescript codes..."
 	@$(START_TIME)
