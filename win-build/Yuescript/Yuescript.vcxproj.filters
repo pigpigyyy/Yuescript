@@ -11,6 +11,12 @@
     <Filter Include="src\yuescript">
       <UniqueIdentifier>{af398a57-cb37-4862-a5e8-5ec539259611}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\efsw">
+      <UniqueIdentifier>{410f4895-3ea8-4a46-ac6a-0d4737da5cf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\efsw\win">
+      <UniqueIdentifier>{4b765224-203c-4df9-ba95-c975f75c4cf1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\3rdParty\lua\lapi.c">
@@ -127,6 +133,75 @@
     <ClCompile Include="..\..\src\yue.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Debug.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshot.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshotDiff.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirWatcherGeneric.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileInfo.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileSystem.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcher.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherCWrapper.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherGeneric.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherImpl.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherWin32.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Log.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Mutex.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\String.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\System.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Thread.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Watcher.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherGeneric.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherWin32.cpp">
+      <Filter>src\efsw</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\FileSystemImpl.cpp">
+      <Filter>src\efsw\win</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\MutexImpl.cpp">
+      <Filter>src\efsw\win</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\SystemImpl.cpp">
+      <Filter>src\efsw\win</Filter>
+    </ClCompile>
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\ThreadImpl.cpp">
+      <Filter>src\efsw\win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\3rdParty\lua\lapi.h">
@@ -233,6 +308,87 @@
     </ClInclude>
     <ClInclude Include="..\..\src\yuescript\yuescript.h">
       <Filter>src\yuescript</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\FileSystemImpl.hpp">
+      <Filter>src\efsw\win</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\MutexImpl.hpp">
+      <Filter>src\efsw\win</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\SystemImpl.hpp">
+      <Filter>src\efsw\win</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\ThreadImpl.hpp">
+      <Filter>src\efsw\win</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\efsw.h">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\sophist.h">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Atomic.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\base.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Debug.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshot.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshotDiff.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirWatcherGeneric.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\efsw.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileInfo.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileSystem.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherGeneric.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherImpl.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherWin32.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Lock.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Mutex.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\String.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\System.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Thread.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Utf.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Watcher.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherGeneric.hpp">
+      <Filter>src\efsw</Filter>
+    </ClInclude>
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherWin32.hpp">
+      <Filter>src\efsw</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

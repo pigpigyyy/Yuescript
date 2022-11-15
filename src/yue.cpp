@@ -19,10 +19,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <sstream>
 #include <string_view>
 #include <tuple>
+#include <chrono>
+#include <thread>
 using namespace std::string_view_literals;
 using namespace std::string_literals;
+using namespace std::chrono_literals;
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
+#include "efsw/efsw.hpp"
 
 #if not(defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
 #define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { code; })
@@ -88,8 +92,8 @@ void pushOptions(lua_State* L, int lineOffset) {
 #ifndef YUE_COMPILER_ONLY
 static const char luaminifyCodes[] =
 #include "LuaMinify.h"
-
-	static void pushLuaminify(lua_State * L) {
+//
+static void pushLuaminify(lua_State * L) {
 	if (luaL_loadbuffer(L, luaminifyCodes, sizeof(luaminifyCodes) / sizeof(luaminifyCodes[0]) - 1, "=(luaminify)") != 0) {
 		std::string err = "failed to load luaminify module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
@@ -99,6 +103,126 @@ static const char luaminifyCodes[] =
 	}
 }
 #endif // YUE_COMPILER_ONLY
+
+fs::path getTargetFile(const fs::path& srcFile) {
+	auto ext = srcFile.extension().string();
+	for (auto& ch : ext) ch = std::tolower(ch);
+	if (!ext.empty() && ext.substr(1) == yue::extension) {
+		auto targetFile = srcFile;
+		targetFile.replace_extension("lua"s);
+		if (fs::exists(targetFile)) {
+			return targetFile;
+		}
+	}
+	return fs::path();
+}
+
+fs::path getTargetFileDirty(const fs::path& srcFile) {
+	if (!fs::exists(srcFile)) return fs::path();
+	auto ext = srcFile.extension().string();
+	for (auto& ch : ext) ch = std::tolower(ch);
+	if (!fs::is_directory(srcFile) && !ext.empty() && ext.substr(1) == yue::extension) {
+		auto targetFile = srcFile;
+		targetFile.replace_extension("lua"s);
+		if (fs::exists(targetFile)) {
+			auto time = fs::last_write_time(targetFile);
+			auto targetTime = fs::last_write_time(srcFile);
+			if (time < targetTime) {
+				return targetFile;
+			}
+		} else {
+			return targetFile;
+		}
+	}
+	return fs::path();
+}
+
+static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, const std::string& workPath) {
+	auto targetFile = getTargetFileDirty(srcFile);
+	if (targetFile.empty()) return std::string();
+	std::ifstream input(srcFile, std::ios::in);
+	if (input) {
+		std::string s(
+			(std::istreambuf_iterator<char>(input)),
+			std::istreambuf_iterator<char>());
+		auto modulePath = srcFile.lexically_relative(workPath);
+		conf.module = modulePath.string();
+		if (!workPath.empty()) {
+			auto it = conf.options.find("path");
+			if (it != conf.options.end()) {
+				it->second += ';';
+				it->second += (fs::path(workPath) / "?.lua"sv).string();
+			} else {
+				conf.options["path"] = (fs::path(workPath) / "?.lua"sv).string();
+			}
+		}
+		auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
+		if (result.error.empty()) {
+			std::string targetExtension("lua"sv);
+			if (result.options) {
+				auto it = result.options->find("target_extension"s);
+				if (it != result.options->end()) {
+					targetExtension = it->second;
+				}
+			}
+			if (targetFile.has_parent_path()) {
+				fs::create_directories(targetFile.parent_path());
+			}
+			if (result.codes.empty()) {
+				return "Built "s + modulePath.string() + '\n';
+			}
+			std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
+			if (output) {
+				const auto& codes = result.codes;
+				if (conf.reserveLineNumber) {
+					auto head = "-- [yue]: "s + modulePath.string() + '\n';
+					output.write(head.c_str(), head.size());
+				}
+				output.write(codes.c_str(), codes.size());
+				return "Built "s + modulePath.string() + '\n';
+			} else {
+				return "Failed to write file: "s + targetFile.string() + '\n';
+			}
+		} else {
+			return "Failed to compile: "s + modulePath.string() + '\n' + result.error + '\n';
+		}
+	} else {
+		return "Failed to read file: "s + srcFile.string() + '\n';
+	}
+}
+
+class UpdateListener : public efsw::FileWatchListener {
+public:
+	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename) override {
+		switch(action) {
+			case efsw::Actions::Add:
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
+					std::cout << res;
+				}
+				break;
+			case efsw::Actions::Delete: {
+				auto srcFile = fs::path(dir) / filename;
+				auto targetFile = getTargetFile(srcFile);
+				if (!targetFile.empty()) {
+					fs::remove(targetFile);
+					std::cout << "Deleted " << targetFile.lexically_relative(workPath).string() << '\n';
+				}
+				break;
+			}
+			case efsw::Actions::Modified:
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
+					std::cout << res;
+				}
+				break;
+			case efsw::Actions::Moved:
+				break;
+			default:
+				break;
+		}
+	}
+	yue::YueConfig config;
+	std::string workPath;
+};
 
 int main(int narg, const char** args) {
 	const char* help =
@@ -275,6 +399,7 @@ int main(int narg, const char** args) {
 	bool writeToFile = true;
 	bool dumpCompileTime = false;
 	bool lintGlobal = false;
+	bool watchFiles = false;
 	std::string targetPath;
 	std::string resultFile;
 	std::string workPath;
@@ -412,6 +537,8 @@ int main(int narg, const char** args) {
 				std::cout << help;
 				return 1;
 			}
+		} else if (arg == "-w"sv) {
+			watchFiles = true;
 		} else if (arg.size() > 2 && arg.substr(0, 2) == "--"sv && arg.substr(2, 1) != "-"sv) {
 			auto argStr = arg.substr(2);
 			yue::Utils::trim(argStr);
@@ -437,19 +564,48 @@ int main(int narg, const char** args) {
 						}
 					}
 				}
+			} else if (watchFiles) {
+				std::cout << "Error: -w can not be used with file\n"sv;
+				return 1;
 			} else {
 				workPath = fs::path(arg).parent_path().string();
 				files.emplace_back(arg, arg);
 			}
 		}
 	}
-	if (files.empty()) {
+	if (!watchFiles && files.empty()) {
 		std::cout << help;
 		return 0;
 	}
 	if (!resultFile.empty() && files.size() > 1) {
 		std::cout << "Error: -o can not be used with multiple input files\n"sv;
 		std::cout << help;
+	}
+	if (watchFiles) {
+		auto fullWorkPath = fs::absolute(fs::path(workPath)).string();
+		std::list<std::future<std::string>> results;
+		for (const auto& file : files) {
+			auto task = std::async(std::launch::async, [=]() {
+				return compileFile(fs::absolute(file.first), config, fullWorkPath);
+			});
+			results.push_back(std::move(task));
+		}
+		for (auto& result : results) {
+			std::string msg = result.get();
+			if (!msg.empty()) {
+				std::cout << msg;
+			}
+		}
+		efsw::FileWatcher fileWatcher{};
+		UpdateListener listener{};
+		listener.config = config;
+		listener.workPath = fullWorkPath;
+		fileWatcher.addWatch(workPath, &listener, true);
+		fileWatcher.watch();
+		while (true) {
+			std::this_thread::sleep_for(10000ms);
+		}
+		return 0;
 	}
 	std::list<std::future<std::tuple<int, std::string, std::string>>> results;
 	for (const auto& file : files) {
@@ -518,7 +674,7 @@ int main(int narg, const char** args) {
 							}
 							targetFile.replace_extension('.' + targetExtension);
 						}
-						if (!targetPath.empty()) {
+						if (targetFile.has_parent_path()) {
 							fs::create_directories(targetFile.parent_path());
 						}
 						if (result.codes.empty()) {

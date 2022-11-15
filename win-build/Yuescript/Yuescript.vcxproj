@@ -176,7 +176,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -191,7 +191,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -206,7 +206,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -221,7 +221,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -238,7 +238,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -257,7 +257,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -276,7 +276,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -295,7 +295,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\src;..\..\src\3rdParty;..\..\src\3rdParty\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -347,6 +347,29 @@
     <ClCompile Include="..\..\src\yuescript\yuescript.cpp" />
     <ClCompile Include="..\..\src\yuescript\yue_compiler.cpp" />
     <ClCompile Include="..\..\src\yuescript\yue_parser.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Debug.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshot.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshotDiff.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirWatcherGeneric.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileInfo.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileSystem.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcher.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherCWrapper.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherGeneric.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherImpl.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherWin32.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Log.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Mutex.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\FileSystemImpl.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\MutexImpl.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\SystemImpl.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\ThreadImpl.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\String.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\System.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Thread.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Watcher.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherGeneric.cpp" />
+    <ClCompile Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherWin32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\3rdParty\lua\lapi.h" />
@@ -384,6 +407,33 @@
     <ClInclude Include="..\..\src\yuescript\yue_ast.h" />
     <ClInclude Include="..\..\src\yuescript\yue_compiler.h" />
     <ClInclude Include="..\..\src\yuescript\yue_parser.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Atomic.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\base.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Debug.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshot.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirectorySnapshotDiff.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\DirWatcherGeneric.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\efsw.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\efsw.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileInfo.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileSystem.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherGeneric.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherImpl.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\FileWatcherWin32.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Lock.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Mutex.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\FileSystemImpl.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\MutexImpl.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\SystemImpl.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\platform\win\ThreadImpl.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\sophist.h" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\String.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\System.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Thread.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Utf.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\Watcher.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherGeneric.hpp" />
+    <ClInclude Include="\\Mac\Home\Workspace\Yuescript\src\3rdParty\efsw\WatcherWin32.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
