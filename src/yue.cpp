@@ -9,6 +9,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <future>
@@ -18,15 +19,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <memory>
 #include <sstream>
 #include <string_view>
-#include <tuple>
-#include <chrono>
 #include <thread>
+#include <tuple>
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 using namespace std::chrono_literals;
+#include "efsw/efsw.hpp"
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
-#include "efsw/efsw.hpp"
 
 #if not(defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
 #define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { code; })
@@ -92,8 +92,9 @@ void pushOptions(lua_State* L, int lineOffset) {
 #ifndef YUE_COMPILER_ONLY
 static const char luaminifyCodes[] =
 #include "LuaMinify.h"
-//
-static void pushLuaminify(lua_State * L) {
+	;
+
+static void pushLuaminify(lua_State* L) {
 	if (luaL_loadbuffer(L, luaminifyCodes, sizeof(luaminifyCodes) / sizeof(luaminifyCodes[0]) - 1, "=(luaminify)") != 0) {
 		std::string err = "failed to load luaminify module.\n"s + lua_tostring(L, -1);
 		luaL_error(L, err.c_str());
@@ -197,7 +198,7 @@ static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, con
 class UpdateListener : public efsw::FileWatchListener {
 public:
 	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string) override {
-		switch(action) {
+		switch (action) {
 			case efsw::Actions::Add:
 				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
 					std::cout << res;
