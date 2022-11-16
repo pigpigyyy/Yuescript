@@ -214,7 +214,7 @@ else
 	@echo "Beginning debug build"
 endif
 ifneq ($(NO_LUA),true)
-	@$(MAKE) generic -C $(SRC_PATH)/3rdParty/lua
+	@$(MAKE) $(PLAT) -C $(SRC_PATH)/3rdParty/lua
 endif
 	@$(START_TIME)
 	@$(MAKE) all --no-print-directory

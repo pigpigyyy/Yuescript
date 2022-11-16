@@ -95,6 +95,7 @@ Usage: yue [options|files|directories] ...
    -b       Dump compile time (doesn't write output)
    -g       Dump global variables used in NAME LINE COLUMN
    -l       Write line numbers from source codes
+   -w path  Watch changes and compile every file under directory
    -v       Print version
    --       Read from standard in, print to standard out
             (Must be first and only argument)

@@ -41,7 +41,7 @@ bool FileWatcherFSEvents::isGranular() {
 	return getOSXReleaseNumber() >= 11;
 }
 
-void FileWatcherFSEvents::FSEventCallback( ConstFSEventStreamRef streamRef, void* userData,
+void FileWatcherFSEvents::FSEventCallback( ConstFSEventStreamRef /*streamRef*/, void* userData,
 										   size_t numEvents, void* eventPaths,
 										   const FSEventStreamEventFlags eventFlags[],
 										   const FSEventStreamEventId eventIds[] ) {
@@ -208,8 +208,8 @@ void FileWatcherFSEvents::run() {
 	mRunLoopRef = NULL;
 }
 
-void FileWatcherFSEvents::handleAction( Watcher* watch, const std::string& filename,
-										unsigned long action, std::string oldFilename ) {
+void FileWatcherFSEvents::handleAction( Watcher* /*watch*/, const std::string& /*filename*/,
+										unsigned long /*action*/, std::string /*oldFilename*/ ) {
 	/// Not used
 }
 

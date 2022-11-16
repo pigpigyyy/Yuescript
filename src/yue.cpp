@@ -196,7 +196,7 @@ static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, con
 
 class UpdateListener : public efsw::FileWatchListener {
 public:
-	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename) override {
+	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string) override {
 		switch(action) {
 			case efsw::Actions::Add:
 				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
@@ -246,6 +246,7 @@ int main(int narg, const char** args) {
 		"   -b       Dump compile time (doesn't write output)\n"
 		"   -g       Dump global variables used in NAME LINE COLUMN\n"
 		"   -l       Write line numbers from source codes\n"
+		"   -w path  Watch changes and compile every file under directory\n"
 		"   -v       Print version\n"
 #ifndef YUE_COMPILER_ONLY
 		"   --       Read from standard in, print to standard out\n"
@@ -581,14 +582,18 @@ int main(int narg, const char** args) {
 		}
 	}
 	if (!watchFiles && files.empty()) {
-		std::cout << help;
+		std::cout << "no input files\n"sv;
 		return 0;
 	}
 	if (!resultFile.empty() && files.size() > 1) {
 		std::cout << "Error: -o can not be used with multiple input files\n"sv;
-		std::cout << help;
+		return 1;
 	}
 	if (watchFiles) {
+		if (!targetPath.empty()) {
+			std::cout << "Error: -t can not be used with watching mode\n"sv;
+			return 1;
+		}
 		auto fullWorkPath = fs::absolute(fs::path(workPath)).string();
 		std::list<std::future<std::string>> results;
 		for (const auto& file : files) {

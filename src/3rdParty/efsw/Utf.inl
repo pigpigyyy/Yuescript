@@ -375,17 +375,17 @@ template <typename In, typename Out> Out Utf<16>::ToUtf32( In begin, In end, Out
 	return output;
 }
 
-template <typename In> In Utf<32>::Decode( In begin, In end, Uint32& output, Uint32 ) {
+template <typename In> In Utf<32>::Decode( In begin, In /*end*/, Uint32& output, Uint32 ) {
 	output = *begin++;
 	return begin;
 }
 
-template <typename Out> Out Utf<32>::Encode( Uint32 input, Out output, Uint32 replacement ) {
+template <typename Out> Out Utf<32>::Encode( Uint32 input, Out output, Uint32 /*replacement*/ ) {
 	*output++ = input;
 	return output;
 }
 
-template <typename In> In Utf<32>::Next( In begin, In end ) {
+template <typename In> In Utf<32>::Next( In begin, In /*end*/ ) {
 	return ++begin;
 }
 

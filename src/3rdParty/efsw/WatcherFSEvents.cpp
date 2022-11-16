@@ -11,7 +11,7 @@ WatcherFSEvents::WatcherFSEvents() :
 	Watcher(), FWatcher( NULL ), FSStream( NULL ), WatcherGen( NULL ), initializedAsync( false ) {}
 
 WatcherFSEvents::WatcherFSEvents( WatchID id, std::string directory, FileWatchListener* listener,
-								  bool recursive, WatcherFSEvents* parent ) :
+								  bool recursive, WatcherFSEvents* /*parent*/ ) :
 	Watcher( id, directory, listener, recursive ),
 	FWatcher( NULL ),
 	FSStream( NULL ),

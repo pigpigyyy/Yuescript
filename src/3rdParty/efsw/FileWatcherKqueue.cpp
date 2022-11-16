@@ -181,8 +181,8 @@ void FileWatcherKqueue::run() {
 	} while ( mInitOK );
 }
 
-void FileWatcherKqueue::handleAction( Watcher* watch, const std::string& filename,
-									  unsigned long action, std::string oldFilename ) {}
+void FileWatcherKqueue::handleAction( Watcher* /*watch*/, const std::string& /*filename*/,
+									  unsigned long /*action*/, std::string /*oldFilename*/ ) {}
 
 std::list<std::string> FileWatcherKqueue::directories() {
 	std::list<std::string> dirs;

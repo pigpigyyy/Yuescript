@@ -18,9 +18,11 @@ class FileInfo {
 
 	FileInfo();
 
-	FileInfo( const std::string& filepath );
+	explicit FileInfo( const std::string& filepath );
 
 	FileInfo( const std::string& filepath, bool linkInfo );
+
+	FileInfo( const FileInfo& ) = default;
 
 	bool operator==( const FileInfo& Other ) const;
 
