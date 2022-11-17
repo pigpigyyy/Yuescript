@@ -105,11 +105,12 @@ static void pushLuaminify(lua_State* L) {
 }
 #endif // YUE_COMPILER_ONLY
 
-fs::path getTargetFile(const fs::path& srcFile) {
+fs::path getTargetFile(const fs::path& file, const fs::path& workPath, const fs::path& targetPath) {
+	auto srcFile = fs::absolute(file);
 	auto ext = srcFile.extension().string();
 	for (auto& ch : ext) ch = std::tolower(ch);
 	if (!ext.empty() && ext.substr(1) == yue::extension) {
-		auto targetFile = srcFile;
+		auto targetFile = targetPath / srcFile.lexically_relative(workPath);
 		targetFile.replace_extension("lua"s);
 		if (fs::exists(targetFile)) {
 			return targetFile;
@@ -118,12 +119,13 @@ fs::path getTargetFile(const fs::path& srcFile) {
 	return fs::path();
 }
 
-fs::path getTargetFileDirty(const fs::path& srcFile) {
-	if (!fs::exists(srcFile)) return fs::path();
+fs::path getTargetFileDirty(const fs::path& file, const fs::path& workPath, const fs::path& targetPath) {
+	if (!fs::exists(file)) return fs::path();
+	auto srcFile = fs::absolute(file);
 	auto ext = srcFile.extension().string();
 	for (auto& ch : ext) ch = std::tolower(ch);
 	if (!fs::is_directory(srcFile) && !ext.empty() && ext.substr(1) == yue::extension) {
-		auto targetFile = srcFile;
+		auto targetFile = targetPath / srcFile.lexically_relative(workPath);
 		targetFile.replace_extension("lua"s);
 		if (fs::exists(targetFile)) {
 			auto time = fs::last_write_time(targetFile);
@@ -138,8 +140,9 @@ fs::path getTargetFileDirty(const fs::path& srcFile) {
 	return fs::path();
 }
 
-static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, const std::string& workPath) {
-	auto targetFile = getTargetFileDirty(srcFile);
+static std::string compileFile(const fs::path& file, yue::YueConfig conf, const fs::path& workPath, const fs::path& targetPath) {
+	auto srcFile = fs::absolute(file);
+	auto targetFile = getTargetFileDirty(srcFile, workPath, targetPath);
 	if (targetFile.empty()) return std::string();
 	std::ifstream input(srcFile, std::ios::in);
 	if (input) {
@@ -155,9 +158,9 @@ static std::string compileFile(const fs::path& srcFile, yue::YueConfig conf, con
 			auto it = conf.options.find("path");
 			if (it != conf.options.end()) {
 				it->second += ';';
-				it->second += (fs::path(workPath) / "?.lua"sv).string();
+				it->second += (workPath / "?.lua"sv).string();
 			} else {
-				conf.options["path"] = (fs::path(workPath) / "?.lua"sv).string();
+				conf.options["path"] = (workPath / "?.lua"sv).string();
 			}
 		}
 		auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
@@ -200,16 +203,15 @@ public:
 	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string) override {
 		switch (action) {
 			case efsw::Actions::Add:
-				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath); !res.empty()) {
 					std::cout << res;
 				}
 				break;
 			case efsw::Actions::Delete: {
-				auto srcFile = fs::path(dir) / filename;
-				auto targetFile = getTargetFile(srcFile);
+				auto targetFile = getTargetFile(fs::path(dir) / filename, workPath, targetPath);
 				if (!targetFile.empty()) {
 					fs::remove(targetFile);
-					auto moduleFile = targetFile.lexically_relative(workPath);
+					auto moduleFile = targetFile.lexically_relative(targetPath);
 					if (moduleFile.empty()) {
 						moduleFile = targetFile;
 					}
@@ -218,7 +220,7 @@ public:
 				break;
 			}
 			case efsw::Actions::Modified:
-				if (auto res = compileFile(fs::path(dir) / filename, config, workPath); !res.empty()) {
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath); !res.empty()) {
 					std::cout << res;
 				}
 				break;
@@ -229,7 +231,8 @@ public:
 		}
 	}
 	yue::YueConfig config;
-	std::string workPath;
+	fs::path workPath;
+	fs::path targetPath;
 };
 
 int main(int narg, const char** args) {
@@ -591,15 +594,15 @@ int main(int narg, const char** args) {
 		return 1;
 	}
 	if (watchFiles) {
-		if (!targetPath.empty()) {
-			std::cout << "Error: -t can not be used with watching mode\n"sv;
-			return 1;
-		}
 		auto fullWorkPath = fs::absolute(fs::path(workPath)).string();
+		auto fullTargetPath = fullWorkPath;
+		if (!targetPath.empty()) {
+			fullTargetPath = fs::absolute(fs::path(targetPath)).string();
+		}
 		std::list<std::future<std::string>> results;
 		for (const auto& file : files) {
 			auto task = std::async(std::launch::async, [=]() {
-				return compileFile(fs::absolute(file.first), config, fullWorkPath);
+				return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath);
 			});
 			results.push_back(std::move(task));
 		}
@@ -613,6 +616,7 @@ int main(int narg, const char** args) {
 		UpdateListener listener{};
 		listener.config = config;
 		listener.workPath = fullWorkPath;
+		listener.targetPath = fullTargetPath;
 		fileWatcher.addWatch(workPath, &listener, true);
 		fileWatcher.watch();
 		while (true) {
