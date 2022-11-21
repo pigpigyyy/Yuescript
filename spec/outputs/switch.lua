@@ -107,37 +107,43 @@ do
 		}
 	}
 	do
-		local _tab_0 = "table" == type(dict)
+		local _tab_0 = type(dict)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		if _tab_0 then
 			local first = dict[1]
 			local one
 			do
 				local _obj_0 = dict[2]
-				if _obj_0 ~= nil then
+				local _type_0 = type(_obj_0)
+				if "table" == _type_0 or "userdata" == _type_0 then
 					one = _obj_0[1]
 				end
 			end
 			local two
 			do
 				local _obj_0 = dict[2]
-				if _obj_0 ~= nil then
+				local _type_0 = type(_obj_0)
+				if "table" == _type_0 or "userdata" == _type_0 then
 					two = _obj_0[2]
 				end
 			end
 			local three
 			do
 				local _obj_0 = dict[2]
-				if _obj_0 ~= nil then
+				local _type_0 = type(_obj_0)
+				if "table" == _type_0 or "userdata" == _type_0 then
 					three = _obj_0[3]
 				end
 			end
 			local c
 			do
 				local _obj_0 = dict.a
-				if _obj_0 ~= nil then
+				local _type_0 = type(_obj_0)
+				if "table" == _type_0 or "userdata" == _type_0 then
 					do
 						local _obj_1 = _obj_0.b
-						if _obj_1 ~= nil then
+						local _type_1 = type(_obj_1)
+						if "table" == _type_1 or "userdata" == _type_1 then
 							c = _obj_1.c
 						end
 					end
@@ -146,10 +152,12 @@ do
 			local z
 			do
 				local _obj_0 = dict.x
-				if _obj_0 ~= nil then
+				local _type_0 = type(_obj_0)
+				if "table" == _type_0 or "userdata" == _type_0 then
 					do
 						local _obj_1 = _obj_0.y
-						if _obj_1 ~= nil then
+						local _type_1 = type(_obj_1)
+						if "table" == _type_1 or "userdata" == _type_1 then
 							z = _obj_1.z
 						end
 					end
@@ -176,7 +184,8 @@ do
 	for _index_0 = 1, #items do
 		local item = items[_index_0]
 		do
-			local _tab_0 = "table" == type(item)
+			local _tab_0 = type(item)
+			_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 			local _match_0 = false
 			if _tab_0 then
 				local x = item.x
@@ -234,7 +243,8 @@ end
 do
 	local tb = { }
 	do
-		local _tab_0 = "table" == type(tb)
+		local _tab_0 = type(tb)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		if _tab_0 then
 			local a = tb.a
 			local b = tb.b
@@ -248,7 +258,8 @@ do
 		end
 	end
 	do
-		local _tab_0 = "table" == type(tb)
+		local _tab_0 = type(tb)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		if _tab_0 then
 			local a = tb.a
 			local b = tb.b
@@ -261,7 +272,8 @@ do
 		end
 	end
 	do
-		local _tab_0 = "table" == type(tb)
+		local _tab_0 = type(tb)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		local _match_0 = false
 		if _tab_0 then
 			local a = tb.a
@@ -281,7 +293,8 @@ do
 		x = "abc"
 	}
 	do
-		local _tab_0 = "table" == type(tb)
+		local _tab_0 = type(tb)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		local _match_0 = false
 		if _tab_0 then
 			local x = tb.x
@@ -308,7 +321,8 @@ do
 		if 1 == _exp_0 then
 			matched = "1"
 		else
-			local _tab_0 = "table" == type(_exp_0)
+			local _tab_0 = type(_exp_0)
+			_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 			local _match_0 = false
 			if _tab_0 then
 				local x = _exp_0.x
@@ -333,7 +347,8 @@ do
 		return "invalid"
 	else
 		do
-			local _tab_0 = "table" == type(_exp_0)
+			local _tab_0 = type(_exp_0)
+			_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 			local _match_0 = false
 			if _tab_0 then
 				local a = _exp_0.a
@@ -367,7 +382,8 @@ end
 do
 	do
 		local _exp_0 = y
-		local _tab_0 = "table" == type(_exp_0)
+		local _tab_0 = type(_exp_0)
+		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		if _tab_0 then
 			local mt = (function()
 				local _obj_0 = _exp_0.x

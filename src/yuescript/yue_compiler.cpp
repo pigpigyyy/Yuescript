@@ -60,7 +60,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.14"sv;
+const std::string_view version = "0.15.15"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1806,7 +1806,7 @@ private:
 				case ChainType::EndWithColon:
 				case ChainType::MetaFieldInvocation: {
 					std::string preDefine = getPreDefineLine(assignment);
-					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
+					transformChainValue(chainValue, out, ExpUsage::Assignment, expList, false, optionalDestruct);
 					out.back().insert(0, preDefine);
 					return;
 				}
@@ -1850,7 +1850,7 @@ private:
 							newChain->items.dup(pair.structure->items);
 						}
 						auto newAssignment = assignmentFrom(pair.target, newExp(newChain, val->item), x);
-						transformAssignment(newAssignment, temp);
+						transformAssignment(newAssignment, temp, optionalDestruct);
 						if (pair.defVal) {
 							bool isNil = false;
 							if (auto v1 = singleValueFrom(pair.defVal)) {
@@ -1898,7 +1898,7 @@ private:
 					chain->items.dup(pair.structure->items);
 					auto valueExp = newExp(chain, pair.target);
 					auto newAssignment = assignmentFrom(pair.target, valueExp, x);
-					transformAssignment(newAssignment, temp);
+					transformAssignment(newAssignment, temp, optionalDestruct);
 					if (!isLocalValue) {
 						popScope();
 						_buf << indent() << "end"sv << nlr(x);
@@ -1986,7 +1986,7 @@ private:
 							auto assign = x->new_ptr<Assign_t>();
 							assign->values.dup(valueList->exprs);
 							newAssignment->action.set(assign);
-							transformAssignment(newAssignment, temp);
+							transformAssignment(newAssignment, temp, true);
 						}
 					} else {
 						auto valueList = x->new_ptr<ExpList_t>();
@@ -2114,10 +2114,10 @@ private:
 								throw std::logic_error(_info.errorMessage("default value is not supported here"sv, defVal));
 							}
 						}
+						auto indexItem = toAst<Exp_t>(std::to_string(index), value);
 						for (auto& p : subPairs) {
 							if (sep) p.structure->items.push_front(sep);
-							p.structure->items.push_front(
-								toAst<Exp_t>(std::to_string(index), p.target));
+							p.structure->items.push_front(indexItem);
 							pairs.push_back(p);
 						}
 					} else {
@@ -2125,7 +2125,8 @@ private:
 						auto varName = singleVariableFrom(exp, false);
 						if (varName == "_"sv) break;
 						auto chain = exp->new_ptr<ChainValue_t>();
-						chain->items.push_back(toAst<Exp_t>(std::to_string(index), exp));
+						auto indexItem = toAst<Exp_t>(std::to_string(index), exp);
+						chain->items.push_back(indexItem);
 						pairs.push_back({exp,
 							varName,
 							chain,
@@ -2229,9 +2230,10 @@ private:
 					auto tb = static_cast<TableBlockIndent_t*>(pair);
 					++index;
 					auto subPairs = destructFromExp(tb, optional);
+					auto indexItem = toAst<Exp_t>(std::to_string(index), tb);
 					for (auto& p : subPairs) {
 						if (sep) p.structure->items.push_front(sep);
-						p.structure->items.push_front(toAst<Exp_t>(std::to_string(index), tb));
+						p.structure->items.push_front(indexItem);
 						pairs.push_back(p);
 					}
 					break;
@@ -2290,13 +2292,13 @@ private:
 			auto simpleValue = subMetaDestruct->new_ptr<SimpleValue_t>();
 			simpleValue->value.set(subMetaDestruct);
 			auto subPairs = destructFromExp(newExp(simpleValue, subMetaDestruct), optional);
+			auto mt = simpleValue->new_ptr<Metatable_t>();
+			auto dot = mt->new_ptr<DotChainItem_t>();
+			dot->name.set(mt);
 			for (const auto& p : subPairs) {
 				if (!p.structure->items.empty()) {
 					if (sep) p.structure->items.push_front(sep);
 				}
-				auto mt = p.structure->new_ptr<Metatable_t>();
-				auto dot = mt->new_ptr<DotChainItem_t>();
-				dot->name.set(mt);
 				p.structure->items.push_front(dot);
 				pairs.push_back(p);
 			}
@@ -2511,7 +2513,6 @@ private:
 				}
 			}
 		}
-		popScope();
 		for (const auto& p : destructPairs) {
 			exprs.erase(p.first);
 			values.erase(p.second);
@@ -2529,7 +2530,6 @@ private:
 			newAssignment = newAssign;
 		}
 		if (!varDefOnly) {
-			pushScope();
 			for (auto& des : destructs) {
 				for (const auto& item : des.items) {
 					for (auto node : item.structure->items.objects()) {
@@ -2552,7 +2552,7 @@ private:
 									auto assignList = des.inlineAssignment->expList.get();
 									auto assign = des.inlineAssignment->action.to<Assign_t>();
 									auto tmpVar = getUnusedName("_tmp_"sv);
-									addToScope(tmpVar);
+									forceAddToScope(tmpVar);
 									auto tmpExp = toAst<Exp_t>(tmpVar, exp);
 									assignList->exprs.push_back(tmpExp);
 									auto vExp = exp->new_ptr<Exp_t>();
@@ -2571,8 +2571,8 @@ private:
 					}
 				}
 			}
-			popScope();
 		}
+		popScope();
 		return {std::move(destructs), newAssignment};
 	}
 
@@ -4098,7 +4098,7 @@ private:
 		return false;
 	}
 
-	bool transformChainWithEOP(const node_container& chainList, str_list& out, ExpUsage usage, ExpList_t* assignList) {
+	bool transformChainWithEOP(const node_container& chainList, str_list& out, ExpUsage usage, ExpList_t* assignList, bool optionalDestruct) {
 		auto opIt = std::find_if(chainList.begin(), chainList.end(), [](ast_node* node) { return ast_is<existential_op_t>(node); });
 		if (opIt != chainList.end()) {
 			auto x = chainList.front();
@@ -4185,7 +4185,6 @@ private:
 					auto it = opIt;
 					++it;
 					if (it != chainList.end() && ast_is<Invoke_t, InvokeArgs_t>(*it)) {
-
 						if (auto invoke = ast_cast<Invoke_t>(*it)) {
 							invoke->args.push_front(toAst<Exp_t>(objVar, x));
 						} else {
@@ -4203,7 +4202,15 @@ private:
 				expListAssign->action.set(assign);
 				transformAssignment(expListAssign, temp);
 			}
-			_buf << indent() << "if "sv << objVar << " ~= nil then"sv << nll(x);
+			if (optionalDestruct) {
+				auto typeVar = getUnusedName("_type_"sv);
+				_buf << typeVar << "=type "sv << objVar;
+				auto typeAssign = toAst<ExpListAssign_t>(clearBuf(), partOne);
+				transformAssignment(typeAssign, temp);
+				_buf << indent() << "if \"table\" == " << typeVar << " or \"userdata\" == "sv << typeVar << " then"sv << nll(x);
+			} else {
+				_buf << indent() << "if "sv << objVar << " ~= nil then"sv << nll(x);
+			}
 			temp.push_back(clearBuf());
 			pushScope();
 			auto partTwo = x->new_ptr<ChainValue_t>();
@@ -4222,7 +4229,7 @@ private:
 					auto assignment = x->new_ptr<ExpListAssign_t>();
 					assignment->expList.set(assignList);
 					assignment->action.set(assign);
-					transformAssignment(assignment, temp);
+					transformAssignment(assignment, temp, optionalDestruct);
 					break;
 				}
 				case ExpUsage::Return:
@@ -5018,7 +5025,7 @@ private:
 	}
 #endif // YUE_NO_MACRO
 
-	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false) {
+	void transformChainValue(ChainValue_t* chainValue, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool allowBlockMacroReturn = false, bool optionalDestruct = false) {
 		if (isMacroChain(chainValue)) {
 #ifndef YUE_NO_MACRO
 			ast_ptr<false, ast_node> node;
@@ -5072,7 +5079,7 @@ private:
 		if (transformChainEndWithEOP(chainList, out, usage, assignList)) {
 			return;
 		}
-		if (transformChainWithEOP(chainList, out, usage, assignList)) {
+		if (transformChainWithEOP(chainList, out, usage, assignList, optionalDestruct)) {
 			return;
 		}
 		if (transformChainWithMetatable(chainList, out, usage, assignList)) {
@@ -7837,7 +7844,8 @@ private:
 					}
 					tabCheckVar = getUnusedName("_tab_");
 					forceAddToScope(tabCheckVar);
-					temp.push_back(indent() + "local "s + tabCheckVar + " = \"table\" == "s + globalVar("type", branch) + '(' + objVar + ')' + nll(branch));
+					temp.push_back(indent() + "local "s + tabCheckVar + " = "s + globalVar("type", branch) + '(' + objVar + ')' + nll(branch));
+					temp.push_back(indent() + tabCheckVar + " = \"table\" == "s + tabCheckVar + " or \"userdata\" == "s + tabCheckVar + nll(branch));
 				}
 				std::string matchVar;
 				bool lastBranch = branches.back() == branch_ && !switchNode->lastBranch;

@@ -242,18 +242,21 @@ YueParser::YueParser() {
 	SwitchCase = Space >> key("when") >> disable_chain(disable_arg_table_block(SwitchList)) >> body_with("then");
 	SwitchElse = Space >> key("else") >> body;
 
-	SwitchBlock = *EmptyLine >>
-		Advance >> Seperator >>
-		SwitchCase >>
+	SwitchBlock =
 		*(Break >> *EmptyLine >> CheckIndent >> SwitchCase) >>
-		-(Break >> *EmptyLine >> CheckIndent >> SwitchElse) >>
-		PopIndent;
+		-(Break >> *EmptyLine >> CheckIndent >> SwitchElse);
 
 	exp_not_tab = not_(simple_table | TableLit) >> Exp;
 
 	SwitchList = Seperator >> (and_(simple_table | TableLit) >> Exp | exp_not_tab >> *(sym(',') >> exp_not_tab));
-	Switch = Space >> key("switch") >> disable_do(Exp) >> -(Space >> key("do"))
-		>> -Space >> Break >> SwitchBlock;
+	Switch = Space >> key("switch") >> Exp >>
+		Seperator >> (
+			SwitchCase >> Space >> (
+				Break >> *EmptyLine >> CheckIndent >> SwitchCase >> SwitchBlock |
+				*SwitchCase >> -SwitchElse
+			) |
+			SpaceBreak >> *EmptyLine >> Advance >> SwitchCase >> SwitchBlock >> PopIndent
+		) >> SwitchBlock;
 
 	assignment = ExpList >> Assign;
 	IfCond = disable_chain(disable_arg_table_block(assignment | Exp));
