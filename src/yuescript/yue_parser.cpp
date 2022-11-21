@@ -523,11 +523,11 @@ YueParser::YueParser() {
 	ClassBlock = +SpaceBreak >> Advance >> Seperator >> ClassLine >> *(+SpaceBreak >> ClassLine) >> PopIndent;
 
 	ClassDecl =
-		Space >> key("class") >> not_(expr(':')) >>
-		-Assignable >>
-		-(Space >> key("extends") >> PreventIndent >> ensure(Exp, PopIndent)) >>
-		-(Space >> key("using") >> PreventIndent >> ensure(ExpList, PopIndent)) >>
-		-ClassBlock;
+		Space >> key("class") >> not_(expr(':')) >> disable_arg_table_block(
+			-Assignable >>
+			-(Space >> key("extends") >> PreventIndent >> ensure(Exp, PopIndent)) >>
+			-(Space >> key("using") >> PreventIndent >> ensure(ExpList, PopIndent))
+		) >> -ClassBlock;
 
 	global_values = NameList >> -(sym('=') >> (TableBlock | ExpListLow));
 	global_op = expr('*') | expr('^');
