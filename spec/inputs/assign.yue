@@ -85,4 +85,8 @@ do
 do
 	{a} = :b = c.d = e = tab
 
+do
+	val = 123
+	a = b = c = val
+
 nil

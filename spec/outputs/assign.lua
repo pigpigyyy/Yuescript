@@ -135,23 +135,22 @@ return _(function()
 		local d = 0
 	end
 	do
-		local a
-		local b
-		local c
-		local d
-		do
-			local _tmp_0 = f()
-			a = _tmp_0
-			b = _tmp_0
-			c = _tmp_0
-			d = _tmp_0
-		end
+		local a = f()
+		local b = a
+		local c = a
+		local d = a
 	end
 	do
-		local a = tab[1]
-		local b = tab.b
-		c.d = tab
 		local e = tab
+		local a = e[1]
+		local b = e.b
+		c.d = e
+	end
+	do
+		local val = 123
+		local a = val
+		local b = val
+		local c = val
 	end
 	return nil
 end)

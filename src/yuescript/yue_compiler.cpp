@@ -60,7 +60,7 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.16"sv;
+const std::string_view version = "0.15.17"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -8161,7 +8161,32 @@ private:
 		if (auto simpleVal = simpleSingleValueFrom(value)) {
 			constVal = ast_is<const_value_t, Num_t>(simpleVal->value);
 		}
-		if (constVal || !singleVariableFrom(value, false).empty()) {
+		bool localVal = false;
+		if (auto var = singleVariableFrom(value, false); isLocal(var)) {
+			localVal = true;
+		}
+		if (!constVal && !localVal) {
+			for (auto exp : chainAssign->exprs.objects()) {
+				std::string var = singleVariableFrom(exp, false);
+				if (!var.empty()) {
+					str_list temp;
+					transformAssignment(assignmentFrom(static_cast<Exp_t*>(exp), value, exp), temp);
+					auto newChainAssign = x->new_ptr<ChainAssign_t>();
+					auto newAssign = x->new_ptr<Assign_t>();
+					newAssign->values.push_back(exp);
+					newChainAssign->assign.set(newAssign);
+					for (auto e : chainAssign->exprs.objects()) {
+						if (e != exp) {
+							newChainAssign->exprs.push_back(e);
+						}
+					}
+					transformChainAssign(newChainAssign, temp);
+					out.push_back(join(temp));
+					return;
+				}
+			}
+		}
+		if (constVal || localVal) {
 			for (auto exp : chainAssign->exprs.objects()) {
 				transformAssignment(assignmentFrom(static_cast<Exp_t*>(exp), value, exp), temp);
 			}
