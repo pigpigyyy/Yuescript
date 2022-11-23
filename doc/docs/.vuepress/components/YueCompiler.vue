@@ -9,12 +9,12 @@
 				</div>
 				<div class="childL" ref='yueEditor' style="height: 30em;">
 					<ClientOnly>
-						<prism-editor class="my-editor" v-model="code" :highlight="highlighter" @input="codeChanged($event)" line-numbers :readonly="readonly"></prism-editor>
+						<prism-editor class="my-editor" v-model="code" :highlight="highlighterYue" @input="codeChanged($event)" line-numbers :readonly="readonly"></prism-editor>
 					</ClientOnly>
 				</div>
 				<div class="childR" style="height: 30em;">
 					<ClientOnly>
-						<prism-editor class="my-editor" v-model="compiled" :highlight="highlighter" @input="codeChanged($event)" readonly></prism-editor>
+						<prism-editor class="my-editor" v-model="compiled" :highlight="highlighterLua" @input="codeChanged($event)" readonly></prism-editor>
 					</ClientOnly>
 				</div>
 			</div>
@@ -98,8 +98,11 @@
 					this.$data.result = res;
 				}
 			},
-			highlighter(code) {
+			highlighterYue(code) {
 				return highlight(code, languages.moon);
+			},
+			highlighterLua(code) {
+				return highlight(code, languages.lua);
 			},
 			codeChanged(text) {
 				if (window.yue) {
