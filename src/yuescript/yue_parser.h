@@ -123,6 +123,7 @@ private:
 	rule num_char_hex;
 	rule num_lit;
 	rule num_expo;
+	rule num_expo_hex;
 	rule lj_num;
 	rule plain_space;
 	rule Break;

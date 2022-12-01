@@ -50,13 +50,23 @@ YueParser::YueParser() {
 	EmptyLine = SpaceBreak;
 	AlphaNum = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *AlphaNum;
-	num_expo = set("eE") >> -expr('-') >> num_char;
+	num_expo = set("eE") >> -set("+-") >> num_char;
+	num_expo_hex = set("pP") >> -set("+-") >> num_char;
 	lj_num = -set("uU") >> set("lL") >> set("lL");
 	num_char = range('0', '9') >> *(range('0', '9') | expr('_') >> and_(range('0', '9')));
 	num_char_hex = range('0', '9') | range('a', 'f') | range('A', 'F');
 	num_lit = num_char_hex >> *(num_char_hex | expr('_') >> and_(num_char_hex));
 	Num = (
-		"0x" >> +num_lit >> -lj_num
+		"0x." >> +num_lit >> -num_expo_hex
+	) | (
+		"0x" >> +num_lit >> (
+			'.' >> +num_lit >> -num_expo_hex |
+			num_expo_hex |
+			lj_num |
+			true_()
+		)
+	) | (
+		'.' >> +num_char >> -num_expo
 	) | (
 		+num_char >> (
 			'.' >> +num_char >> -num_expo |
@@ -64,8 +74,6 @@ YueParser::YueParser() {
 			lj_num |
 			true_()
 		)
-	) | (
-		'.' >> +num_char >> -num_expo
 	);
 
 	Cut = false_();
