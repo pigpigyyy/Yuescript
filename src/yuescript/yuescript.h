@@ -24,23 +24,34 @@ local yue = select(1, ...)
 local concat, insert = table.concat, table.insert
 local unpack = unpack or table.unpack
 yue.yue_compiled = { }
-yue.file_exist = function(fname)
-	local file = io.open(fname)
-	if file then
+if not lovr then
+	yue.file_exist = function(fname)
+		local file = io.open(fname)
+		if file then
+			file:close()
+			return true
+		else
+			return false
+		end
+	end
+	yue.read_file = function(fname)
+		local file, err = io.open(fname)
+		if not file then
+			return nil, err
+		end
+		local text = assert(file:read("*a"))
 		file:close()
-		return true
-	else
-		return false
+		return text
 	end
-end
-yue.read_file = function(fname)
-	local file, err = io.open(fname)
-	if not file then
-		return nil, err
+else
+	yue.file_exist = lovr.filesystem.isFile
+	yue.read_file  = function(fname)
+		contents, bytes = lovr.filesystem.read(fname)
+		if contents == nil then
+			return nil, 'File not found.'
+		end
+		return contents
 	end
-	local text = assert(file:read("*a"))
-	file:close()
-	return text
 end
 local function get_options(...)
 	local count = select("#", ...)
