@@ -24,7 +24,7 @@ local yue = select(1, ...)
 local concat, insert = table.concat, table.insert
 local unpack = unpack or table.unpack
 yue.yue_compiled = { }
-if not lovr then
+if not (lovr and lovr.filesystem) then
 	yue.file_exist = function(fname)
 		local file = io.open(fname)
 		if file then
