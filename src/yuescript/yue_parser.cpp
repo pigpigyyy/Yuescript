@@ -57,16 +57,16 @@ YueParser::YueParser() {
 	num_char_hex = range('0', '9') | range('a', 'f') | range('A', 'F');
 	num_lit = num_char_hex >> *(num_char_hex | expr('_') >> and_(num_char_hex));
 	Num = (
-		"0x." >> +num_lit >> -num_expo_hex
-	) | (
-		"0x" >> +num_lit >> (
-			'.' >> +num_lit >> -num_expo_hex |
-			num_expo_hex |
-			lj_num |
-			true_()
+		"0x" >> (
+			+num_lit >> (
+				'.' >> +num_lit >> -num_expo_hex |
+				num_expo_hex |
+				lj_num |
+				true_()
+			) | (
+				'.' >> +num_lit >> -num_expo_hex
+			)
 		)
-	) | (
-		'.' >> +num_char >> -num_expo
 	) | (
 		+num_char >> (
 			'.' >> +num_char >> -num_expo |
@@ -74,6 +74,8 @@ YueParser::YueParser() {
 			lj_num |
 			true_()
 		)
+	) | (
+		'.' >> +num_char >> -num_expo
 	);
 
 	Cut = false_();
