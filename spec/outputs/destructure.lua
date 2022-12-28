@@ -288,28 +288,31 @@ do
 			end)
 		end
 	end
-	local _obj_0 = tb
-	local mtx, y, zItem = getmetatable(_obj_0.x), _obj_0.y, _obj_0.z
-	if mtx == nil then
-		mtx = { }
-	end
-	local index = getmetatable(_obj_0).__index
-	if index == nil then
-		index = function()
-			return nil
+	local mtx, y, zItem, index
+	do
+		local _obj_0 = tb
+		mtx, y, zItem = getmetatable(_obj_0.x), _obj_0.y, _obj_0.z
+		if mtx == nil then
+			mtx = { }
+		end
+		index = getmetatable(_obj_0).__index
+		if index == nil then
+			index = function()
+				return nil
+			end
 		end
 	end
 	do
 		local _tmp_0
 		do
-			local _obj_1 = getmetatable(tb)
-			_tmp_0 = _obj_1.func
+			local _obj_0 = getmetatable(tb)
+			_tmp_0 = _obj_0.func
 		end
 		if _tmp_0 == nil then
 			do
-				local _obj_1 = item
-				if _obj_1 ~= nil then
-					_tmp_0 = _obj_1.defVal
+				local _obj_0 = item
+				if _obj_0 ~= nil then
+					_tmp_0 = _obj_0.defVal
 				end
 			end
 		end
@@ -455,9 +458,12 @@ do
 	end
 end
 do
-	local _obj_0 = tb
-	local value = _obj_0[name]
-	local value_meta = getmetatable(_obj_0)[name]
+	local value, value_meta
+	do
+		local _obj_0 = tb
+		value = _obj_0[name]
+		value_meta = getmetatable(_obj_0)[name]
+	end
 end
 do
 	local tostring, add
@@ -492,16 +498,15 @@ do
 end
 do
 	local tb = { }
-	local _obj_0 = tb
 	do
 		local _tmp_0 = c()
-		local v2 = _obj_0[_tmp_0]
+		local v2 = tb[_tmp_0]
 	end
 	local v1
 	do
-		local _obj_1 = getmetatable(_obj_0)
+		local _obj_0 = getmetatable(tb)
 		local _tmp_1 = a + b
-		v1 = _obj_1[_tmp_1]
+		v1 = _obj_0[_tmp_1]
 	end
 end
 do
@@ -575,16 +580,15 @@ do
 		local _tab_0 = type(_exp_0)
 		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
 		if _tab_0 then
-			local _obj_0 = _exp_0
 			do
-				local _obj_1 = _obj_0.c
-				local _type_0 = type(_obj_1)
+				local _obj_0 = _exp_0.c
+				local _type_0 = type(_obj_0)
 				if "table" == _type_0 or "userdata" == _type_0 then
 					do
-						local _obj_2 = getmetatable(_obj_1)
-						local _type_1 = type(_obj_2)
+						local _obj_1 = getmetatable(_obj_0)
+						local _type_1 = type(_obj_1)
 						if "table" == _type_1 or "userdata" == _type_1 then
-							meta_field = _obj_2["abc"]
+							meta_field = _obj_1["abc"]
 						end
 					end
 				end
@@ -593,19 +597,19 @@ do
 				meta_field = "def"
 			end
 			do
-				local _obj_1 = getmetatable(_obj_0)
+				local _obj_0 = getmetatable(_exp_0)
 				do
-					local _obj_2 = _obj_1[ [[any string]]]
-					local _type_0 = type(_obj_2)
+					local _obj_1 = _obj_0[ [[any string]]]
+					local _type_0 = type(_obj_1)
 					if "table" == _type_0 or "userdata" == _type_0 then
-						abc = _obj_2.d
+						abc = _obj_1.d
 					end
 				end
 				do
-					local _obj_2 = _obj_1['str']
-					local _type_0 = type(_obj_2)
+					local _obj_1 = _obj_0['str']
+					local _type_0 = type(_obj_1)
 					if "table" == _type_0 or "userdata" == _type_0 then
-						def = _obj_2.e
+						def = _obj_1.e
 					end
 				end
 				if abc == nil then

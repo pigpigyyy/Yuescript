@@ -89,14 +89,18 @@ do
 	end
 end
 do
-	local b = getmetatable(require("m")).__a
-	local _obj_0 = require("m")
-	local f = _obj_0.e
-	local c = getmetatable(_obj_0).__a
+	local b = getmetatable(require("m")).__gc
+	local index = getmetatable(require("m")).__index
+	local f, c
+	do
+		local _obj_0 = require("m")
+		f = _obj_0.e
+		c = getmetatable(_obj_0).__pairs
+	end
 	local d = require("m").c
 	local g, i
 	do
-		local _obj_1 = require("m")
-		g, i = _obj_1[1], getmetatable(_obj_1[2]).__h
+		local _obj_0 = require("m")
+		g, i = _obj_0[1], getmetatable(_obj_0[2]).__close
 	end
 end

@@ -60,7 +60,18 @@ namespace yue {
 
 typedef std::list<std::string> str_list;
 
-const std::string_view version = "0.15.18"sv;
+static std::unordered_set<std::string> Metamethods = {
+	"add"s, "sub"s, "mul"s, "div"s, "mod"s,
+	"pow"s, "unm"s, "concat"s, "len"s, "eq"s,
+	"lt"s, "le"s, "index"s, "newindex"s, "call"s,
+	"gc"s, "mode"s, "tostring"s, "metatable"s, // Lua 5.1
+	"pairs"s, "ipairs"s, // Lua 5.2
+	"name"s, "idiv"s, "band"s, "bor"s, "bxor"s,
+	"bnot"s, "shl"s, "shr"s, // Lua 5.3 ipairs deprecated
+	"close"s // Lua 5.4
+};
+
+const std::string_view version = "0.15.19"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1089,6 +1100,46 @@ private:
 		return str;
 	}
 
+	void checkMetamethod(const std::string& name, ast_node* x) {
+		if (Metamethods.find(name) == Metamethods.end()) {
+			throw std::logic_error(_info.errorMessage("invalid metamethod name"sv, x));
+		}
+		int target = getLuaTarget(x);
+		switch (target) {
+			case 501: goto metamethod51;
+			case 502: goto metamethod52;
+			case 503: {
+				if (name == "ipairs"sv) {
+					throw std::logic_error(_info.errorMessage("metamethod is deprecated since Lua 5.3"sv, x));
+				}
+				goto metamethod53;
+			}
+			case 504: {
+				if (name == "ipairs"sv) {
+					throw std::logic_error(_info.errorMessage("metamethod is not supported since Lua 5.4"sv, x));
+				}
+				goto metamethod54;
+			}
+		}
+		metamethod51:
+		if (name == "pairs"sv || name == "ipairs"sv) {
+			throw std::logic_error(_info.errorMessage("metamethod is not supported until Lua 5.2"sv, x));
+		}
+		metamethod52:
+		if (name == "name"sv || name == "idiv"sv ||
+			name == "band"sv || name == "bor"sv ||
+			name == "bxor"sv || name == "bnot"sv ||
+			name == "shl"sv || name == "shr"sv) {
+			throw std::logic_error(_info.errorMessage("metamethod is not supported until Lua 5.3"sv, x));
+		}
+		metamethod53:
+		if (name == "close"sv) {
+			throw std::logic_error(_info.errorMessage("metamethod is not supported until Lua 5.4"sv, x));
+		}
+		metamethod54:
+		return;
+	}
+
 	void transformStatement(Statement_t* statement, str_list& out) {
 		auto x = statement;
 		if (statement->appendix) {
@@ -1825,11 +1876,32 @@ private:
 		if (info.destructures.empty()) {
 			transformAssignmentCommon(assignment, out);
 		} else {
+			auto x = assignment;
 			str_list temp;
+			if (info.extraScope) {
+				str_list defs;
+				for (auto& destruct : info.destructures) {
+					for (auto& item : destruct.items) {
+						if (!item.targetVar.empty()) {
+							if (!isDefined(item.targetVar)) {
+								defs.push_back(item.targetVar);
+							}
+						}
+					}
+				}
+				if (!defs.empty()) {
+					for (const auto& def : defs) {
+						checkConst(def, x);
+						addToScope(def);
+					}
+					temp.push_back(indent() + "local "s + join(defs, ", "sv) + nll(x));
+				}
+				temp.push_back(indent() + "do"s + nll(x));
+				pushScope();
+			}
 			if (info.assignment) {
 				transformAssignmentCommon(info.assignment, temp);
 			}
-			auto x = assignment;
 			for (auto& destruct : info.destructures) {
 				std::list<std::pair<ast_ptr<true, Exp_t>, ast_ptr<true, Exp_t>>> leftPairs;
 				bool extraScope = false;
@@ -1861,7 +1933,7 @@ private:
 								}
 							}
 							if (!isNil) {
-								auto stmt = toAst<Statement_t>(pair.targetVar + "=nil if "s + pair.targetVar + "==nil", pair.defVal);
+								auto stmt = toAst<Statement_t>(pair.targetVar + "=nil if "s + pair.targetVar + "==nil"s, pair.defVal);
 								auto defAssign = stmt->content.as<ExpListAssign_t>();
 								auto assign = defAssign->action.as<Assign_t>();
 								assign->values.clear();
@@ -2034,6 +2106,10 @@ private:
 					_buf << indent() << "end"sv << nlr(x);
 					temp.push_back(clearBuf());
 				}
+			}
+			if (info.extraScope) {
+				popScope();
+				temp.push_back(indent() + "end"s + nlr(x));
 			}
 			out.push_back(join(temp));
 		}
@@ -2247,6 +2323,7 @@ private:
 					}
 					auto mp = static_cast<meta_variable_pair_t*>(pair);
 					auto name = _parser.toString(mp->name);
+					checkMetamethod(name, mp->name);
 					_buf << "__"sv << name << ':' << name;
 					auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), pair);
 					newPairDef->defVal.set(defVal);
@@ -2266,6 +2343,7 @@ private:
 						switch (mp->key->getId()) {
 							case id<Name_t>(): {
 								auto key = _parser.toString(mp->key);
+								checkMetamethod(key, mp->key);
 								_buf << "__"sv << key;
 								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
 								newPair->key.set(newKey);
@@ -2309,10 +2387,12 @@ private:
 	struct DestructureInfo {
 		std::list<Destructure> destructures;
 		ast_ptr<false, ExpListAssign_t> assignment;
+		bool extraScope = false;
 	};
 
 	DestructureInfo extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly, bool optional) {
 		auto x = assignment;
+		bool extraScope = false;
 		std::list<Destructure> destructs;
 		if (!assignment->action.is<Assign_t>()) return {destructs, nullptr};
 		auto exprs = assignment->expList->exprs.objects();
@@ -2367,6 +2447,7 @@ private:
 							auto mvp = static_cast<meta_variable_pair_def_t*>(item);
 							auto mp = mvp->pair.get();
 							auto name = _parser.toString(mp->name);
+							checkMetamethod(name, mp->name);
 							_buf << "__"sv << name << ':' << name;
 							auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), item);
 							newPairDef->defVal.set(mvp->defVal);
@@ -2381,6 +2462,7 @@ private:
 								switch (mp->key->getId()) {
 									case id<Name_t>(): {
 										auto key = _parser.toString(mp->key);
+										checkMetamethod(key, mp->key);
 										_buf << "__"sv << key;
 										auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
 										newPair->key.set(newKey);
@@ -2406,6 +2488,7 @@ private:
 						case id<meta_variable_pair_t>(): {
 							auto mp = static_cast<meta_variable_pair_t*>(item);
 							auto name = _parser.toString(mp->name);
+							checkMetamethod(name, mp->name);
 							_buf << "__"sv << name << ':' << name;
 							auto newPairDef = toAst<normal_pair_def_t>(clearBuf(), item);
 							subMetaDestruct->values.push_back(newPairDef);
@@ -2418,6 +2501,7 @@ private:
 								switch (mp->key->getId()) {
 									case id<Name_t>(): {
 										auto key = _parser.toString(mp->key);
+										checkMetamethod(key, mp->key);
 										_buf << "__"sv << key;
 										auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
 										newPair->key.set(newKey);
@@ -2462,12 +2546,16 @@ private:
 				}
 				valueItems.push_back(*j);
 				if (!varDefOnly && !subDestruct->values.empty() && !subMetaDestruct->values.empty()) {
-					auto objVar = getUnusedName("_obj_"sv);
-					addToScope(objVar);
-					valueItems.pop_back();
-					valueItems.push_back(toAst<Exp_t>(objVar, *j));
-					exprs.push_back(valueItems.back());
-					values.push_back(*j);
+					auto var = singleVariableFrom(*j, false);
+					if (var.empty() || !isLocal(var)) {
+						auto objVar = getUnusedName("_obj_"sv);
+						addToScope(objVar);
+						valueItems.pop_back();
+						valueItems.push_back(toAst<Exp_t>(objVar, *j));
+						exprs.push_back(valueItems.back());
+						values.push_back(*j);
+						extraScope = true;
+					}
 				}
 				TableLit_t* tabs[] = {subDestruct.get(), subMetaDestruct.get()};
 				for (auto tab : tabs) {
@@ -2573,7 +2661,7 @@ private:
 			}
 		}
 		popScope();
-		return {std::move(destructs), newAssignment};
+		return {std::move(destructs), newAssignment, extraScope};
 	}
 
 	void transformAssignmentCommon(ExpListAssign_t* assignment, str_list& out) {
@@ -5513,6 +5601,7 @@ private:
 						throw std::logic_error(_info.errorMessage("too many metatable declarations"sv, mp->name));
 					}
 					auto name = _parser.toString(mp->name);
+					checkMetamethod(name, mp->name);
 					_buf << "__"sv << name << ':' << name;
 					auto newPair = toAst<normal_pair_t>(clearBuf(), item);
 					metatable->pairs.push_back(newPair);
@@ -5529,6 +5618,7 @@ private:
 						switch (mp->key->getId()) {
 							case id<Name_t>(): {
 								auto key = _parser.toString(mp->key);
+								checkMetamethod(key, mp->key);
 								_buf << "__"sv << key;
 								auto newKey = toAst<KeyName_t>(clearBuf(), mp->key);
 								newPair->key.set(newKey);
@@ -6739,6 +6829,7 @@ private:
 				case id<meta_variable_pair_t>(): {
 					auto mtPair = static_cast<meta_variable_pair_t*>(keyValue);
 					auto nameStr = _parser.toString(mtPair->name);
+					checkMetamethod(nameStr, mtPair->name);
 					ref.set(toAst<normal_pair_t>("__"s + nameStr + ':' + nameStr, keyValue));
 					keyValue = ref.get();
 					break;
@@ -6748,6 +6839,7 @@ private:
 					auto normal_pair = keyValue->new_ptr<normal_pair_t>();
 					if (auto name = mtPair->key.as<Name_t>()) {
 						auto nameStr = _parser.toString(name);
+						checkMetamethod(nameStr, name);
 						normal_pair->key.set(toAst<KeyName_t>("__"s + nameStr, keyValue));
 					} else if (auto str = mtPair->key.as<String_t>()) {
 						normal_pair->key.set(newExp(str, str));
