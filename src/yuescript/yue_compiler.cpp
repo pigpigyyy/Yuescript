@@ -71,7 +71,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.19"sv;
+const std::string_view version = "0.15.20"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -417,6 +417,19 @@ private:
 		return isDefined;
 	}
 
+	bool isSolidDefined(const std::string& name) const {
+		bool defined = false;
+		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
+			auto vars = it->vars.get();
+			auto vit = vars->find(name);
+			if (vit != vars->end()) {
+				defined = true;
+				break;
+			}
+		}
+		return defined;
+	}
+
 	bool isLocal(const std::string& name) const {
 		bool local = false;
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
@@ -526,7 +539,7 @@ private:
 		do {
 			newName = nameStr + std::to_string(index);
 			index++;
-		} while (isLocal(newName));
+		} while (isSolidDefined(newName));
 		return newName;
 	}
 
