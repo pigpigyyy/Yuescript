@@ -739,7 +739,12 @@ int main(int narg, const char** args) {
 		int val = 0;
 		std::string file;
 		std::string msg;
-		std::tie(val, file, msg) = result.get();
+		try {
+			std::tie(val, file, msg) = result.get();
+		} catch (const std::range_error&) {
+			std::cout << "invalid text encoding" << std::endl;
+			return 1;
+		}
 		if (val != 0) {
 			ret = val;
 			errs.push_back(msg);
