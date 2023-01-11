@@ -363,10 +363,10 @@ YueParser::YueParser() {
 
 	Assignable = Space >> (AssignableChain | Variable | SelfName);
 
-	unary_value = unary_operator >> *(Space >> unary_operator) >> Value;
+	unary_value = +(unary_operator >> Space) >> Value;
 
 	ExponentialOperator = expr('^');
-	expo_value = Space >> ExponentialOperator >> *SpaceBreak >> Value;
+	expo_value = Space >> ExponentialOperator >> *SpaceBreak >> Space >> Value;
 	expo_exp = Value >> *expo_value;
 
 	unary_operator =
@@ -374,7 +374,7 @@ YueParser::YueParser() {
 		expr('#') |
 		expr('~') >> not_(expr('=') | space_one) |
 		expr("not") >> not_(AlphaNum);
-	unary_exp = *(Space >> unary_operator) >> expo_exp;
+	unary_exp = Space >> *(unary_operator >> Space) >> expo_exp;
 
 	PipeOperator = expr("|>");
 	pipe_value = Space >> PipeOperator >> *SpaceBreak >> unary_exp;
@@ -414,10 +414,10 @@ YueParser::YueParser() {
 		return st->noChainBlockStack.empty() || !st->noChainBlockStack.top();
 	}) >> +SpaceBreak >> Advance >> ensure(
 		chain_line >> *(+SpaceBreak >> chain_line), PopIndent);
-	ChainValue = Space >> Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;
+	ChainValue = Seperator >> (Chain | Callable) >> -existential_op >> -(InvokeArgs | chain_block) >> -table_appending_op;
 
 	simple_table = Seperator >> KeyValue >> *(sym(',') >> KeyValue);
-	Value = SimpleValue | simple_table | ChainValue | Space >> String;
+	Value = SimpleValue | simple_table | ChainValue | String;
 
 	single_string_inner = expr('\\') >> set("'\\") | not_(expr('\'')) >> Any;
 	SingleString = symx('\'') >> *single_string_inner >> symx('\'');
@@ -663,10 +663,11 @@ YueParser::YueParser() {
 
 	const_value = (expr("nil") | expr("true") | expr("false")) >> not_(AlphaNum);
 
-	SimpleValue = Space >> (const_value |
-		If | Switch | Try | With | ClassDecl | ForEach | For | While | Do |
-		unary_value | TblComprehension | TableLit | Comprehension |
-		FunLit | Num);
+	SimpleValue =
+		TableLit | const_value | If | Switch | Try | With |
+		ClassDecl | ForEach | For | While | Do |
+		unary_value | TblComprehension | Comprehension |
+		FunLit | Num;
 
 	ExpListAssign = ExpList >> -(Update | Assign) >> not_(Space >> expr('='));
 
