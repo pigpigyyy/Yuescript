@@ -24,7 +24,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 using namespace std::chrono_literals;
+#ifndef YUE_NO_WATCHER
 #include "efsw/efsw.hpp"
+#endif // YUE_NO_WATCHER
 #include "ghc/fs_std.hpp"
 #include "linenoise.hpp"
 
@@ -140,6 +142,7 @@ fs::path getTargetFileDirty(const fs::path& file, const fs::path& workPath, cons
 	return fs::path();
 }
 
+#ifndef YUE_NO_WATCHER
 static std::string compileFile(const fs::path& file, yue::YueConfig conf, const fs::path& workPath, const fs::path& targetPath) {
 	auto srcFile = fs::absolute(file);
 	auto targetFile = getTargetFileDirty(srcFile, workPath, targetPath);
@@ -234,6 +237,7 @@ public:
 	fs::path workPath;
 	fs::path targetPath;
 };
+#endif // YUE_NO_WATCHER
 
 int main(int narg, const char** args) {
 	const char* help =
@@ -250,7 +254,9 @@ int main(int narg, const char** args) {
 		"   -b       Dump compile time (doesn't write output)\n"
 		"   -g       Dump global variables used in NAME LINE COLUMN\n"
 		"   -l       Write line numbers from source codes\n"
+#ifndef YUE_NO_WATCHER
 		"   -w path  Watch changes and compile every file under directory\n"
+#endif // YUE_NO_WATCHER
 		"   -v       Print version\n"
 #ifndef YUE_COMPILER_ONLY
 		"   --       Read from standard in, print to standard out\n"
@@ -550,7 +556,12 @@ int main(int narg, const char** args) {
 				return 1;
 			}
 		} else if (arg == "-w"sv) {
+#ifndef YUE_NO_WATCHER
 			watchFiles = true;
+#else
+			std::cout << "Error: -w is not supported\n"sv;
+			return 1;
+#endif // YUE_NO_WATCHER 
 		} else if (arg.size() > 2 && arg.substr(0, 2) == "--"sv && arg.substr(2, 1) != "-"sv) {
 			auto argStr = arg.substr(2);
 			yue::Utils::trim(argStr);
@@ -593,6 +604,7 @@ int main(int narg, const char** args) {
 		std::cout << "Error: -o can not be used with multiple input files\n"sv;
 		return 1;
 	}
+#ifndef YUE_NO_WATCHER
 	if (watchFiles) {
 		auto fullWorkPath = fs::absolute(fs::path(workPath)).string();
 		auto fullTargetPath = fullWorkPath;
@@ -624,6 +636,7 @@ int main(int narg, const char** args) {
 		}
 		return 0;
 	}
+#endif // YUE_NO_WATCHER
 	std::list<std::future<std::tuple<int, std::string, std::string>>> results;
 	for (const auto& file : files) {
 		auto task = std::async(std::launch::async, [=]() {

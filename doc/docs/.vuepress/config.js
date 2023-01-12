@@ -43,13 +43,6 @@ module.exports = {
 				}
 			};
 		`],
-		['script', {}, `
-			var Module = {
-				onRuntimeInitialized: function() {
-					window.yue = Module;
-				}
-			};
-		`],
 		['script', { src: '/js/yuescript.js' }],
 	],
 

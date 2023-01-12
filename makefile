@@ -54,6 +54,9 @@ endif
 	INCLUDES += -I $(SRC_PATH)/3rdParty/lua
 	LINK_FLAGS += -L $(SRC_PATH)/3rdParty/lua -llua -ldl
 endif
+ifeq ($(NO_WATCHER),true)
+	COMPILE_FLAGS += -DYUE_NO_WATCHER
+endif
 
 # Add platform related linker flag
 ifneq ($(UNAME_S),Darwin)
@@ -137,7 +140,9 @@ OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
 # Set the dependency files that will be used to add header dependencies
 DEPS = $(OBJECTS:.o=.d)
 
-SOURCES += $(SRC_PATH)/3rdParty/efsw/Debug.cpp $(SRC_PATH)/3rdParty/efsw/DirectorySnapshot.cpp $(SRC_PATH)/3rdParty/efsw/DirectorySnapshotDiff.cpp $(SRC_PATH)/3rdParty/efsw/DirWatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/FileInfo.cpp $(SRC_PATH)/3rdParty/efsw/FileSystem.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcher.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherCWrapper.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherImpl.cpp $(SRC_PATH)/3rdParty/efsw/Log.cpp $(SRC_PATH)/3rdParty/efsw/Mutex.cpp $(SRC_PATH)/3rdParty/efsw/String.cpp $(SRC_PATH)/3rdParty/efsw/System.cpp $(SRC_PATH)/3rdParty/efsw/Thread.cpp $(SRC_PATH)/3rdParty/efsw/Watcher.cpp $(SRC_PATH)/3rdParty/efsw/WatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/FileSystemImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/MutexImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/SystemImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/ThreadImpl.cpp
+ifneq ($(NO_WATCHER),true)
+	SOURCES += $(SRC_PATH)/3rdParty/efsw/Debug.cpp $(SRC_PATH)/3rdParty/efsw/DirectorySnapshot.cpp $(SRC_PATH)/3rdParty/efsw/DirectorySnapshotDiff.cpp $(SRC_PATH)/3rdParty/efsw/DirWatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/FileInfo.cpp $(SRC_PATH)/3rdParty/efsw/FileSystem.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcher.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherCWrapper.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherImpl.cpp $(SRC_PATH)/3rdParty/efsw/Log.cpp $(SRC_PATH)/3rdParty/efsw/Mutex.cpp $(SRC_PATH)/3rdParty/efsw/String.cpp $(SRC_PATH)/3rdParty/efsw/System.cpp $(SRC_PATH)/3rdParty/efsw/Thread.cpp $(SRC_PATH)/3rdParty/efsw/Watcher.cpp $(SRC_PATH)/3rdParty/efsw/WatcherGeneric.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/FileSystemImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/MutexImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/SystemImpl.cpp $(SRC_PATH)/3rdParty/efsw/platform/posix/ThreadImpl.cpp
+endif
 
 # Macros for timing compilation
 ifeq ($(UNAME_S),Darwin)
@@ -148,7 +153,9 @@ ifeq ($(UNAME_S),Darwin)
 		$(RM) $(TIME_FILE) ; \
 		st=$$((`$(CUR_TIME)` - $$st)) ; \
 		echo $$st
-	SOURCES += $(SRC_PATH)/3rdParty/efsw/FileWatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/WatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/WatcherKqueue.cpp
+	ifneq ($(NO_WATCHER),true)
+		SOURCES += $(SRC_PATH)/3rdParty/efsw/FileWatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/WatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/WatcherKqueue.cpp
+	endif
 else
 	TIME_FILE = $(dir $@).$(notdir $@)_time
 	START_TIME = date '+%s' > $(TIME_FILE)
@@ -156,7 +163,9 @@ else
 		$(RM) $(TIME_FILE) ; \
 		st=$$((`date '+%s'` - $$st - 86400)) ; \
 		echo `date -u -d @$$st '+%H:%M:%S'`
-	SOURCES += $(SRC_PATH)/3rdParty/efsw/FileWatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/WatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/WatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherInotify.cpp $(SRC_PATH)/3rdParty/efsw/WatcherInotify.cpp
+	ifneq ($(NO_WATCHER),true)
+		SOURCES += $(SRC_PATH)/3rdParty/efsw/FileWatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/WatcherFSEvents.cpp $(SRC_PATH)/3rdParty/efsw/WatcherKqueue.cpp $(SRC_PATH)/3rdParty/efsw/FileWatcherInotify.cpp $(SRC_PATH)/3rdParty/efsw/WatcherInotify.cpp
+	endif
 endif
 
 # Version macros
