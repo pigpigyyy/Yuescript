@@ -521,11 +521,12 @@ class unary_value_t;
 class FunLit_t;
 
 AST_NODE(SimpleValue)
-	ast_sel<true, const_value_t,
+	ast_sel<true,
+	TableLit_t, const_value_t,
 	If_t, Switch_t, With_t, ClassDecl_t,
 	ForEach_t, For_t, While_t, Do_t, Try_t,
 	unary_value_t,
-	TblComprehension_t, TableLit_t, Comprehension_t,
+	TblComprehension_t, Comprehension_t,
 	FunLit_t, Num_t> value;
 	AST_MEMBER(SimpleValue, &value)
 AST_END(SimpleValue, "simple_value"sv)

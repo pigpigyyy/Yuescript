@@ -176,6 +176,7 @@ private:
 	rule for_in;
 	rule CompClause;
 	rule Chain;
+	rule ChainList;
 	rule KeyValue;
 	rule single_string_inner;
 	rule interp;
@@ -186,6 +187,7 @@ private:
 	rule FnArgs;
 	rule macro_args_def;
 	rule chain_call;
+	rule chain_call_list;
 	rule chain_index_chain;
 	rule ChainItems;
 	rule chain_dot_chain;

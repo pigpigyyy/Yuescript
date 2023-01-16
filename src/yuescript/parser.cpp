@@ -608,7 +608,8 @@ public:
 
 protected:
 	// left and right expressions
-	_expr *m_left, *m_right;
+	_expr* m_left;
+	_expr* m_right;
 };
 
 // sequence
@@ -630,6 +631,42 @@ public:
 		if (!m_left->parse_term(con)) return false;
 		return m_right->parse_term(con);
 	}
+};
+
+// sequence list
+class _seq_list : public _expr {
+public:
+	// constructor.
+	_seq_list(std::initializer_list<expr> list) {
+		m_list.reserve(list.size());
+		for (const expr& expr : list) {
+			m_list.push_back(_private::get_expr(expr));
+		}
+	}
+
+	virtual ~_seq_list() {
+		for (_expr* expr : m_list) {
+			delete expr;
+		}
+	}
+
+	// parse with whitespace
+	virtual bool parse_non_term(_context& con) const {
+		for (_expr* expr : m_list) {
+			if (!expr->parse_non_term(con)) return false;
+		}
+		return true;
+	}
+
+	// parse terminal
+	virtual bool parse_term(_context& con) const {
+		for (_expr* expr : m_list) {
+			if (!expr->parse_term(con)) return false;
+		}
+		return true;
+	}
+private:
+	std::vector<_expr*> m_list;
 };
 
 // choice
@@ -655,6 +692,46 @@ public:
 		con.restore(st);
 		return m_right->parse_term(con);
 	}
+};
+
+// select
+class _sel : public _expr {
+public:
+	// constructor.
+	_sel(std::initializer_list<expr> list) {
+		m_list.reserve(list.size());
+		for (const expr& expr : list) {
+			m_list.push_back(_private::get_expr(expr));
+		}
+	}
+
+	virtual ~_sel() {
+		for (_expr* expr : m_list) {
+			delete expr;
+		}
+	}
+
+	// parse with whitespace
+	virtual bool parse_non_term(_context& con) const {
+		_state st(con);
+		for (_expr* expr : m_list) {
+			if (expr->parse_non_term(con)) return true;
+			if (expr != m_list.back()) con.restore(st);
+		}
+		return false;
+	}
+
+	// parse terminal
+	virtual bool parse_term(_context& con) const {
+		_state st(con);
+		for (_expr* expr : m_list) {
+			if (expr->parse_term(con)) return true;
+			if (expr != m_list.back()) con.restore(st);
+		}
+		return false;
+	}
+private:
+	std::vector<_expr*> m_list;
 };
 
 // reference to rule
@@ -1186,6 +1263,14 @@ expr operator>>(const expr& left, const expr& right) {
 		new _seq(_private::get_expr(left), _private::get_expr(right)));
 }
 
+/** creates a sequence of expressions.
+	@param list list of expressions.
+	@return an expression which parses a sequence.
+*/
+expr seq(std::initializer_list<expr> list) {
+	return _private::construct_expr(new _seq_list(list));
+}
+
 /** creates a choice of expressions.
 	@param left left operand.
 	@param right right operand.
@@ -1194,6 +1279,14 @@ expr operator>>(const expr& left, const expr& right) {
 expr operator|(const expr& left, const expr& right) {
 	return _private::construct_expr(
 		new _choice(_private::get_expr(left), _private::get_expr(right)));
+}
+
+/** creates multiple choices of expressions.
+	@param list list of expressions.
+	@return an expression which parses multiple choices.
+*/
+expr sel(std::initializer_list<expr> list) {
+	return _private::construct_expr(new _sel(list));
 }
 
 /** converts a parser expression into a terminal.
