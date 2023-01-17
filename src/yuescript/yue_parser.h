@@ -185,6 +185,7 @@ private:
 	rule lua_string_close;
 	rule FnArgsExpList;
 	rule FnArgs;
+	rule destruct_def;
 	rule macro_args_def;
 	rule chain_call;
 	rule chain_call_list;
