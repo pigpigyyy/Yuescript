@@ -449,5 +449,16 @@ do
 		,f 4, \
 			4
 
+do
+	f = (
+		a -- param a
+		b -- param b
+	)-> a + b
+	f(
+		a -- value a
+		b -- value b
+	)
+	f !
+
 nil
 

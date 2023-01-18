@@ -407,4 +407,11 @@ do
 	local _3, _4
 	_1, _2, _3, _4 = 1, f(2, 3, f(4, 4))
 end
+do
+	f = function(a, b)
+		return a + b
+	end
+	f(a, b)
+	f()
+end
 return nil
