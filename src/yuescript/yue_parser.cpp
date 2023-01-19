@@ -47,8 +47,8 @@ YueParser::YueParser() {
 	space = -(and_(set(" \t-\\")) >> *space_one >> -comment);
 	space_break = space >> line_break;
 	white = space >> *(line_break >> space);
-	empty_line = space_break;
 	alpha_num = sel({range('a', 'z'), range('A', 'Z'), range('0', '9'), '_'});
+	not_alpha_num = not_(alpha_num);
 	Name = sel({range('a', 'z'), range('A', 'Z'), '_'}) >> *alpha_num;
 	num_expo = set("eE") >> -set("+-") >> num_char;
 	num_expo_hex = set("pP") >> -set("+-") >> num_char;
@@ -86,7 +86,7 @@ YueParser::YueParser() {
 
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
-	#define key(str) (str >> not_(alpha_num))
+	#define key(str) (str >> not_alpha_num)
 
 	#define disable_do_rule(patt) ( \
 		disable_do >> ( \
@@ -291,7 +291,7 @@ YueParser::YueParser() {
 
 	ShortTabAppending = "[]" >> space >> Assign;
 
-	BreakLoop = sel({"break", "continue"}) >> not_(alpha_num);
+	BreakLoop = sel({"break", "continue"}) >> not_alpha_num;
 
 	Return = key("return") >> -(space >> (TableBlock | ExpListLow));
 
@@ -302,8 +302,8 @@ YueParser::YueParser() {
 	switch_else = key("else") >> space >> body;
 
 	switch_block =
-		*(line_break >> *empty_line >> check_indent_match >> space >> SwitchCase) >>
-		-(line_break >> *empty_line >> check_indent_match >> space >> switch_else);
+		*(line_break >> *space_break >> check_indent_match >> space >> SwitchCase) >>
+		-(line_break >> *space_break >> check_indent_match >> space >> switch_else);
 
 	exp_not_tab = not_(SimpleTable | TableLit) >> space >> Exp;
 
@@ -314,22 +314,22 @@ YueParser::YueParser() {
 	Switch = key("switch") >> space >> Exp >>
 		space >> Seperator >> (
 			SwitchCase >> space >> (
-				line_break >> *empty_line >> check_indent_match >> space >> SwitchCase >> switch_block |
+				line_break >> *space_break >> check_indent_match >> space >> SwitchCase >> switch_block |
 				*(space >> SwitchCase) >> -(space >> switch_else)
 			) |
-			space_break >> *empty_line >> advance_match >> space >> SwitchCase >> switch_block >> pop_indent
+			+space_break >> advance_match >> space >> SwitchCase >> switch_block >> pop_indent
 		) >> switch_block;
 
 	Assignment = ExpList >> space >> Assign;
 	IfCond = disable_chain_rule(disable_arg_table_block_rule(Assignment | Exp));
-	if_else_if = -(line_break >> *empty_line >> check_indent_match) >> space >> key("elseif") >> space >> IfCond >> space >> body_with("then");
-	if_else = -(line_break >> *empty_line >> check_indent_match) >> space >> key("else") >> space >> body;
-	IfType = sel({"if", "unless"}) >> not_(alpha_num);
+	if_else_if = -(line_break >> *space_break >> check_indent_match) >> space >> key("elseif") >> space >> IfCond >> space >> body_with("then");
+	if_else = -(line_break >> *space_break >> check_indent_match) >> space >> key("else") >> space >> body;
+	IfType = sel({"if", "unless"}) >> not_alpha_num;
 	If = seq({IfType, space, IfCond, space, opt_body_with("then"), *if_else_if, -if_else});
 
-	WhileType = sel({"while", "until"}) >> not_(alpha_num);
+	WhileType = sel({"while", "until"}) >> not_alpha_num;
 	While = WhileType >> space >> disable_do_chain_arg_table_block_rule(Exp) >> space >> opt_body_with("do");
-	Repeat = seq({key("repeat"), space, Body, line_break, *empty_line, check_indent_match, space, key("until"), space, Exp});
+	Repeat = seq({key("repeat"), space, Body, line_break, *space_break, check_indent_match, space, key("until"), space, Exp});
 
 	ForStepValue = ',' >> space >> Exp;
 	for_args = Variable >> space >> '=' >> space >> Exp >> space >> ',' >> space >> Exp >> space >> -ForStepValue;
@@ -386,7 +386,7 @@ YueParser::YueParser() {
 		return true;
 	});
 
-	CatchBlock = line_break >> *empty_line >> check_indent_match >> space >> key("catch") >> space >> Variable >> space >> in_block;
+	CatchBlock = line_break >> *space_break >> check_indent_match >> space >> key("catch") >> space >> Variable >> space >> in_block;
 	Try = key("try") >> space >> (in_block | Exp) >> -CatchBlock;
 
 	Comprehension = '[' >> not_('[') >> space >> Exp >> space >> CompInner >> space >> ']';
@@ -424,7 +424,7 @@ YueParser::YueParser() {
 		'-' >> not_(set(">=") | space_one),
 		'#',
 		'~' >> not_('=' | space_one),
-		"not" >> not_(alpha_num)
+		"not" >> not_alpha_num
 	});
 	UnaryExp = *(UnaryOperator >> space) >> expo_exp;
 
@@ -433,8 +433,8 @@ YueParser::YueParser() {
 	pipe_exp = UnaryExp >> *(space >> pipe_value);
 
 	BinaryOperator = sel({
-		"or" >> not_(alpha_num),
-		"and" >> not_(alpha_num),
+		"or" >> not_alpha_num,
+		"and" >> not_alpha_num,
 		"<=", ">=", "~=", "!=", "==",
 		"..", "<<", ">>", "//",
 		set("+-*/%><|&~")
@@ -595,7 +595,7 @@ YueParser::YueParser() {
 		white, '}'
 	});
 
-	table_value_list = table_value >> *(space >> ',' >> space >> table_value);
+	table_value_list = table_value >> *seq({space, ',', space, table_value});
 
 	table_lit_line = (
 		push_indent_match >> (space >> table_value_list >> pop_indent | pop_indent)
@@ -762,7 +762,7 @@ YueParser::YueParser() {
 			leading_spaces_error
 		});
 
-	ConstValue = sel({"nil", "true", "false"}) >> not_(alpha_num);
+	ConstValue = sel({"nil", "true", "false"}) >> not_alpha_num;
 
 	SimpleValue = sel({
 		TableLit, ConstValue, If, Switch, Try, With,
