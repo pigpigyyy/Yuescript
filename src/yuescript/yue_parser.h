@@ -112,7 +112,7 @@ private:
 	template <class T>
 	inline rule& getRule(identity<T>) {
 		assert(false);
-		return Cut;
+		return cut;
 	}
 
 	rule empty_block_error;
@@ -126,94 +126,94 @@ private:
 	rule num_expo_hex;
 	rule lj_num;
 	rule plain_space;
-	rule Break;
-	rule Any;
-	rule White;
-	rule Stop;
-	rule Comment;
+	rule line_break;
+	rule any_char;
+	rule white;
+	rule stop;
+	rule comment;
 	rule multi_line_open;
 	rule multi_line_close;
 	rule multi_line_content;
-	rule MultiLineComment;
-	rule Indent;
-	rule EscapeNewLine;
+	rule multi_line_comment;
+	rule indent;
+	rule escape_new_line;
 	rule space_one;
-	rule Space;
-	rule SpaceBreak;
-	rule EmptyLine;
-	rule AlphaNum;
-	rule Cut;
+	rule space;
+	rule space_break;
+	rule empty_line;
+	rule alpha_num;
+	rule cut;
+	rule check_indent_match;
 	rule check_indent;
-	rule CheckIndent;
+	rule advance_match;
 	rule advance;
-	rule Advance;
+	rule push_indent_match;
 	rule push_indent;
-	rule PushIndent;
-	rule PreventIndent;
-	rule PopIndent;
-	rule InBlock;
-	rule ImportName;
-	rule ImportNameList;
+	rule prevent_indent;
+	rule pop_indent;
+	rule in_block;
+	rule import_name;
+	rule import_name_list;
 	rule import_literal_chain;
-	rule ImportTabItem;
-	rule ImportTabList;
-	rule ImportTabLine;
+	rule import_tab_item;
+	rule import_tab_list;
+	rule import_tab_line;
 	rule import_tab_lines;
-	rule WithExp;
-	rule DisableDo;
-	rule EnableDo;
-	rule DisableChain;
-	rule EnableChain;
-	rule DisableDoChainArgTableBlock;
-	rule EnableDoChainArgTableBlock;
-	rule DisableArgTableBlock;
-	rule EnableArgTableBlock;
-	rule SwitchElse;
-	rule SwitchBlock;
-	rule IfElseIf;
-	rule IfElse;
+	rule with_exp;
+	rule disable_do;
+	rule enable_do;
+	rule disable_chain;
+	rule enable_chain;
+	rule disable_do_chain_arg_table_block;
+	rule enable_do_chain_arg_table_block;
+	rule disable_arg_table_block;
+	rule enable_arg_table_block;
+	rule switch_else;
+	rule switch_block;
+	rule if_else_if;
+	rule if_else;
 	rule for_args;
 	rule for_in;
-	rule CompClause;
-	rule Chain;
-	rule ChainList;
-	rule KeyValue;
+	rule comp_clause;
+	rule chain;
+	rule chain_list;
+	rule key_value;
 	rule single_string_inner;
 	rule interp;
 	rule double_string_plain;
 	rule lua_string_open;
 	rule lua_string_close;
-	rule FnArgsExpList;
-	rule FnArgs;
+	rule fn_args_exp_list;
+	rule fn_args;
 	rule destruct_def;
 	rule macro_args_def;
 	rule chain_call;
 	rule chain_call_list;
 	rule chain_index_chain;
-	rule ChainItems;
+	rule chain_items;
 	rule chain_dot_chain;
-	rule ColonChain;
+	rule colon_chain;
 	rule chain_with_colon;
-	rule ChainItem;
+	rule chain_item;
 	rule chain_line;
 	rule chain_block;
 	rule meta_index;
-	rule Index;
+	rule index;
 	rule invoke_chain;
-	rule TableValue;
+	rule table_value;
 	rule table_lit_lines;
-	rule TableLitLine;
-	rule TableValueList;
-	rule TableBlockInner;
-	rule ClassLine;
-	rule KeyValueLine;
-	rule KeyValueList;
-	rule ArgLine;
-	rule ArgBlock;
+	rule table_lit_line;
+	rule table_value_list;
+	rule table_block_inner;
+	rule class_line;
+	rule key_value_line;
+	rule key_value_list;
+	rule arg_line;
+	rule arg_block;
 	rule invoke_args_with_table;
 	rule arg_table_block;
-	rule PipeOperator;
-	rule ExponentialOperator;
+	rule pipe_operator;
+	rule exponential_operator;
 	rule pipe_value;
 	rule pipe_exp;
 	rule expo_value;
@@ -224,42 +224,42 @@ private:
 	rule yue_comment;
 	rule yue_line_comment;
 	rule yue_multiline_comment;
-	rule Line;
-	rule Shebang;
+	rule line;
+	rule shebang;
 
 	AST_RULE(Num)
 	AST_RULE(Name)
 	AST_RULE(Variable)
 	AST_RULE(LabelName)
 	AST_RULE(LuaKeyword)
-	AST_RULE(self)
-	AST_RULE(self_name)
-	AST_RULE(self_class)
-	AST_RULE(self_class_name)
+	AST_RULE(Self)
 	AST_RULE(SelfName)
+	AST_RULE(SelfClass)
+	AST_RULE(SelfClassName)
+	AST_RULE(SelfItem)
 	AST_RULE(KeyName)
 	AST_RULE(VarArg)
 	AST_RULE(Seperator)
 	AST_RULE(NameList)
-	AST_RULE(local_flag)
-	AST_RULE(local_values)
+	AST_RULE(LocalFlag)
+	AST_RULE(LocalValues)
 	AST_RULE(Local)
-	AST_RULE(const_attrib)
-	AST_RULE(close_attrib)
+	AST_RULE(ConstAttrib)
+	AST_RULE(CloseAttrib)
 	AST_RULE(LocalAttrib);
-	AST_RULE(colon_import_name)
-	AST_RULE(import_literal_inner)
+	AST_RULE(ColonImportName)
+	AST_RULE(ImportLiteralInner)
 	AST_RULE(ImportLiteral)
 	AST_RULE(ImportFrom)
-	AST_RULE(macro_name_pair)
-	AST_RULE(import_all_macro)
+	AST_RULE(MacroNamePair)
+	AST_RULE(ImportAllMacro)
 	AST_RULE(ImportTabLit)
 	AST_RULE(ImportAs)
 	AST_RULE(Import)
 	AST_RULE(Label)
 	AST_RULE(Goto)
 	AST_RULE(ShortTabAppending)
-	AST_RULE(fn_arrow_back)
+	AST_RULE(FnArrowBack)
 	AST_RULE(Backcall)
 	AST_RULE(PipeBody)
 	AST_RULE(ExpListLow)
@@ -269,38 +269,38 @@ private:
 	AST_RULE(SwitchList)
 	AST_RULE(SwitchCase)
 	AST_RULE(Switch)
-	AST_RULE(assignment)
+	AST_RULE(Assignment)
 	AST_RULE(IfCond)
 	AST_RULE(IfType)
 	AST_RULE(If)
 	AST_RULE(WhileType)
 	AST_RULE(While)
 	AST_RULE(Repeat)
-	AST_RULE(for_step_value)
+	AST_RULE(ForStepValue)
 	AST_RULE(For)
 	AST_RULE(ForEach)
 	AST_RULE(Do)
-	AST_RULE(catch_block)
+	AST_RULE(CatchBlock)
 	AST_RULE(Try)
 	AST_RULE(Comprehension)
-	AST_RULE(comp_value)
+	AST_RULE(CompValue)
 	AST_RULE(TblComprehension)
-	AST_RULE(star_exp)
+	AST_RULE(StarExp)
 	AST_RULE(CompForEach)
 	AST_RULE(CompFor)
 	AST_RULE(CompInner)
 	AST_RULE(Assign)
-	AST_RULE(update_op)
+	AST_RULE(UpdateOp)
 	AST_RULE(Update)
 	AST_RULE(BinaryOperator)
-	AST_RULE(unary_operator)
+	AST_RULE(UnaryOperator)
 	AST_RULE(Assignable)
 	AST_RULE(AssignableChain)
-	AST_RULE(exp_op_value)
+	AST_RULE(ExpOpValue)
 	AST_RULE(Exp)
 	AST_RULE(Callable)
 	AST_RULE(ChainValue)
-	AST_RULE(simple_table)
+	AST_RULE(SimpleTable)
 	AST_RULE(SimpleValue)
 	AST_RULE(Value)
 	AST_RULE(LuaStringOpen);
@@ -308,8 +308,8 @@ private:
 	AST_RULE(LuaStringClose);
 	AST_RULE(LuaString)
 	AST_RULE(SingleString)
-	AST_RULE(double_string_inner)
-	AST_RULE(double_string_content)
+	AST_RULE(DoubleStringInner)
+	AST_RULE(DoubleStringContent)
 	AST_RULE(DoubleString)
 	AST_RULE(String)
 	AST_RULE(Parens)
@@ -317,37 +317,37 @@ private:
 	AST_RULE(ColonChainItem)
 	AST_RULE(Metatable)
 	AST_RULE(Metamethod)
-	AST_RULE(default_value)
+	AST_RULE(DefaultValue)
 	AST_RULE(Slice)
 	AST_RULE(Invoke)
-	AST_RULE(existential_op)
-	AST_RULE(table_appending_op)
+	AST_RULE(ExistentialOp)
+	AST_RULE(TableAppendingOp)
 	AST_RULE(SpreadExp)
 	AST_RULE(TableLit)
 	AST_RULE(TableBlock)
 	AST_RULE(TableBlockIndent)
-	AST_RULE(class_member_list)
+	AST_RULE(ClassMemberList)
 	AST_RULE(ClassBlock)
 	AST_RULE(ClassDecl)
-	AST_RULE(global_values)
-	AST_RULE(global_op)
+	AST_RULE(GlobalValues)
+	AST_RULE(GlobalOp)
 	AST_RULE(Global)
-	AST_RULE(export_default)
+	AST_RULE(ExportDefault)
 	AST_RULE(Export)
-	AST_RULE(variable_pair)
-	AST_RULE(normal_pair)
-	AST_RULE(meta_variable_pair)
-	AST_RULE(meta_normal_pair)
-	AST_RULE(variable_pair_def)
-	AST_RULE(normal_pair_def)
-	AST_RULE(normal_def)
-	AST_RULE(meta_variable_pair_def)
-	AST_RULE(meta_normal_pair_def)
+	AST_RULE(VariablePair)
+	AST_RULE(NormalPair)
+	AST_RULE(MetaVariablePair)
+	AST_RULE(MetaNormalPair)
+	AST_RULE(VariablePairDef)
+	AST_RULE(NormalPairDef)
+	AST_RULE(NormalDef)
+	AST_RULE(MetaVariablePairDef)
+	AST_RULE(MetaNormalPairDef)
 	AST_RULE(FnArgDef)
 	AST_RULE(FnArgDefList)
-	AST_RULE(outer_var_shadow)
+	AST_RULE(OuterVarShadow)
 	AST_RULE(FnArgsDef)
-	AST_RULE(fn_arrow)
+	AST_RULE(FnArrow)
 	AST_RULE(FunLit)
 	AST_RULE(MacroName)
 	AST_RULE(MacroLit)
@@ -356,15 +356,15 @@ private:
 	AST_RULE(NameOrDestructure)
 	AST_RULE(AssignableNameList)
 	AST_RULE(InvokeArgs)
-	AST_RULE(const_value)
-	AST_RULE(unary_value)
-	AST_RULE(unary_exp)
+	AST_RULE(ConstValue)
+	AST_RULE(UnaryValue)
+	AST_RULE(UnaryExp)
 	AST_RULE(ExpListAssign)
-	AST_RULE(if_line)
-	AST_RULE(while_line)
+	AST_RULE(IfLine)
+	AST_RULE(WhileLine)
 	AST_RULE(BreakLoop)
-	AST_RULE(statement_appendix)
-	AST_RULE(statement_sep)
+	AST_RULE(StatementAppendix)
+	AST_RULE(StatementSep)
 	AST_RULE(Statement)
 	AST_RULE(YueLineComment)
 	AST_RULE(YueMultilineComment)
