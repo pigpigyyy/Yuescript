@@ -135,7 +135,6 @@ private:
 	rule multi_line_close;
 	rule multi_line_content;
 	rule multi_line_comment;
-	rule indent;
 	rule escape_new_line;
 	rule space_one;
 	rule space;

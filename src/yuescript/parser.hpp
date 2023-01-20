@@ -302,12 +302,7 @@ private:
 	@return an expression which parses a sequence.
 */
 expr operator>>(const expr& left, const expr& right);
-
-/** creates a sequence of expressions.
-	@param list list of expressions.
-	@return an expression which parses a sequence.
-*/
-expr seq(std::initializer_list<expr> list);
+expr operator>>(expr&& left, expr&& right);
 
 /** creates a choice of expressions.
 	@param left left operand.
@@ -315,12 +310,7 @@ expr seq(std::initializer_list<expr> list);
 	@return an expression which parses a choice.
 */
 expr operator|(const expr& left, const expr& right);
-
-/** creates multiple choices of expressions.
-	@param list list of expressions.
-	@return an expression which parses multiple choices.
-*/
-expr sel(std::initializer_list<expr> list);
+expr operator|(expr&& left, expr&& right);
 
 /** converts a parser expression into a terminal.
 	@param e expression.

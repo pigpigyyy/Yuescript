@@ -176,6 +176,14 @@ private:
 	bool _parse_term(rule& r);
 };
 
+enum class EXPR_TYPE {
+	NORMAL,
+	SEQ_TWO,
+	SEQ_LIST,
+	CHOICE_TWO,
+	CHOICE_LIST
+};
+
 // base class for expressions
 class _expr {
 public:
@@ -188,6 +196,8 @@ public:
 
 	// parse terminal
 	virtual bool parse_term(_context& con) const = 0;
+
+	virtual EXPR_TYPE get_type() const { return EXPR_TYPE::NORMAL; }
 };
 
 // single character expression.
@@ -199,12 +209,12 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return _parse(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return _parse(con);
 	}
 
@@ -235,12 +245,12 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return _parse(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return _parse(con);
 	}
 
@@ -250,8 +260,8 @@ private:
 
 	// parse the string
 	bool _parse(_context& con) const {
-		for (input::const_iterator it = m_string.begin(),
-								   end = m_string.end();
+		for (auto it = m_string.begin(),
+				  end = m_string.end();
 			 ;) {
 			if (it == end) return true;
 			if (con.end()) break;
@@ -286,12 +296,12 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return _parse(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return _parse(con);
 	}
 
@@ -358,12 +368,12 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return m_expr->parse_term(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return m_expr->parse_term(con);
 	}
 };
@@ -378,7 +388,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		pos pos = con.m_pos;
 		if (m_expr->parse_non_term(con)) {
 			item_t item = {&pos, &con.m_pos, con.m_user_data};
@@ -388,7 +398,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		pos pos = con.m_pos;
 		if (m_expr->parse_term(con)) {
 			item_t item = {&pos, &con.m_pos, con.m_user_data};
@@ -410,7 +420,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		// if parsing of the first fails, restore the context and stop
 		_state st(con);
 		if (!m_expr->parse_non_term(con)) {
@@ -431,7 +441,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		// if parsing of the first fails, restore the context and stop
 		_state st(con);
 		if (!m_expr->parse_term(con)) {
@@ -461,7 +471,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		// parse the first; if the first fails, stop
 		if (!m_expr->parse_non_term(con)) return false;
 
@@ -478,7 +488,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		// parse the first; if the first fails, stop
 		if (!m_expr->parse_term(con)) return false;
 
@@ -504,14 +514,14 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		_state st(con);
 		if (!m_expr->parse_non_term(con)) con.restore(st);
 		return true;
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		_state st(con);
 		if (!m_expr->parse_term(con)) con.restore(st);
 		return true;
@@ -527,7 +537,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		_state st(con);
 		bool ok = m_expr->parse_non_term(con);
 		con.restore(st);
@@ -535,7 +545,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		_state st(con);
 		bool ok = m_expr->parse_term(con);
 		con.restore(st);
@@ -552,7 +562,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		_state st(con);
 		bool ok = !m_expr->parse_non_term(con);
 		con.restore(st);
@@ -560,7 +570,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		_state st(con);
 		bool ok = !m_expr->parse_term(con);
 		con.restore(st);
@@ -577,14 +587,14 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		if (!m_expr->parse_non_term(con)) return false;
 		con.next_line();
 		return true;
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		if (!m_expr->parse_term(con)) return false;
 		con.next_line();
 		return true;
@@ -602,14 +612,17 @@ public:
 
 	// destructor.
 	virtual ~_binary() {
-		delete m_left;
-		delete m_right;
+		if (m_left) delete m_left;
+		if (m_right) delete m_right;
 	}
 
 protected:
 	// left and right expressions
 	_expr* m_left;
 	_expr* m_right;
+
+	friend expr operator>>(expr&& left, expr&& right);
+	friend expr operator|(expr&& left, expr&& right);
 };
 
 // sequence
@@ -621,15 +634,19 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		if (!m_left->parse_non_term(con)) return false;
 		return m_right->parse_non_term(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		if (!m_left->parse_term(con)) return false;
 		return m_right->parse_term(con);
+	}
+
+	virtual EXPR_TYPE get_type() const override {
+		return EXPR_TYPE::SEQ_TWO;
 	}
 };
 
@@ -637,12 +654,14 @@ public:
 class _seq_list : public _expr {
 public:
 	// constructor.
-	_seq_list(std::initializer_list<expr> list) {
+	_seq_list(std::initializer_list<_expr*> list) {
 		m_list.reserve(list.size());
-		for (const expr& expr : list) {
-			m_list.push_back(_private::get_expr(expr));
+		for (_expr* expr : list) {
+			m_list.push_back(expr);
 		}
 	}
+
+	_seq_list() { }
 
 	virtual ~_seq_list() {
 		for (_expr* expr : m_list) {
@@ -651,7 +670,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		for (_expr* expr : m_list) {
 			if (!expr->parse_non_term(con)) return false;
 		}
@@ -659,14 +678,20 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		for (_expr* expr : m_list) {
 			if (!expr->parse_term(con)) return false;
 		}
 		return true;
 	}
+
+	virtual EXPR_TYPE get_type() const override {
+		return EXPR_TYPE::SEQ_LIST;
+	}
+
 private:
 	std::vector<_expr*> m_list;
+	friend expr operator>>(expr&& left, expr&& right);
 };
 
 // choice
@@ -678,7 +703,7 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		_state st(con);
 		if (m_left->parse_non_term(con)) return true;
 		con.restore(st);
@@ -686,33 +711,39 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		_state st(con);
 		if (m_left->parse_term(con)) return true;
 		con.restore(st);
 		return m_right->parse_term(con);
 	}
+
+	virtual EXPR_TYPE get_type() const override {
+		return EXPR_TYPE::CHOICE_TWO;
+	}
 };
 
-// select
-class _sel : public _expr {
+// choice list
+class _choice_list : public _expr {
 public:
 	// constructor.
-	_sel(std::initializer_list<expr> list) {
+	_choice_list(std::initializer_list<_expr*> list) {
 		m_list.reserve(list.size());
-		for (const expr& expr : list) {
-			m_list.push_back(_private::get_expr(expr));
+		for (_expr* expr : list) {
+			m_list.push_back(expr);
 		}
 	}
 
-	virtual ~_sel() {
+	_choice_list() { }
+
+	virtual ~_choice_list() {
 		for (_expr* expr : m_list) {
 			delete expr;
 		}
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		_state st(con);
 		for (_expr* expr : m_list) {
 			if (expr->parse_non_term(con)) return true;
@@ -722,7 +753,7 @@ public:
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		_state st(con);
 		for (_expr* expr : m_list) {
 			if (expr->parse_term(con)) return true;
@@ -730,8 +761,14 @@ public:
 		}
 		return false;
 	}
+
+	virtual EXPR_TYPE get_type() const override {
+		return EXPR_TYPE::CHOICE_LIST;
+	}
+
 private:
 	std::vector<_expr*> m_list;
+	friend expr operator|(expr&& left, expr&& right);
 };
 
 // reference to rule
@@ -743,12 +780,12 @@ public:
 	}
 
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return con.parse_non_term(m_rule);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return con.parse_term(m_rule);
 	}
 
@@ -761,12 +798,12 @@ private:
 class _eof : public _expr {
 public:
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return parse_term(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		return con.end();
 	}
 };
@@ -775,12 +812,12 @@ public:
 class _any : public _expr {
 public:
 	// parse with whitespace
-	virtual bool parse_non_term(_context& con) const {
+	virtual bool parse_non_term(_context& con) const override {
 		return parse_term(con);
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context& con) const {
+	virtual bool parse_term(_context& con) const override {
 		if (!con.end()) {
 			con.next_col();
 			return true;
@@ -794,12 +831,12 @@ public:
 class _true : public _expr {
 public:
 	// parse with whitespace
-	virtual bool parse_non_term(_context&) const {
+	virtual bool parse_non_term(_context&) const override {
 		return true;
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context&) const {
+	virtual bool parse_term(_context&) const override {
 		return true;
 	}
 };
@@ -808,12 +845,12 @@ public:
 class _false : public _expr {
 public:
 	// parse with whitespace
-	virtual bool parse_non_term(_context&) const {
+	virtual bool parse_non_term(_context&) const override {
 		return false;
 	}
 
 	// parse terminal
-	virtual bool parse_term(_context&) const {
+	virtual bool parse_term(_context&) const override {
 		return false;
 	}
 };
@@ -1263,12 +1300,82 @@ expr operator>>(const expr& left, const expr& right) {
 		new _seq(_private::get_expr(left), _private::get_expr(right)));
 }
 
-/** creates a sequence of expressions.
-	@param list list of expressions.
-	@return an expression which parses a sequence.
-*/
-expr seq(std::initializer_list<expr> list) {
-	return _private::construct_expr(new _seq_list(list));
+expr operator>>(expr&& left, expr&& right) {
+	auto left_expr = _private::get_expr(left);
+	auto right_expr = _private::get_expr(right);
+	switch (left_expr->get_type()) {
+		case EXPR_TYPE::SEQ_TWO: {
+			auto l_seq = static_cast<_seq*>(left_expr);
+			switch (right_expr->get_type()) {
+				case EXPR_TYPE::SEQ_TWO: {
+					auto r_seq = static_cast<_seq*>(right_expr);
+					auto list = new _seq_list{
+						l_seq->m_left,
+						l_seq->m_right,
+						r_seq->m_left,
+						r_seq->m_right};
+					l_seq->m_left = nullptr;
+					l_seq->m_right = nullptr;
+					r_seq->m_left = nullptr;
+					r_seq->m_right = nullptr;
+					delete l_seq;
+					delete r_seq;
+					return _private::construct_expr(list);
+				}
+				case EXPR_TYPE::SEQ_LIST: {
+					auto r_list = static_cast<_seq_list*>(right_expr);
+					auto list = new _seq_list{};
+					list->m_list.reserve(2 + list->m_list.size());
+					list->m_list.push_back(l_seq->m_left);
+					list->m_list.push_back(l_seq->m_right);
+					list->m_list.insert(list->m_list.end(), r_list->m_list.begin(), r_list->m_list.end());
+					l_seq->m_left = nullptr;
+					l_seq->m_right = nullptr;
+					r_list->m_list.clear();
+					delete l_seq;
+					delete r_list;
+					return _private::construct_expr(list);
+				}
+				default: {
+					auto list = new _seq_list{
+						l_seq->m_left,
+						l_seq->m_right,
+						right_expr};
+					l_seq->m_left = nullptr;
+					l_seq->m_right = nullptr;
+					delete l_seq;
+					return _private::construct_expr(list);
+				}
+			}
+		}
+		case EXPR_TYPE::SEQ_LIST: {
+			auto l_list = static_cast<_seq_list*>(left_expr);
+			switch (right_expr->get_type()) {
+				case EXPR_TYPE::SEQ_TWO: {
+					auto r_seq = static_cast<_seq*>(right_expr);
+					l_list->m_list.insert(l_list->m_list.end(), {r_seq->m_left, r_seq->m_right});
+					r_seq->m_left = nullptr;
+					r_seq->m_right = nullptr;
+					delete r_seq;
+					return _private::construct_expr(l_list);
+				}
+				case EXPR_TYPE::SEQ_LIST: {
+					auto r_list = static_cast<_seq_list*>(right_expr);
+					l_list->m_list.insert(l_list->m_list.end(), r_list->m_list.begin(), r_list->m_list.end());
+					r_list->m_list.clear();
+					delete r_list;
+					return _private::construct_expr(l_list);
+				}
+				default: {
+					l_list->m_list.push_back(right_expr);
+					return _private::construct_expr(l_list);
+				}
+			}
+		}
+		default:
+			return _private::construct_expr(
+				new _seq(left_expr, right_expr));
+	}
 }
 
 /** creates a choice of expressions.
@@ -1281,12 +1388,81 @@ expr operator|(const expr& left, const expr& right) {
 		new _choice(_private::get_expr(left), _private::get_expr(right)));
 }
 
-/** creates multiple choices of expressions.
-	@param list list of expressions.
-	@return an expression which parses multiple choices.
-*/
-expr sel(std::initializer_list<expr> list) {
-	return _private::construct_expr(new _sel(list));
+expr operator|(expr&& left, expr&& right) {
+	auto left_expr = _private::get_expr(left);
+	auto right_expr = _private::get_expr(right);
+	switch (left_expr->get_type()) {
+		case EXPR_TYPE::CHOICE_TWO: {
+			auto l_choice = static_cast<_choice*>(left_expr);
+			switch (right_expr->get_type()) {
+				case EXPR_TYPE::CHOICE_TWO: {
+					auto r_choice = static_cast<_choice*>(right_expr);
+					auto list = new _choice_list{
+						l_choice->m_left,
+						l_choice->m_right,
+						r_choice->m_left,
+						r_choice->m_right};
+					l_choice->m_left = nullptr;
+					l_choice->m_right = nullptr;
+					r_choice->m_left = nullptr;
+					r_choice->m_right = nullptr;
+					delete l_choice;
+					delete r_choice;
+					return _private::construct_expr(list);
+				}
+				case EXPR_TYPE::CHOICE_LIST: {
+					auto r_list = static_cast<_choice_list*>(right_expr);
+					auto list = new _choice_list{};
+					list->m_list.reserve(2 + list->m_list.size());
+					list->m_list.insert(list->m_list.end(), {l_choice->m_left, l_choice->m_right});
+					list->m_list.insert(list->m_list.end(), r_list->m_list.begin(), r_list->m_list.end());
+					l_choice->m_left = nullptr;
+					l_choice->m_right = nullptr;
+					r_list->m_list.clear();
+					delete l_choice;
+					delete r_list;
+					return _private::construct_expr(list);
+				}
+				default: {
+					auto list = new _choice_list{
+						l_choice->m_left,
+						l_choice->m_right,
+						right_expr};
+					l_choice->m_left = nullptr;
+					l_choice->m_right = nullptr;
+					delete l_choice;
+					return _private::construct_expr(list);
+				}
+			}
+		}
+		case EXPR_TYPE::CHOICE_LIST: {
+			auto l_list = static_cast<_choice_list*>(left_expr);
+			switch (right_expr->get_type()) {
+				case EXPR_TYPE::CHOICE_TWO: {
+					auto r_choice = static_cast<_choice*>(right_expr);
+					l_list->m_list.insert(l_list->m_list.end(), {r_choice->m_left, r_choice->m_right});
+					r_choice->m_left = nullptr;
+					r_choice->m_right = nullptr;
+					delete r_choice;
+					return _private::construct_expr(l_list);
+				}
+				case EXPR_TYPE::CHOICE_LIST: {
+					auto r_list = static_cast<_choice_list*>(right_expr);
+					l_list->m_list.insert(l_list->m_list.end(), r_list->m_list.begin(), r_list->m_list.end());
+					r_list->m_list.clear();
+					delete r_list;
+					return _private::construct_expr(l_list);
+				}
+				default: {
+					l_list->m_list.push_back(right_expr);
+					return _private::construct_expr(l_list);
+				}
+			}
+		}
+		default:
+			return _private::construct_expr(
+				new _choice(left_expr, right_expr));
+	}
 }
 
 /** converts a parser expression into a terminal.
