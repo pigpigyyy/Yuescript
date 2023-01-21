@@ -71,7 +71,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.22"sv;
+const std::string_view version = "0.15.23"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {

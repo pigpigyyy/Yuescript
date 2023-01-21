@@ -118,6 +118,7 @@ private:
 	rule empty_block_error;
 	rule leading_spaces_error;
 	rule indentation_error;
+	rule braces_expression_error;
 
 	rule num_char;
 	rule num_char_hex;

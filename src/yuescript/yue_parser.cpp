@@ -387,7 +387,7 @@ YueParser::YueParser() {
 
 	Comprehension = '[' >> not_('[') >> space >> Exp >> space >> CompInner >> space >> ']';
 	CompValue = ',' >> space >> Exp;
-	TblComprehension = '{' >> space >> Exp >> space >> -(CompValue >> space) >> CompInner >> space >> '}';
+	TblComprehension = '{' >> (space >> Exp >> space >> -(CompValue >> space) >> CompInner >> space >> '}' | braces_expression_error);
 
 	CompInner = Seperator >> (CompForEach | CompFor) >> *(space >> comp_clause);
 	StarExp = '*' >> space >> Exp;
@@ -735,6 +735,11 @@ YueParser::YueParser() {
 		);
 
 	ConstValue = (expr("nil") | "true" | "false") >> not_alpha_num;
+
+	braces_expression_error = pl::user("{", [](const item_t& item) {
+		throw ParserError("invalid brace expression", *item.begin, *item.end);
+		return false;
+	});
 
 	SimpleValue =
 		TableLit | ConstValue | If | Switch | Try | With |
