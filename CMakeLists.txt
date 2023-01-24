@@ -4,28 +4,28 @@ cmake_minimum_required(VERSION 3.1)
 SET(LUA_LIBDIR ${LUA_INCDIR}/../lib " " ${LUA_INCDIR}/../../lib)
 
 find_package(Lua)
-IF(LUA_FOUND)
+if (LUA_FOUND)
 	SET(LUA_LIBRARIES "${LUA_LIBRARY}")
-ELSE(LUA_FOUND)
+else ()
 	MESSAGE(STATUS "Lua: using information from luarocks")
 	SET(LUA_INCLUDE_DIR "${LUA_INCDIR}")
 	GET_FILENAME_COMPONENT(LUA_EXEC_NAME ${LUA} NAME_WE)
-	IF(LUA_EXEC_NAME STREQUAL "luajit")
+	if (LUA_EXEC_NAME STREQUAL "luajit")
 		FIND_LIBRARY(LUA_LIBRARIES
 			NAMES luajit libluajit
 			PATHS ${LUA_LIBDIR}
 			NO_DEFAULT_PATH)
-	ELSEIF(LUA_EXEC_NAME MATCHES "lua.*")
+	elseif ()
 		FIND_LIBRARY(LUA_LIBRARIES
 			NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51 liblua5.4 liblua5.3 liblua5.2 liblua5.1
 			PATHS ${LUA_LIBDIR}
 			NO_DEFAULT_PATH)
-	ENDIF(LUA_EXEC_NAME STREQUAL "luajit")
-ENDIF(LUA_FOUND)
+	endif()
+endif()
 
-MESSAGE(STATUS "Lua: " ${LUA})
-MESSAGE(STATUS "Lua include: " ${LUA_INCLUDE_DIR})
-MESSAGE(STATUS "Lua library: ${LUA_LIBRARIES}")
+message(STATUS "Lua: " ${LUA})
+message(STATUS "Lua include: " ${LUA_INCLUDE_DIR})
+message(STATUS "Lua library: ${LUA_LIBRARIES}")
 
 enable_language(CXX)
 include_directories(src src/3rdParty ${LUA_INCLUDE_DIR})
@@ -131,22 +131,25 @@ elseif (${CMAKE_BUILD_TYPE} MATCHES "Release")
 	target_compile_definitions(yue PRIVATE NDEBUG)
 endif()
 
+if(CMAKE_DL_LIBS)
+	SET(YUE_DEP_LIBS ${LUA_LIBRARIES} " " ${CMAKE_DL_LIBS})
+else ()
+	SET(YUE_DEP_LIBS ${LUA_LIBRARIES})
+endif()
+
 find_package(Threads REQUIRED)
 if (APPLE)
 	set(MAC_LIBS "-framework CoreFoundation" "-framework CoreServices")
-	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES} ${MAC_LIBS} Threads::Threads)
+	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS} ${MAC_LIBS} Threads::Threads)
 elseif (NOT (${CMAKE_SYSTEM_NAME} MATCHES "Haiku") AND NOT WIN32)
-	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES} Threads::Threads)
+	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS} Threads::Threads)
 else ()
-	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES})
+	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS})
 endif()
 	
-IF(CMAKE_DL_LIBS)
-	target_link_libraries(yue ${CMAKE_DL_LIBS})
-ENDIF(CMAKE_DL_LIBS)
-IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_link_options(yue PRIVATE -lstdc++fs)
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+endif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 install(CODE "")
 
