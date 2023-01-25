@@ -1,22 +1,22 @@
 project(yue CXX)
 cmake_minimum_required(VERSION 3.1)
 
-SET(LUA_LIBDIR ${LUA_INCDIR}/../lib " " ${LUA_INCDIR}/../../lib)
+set(LUA_LIBDIR ${LUA_INCDIR}/../lib " " ${LUA_INCDIR}/../../lib)
 
 find_package(Lua)
 if (LUA_FOUND)
-	SET(LUA_LIBRARIES "${LUA_LIBRARY}")
+	set(LUA_LIBRARIES "${LUA_LIBRARY}")
 else ()
-	MESSAGE(STATUS "Lua: using information from luarocks")
-	SET(LUA_INCLUDE_DIR "${LUA_INCDIR}")
-	GET_FILENAME_COMPONENT(LUA_EXEC_NAME ${LUA} NAME_WE)
+	message(STATUS "Lua: using information from luarocks")
+	set(LUA_INCLUDE_DIR "${LUA_INCDIR}")
+	get_filename_component(LUA_EXEC_NAME ${LUA} NAME_WE)
 	if (LUA_EXEC_NAME STREQUAL "luajit")
-		FIND_LIBRARY(LUA_LIBRARIES
+		find_library(LUA_LIBRARIES
 			NAMES luajit libluajit
 			PATHS ${LUA_LIBDIR}
 			NO_DEFAULT_PATH)
 	elseif ()
-		FIND_LIBRARY(LUA_LIBRARIES
+		find_library(LUA_LIBRARIES
 			NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51 liblua5.4 liblua5.3 liblua5.2 liblua5.1
 			PATHS ${LUA_LIBDIR}
 			NO_DEFAULT_PATH)
@@ -131,20 +131,18 @@ elseif (${CMAKE_BUILD_TYPE} MATCHES "Release")
 	target_compile_definitions(yue PRIVATE NDEBUG)
 endif()
 
-if(CMAKE_DL_LIBS)
-	SET(YUE_DEP_LIBS ${LUA_LIBRARIES} " " dl)
-else ()
-	SET(YUE_DEP_LIBS ${LUA_LIBRARIES})
+if (CMAKE_DL_LIBS)
+	target_link_options(yue PRIVATE -ldl)
 endif()
 
 find_package(Threads REQUIRED)
 if (APPLE)
 	set(MAC_LIBS "-framework CoreFoundation" "-framework CoreServices")
-	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS} ${MAC_LIBS} Threads::Threads)
+	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES} ${MAC_LIBS} Threads::Threads)
 elseif (NOT (${CMAKE_SYSTEM_NAME} MATCHES "Haiku") AND NOT WIN32)
-	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS} Threads::Threads)
+	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES} Threads::Threads)
 else ()
-	target_link_libraries(yue PRIVATE ${YUE_DEP_LIBS})
+	target_link_libraries(yue PRIVATE ${LUA_LIBRARIES})
 endif()
 	
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
