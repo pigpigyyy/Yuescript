@@ -132,7 +132,7 @@ elseif (${CMAKE_BUILD_TYPE} MATCHES "Release")
 endif()
 
 if(CMAKE_DL_LIBS)
-	SET(YUE_DEP_LIBS ${LUA_LIBRARIES} " dl")
+	SET(YUE_DEP_LIBS ${LUA_LIBRARIES} " " dl)
 else ()
 	SET(YUE_DEP_LIBS ${LUA_LIBRARIES})
 endif()
