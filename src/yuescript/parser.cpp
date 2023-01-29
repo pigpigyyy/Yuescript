@@ -1224,8 +1224,8 @@ rule::rule(const expr& e)
 */
 rule::rule(const char* name, rule::initTag)
 	: m_expr(nullptr)
-	, m_parse_proc(nullptr)
-	, m_name(name) { }
+	, m_name(name)
+	, m_parse_proc(nullptr) { }
 
 #endif // NDEBUG
 

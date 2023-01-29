@@ -21,6 +21,7 @@ build = {
 	variables = {
 		LUA_INCDIR = "$(LUA_INCDIR)",
 		LUA = "$(LUA)",
+		CMAKE_BUILD_TYPE="Release"
 	},
 	install = {
 		lib = {
