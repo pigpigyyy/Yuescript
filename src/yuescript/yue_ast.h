@@ -450,7 +450,7 @@ class Parens_t;
 class MacroName_t;
 
 AST_NODE(Callable)
-	ast_sel<true, Variable_t, SelfItem_t, VarArg_t, Parens_t, MacroName_t> item;
+	ast_sel<true, Variable_t, SelfItem_t, Parens_t, MacroName_t> item;
 	AST_MEMBER(Callable, &item)
 AST_END(Callable, "callable"sv)
 
@@ -527,7 +527,7 @@ AST_NODE(SimpleValue)
 	ForEach_t, For_t, While_t, Do_t, Try_t,
 	UnaryValue_t,
 	TblComprehension_t, Comprehension_t,
-	FunLit_t, Num_t> value;
+	FunLit_t, Num_t, VarArg_t> value;
 	AST_MEMBER(SimpleValue, &value)
 AST_END(SimpleValue, "simple_value"sv)
 

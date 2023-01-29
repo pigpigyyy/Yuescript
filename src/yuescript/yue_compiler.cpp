@@ -71,7 +71,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.23"sv;
+const std::string_view version = "0.15.24"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1224,6 +1224,8 @@ private:
 					}
 					default: YUEE("AST node mismatch", appendix->item.get()); break;
 				}
+			} else if (statement->content.is<Return_t>() && !statement->appendix->item.is<IfLine_t>()) {
+				throw std::logic_error(_info.errorMessage("loop line decorator can not be used in a return statement"sv, statement->appendix->item));
 			}
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
@@ -1357,7 +1359,7 @@ private:
 							break;
 						}
 					}
-					throw std::logic_error(_info.errorMessage("expression list is not supported here"sv, expList));
+					throw std::logic_error(_info.errorMessage("unexpected expression"sv, expList));
 				}
 				break;
 			}
@@ -3029,7 +3031,7 @@ private:
 				auto unary = static_cast<UnaryExp_t*>(*it);
 				auto value = static_cast<Value_t*>(singleUnaryExpFrom(unary) ? unary->expos.back() : nullptr);
 				if (values.back() == *it && !unary->ops.empty() && usage == ExpUsage::Common) {
-					throw std::logic_error(_info.errorMessage("expression list is not supported here"sv, x));
+					throw std::logic_error(_info.errorMessage("unexpected expression"sv, x));
 				}
 				if (!value) throw std::logic_error(_info.errorMessage("pipe operator must be followed by chain value"sv, *it));
 				if (auto chainValue = value->item.as<ChainValue_t>()) {
@@ -3275,13 +3277,6 @@ private:
 				globalVar("self"sv, item);
 				break;
 			}
-			case id<VarArg_t>():
-				if (_varArgs.empty() || !_varArgs.top().hasVar) {
-					throw std::logic_error(_info.errorMessage("cannot use '...' outside a vararg function near '...'"sv, item));
-				}
-				_varArgs.top().usedVar = true;
-				out.push_back("..."s);
-				break;
 			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
 			default: YUEE("AST node mismatch", item); break;
 		}
@@ -3312,6 +3307,7 @@ private:
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<FunLit_t>(): transformFunLit(static_cast<FunLit_t*>(value), out); break;
 			case id<Num_t>(): transformNum(static_cast<Num_t*>(value), out); break;
+			case id<VarArg_t>(): transformVarArg(static_cast<VarArg_t*>(value), out); break;
 			default: YUEE("AST node mismatch", value); break;
 		}
 	}
@@ -3638,8 +3634,19 @@ private:
 			}
 			case ExpUsage::Assignment: {
 				auto last = lastStatementFrom(block);
-				if (!last) return;
-				bool lastAssignable = expListFrom(last) || ast_is<For_t, ForEach_t, While_t>(last->content);
+				if (!last) throw std::logic_error(_info.errorMessage("block is not assignable"sv, block));
+				if (last->appendix) {
+					auto appendix = last->appendix->item.get();
+					switch (appendix->getId()) {
+						case id<WhileLine_t>():
+							throw std::logic_error(_info.errorMessage("while-loop line decorator is not supported here"sv, appendix));
+							break;
+						case id<CompFor_t>():
+							throw std::logic_error(_info.errorMessage("for-loop line decorator is not supported here"sv, appendix));
+							break;
+					}
+				}
+				bool lastAssignable = (expListFrom(last) || ast_is<For_t, ForEach_t, While_t>(last->content));
 				if (lastAssignable) {
 					auto x = last;
 					auto newAssignment = x->new_ptr<ExpListAssign_t>();
@@ -3660,6 +3667,8 @@ private:
 					if (bLast != nodes.rend()) {
 						static_cast<Statement_t*>(*bLast)->needSep.set(nullptr);
 					}
+				} else if (!last->content.is<BreakLoop_t>()) {
+					throw std::logic_error(_info.errorMessage("expecting assignable statement or break loop"sv, last));
 				}
 				break;
 			}
@@ -4627,12 +4636,6 @@ private:
 
 	void transformChainList(const node_container& chainList, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = chainList.front();
-		if (chainList.size() > 1) {
-			auto callable = ast_cast<Callable_t>(x);
-			if (callable && callable->item.is<VarArg_t>()) {
-				throw std::logic_error(_info.errorMessage("can not access variadic arguments directly"sv, x));
-			}
-		}
 		str_list temp;
 		switch (x->getId()) {
 			case id<DotChainItem_t>():
@@ -5277,6 +5280,14 @@ private:
 		out.push_back(numStr);
 	}
 
+	void transformVarArg(VarArg_t* varArg, str_list& out) {
+		if (_varArgs.empty() || !_varArgs.top().hasVar) {
+			throw std::logic_error(_info.errorMessage("cannot use '...' outside a vararg function near '...'"sv, varArg));
+		}
+		_varArgs.top().usedVar = true;
+		out.push_back("..."s);
+	}
+
 	bool hasSpreadExp(const node_container& items) {
 		for (auto item : items) {
 			if (ast_is<SpreadExp_t>(item)) return true;
@@ -5420,10 +5431,9 @@ private:
 					BREAK_IF(current != values.back());
 					auto value = singleValueFrom(item);
 					BREAK_IF(!value);
-					auto chainValue = value->item.as<ChainValue_t>();
-					BREAK_IF(!chainValue);
-					BREAK_IF(chainValue->items.size() != 1);
-					BREAK_IF((!chainValue->getByPath<Callable_t, VarArg_t>()));
+					auto simpleValue = value->item.as<SimpleValue_t>();
+					BREAK_IF(!simpleValue);
+					BREAK_IF(!simpleValue->value.is<VarArg_t>());
 					auto indexVar = getUnusedName("_index_");
 					_buf << "for "sv << indexVar << "=1,select '#',...\n\t"sv << tableVar << "[]= select "sv << indexVar << ",..."sv;
 					transformFor(toAst<For_t>(clearBuf(), item), temp);

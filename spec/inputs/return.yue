@@ -6,7 +6,7 @@ _ = -> [x for x in *things]
 
 -- doesn't make sense on purpose
 do
-	return x for x in *things
+	for x in *things do return x
 
 do
 	return [x for x in *things]

@@ -75,15 +75,17 @@ while also do
 i = 0
 x = while i < 10
 	i += 1
+	i
 
--- values that can'e be coerced
+-- values that can't be coerced
 
 x = for thing in *3
 	y = "hello"
+	break
 
 x = for x=1,2
 	y = "hello"
-
+	y
 
 -- continue
 

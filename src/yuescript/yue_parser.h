@@ -52,10 +52,23 @@ struct identity {
 	typedef T type;
 };
 
-#define AST_RULE(type) \
-	rule type; \
-	ast<type##_t> type##_impl = type; \
-	inline rule& getRule(identity<type##_t>) { return type; }
+#ifdef NDEBUG
+	#define NONE_AST_RULE(type) \
+		rule type;
+
+	#define AST_RULE(type) \
+		rule type; \
+		ast<type##_t> type##_impl = type; \
+		inline rule& getRule(identity<type##_t>) { return type; }
+#else // NDEBUG
+	#define NONE_AST_RULE(type) \
+		rule type{#type, rule::initTag{}};
+
+	#define AST_RULE(type) \
+		rule type{#type, rule::initTag{}}; \
+		ast<type##_t> type##_impl = type; \
+		inline rule& getRule(identity<type##_t>) { return type; }
+#endif // NDEBUG
 
 extern std::unordered_set<std::string> LuaKeywords;
 extern std::unordered_set<std::string> Keywords;
@@ -92,6 +105,7 @@ protected:
 		bool exportMacro = false;
 		int exportCount = 0;
 		int moduleFix = 0;
+		int expLevel = 0;
 		size_t stringOpen = 0;
 		std::string moduleName = "_module_0"s;
 		std::string buffer;
@@ -99,6 +113,7 @@ protected:
 		std::stack<bool> noDoStack;
 		std::stack<bool> noChainBlockStack;
 		std::stack<bool> noTableBlockStack;
+		std::stack<bool> noForStack;
 	};
 
 	template <class T>
@@ -115,117 +130,124 @@ private:
 		return cut;
 	}
 
-	rule empty_block_error;
-	rule leading_spaces_error;
-	rule indentation_error;
-	rule braces_expression_error;
+	NONE_AST_RULE(empty_block_error);
+	NONE_AST_RULE(leading_spaces_error);
+	NONE_AST_RULE(indentation_error);
+	NONE_AST_RULE(braces_expression_error);
+	NONE_AST_RULE(brackets_expression_error);
 
-	rule num_char;
-	rule num_char_hex;
-	rule num_lit;
-	rule num_expo;
-	rule num_expo_hex;
-	rule lj_num;
-	rule plain_space;
-	rule line_break;
-	rule any_char;
-	rule white;
-	rule stop;
-	rule comment;
-	rule multi_line_open;
-	rule multi_line_close;
-	rule multi_line_content;
-	rule multi_line_comment;
-	rule escape_new_line;
-	rule space_one;
-	rule space;
-	rule space_break;
-	rule alpha_num;
-	rule not_alpha_num;
-	rule cut;
-	rule check_indent_match;
-	rule check_indent;
-	rule advance_match;
-	rule advance;
-	rule push_indent_match;
-	rule push_indent;
-	rule prevent_indent;
-	rule pop_indent;
-	rule in_block;
-	rule import_name;
-	rule import_name_list;
-	rule import_literal_chain;
-	rule import_tab_item;
-	rule import_tab_list;
-	rule import_tab_line;
-	rule import_tab_lines;
-	rule with_exp;
-	rule disable_do;
-	rule enable_do;
-	rule disable_chain;
-	rule enable_chain;
-	rule disable_do_chain_arg_table_block;
-	rule enable_do_chain_arg_table_block;
-	rule disable_arg_table_block;
-	rule enable_arg_table_block;
-	rule switch_else;
-	rule switch_block;
-	rule if_else_if;
-	rule if_else;
-	rule for_args;
-	rule for_in;
-	rule comp_clause;
-	rule chain;
-	rule chain_list;
-	rule key_value;
-	rule single_string_inner;
-	rule interp;
-	rule double_string_plain;
-	rule lua_string_open;
-	rule lua_string_close;
-	rule fn_args_exp_list;
-	rule fn_args;
-	rule destruct_def;
-	rule macro_args_def;
-	rule chain_call;
-	rule chain_call_list;
-	rule chain_index_chain;
-	rule chain_items;
-	rule chain_dot_chain;
-	rule colon_chain;
-	rule chain_with_colon;
-	rule chain_item;
-	rule chain_line;
-	rule chain_block;
-	rule meta_index;
-	rule index;
-	rule invoke_chain;
-	rule table_value;
-	rule table_lit_lines;
-	rule table_lit_line;
-	rule table_value_list;
-	rule table_block_inner;
-	rule class_line;
-	rule key_value_line;
-	rule key_value_list;
-	rule arg_line;
-	rule arg_block;
-	rule invoke_args_with_table;
-	rule arg_table_block;
-	rule pipe_operator;
-	rule exponential_operator;
-	rule pipe_value;
-	rule pipe_exp;
-	rule expo_value;
-	rule expo_exp;
-	rule exp_not_tab;
-	rule local_const_item;
-	rule empty_line_break;
-	rule yue_comment;
-	rule yue_line_comment;
-	rule yue_multiline_comment;
-	rule line;
-	rule shebang;
+	NONE_AST_RULE(inc_exp_level);
+	NONE_AST_RULE(dec_exp_level);
+
+	NONE_AST_RULE(num_char);
+	NONE_AST_RULE(num_char_hex);
+	NONE_AST_RULE(num_lit);
+	NONE_AST_RULE(num_expo);
+	NONE_AST_RULE(num_expo_hex);
+	NONE_AST_RULE(lj_num);
+	NONE_AST_RULE(plain_space);
+	NONE_AST_RULE(line_break);
+	NONE_AST_RULE(any_char);
+	NONE_AST_RULE(white);
+	NONE_AST_RULE(stop);
+	NONE_AST_RULE(comment);
+	NONE_AST_RULE(multi_line_open);
+	NONE_AST_RULE(multi_line_close);
+	NONE_AST_RULE(multi_line_content);
+	NONE_AST_RULE(multi_line_comment);
+	NONE_AST_RULE(escape_new_line);
+	NONE_AST_RULE(space_one);
+	NONE_AST_RULE(space);
+	NONE_AST_RULE(space_break);
+	NONE_AST_RULE(alpha_num);
+	NONE_AST_RULE(not_alpha_num);
+	NONE_AST_RULE(cut);
+	NONE_AST_RULE(check_indent_match);
+	NONE_AST_RULE(check_indent);
+	NONE_AST_RULE(advance_match);
+	NONE_AST_RULE(advance);
+	NONE_AST_RULE(push_indent_match);
+	NONE_AST_RULE(push_indent);
+	NONE_AST_RULE(prevent_indent);
+	NONE_AST_RULE(pop_indent);
+	NONE_AST_RULE(in_block);
+	NONE_AST_RULE(import_name);
+	NONE_AST_RULE(import_name_list);
+	NONE_AST_RULE(import_literal_chain);
+	NONE_AST_RULE(import_tab_item);
+	NONE_AST_RULE(import_tab_list);
+	NONE_AST_RULE(import_tab_line);
+	NONE_AST_RULE(import_tab_lines);
+	NONE_AST_RULE(with_exp);
+	NONE_AST_RULE(disable_do);
+	NONE_AST_RULE(enable_do);
+	NONE_AST_RULE(disable_chain);
+	NONE_AST_RULE(enable_chain);
+	NONE_AST_RULE(disable_do_chain_arg_table_block);
+	NONE_AST_RULE(enable_do_chain_arg_table_block);
+	NONE_AST_RULE(disable_arg_table_block);
+	NONE_AST_RULE(enable_arg_table_block);
+	NONE_AST_RULE(disable_for);
+	NONE_AST_RULE(enable_for);
+	NONE_AST_RULE(switch_else);
+	NONE_AST_RULE(switch_block);
+	NONE_AST_RULE(if_else_if);
+	NONE_AST_RULE(if_else);
+	NONE_AST_RULE(for_key);
+	NONE_AST_RULE(for_args);
+	NONE_AST_RULE(for_in);
+	NONE_AST_RULE(comp_clause);
+	NONE_AST_RULE(chain);
+	NONE_AST_RULE(chain_list);
+	NONE_AST_RULE(key_value);
+	NONE_AST_RULE(single_string_inner);
+	NONE_AST_RULE(interp);
+	NONE_AST_RULE(double_string_plain);
+	NONE_AST_RULE(lua_string_open);
+	NONE_AST_RULE(lua_string_close);
+	NONE_AST_RULE(fn_args_exp_list);
+	NONE_AST_RULE(fn_args);
+	NONE_AST_RULE(destruct_def);
+	NONE_AST_RULE(macro_args_def);
+	NONE_AST_RULE(chain_call);
+	NONE_AST_RULE(chain_call_list);
+	NONE_AST_RULE(chain_index_chain);
+	NONE_AST_RULE(chain_items);
+	NONE_AST_RULE(chain_dot_chain);
+	NONE_AST_RULE(colon_chain);
+	NONE_AST_RULE(chain_with_colon);
+	NONE_AST_RULE(chain_item);
+	NONE_AST_RULE(chain_line);
+	NONE_AST_RULE(chain_block);
+	NONE_AST_RULE(meta_index);
+	NONE_AST_RULE(index);
+	NONE_AST_RULE(invoke_chain);
+	NONE_AST_RULE(table_value);
+	NONE_AST_RULE(table_lit_lines);
+	NONE_AST_RULE(table_lit_line);
+	NONE_AST_RULE(table_value_list);
+	NONE_AST_RULE(table_block_inner);
+	NONE_AST_RULE(class_line);
+	NONE_AST_RULE(key_value_line);
+	NONE_AST_RULE(key_value_list);
+	NONE_AST_RULE(arg_line);
+	NONE_AST_RULE(arg_block);
+	NONE_AST_RULE(invoke_args_with_table);
+	NONE_AST_RULE(arg_table_block);
+	NONE_AST_RULE(pipe_operator);
+	NONE_AST_RULE(exponential_operator);
+	NONE_AST_RULE(pipe_value);
+	NONE_AST_RULE(pipe_exp);
+	NONE_AST_RULE(expo_value);
+	NONE_AST_RULE(expo_exp);
+	NONE_AST_RULE(exp_not_tab);
+	NONE_AST_RULE(local_const_item);
+	NONE_AST_RULE(empty_line_break);
+	NONE_AST_RULE(yue_comment);
+	NONE_AST_RULE(yue_line_comment);
+	NONE_AST_RULE(yue_multiline_comment);
+	NONE_AST_RULE(line);
+	NONE_AST_RULE(shebang);
 
 	AST_RULE(Num)
 	AST_RULE(Name)

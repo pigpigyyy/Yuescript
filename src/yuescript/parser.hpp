@@ -207,6 +207,16 @@ public:
 	*/
 	rule(const expr& e);
 
+#ifndef NDEBUG
+
+	/** constructor from a expression name.
+		@param name name of expression.
+	*/
+	struct initTag { };
+	rule(const char* name, initTag);
+
+#endif // NDEBUG
+
 	/** constructor from rule.
 		@param r rule.
 	*/
@@ -285,6 +295,10 @@ private:
 
 	// internal expression
 	_expr* m_expr;
+
+#ifndef NDEBUG
+	const char* m_name = nullptr;
+#endif
 
 	// associated parse procedure.
 	parse_proc m_parse_proc;

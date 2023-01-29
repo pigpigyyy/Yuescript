@@ -125,6 +125,7 @@ do
 	local _len_0 = 1
 	while i < 10 do
 		i = i + 1
+		_accum_0[_len_0] = i
 		_len_0 = _len_0 + 1
 	end
 	x = _accum_0
@@ -136,6 +137,7 @@ do
 	for _index_0 = 1, #_list_2 do
 		local thing = _list_2[_index_0]
 		y = "hello"
+		break
 		_len_0 = _len_0 + 1
 	end
 	x = _accum_0
@@ -145,6 +147,7 @@ do
 	local _len_0 = 1
 	for x = 1, 2 do
 		y = "hello"
+		_accum_0[_len_0] = y
 		_len_0 = _len_0 + 1
 	end
 	x = _accum_0

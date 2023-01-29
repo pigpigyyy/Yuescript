@@ -114,6 +114,13 @@ YueParser::YueParser() {
 		) \
 	)
 
+	#define disable_for_rule(patt) ( \
+		disable_for >> ( \
+			(patt) >> enable_for | \
+			enable_for >> cut \
+		) \
+	)
+
 	#define body_with(str) ( \
 		key(str) >> space >> (in_block | Statement) | \
 		in_block | \
@@ -327,14 +334,18 @@ YueParser::YueParser() {
 	While = WhileType >> space >> disable_do_chain_arg_table_block_rule(Exp) >> space >> opt_body_with("do");
 	Repeat = key("repeat") >> space >> Body >> line_break >> *space_break >> check_indent_match >> space >> key("until") >> space >> Exp;
 
+	for_key = pl::user(key("for"), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->noForStack.empty() || !st->noForStack.top();
+	});
 	ForStepValue = ',' >> space >> Exp;
 	for_args = Variable >> space >> '=' >> space >> Exp >> space >> ',' >> space >> Exp >> space >> -ForStepValue;
 
-	For = key("for") >> space >> disable_do_chain_arg_table_block_rule(for_args) >> space >> opt_body_with("do");
+	For = for_key >> space >> disable_do_chain_arg_table_block_rule(for_args) >> space >> opt_body_with("do");
 
 	for_in = StarExp | ExpList;
 
-	ForEach = key("for") >> space >> AssignableNameList >> space >> key("in") >> space >>
+	ForEach = for_key >> space >> AssignableNameList >> space >> key("in") >> space >>
 		disable_do_chain_arg_table_block_rule(for_in) >> space >> opt_body_with("do");
 
 	Do = pl::user(key("do"), [](const item_t& item) {
@@ -382,12 +393,24 @@ YueParser::YueParser() {
 		return true;
 	});
 
+	disable_for = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->noForStack.push(true);
+		return true;
+	});
+
+	enable_for = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->noForStack.pop();
+		return true;
+	});
+
 	CatchBlock = line_break >> *space_break >> check_indent_match >> space >> key("catch") >> space >> Variable >> space >> in_block;
 	Try = key("try") >> space >> (in_block | Exp) >> -CatchBlock;
 
-	Comprehension = '[' >> not_('[') >> space >> Exp >> space >> CompInner >> space >> ']';
+	Comprehension = '[' >> not_('[') >> space >> disable_for_rule(Exp) >> space >> CompInner >> space >> ']';
 	CompValue = ',' >> space >> Exp;
-	TblComprehension = '{' >> (space >> Exp >> space >> -(CompValue >> space) >> CompInner >> space >> '}' | braces_expression_error);
+	TblComprehension = and_('{') >> ('{' >> space >> disable_for_rule(Exp >> space >> -(CompValue >> space)) >> CompInner >> space >> '}' | braces_expression_error);
 
 	CompInner = Seperator >> (CompForEach | CompFor) >> *(space >> comp_clause);
 	StarExp = '*' >> space >> Exp;
@@ -461,8 +484,24 @@ YueParser::YueParser() {
 		-(InvokeArgs | chain_block) >>
 		-TableAppendingOp;
 
+	inc_exp_level = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->expLevel++;
+		const int max_exp_level = 100;
+		if (st->expLevel > max_exp_level) {
+			throw ParserError("nesting expressions exceeds 100 levels", *item.begin, *item.end);
+		}
+		return true;
+	});
+
+	dec_exp_level = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->expLevel--;
+		return true;
+	});
+
 	SimpleTable = Seperator >> key_value >> *(space >> ',' >> space >> key_value);
-	Value = SimpleValue | SimpleTable | ChainValue | String;
+	Value = inc_exp_level >> ensure(SimpleValue | SimpleTable | ChainValue | String, dec_exp_level);
 
 	single_string_inner = '\\' >> set("'\\") | not_('\'') >> any_char;
 	SingleString = '\'' >> *single_string_inner >> '\'';
@@ -495,7 +534,7 @@ YueParser::YueParser() {
 	LuaString = LuaStringOpen >> -line_break >> LuaStringContent >> LuaStringClose;
 
 	Parens = '(' >> *space_break >> space >> Exp >> *space_break >> space >> ')';
-	Callable = Variable | SelfItem | MacroName | VarArg | Parens;
+	Callable = Variable | SelfItem | MacroName | Parens;
 	fn_args_exp_list = space >> Exp >> space >> *((line_break | ',') >> white >> Exp);
 
 	fn_args =
@@ -507,7 +546,7 @@ YueParser::YueParser() {
 	Metamethod = '<' >> space >> meta_index >> space >> '>';
 
 	ExistentialOp = '?' >> not_('?');
-	TableAppendingOp = "[]";
+	TableAppendingOp = and_('[') >> ("[]" | brackets_expression_error);
 	chain_call = (
 		Callable >> -ExistentialOp >> -chain_items
 	) | (
@@ -736,8 +775,13 @@ YueParser::YueParser() {
 
 	ConstValue = (expr("nil") | "true" | "false") >> not_alpha_num;
 
-	braces_expression_error = pl::user("{", [](const item_t& item) {
-		throw ParserError("invalid brace expression", *item.begin, *item.end);
+	braces_expression_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("syntax error in brace expression", *item.begin, *item.end);
+		return false;
+	});
+
+	brackets_expression_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("syntax error in bracket expression", *item.begin, *item.end);
 		return false;
 	});
 
@@ -745,7 +789,7 @@ YueParser::YueParser() {
 		TableLit | ConstValue | If | Switch | Try | With |
 		ClassDecl | ForEach | For | While | Do |
 		UnaryValue | TblComprehension | Comprehension |
-		FunLit | Num;
+		FunLit | Num | VarArg;
 
 	ExpListAssign = ExpList >> -(space >> (Update | Assign)) >> not_(space >> '=');
 

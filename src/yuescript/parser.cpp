@@ -1217,6 +1217,18 @@ rule::rule(const expr& e)
 	: m_expr(_private::get_expr(e))
 	, m_parse_proc(nullptr) { }
 
+#ifndef NDEBUG
+
+/** constructor from a expression name.
+	@param name name of expression.
+*/
+rule::rule(const char* name, rule::initTag)
+	: m_expr(nullptr)
+	, m_parse_proc(nullptr)
+	, m_name(name) { }
+
+#endif // NDEBUG
+
 /** constructor from rule.
 	@param r rule.
 */
