@@ -173,4 +173,26 @@ do
 	for thing in *xxx
 		print thing
 
-
+do
+	for i = 1, 10
+		repeat
+			with? tb
+				.a = 1
+				continue if .b
+				do
+					if .c
+						break
+		until true
+		switch x
+			when 123
+				break
+			else
+				continue
+		if y
+			continue
+		else
+			break
+		do do do
+			print i
+			continue
+		print "abc"

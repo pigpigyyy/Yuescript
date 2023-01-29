@@ -294,3 +294,44 @@ do
 		print(thing)
 	end
 end
+do
+	for i = 1, 10 do
+		repeat
+			do
+				local _with_0 = tb
+				if _with_0 ~= nil then
+					_with_0.a = 1
+					if _with_0.b then
+						goto _continue_12
+					end
+					do
+						if _with_0.c then
+							break
+						end
+					end
+				end
+			end
+			::_continue_12::
+		until true
+		if 123 == x then
+			break
+		else
+			goto _continue_11
+		end
+		if y then
+			goto _continue_11
+		else
+			break
+		end
+		do
+			do
+				do
+					print(i)
+					goto _continue_11
+				end
+			end
+		end
+		print("abc")
+		::_continue_11::
+	end
+end

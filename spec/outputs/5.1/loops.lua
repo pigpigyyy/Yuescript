@@ -382,3 +382,63 @@ do
 		print(thing)
 	end
 end
+do
+	for i = 1, 10 do
+		local _continue_0 = false
+		repeat
+			repeat
+				local _cond_0 = false
+				local _continue_1 = false
+				repeat
+					do
+						local _with_0 = tb
+						if _with_0 ~= nil then
+							_with_0.a = 1
+							if _with_0.b then
+								_cond_0 = true
+								_continue_1 = true
+								break
+							end
+							do
+								if _with_0.c then
+									break
+								end
+							end
+						end
+					end
+					_cond_0 = true
+					_continue_1 = true
+				until true
+				if not _continue_1 then
+					break
+				end
+			until _cond_0
+			if 123 == x then
+				break
+			else
+				_continue_0 = true
+				break
+			end
+			if y then
+				_continue_0 = true
+				break
+			else
+				break
+			end
+			do
+				do
+					do
+						print(i)
+						_continue_0 = true
+						break
+					end
+				end
+			end
+			print("abc")
+			_continue_0 = true
+		until true
+		if not _continue_0 then
+			break
+		end
+	end
+end

@@ -71,7 +71,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.24"sv;
+const std::string_view version = "0.15.25"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -296,6 +296,7 @@ private:
 	};
 	std::stack<VarArgState> _varArgs;
 	std::stack<bool> _enableReturn;
+	std::stack<bool> _enableBreakLoop;
 	std::stack<std::string> _withVars;
 	struct ContinueVar {
 		std::string var;
@@ -1072,12 +1073,14 @@ private:
 
 	void pushFunctionScope() {
 		_enableReturn.push(true);
+		_enableBreakLoop.push(false);
 		_gotoScopes.push(_gotoScope);
 		_gotoScope++;
 	}
 
 	void popFunctionScope() {
 		_enableReturn.pop();
+		_enableBreakLoop.pop();
 		_gotoScopes.pop();
 	}
 
@@ -1224,8 +1227,16 @@ private:
 					}
 					default: YUEE("AST node mismatch", appendix->item.get()); break;
 				}
-			} else if (statement->content.is<Return_t>() && !statement->appendix->item.is<IfLine_t>()) {
-				throw std::logic_error(_info.errorMessage("loop line decorator can not be used in a return statement"sv, statement->appendix->item));
+			} else if (!statement->appendix->item.is<IfLine_t>()) {
+				auto appendix = statement->appendix->item.get();
+				switch (statement->content->getId()) {
+					case id<Return_t>():
+						throw std::logic_error(_info.errorMessage("loop line decorator can not be used in a return statement"sv, appendix));
+						break;
+					case id<BreakLoop_t>():
+						throw std::logic_error(_info.errorMessage("loop line decorator can not be used in a break-loop statement"sv, appendix));
+						break;
+				}
 			}
 			auto appendix = statement->appendix.get();
 			switch (appendix->item->getId()) {
@@ -6099,18 +6110,62 @@ private:
 			if (auto stmt = ast_cast<Statement_t>(node)) {
 				if (stmt->content.is<BreakLoop_t>()) {
 					return _parser.toString(stmt->content) == "continue"sv ? traversal::Stop : traversal::Return;
-				} else if (expListFrom(stmt)) {
-					return traversal::Continue;
+				} else if (auto expList = expListFrom(stmt)) {
+					BLOCK_START
+					auto value = singleValueFrom(expList);
+					BREAK_IF(!value);
+					auto simpleValue = value->item.as<SimpleValue_t>();
+					BREAK_IF(!simpleValue);
+					auto sVal = simpleValue->value.get();
+					switch (sVal->getId()) {
+						case id<With_t>(): {
+							auto withNode = static_cast<With_t*>(sVal);
+							if (hasContinueStatement(withNode->body)) {
+								return traversal::Stop;
+							}
+							break;
+						}
+						case id<Do_t>(): {
+							auto doNode = static_cast<Do_t*>(sVal);
+							if (hasContinueStatement(doNode->body)) {
+								return traversal::Stop;
+							}
+							break;
+						}
+						case id<If_t>(): {
+							auto ifNode = static_cast<If_t*>(sVal);
+							for (auto n : ifNode->nodes.objects()) {
+								if (hasContinueStatement(n)) {
+									return traversal::Stop;
+								}
+							}
+							break;
+						}
+						case id<Switch_t>(): {
+							auto switchNode = static_cast<Switch_t*>(sVal);
+							for (auto branch : switchNode->branches.objects()) {
+								if (hasContinueStatement(static_cast<SwitchCase_t*>(branch)->body)) {
+									return traversal::Stop;
+								}
+							}
+							if (switchNode->lastBranch) {
+								if (hasContinueStatement(switchNode->lastBranch)) {
+									return traversal::Stop;
+								}
+							}
+							break;
+						}
+					}
+					BLOCK_END
 				}
-				return traversal::Return;
-			} else
+			} else {
 				switch (node->getId()) {
-					case id<FunLit_t>():
-					case id<Invoke_t>():
-					case id<InvokeArgs_t>():
-						return traversal::Return;
+					case id<Body_t>():
+					case id<Block_t>():
+						return traversal::Continue;
 				}
-			return traversal::Continue;
+			}
+			return traversal::Return;
 		});
 	}
 
@@ -6171,7 +6226,9 @@ private:
 			}
 			addDoToLastLineReturn(body);
 		}
+		_enableBreakLoop.push(true);
 		transform_plain_body(body, temp, usage, assignList);
+		_enableBreakLoop.pop();
 		if (withContinue) {
 			if (target < 502) {
 				if (extraDo) {
@@ -6250,7 +6307,9 @@ private:
 			}
 			addDoToLastLineReturn(body);
 		}
+		_enableBreakLoop.push(true);
 		transform_plain_body(body, temp, ExpUsage::Common);
+		_enableBreakLoop.pop();
 		if (withContinue) {
 			if (target < 502) {
 				transformAssignment(_continueVars.top().condAssign, temp);
@@ -8203,6 +8262,9 @@ private:
 
 	void transformBreakLoop(BreakLoop_t* breakLoop, str_list& out) {
 		auto keyword = _parser.toString(breakLoop);
+		if (_enableBreakLoop.empty() || !_enableBreakLoop.top()) {
+			throw std::logic_error(_info.errorMessage(keyword + " is not inside a loop"s, breakLoop));
+		}
 		if (keyword == "break"sv) {
 			out.push_back(indent() + keyword + nll(breakLoop));
 			return;
