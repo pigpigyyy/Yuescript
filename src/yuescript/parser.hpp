@@ -207,16 +207,6 @@ public:
 	*/
 	rule(const expr& e);
 
-#ifndef NDEBUG
-
-	/** constructor from a expression name.
-		@param name name of expression.
-	*/
-	struct initTag { };
-	rule(const char* name, initTag);
-
-#endif // NDEBUG
-
 	/** constructor from rule.
 		@param r rule.
 	*/
@@ -270,6 +260,17 @@ public:
 	rule& operator=(rule&);
 
 	rule& operator=(const expr&);
+
+#ifndef NDEBUG
+
+	/** constructor from a expression name.
+		@param name name of expression.
+	*/
+	struct initTag { };
+	rule(const char* name, initTag);
+	const char* get_name() const { return m_name; }
+
+#endif // NDEBUG
 
 private:
 	// mode
