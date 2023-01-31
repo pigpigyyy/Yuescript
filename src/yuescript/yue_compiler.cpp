@@ -32,7 +32,9 @@ extern "C" {
 
 #if LUA_VERSION_NUM > 501
 #ifndef LUA_COMPAT_5_1
+#ifndef lua_objlen
 #define lua_objlen lua_rawlen
+#endif // lua_objlen
 #endif // LUA_COMPAT_5_1
 #endif // LUA_VERSION_NUM
 
@@ -71,7 +73,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.25"sv;
+const std::string_view version = "0.15.26"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {

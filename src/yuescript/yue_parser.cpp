@@ -869,9 +869,10 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 		codes = codes.substr(3);
 	}
 	try {
-		res.codes = std::make_unique<input>();
 		if (!codes.empty()) {
-			*(res.codes) = _converter.from_bytes(&codes.front(), &codes.back() + 1);
+			res.codes = std::make_unique<input>(_converter.from_bytes(&codes.front(), &codes.back() + 1));
+		} else {
+			res.codes = std::make_unique<input>();
 		}
 	} catch (const std::range_error&) {
 		res.error = "invalid text encoding"sv;

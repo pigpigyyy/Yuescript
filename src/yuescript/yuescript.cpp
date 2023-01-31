@@ -22,6 +22,14 @@ extern "C" {
 #include "lauxlib.h"
 #include "lua.h"
 
+#if LUA_VERSION_NUM > 501
+#ifndef LUA_COMPAT_5_1
+#ifndef lua_objlen
+#define lua_objlen lua_rawlen
+#endif // lua_objlen
+#endif // LUA_COMPAT_5_1
+#endif // LUA_VERSION_NUM
+
 static const char yuescriptCodes[] =
 #include "yuescript/yuescript.h"
 	;
@@ -142,6 +150,14 @@ static int yuetolua(lua_State* L) {
 	return 3;
 }
 
+struct yue_stack {
+	int continuation;
+	yue::ast_node* node;
+	int i;
+	std::unique_ptr<std::vector<yue::ast_node*>> children;
+	bool hasSep;
+};
+
 static int yuetoast(lua_State* L) {
 	size_t size = 0;
 	const char* input = luaL_checklstring(L, 1, &size);
@@ -153,6 +169,8 @@ static int yuetoast(lua_State* L) {
 	yue::YueParser parser;
 	auto info = parser.parse<yue::File_t>({input, size});
 	if (info.node) {
+		lua_createtable(L, 0, 0);
+		int tableIndex = lua_gettop(L);
 		lua_createtable(L, 0, 0);
 		int cacheIndex = lua_gettop(L);
 		auto getName = [&](yue::ast_node* node) {
@@ -166,64 +184,108 @@ static int yuetoast(lua_State* L) {
 				lua_rawseti(L, cacheIndex, id);
 			}
 		};
-		std::function<void(yue::ast_node*)> visit;
-		visit = [&](yue::ast_node* node) {
-			int count = 0;
-			bool hasSep = false;
-			node->visitChild([&](yue::ast_node* child) {
-				if (yue::ast_is<yue::Seperator_t>(child)) {
-					hasSep = true;
-					return false;
-				}
-				count++;
-				visit(child);
-				return false;
-			});
-			switch (count) {
+		std::stack<yue_stack> stack;
+		auto do_call = [&](yue::ast_node* node) {
+			stack.push({0, node, 0, nullptr, false});
+		};
+		auto do_return = [&]() {
+			stack.pop();
+		};
+		do_call(info.node);
+		while (!stack.empty()) {
+			auto& current = stack.top();
+			int continuation = current.continuation;
+			auto node = current.node;
+			switch (continuation) {
 				case 0: {
-					lua_createtable(L, 4, 0);
-					getName(node);
-					lua_rawseti(L, -2, 1);
-					lua_pushinteger(L, node->m_begin.m_line);
-					lua_rawseti(L, -2, 2);
-					lua_pushinteger(L, node->m_begin.m_col);
-					lua_rawseti(L, -2, 3);
-					auto str = parser.toString(node);
-					yue::Utils::trim(str);
-					lua_pushlstring(L, str.c_str(), str.length());
-					lua_rawseti(L, -2, 4);
+					if (!current.children) {
+						node->visitChild([&](yue::ast_node* child) {
+							if (yue::ast_is<yue::Seperator_t>(child)) {
+								current.hasSep = true;
+								return false;
+							}
+							if (!current.children) {
+								current.children = std::make_unique<std::vector<yue::ast_node*>>();
+							}
+							current.children->push_back(child);
+							return false;
+						});
+					}
+					current.i = 0;
+					current.continuation = 1;
 					break;
 				}
 				case 1: {
-					if (flattenLevel > 1 || (flattenLevel == 1 && !hasSep)) {
-						getName(node);
-						lua_rawseti(L, -2, 1);
-						lua_pushinteger(L, node->m_begin.m_line);
-						lua_rawseti(L, -2, 2);
-						lua_pushinteger(L, node->m_begin.m_col);
-						lua_rawseti(L, -2, 3);
+					if (current.children && current.i < static_cast<int>(current.children->size())) {
+						do_call(current.children->at(current.i));
+						current.continuation = 2;
 						break;
 					}
+					current.continuation = 3;
+					break;
 				}
-				default: {
-					lua_createtable(L, count + 3, 0);
-					getName(node);
-					lua_rawseti(L, -2, 1);
-					lua_pushinteger(L, node->m_begin.m_line);
-					lua_rawseti(L, -2, 2);
-					lua_pushinteger(L, node->m_begin.m_col);
-					lua_rawseti(L, -2, 3);
-					for (int i = count, j = 4; i >= 1; i--, j++) {
-						lua_pushvalue(L, -1 - i);
-						lua_rawseti(L, -2, j);
+				case 2: {
+					current.i++;
+					current.continuation = 1;
+					break;
+				}
+				case 3: {
+					int count = current.children ? static_cast<int>(current.children->size()) : 0;
+					switch (count) {
+						case 0: {
+							lua_createtable(L, 4, 0);
+							getName(node);
+							lua_rawseti(L, -2, 1);
+							lua_pushinteger(L, node->m_begin.m_line);
+							lua_rawseti(L, -2, 2);
+							lua_pushinteger(L, node->m_begin.m_col);
+							lua_rawseti(L, -2, 3);
+							auto str = parser.toString(node);
+							yue::Utils::trim(str);
+							lua_pushlstring(L, str.c_str(), str.length());
+							lua_rawseti(L, -2, 4);
+							lua_rawseti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
+							break;
+						}
+						case 1: {
+							if (flattenLevel > 1 || (flattenLevel == 1 && !current.hasSep)) {
+								lua_rawgeti(L, tableIndex, 1);
+								getName(node);
+								lua_rawseti(L, -2, 1);
+								lua_pushinteger(L, node->m_begin.m_line);
+								lua_rawseti(L, -2, 2);
+								lua_pushinteger(L, node->m_begin.m_col);
+								lua_rawseti(L, -2, 3);
+								lua_pop(L, 1);
+								break;
+							}
+						}
+						default: {
+							auto len = lua_objlen(L, tableIndex);
+							lua_createtable(L, count + 3, 0);
+							getName(node);
+							lua_rawseti(L, -2, 1);
+							lua_pushinteger(L, node->m_begin.m_line);
+							lua_rawseti(L, -2, 2);
+							lua_pushinteger(L, node->m_begin.m_col);
+							lua_rawseti(L, -2, 3);
+							for (int i = count, j = 4; i >= 1; i--, j++) {
+								lua_rawgeti(L, tableIndex, len);
+								lua_rawseti(L, -2, j);
+								lua_pushnil(L);
+								lua_rawseti(L, tableIndex, len);
+								len--;
+							}
+							lua_rawseti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
+							break;
+						}
 					}
-					lua_insert(L, -1 - count);
-					lua_pop(L, count);
+					do_return();
 					break;
 				}
 			}
-		};
-		visit(info.node);
+		}
+		lua_rawgeti(L, tableIndex, 1);
 		return 1;
 	} else {
 		lua_pushnil(L);

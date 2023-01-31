@@ -270,15 +270,6 @@ int main(int narg, const char** args) {
 		;
 #ifndef YUE_COMPILER_ONLY
 	if (narg == 1) {
-		lua_State* L = luaL_newstate();
-		openlibs(L);
-		DEFER(lua_close(L));
-		pushYue(L, "insert_loader"sv);
-		if (lua_pcall(L, 0, 0, 0) != 0) {
-			std::cout << lua_tostring(L, -1) << '\n';
-			return 1;
-		}
-		int count = 0;
 		linenoise::SetMultiLine(false);
 		linenoise::SetCompletionCallback([](const char* editBuffer, std::vector<std::string>& completions) {
 			std::string buf = editBuffer;
@@ -326,6 +317,15 @@ int main(int narg, const char** args) {
 					break;
 			}
 		});
+		lua_State* L = luaL_newstate();
+		openlibs(L);
+		DEFER(lua_close(L));
+		pushYue(L, "insert_loader"sv);
+		if (lua_pcall(L, 0, 0, 0) != 0) {
+			std::cout << lua_tostring(L, -1) << '\n';
+			return 1;
+		}
+		int count = 0;
 		std::cout << "Yuescript "sv << yue::version << '\n';
 		while (true) {
 			count++;
