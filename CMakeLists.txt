@@ -1,27 +1,50 @@
 project(yue CXX)
 cmake_minimum_required(VERSION 3.1)
 
-set(LUA_LIBDIR ${LUA_INCDIR}/../lib " " ${LUA_INCDIR}/../../lib)
+set(LUA_LIBDIR ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib)
+set(LUA_INCLUDE_DIR "${LUA_INCDIR}")
 
-find_package(Lua)
-if (LUA_FOUND)
-	set(LUA_LIBRARIES "${LUA_LIBRARY}")
+get_filename_component(LUA_EXEC_NAME ${LUA} NAME)
+if (LUA_EXEC_NAME STREQUAL "luajit")
+	find_library(LUA_LIBRARIES
+		NAMES luajit libluajit
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+elseif (LUA_EXEC_NAME MATCHES "lua5\.4" OR LUA_EXEC_NAME MATCHES "lua54")
+	find_library(LUA_LIBRARIES
+		NAMES lua54 lua5.4 liblua54 liblua5.4 lua liblua
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+elseif (LUA_EXEC_NAME MATCHES "lua5\.3" OR LUA_EXEC_NAME MATCHES "lua53")
+	find_library(LUA_LIBRARIES
+		NAMES lua53 lua5.3 liblua53 liblua5.3 lua liblua
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+elseif (LUA_EXEC_NAME MATCHES "lua5\.2" OR LUA_EXEC_NAME MATCHES "lua52")
+	find_library(LUA_LIBRARIES
+		NAMES lua52 lua5.2 liblua52 liblua5.2 lua liblua
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+elseif (LUA_EXEC_NAME MATCHES "lua5\.1" OR LUA_EXEC_NAME MATCHES "lua51")
+	find_library(LUA_LIBRARIES
+		NAMES lua51 lua5.1 liblua51 liblua5.1 lua liblua
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+else ()
+	find_library(LUA_LIBRARIES
+		NAMES lua liblua
+		PATHS ${LUA_LIBDIR}
+		NO_DEFAULT_PATH)
+endif()
+
+if (LUA_LIBRARIES MATCHES "LUA_LIBRARIES-NOTFOUND")
+	find_package(Lua)
+	if (LUA_FOUND)
+		set(LUA_LIBRARIES "${LUA_LIBRARY}")
+	endif()
 else ()
 	message(STATUS "Lua: using information from luarocks")
-	set(LUA_INCLUDE_DIR "${LUA_INCDIR}")
-	get_filename_component(LUA_EXEC_NAME ${LUA} NAME_WE)
-	if (LUA_EXEC_NAME STREQUAL "luajit")
-		find_library(LUA_LIBRARIES
-			NAMES luajit libluajit
-			PATHS ${LUA_LIBDIR}
-			NO_DEFAULT_PATH)
-	elseif ()
-		find_library(LUA_LIBRARIES
-			NAMES lua lua54 lua53 lua52 lua51 liblua liblua54 liblua53 liblua52 liblua51 liblua5.4 liblua5.3 liblua5.2 liblua5.1
-			PATHS ${LUA_LIBDIR}
-			NO_DEFAULT_PATH)
-	endif()
-endif()
+endif()	
 
 message(STATUS "Lua: " ${LUA})
 message(STATUS "Lua include: " ${LUA_INCLUDE_DIR})

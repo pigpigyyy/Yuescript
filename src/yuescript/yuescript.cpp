@@ -161,7 +161,7 @@ struct yue_stack {
 static int yuetoast(lua_State* L) {
 	size_t size = 0;
 	const char* input = luaL_checklstring(L, 1, &size);
-	int flattenLevel = 2;
+	int flattenLevel = 0;
 	if (lua_isnoneornil(L, 2) == 0) {
 		flattenLevel = static_cast<int>(luaL_checkinteger(L, 2));
 		flattenLevel = std::max(std::min(2, flattenLevel), 0);
@@ -270,8 +270,10 @@ static int yuetoast(lua_State* L) {
 							lua_pushinteger(L, node->m_begin.m_col);
 							lua_rawseti(L, -2, 3);
 							for (int i = count, j = 4; i >= 1; i--, j++) {
-								lua_rawgeti(L, tableIndex, len);
+								lua_rawgeti(L, tableIndex, len - i + 1);
 								lua_rawseti(L, -2, j);
+							}
+							for (int i = 1; i <= count; i++) {
 								lua_pushnil(L);
 								lua_rawseti(L, tableIndex, len);
 								len--;
