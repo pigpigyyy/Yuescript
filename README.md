@@ -12,11 +12,11 @@ So Yuescript is a new code base for pushing the language to go forward and being
 
 Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
-## 
+
 
 ## Features
 
-* No other dependencies needed except modified **parserlib** library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
+* No other dependencies needed except modified [parserlib](https://github.com/axilmar/parserlib) library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
 * Written in C++17.
 * Support most of the features from Moonscript language. Generate Lua codes in the same way like the original compiler.
 * Reserve line numbers from source file in the compiled Lua codes to help debugging.
@@ -122,6 +122,8 @@ Usage: yue [options|files|directories] ...
 * [Vim](https://github.com/pigpigyyy/Yuescript-vim)
 * [ZeroBraneStudio](https://github.com/pkulchenko/ZeroBraneStudio/issues/1134) (Syntax highlighting)
 * [Visual Studio Code](https://github.com/pigpigyyy/yuescript-vscode)
+
+
 
 ## License
 
