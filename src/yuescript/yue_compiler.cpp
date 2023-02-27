@@ -73,7 +73,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.15.26"sv;
+const std::string_view version = "0.15.27"sv;
 const std::string_view extension = "yue"sv;
 
 class YueCompilerImpl {
@@ -1160,6 +1160,22 @@ private:
 
 	void transformStatement(Statement_t* statement, str_list& out) {
 		auto x = statement;
+		if (_config.reserveComment && !x->comments.empty()) {
+			for (ast_node* node : x->comments.objects()) {
+				switch (node->getId()) {
+					case id<YueLineComment_t>(): {
+						auto comment = ast_cast<YueLineComment_t>(node);
+						out.push_back(indent() + "--"s + _parser.toString(comment) + '\n');
+						break;
+					}
+					case id<YueMultilineComment_t>(): {
+						auto comment = ast_cast<YueMultilineComment_t>(node);
+						out.push_back(indent() + _parser.toString(comment) + '\n');
+						break;
+					}
+				}
+			}
+		}
 		if (statement->appendix) {
 			if (auto assignment = assignmentFrom(statement)) {
 				auto preDefine = getPreDefineLine(assignment);

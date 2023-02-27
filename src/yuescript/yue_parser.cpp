@@ -798,12 +798,12 @@ YueParser::YueParser() {
 
 	YueLineComment = *(not_(set("\r\n")) >> any_char);
 	yue_line_comment = "--" >> YueLineComment >> and_(stop);
-	YueMultilineComment = multi_line_content;
-	yue_multiline_comment = multi_line_open >> YueMultilineComment >> multi_line_close;
+	MultilineCommentInner = multi_line_content;
+	YueMultilineComment = multi_line_open >> MultilineCommentInner >> multi_line_close;
 	yue_comment = check_indent >> (
 		(
-			yue_multiline_comment >>
-			*(set(" \t") | yue_multiline_comment) >>
+			YueMultilineComment >>
+			*(set(" \t") | YueMultilineComment) >>
 			-yue_line_comment
 		) | yue_line_comment
 	) >> and_(line_break);

@@ -29,6 +29,8 @@ struct YueConfig {
 	bool implicitReturnRoot = true;
 	bool reserveLineNumber = true;
 	bool useSpaceOverTab = false;
+	bool reserveComment = false;
+
 	bool exporting = false;
 	bool profiling = false;
 	int lineOffset = 0;

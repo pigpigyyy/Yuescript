@@ -840,7 +840,12 @@ AST_END(StatementSep, "statement_sep"sv)
 AST_LEAF(YueLineComment)
 AST_END(YueLineComment, "comment"sv)
 
-AST_LEAF(YueMultilineComment)
+AST_LEAF(MultilineCommentInner)
+AST_END(MultilineCommentInner, "comment"sv)
+
+AST_NODE(YueMultilineComment)
+	ast_ptr<true, MultilineCommentInner_t> inner;
+	AST_MEMBER(YueMultilineComment, &inner)
 AST_END(YueMultilineComment, "comment"sv)
 
 AST_NODE(ChainAssign)

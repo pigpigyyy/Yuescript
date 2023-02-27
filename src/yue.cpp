@@ -254,6 +254,7 @@ int main(int narg, const char** args) {
 		"   -b       Dump compile time (doesn't write output)\n"
 		"   -g       Dump global variables used in NAME LINE COLUMN\n"
 		"   -l       Write line numbers from source codes\n"
+		"   -c       Reserve comments before statement from source codes\n"
 #ifndef YUE_NO_WATCHER
 		"   -w path  Watch changes and compile every file under directory\n"
 #endif // YUE_NO_WATCHER
@@ -526,6 +527,8 @@ int main(int narg, const char** args) {
 			config.useSpaceOverTab = true;
 		} else if (arg == "-l"sv) {
 			config.reserveLineNumber = true;
+		} else if (arg == "-c"sv) {
+			config.reserveComment = true;
 		} else if (arg == "-p"sv) {
 			writeToFile = false;
 		} else if (arg == "-g"sv) {

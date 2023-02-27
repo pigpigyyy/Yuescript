@@ -196,6 +196,9 @@ static int yuetoast(lua_State* L) {
 			auto& current = stack.top();
 			int continuation = current.continuation;
 			auto node = current.node;
+			if (auto comment = yue::ast_cast<yue::YueMultilineComment_t>(node)) {
+				node = comment->inner.get();
+			}
 			switch (continuation) {
 				case 0: {
 					if (!current.children) {

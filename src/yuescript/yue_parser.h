@@ -245,7 +245,6 @@ private:
 	NONE_AST_RULE(empty_line_break);
 	NONE_AST_RULE(yue_comment);
 	NONE_AST_RULE(yue_line_comment);
-	NONE_AST_RULE(yue_multiline_comment);
 	NONE_AST_RULE(line);
 	NONE_AST_RULE(shebang);
 
@@ -389,6 +388,7 @@ private:
 	AST_RULE(StatementSep)
 	AST_RULE(Statement)
 	AST_RULE(YueLineComment)
+	AST_RULE(MultilineCommentInner)
 	AST_RULE(YueMultilineComment)
 	AST_RULE(ChainAssign)
 	AST_RULE(Body)
