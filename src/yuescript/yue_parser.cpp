@@ -230,7 +230,7 @@ YueParser::YueParser() {
 		return true;
 	});
 
-	in_block = +space_break >> advance_match >> ensure(Block, pop_indent);
+	in_block = space_break >> *(*set(" \t") >> line_break) >> advance_match >> ensure(Block, pop_indent);
 
 	LocalFlag = expr('*') | '^';
 	LocalValues = NameList >> -(space >> '=' >> space >> (TableBlock | ExpListLow));
