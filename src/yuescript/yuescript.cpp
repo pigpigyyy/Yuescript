@@ -258,7 +258,7 @@ static int yuetoast(lua_State* L) {
 						}
 						case 1: {
 							if (flattenLevel > 1 || (flattenLevel == 1 && !current.hasSep)) {
-								lua_rawgeti(L, tableIndex, 1);
+								lua_rawgeti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
 								getName(node);
 								lua_rawseti(L, -2, 1);
 								lua_pushinteger(L, node->m_begin.m_line);
