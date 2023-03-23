@@ -170,7 +170,7 @@ public:
 			options = std::make_unique<Options>(config.options);
 		}
 		DEFER(clear());
-		if (_info.node) {
+		if (!_info.error) {
 			try {
 				auto block = _info.node.to<File_t>()->block.get();
 				if (_info.exportMacro) {

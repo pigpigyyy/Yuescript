@@ -478,8 +478,8 @@ do
 	end
 	do
 		local _exp_0 = tb
-		local _tab_0 = type(_exp_0)
-		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
+		local _type_0 = type(_exp_0)
+		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
 		if _tab_0 then
 			local name, meta_field
 			do
@@ -537,17 +537,17 @@ do
 	end
 	do
 		local _exp_0 = tb
-		local _tab_0 = type(_exp_0)
-		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
+		local _type_0 = type(_exp_0)
+		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
 		if _tab_0 then
 			do
 				local _obj_0 = _exp_0.a
-				local _type_0 = type(_obj_0)
-				if "table" == _type_0 or "userdata" == _type_0 then
+				local _type_1 = type(_obj_0)
+				if "table" == _type_1 or "userdata" == _type_1 then
 					do
 						local _obj_1 = getmetatable(_obj_0)
-						local _type_1 = type(_obj_1)
-						if "table" == _type_1 or "userdata" == _type_1 then
+						local _type_2 = type(_obj_1)
+						if "table" == _type_2 or "userdata" == _type_2 then
 							add = _obj_1.__add
 						end
 					end
@@ -555,12 +555,12 @@ do
 			end
 			do
 				local _obj_0 = _exp_0.b
-				local _type_0 = type(_obj_0)
-				if "table" == _type_0 or "userdata" == _type_0 then
+				local _type_1 = type(_obj_0)
+				if "table" == _type_1 or "userdata" == _type_1 then
 					do
 						local _obj_1 = getmetatable(_obj_0)
-						local _type_1 = type(_obj_1)
-						if "table" == _type_1 or "userdata" == _type_1 then
+						local _type_2 = type(_obj_1)
+						if "table" == _type_2 or "userdata" == _type_2 then
 							field = _obj_1[fieldName]
 						end
 					end
@@ -577,17 +577,17 @@ do
 	end
 	do
 		local _exp_0 = tb
-		local _tab_0 = type(_exp_0)
-		_tab_0 = "table" == _tab_0 or "userdata" == _tab_0
+		local _type_0 = type(_exp_0)
+		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
 		if _tab_0 then
 			do
 				local _obj_0 = _exp_0.c
-				local _type_0 = type(_obj_0)
-				if "table" == _type_0 or "userdata" == _type_0 then
+				local _type_1 = type(_obj_0)
+				if "table" == _type_1 or "userdata" == _type_1 then
 					do
 						local _obj_1 = getmetatable(_obj_0)
-						local _type_1 = type(_obj_1)
-						if "table" == _type_1 or "userdata" == _type_1 then
+						local _type_2 = type(_obj_1)
+						if "table" == _type_2 or "userdata" == _type_2 then
 							meta_field = _obj_1["abc"]
 						end
 					end
@@ -600,15 +600,15 @@ do
 				local _obj_0 = getmetatable(_exp_0)
 				do
 					local _obj_1 = _obj_0[ [[any string]]]
-					local _type_0 = type(_obj_1)
-					if "table" == _type_0 or "userdata" == _type_0 then
+					local _type_1 = type(_obj_1)
+					if "table" == _type_1 or "userdata" == _type_1 then
 						abc = _obj_1.d
 					end
 				end
 				do
 					local _obj_1 = _obj_0['str']
-					local _type_0 = type(_obj_1)
-					if "table" == _type_0 or "userdata" == _type_0 then
+					local _type_1 = type(_obj_1)
+					if "table" == _type_1 or "userdata" == _type_1 then
 						def = _obj_1.e
 					end
 				end
