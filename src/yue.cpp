@@ -167,7 +167,7 @@ static std::string compileFile(const fs::path& file, yue::YueConfig conf, const 
 			}
 		}
 		auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
-		if (result.error.empty()) {
+		if (!result.error) {
 			std::string targetExtension("lua"sv);
 			if (result.options) {
 				auto it = result.options->find("target_extension"s);
@@ -194,7 +194,7 @@ static std::string compileFile(const fs::path& file, yue::YueConfig conf, const 
 				return "Failed to write file: "s + targetFile.string() + '\n';
 			}
 		} else {
-			return "Failed to compile: "s + modulePath.string() + '\n' + result.error + '\n';
+			return "Failed to compile: "s + modulePath.string() + '\n' + result.error.value().displayMessage + '\n';
 		}
 	} else {
 		return "Failed to read file: "s + srcFile.string() + '\n';
@@ -441,12 +441,12 @@ int main(int narg, const char** args) {
 			conf.reserveLineNumber = false;
 			conf.useSpaceOverTab = true;
 			auto result = yue::YueCompiler{YUE_ARGS}.compile(codes, conf);
-			if (result.error.empty()) {
+			if (!result.error) {
 				std::cout << result.codes;
 				return 0;
 			} else {
 				std::ostringstream buf;
-				std::cout << result.error << '\n';
+				std::cout << result.error.value().displayMessage << '\n';
 				return 1;
 			}
 #ifndef YUE_COMPILER_ONLY
@@ -662,7 +662,7 @@ int main(int narg, const char** args) {
 				if (dumpCompileTime) {
 					conf.profiling = true;
 					auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
-					if (!result.codes.empty()) {
+					if (!result.error) {
 						std::ostringstream buf;
 						buf << file.first << " \n"sv;
 						buf << "Parse time:     "sv << std::setprecision(5) << result.parseTime * 1000 << " ms\n";
@@ -671,13 +671,13 @@ int main(int narg, const char** args) {
 					} else {
 						std::ostringstream buf;
 						buf << "Failed to compile: "sv << file.first << '\n';
-						buf << result.error << '\n';
+						buf << result.error.value().displayMessage << '\n';
 						return std::tuple{1, file.first, buf.str()};
 					}
 				}
 				conf.lintGlobalVariable = lintGlobal;
 				auto result = yue::YueCompiler{YUE_ARGS}.compile(s, conf);
-				if (result.error.empty()) {
+				if (!result.error) {
 					if (!writeToFile) {
 						if (lintGlobal) {
 							std::ostringstream buf;
@@ -729,7 +729,7 @@ int main(int narg, const char** args) {
 				} else {
 					std::ostringstream buf;
 					buf << "Failed to compile: "sv << file.first << '\n';
-					buf << result.error << '\n';
+					buf << result.error.value().displayMessage << '\n';
 					return std::tuple{1, std::string(), buf.str()};
 				}
 			} else {
