@@ -62,8 +62,7 @@ static int init_stacktraceplus(lua_State* L) {
 	return 1;
 }
 
-static yue::YueConfig get_config(lua_State* L) {
-	yue::YueConfig config;
+static void get_config(lua_State* L, yue::YueConfig& config) {
 	lua_pushliteral(L, "lint_global");
 	lua_gettable(L, -2);
 	if (lua_isboolean(L, -1) != 0) {
@@ -100,17 +99,18 @@ static yue::YueConfig get_config(lua_State* L) {
 		config.options["target"] = lua_tostring(L, -1);
 	}
 	lua_pop(L, 1);
-	return config;
 }
 
 static int yuetolua(lua_State* L) {
 	size_t len = 0;
-	std::string codes(luaL_checklstring(L, 1, &len), len);
+	auto input = luaL_checklstring(L, 1, &len);
+	std::string_view codes(input, len);
 	yue::YueConfig config;
 	bool sameModule = false;
-	if (lua_gettop(L) == 2) {
+	if (lua_gettop(L) >= 2) {
 		luaL_checktype(L, 2, LUA_TTABLE);
-		config = get_config(L);
+		lua_pushvalue(L, 2);
+		get_config(L, config);
 		lua_pushliteral(L, "same_module");
 		lua_gettable(L, -2);
 		if (lua_isboolean(L, -1) != 0) {
@@ -128,7 +128,7 @@ static int yuetolua(lua_State* L) {
 		if (lua_isstring(L, -1) != 0) {
 			config.module = lua_tostring(L, -1);
 		}
-		lua_pop(L, 1);
+		lua_pop(L, 2);
 	}
 	auto result = yue::YueCompiler(L, nullptr, sameModule).compile(codes, config);
 	if (result.error) {
@@ -164,12 +164,15 @@ static int yuetolua(lua_State* L) {
 
 static int yuecheck(lua_State* L) {
 	size_t len = 0;
-	std::string codes{luaL_checklstring(L, 1, &len), len};
+	auto input = luaL_checklstring(L, 1, &len);
+	std::string_view codes(input, len);
 	yue::YueConfig config;
 	config.lintGlobalVariable = true;
-	if (lua_gettop(L) == 2) {
+	if (lua_gettop(L) >= 2) {
 		luaL_checktype(L, 2, LUA_TTABLE);
-		config = get_config(L);
+		lua_pushvalue(L, 2);
+		get_config(L, config);
+		lua_pop(L, 1);
 	}
 	auto result = yue::YueCompiler(L).compile(codes, config);
 	lua_createtable(L, 0, 0);
