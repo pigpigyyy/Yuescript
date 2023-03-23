@@ -41,7 +41,11 @@ YueResult tolua(const std::string& codes, bool reserveLineNumber = true, bool im
 	config.implicitReturnRoot = implicitReturnRoot;
 	config.useSpaceOverTab = useSpaceOverTab;
 	auto result = yue::YueCompiler{YUE_ARGS}.compile(codes, config);
-	return {result.codes, result.error};
+	if (result.error) {
+		return {std::string(), result.error.value().displayMessage};
+	} else {
+		return {result.codes, std::string()};
+	}
 }
 
 std::string version() { return std::string(yue::version); }
