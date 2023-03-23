@@ -125,8 +125,11 @@ yue_loadstring = function(...)
 	}))
 end
 local function yue_loadfile(fname, ...)
-	local text = yue.read_file(fname)
-	return yue_loadstring(text, fname, ...)
+	local res, err = yue.read_file(fname)
+	if not res then
+		return nil, err
+	end
+	return yue_loadstring(res, fname, ...)
 end
 local function yue_dofile(...)
 	local f = assert(yue_loadfile(...))
