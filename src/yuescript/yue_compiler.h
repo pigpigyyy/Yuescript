@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <functional>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -30,7 +31,7 @@ struct YueConfig {
 	bool reserveLineNumber = true;
 	bool useSpaceOverTab = false;
 	bool reserveComment = false;
-
+	// internal options
 	bool exporting = false;
 	bool profiling = false;
 	int lineOffset = 0;
@@ -48,11 +49,28 @@ using GlobalVars = std::vector<GlobalVar>;
 
 struct CompileInfo {
 	std::string codes;
-	std::string error;
+	struct Error {
+		std::string msg;
+		int line;
+		int col;
+		std::string displayMessage;
+	};
+	std::optional<Error> error;
 	std::unique_ptr<GlobalVars> globals;
 	std::unique_ptr<Options> options;
 	double parseTime;
 	double compileTime;
+
+	CompileInfo() { }
+	CompileInfo(
+		std::string&& codes,
+		std::optional<Error>&& error,
+		std::unique_ptr<GlobalVars>&& globals,
+		std::unique_ptr<Options>&& options,
+		double parseTime,
+		double compileTime);
+	CompileInfo(CompileInfo&& other);
+	void operator=(CompileInfo&& other);
 };
 
 class YueCompilerImpl;

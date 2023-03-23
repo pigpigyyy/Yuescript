@@ -30,6 +30,17 @@ std::unordered_set<std::string> Keywords = {
 	"try"s, "unless"s, "using"s, "when"s, "with"s // Yue keywords
 };
 
+class ParserError : public std::logic_error {
+public:
+	explicit ParserError(std::string_view msg, const pos* begin)
+		: std::logic_error(std::string(msg))
+		, line(begin->m_line)
+		, col(begin->m_col) { }
+
+	int line;
+	int col;
+};
+
 // clang-format off
 YueParser::YueParser() {
 	plain_space = *set(" \t");
@@ -78,7 +89,7 @@ YueParser::YueParser() {
 	Seperator = true_();
 
 	empty_block_error = pl::user(true_(), [](const item_t& item) {
-		throw ParserError("must be followed by a statement or an indented block", *item.begin, *item.end);
+		throw ParserError("must be followed by a statement or an indented block"sv, item.begin);
 		return false;
 	});
 
@@ -489,7 +500,7 @@ YueParser::YueParser() {
 		st->expLevel++;
 		const int max_exp_level = 100;
 		if (st->expLevel > max_exp_level) {
-			throw ParserError("nesting expressions exceeds 100 levels", *item.begin, *item.end);
+			throw ParserError("nesting expressions exceeds 100 levels"sv, item.begin);
 		}
 		return true;
 	});
@@ -658,10 +669,10 @@ YueParser::YueParser() {
 	}) >> (pl::user(space >> ExportDefault >> space >> Exp, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault) {
-			throw ParserError("export default has already been declared", *item.begin, *item.end);
+			throw ParserError("export default has already been declared"sv, item.begin);
 		}
 		if (st->exportCount > 1) {
-			throw ParserError("there are items already being exported", *item.begin, *item.end);
+			throw ParserError("there are items already being exported"sv, item.begin);
 		}
 		st->exportDefault = true;
 		return true;
@@ -669,7 +680,7 @@ YueParser::YueParser() {
 	| (not_(space >> ExportDefault) >> pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		if (st->exportDefault && st->exportCount > 1) {
-			throw ParserError("can not export any more items when 'export default' is declared", *item.begin, *item.end);
+			throw ParserError("can not export any more items when 'export default' is declared"sv, item.begin);
 		}
 		return true;
 	}) >> space >> ExpList >> -(space >> Assign))
@@ -762,7 +773,7 @@ YueParser::YueParser() {
 		) | arg_table_block;
 
 	leading_spaces_error = pl::user(+space_one >> '(' >> space >> Exp >> +(space >> ',' >> space >> Exp) >> space >> ')', [](const item_t& item) {
-		throw ParserError("write invoke arguments in parentheses without leading spaces or just leading spaces without parentheses", *item.begin, *item.end);
+		throw ParserError("write invoke arguments in parentheses without leading spaces or just leading spaces without parentheses"sv, item.begin);
 		return false;
 	});
 
@@ -776,12 +787,12 @@ YueParser::YueParser() {
 	ConstValue = (expr("nil") | "true" | "false") >> not_alpha_num;
 
 	braces_expression_error = pl::user(true_(), [](const item_t& item) {
-		throw ParserError("syntax error in brace expression", *item.begin, *item.end);
+		throw ParserError("syntax error in brace expression"sv, item.begin);
 		return false;
 	});
 
 	brackets_expression_error = pl::user(true_(), [](const item_t& item) {
-		throw ParserError("syntax error in bracket expression", *item.begin, *item.end);
+		throw ParserError("syntax error in bracket expression"sv, item.begin);
 		return false;
 	});
 
@@ -846,7 +857,7 @@ YueParser::YueParser() {
 	) >> and_(line_break);
 
 	indentation_error = pl::user(not_(pipe_operator | eof()), [](const item_t& item) {
-		throw ParserError("unexpected indent", *item.begin, *item.end);
+		throw ParserError("unexpected indent"sv, item.begin);
 		return false;
 	});
 
@@ -875,7 +886,7 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 			res.codes = std::make_unique<input>();
 		}
 	} catch (const std::range_error&) {
-		res.error = "invalid text encoding"sv;
+		res.error = {"invalid text encoding"s, 1, 1};
 		return res;
 	}
 	error_list errors;
@@ -888,26 +899,22 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 			res.exportMacro = state.exportMacro;
 		}
 	} catch (const ParserError& err) {
-		res.error = res.errorMessage(err.what(), &err.loc);
+		res.error = {err.what(), err.line, err.col};
 		return res;
 	} catch (const std::logic_error& err) {
-		res.error = err.what();
+		res.error = {err.what(), 1, 1};
 		return res;
 	}
 	if (!errors.empty()) {
-		std::ostringstream buf;
-		for (error_list::iterator it = errors.begin(); it != errors.end(); ++it) {
-			const error& err = *it;
-			switch (err.m_type) {
-				case ERROR_TYPE::ERROR_SYNTAX_ERROR:
-					buf << res.errorMessage("syntax error"sv, &err);
-					break;
-				case ERROR_TYPE::ERROR_INVALID_EOF:
-					buf << res.errorMessage("invalid EOF"sv, &err);
-					break;
-			}
+		const error& err = errors.front();
+		switch (err.m_type) {
+			case ERROR_TYPE::ERROR_SYNTAX_ERROR:
+				res.error = {"syntax error"s, err.m_begin.m_line, err.m_begin.m_col};
+				break;
+			case ERROR_TYPE::ERROR_INVALID_EOF:
+				res.error = {"invalid EOF"s, err.m_begin.m_line, err.m_begin.m_col};
+				break;
 		}
-		res.error = buf.str();
 	}
 	return res;
 }
@@ -944,9 +951,9 @@ void trim(std::string& str) {
 }
 } // namespace Utils
 
-std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc) const {
+std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCol) const {
 	const int ASCII = 255;
-	int length = loc->m_begin.m_line;
+	int length = errLine;
 	auto begin = codes->begin();
 	auto end = codes->end();
 	int count = 0;
@@ -961,7 +968,7 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 			count++;
 		}
 	}
-	int oldCol = loc->m_begin.m_col;
+	int oldCol = errCol;
 	int col = std::max(0, oldCol - 1);
 	auto it = begin;
 	for (int i = 0; i < oldCol && it != end; ++i) {
@@ -977,7 +984,7 @@ std::string ParseInfo::errorMessage(std::string_view msg, const input_range* loc
 	}
 	Utils::replace(line, "\t"sv, " "sv);
 	std::ostringstream buf;
-	buf << loc->m_begin.m_line << ": "sv << msg << '\n'
+	buf << errLine << ": "sv << msg << '\n'
 		<< line << '\n'
 		<< std::string(col, ' ') << "^"sv;
 	return buf.str();

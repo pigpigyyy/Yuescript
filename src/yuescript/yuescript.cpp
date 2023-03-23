@@ -62,43 +62,55 @@ static int init_stacktraceplus(lua_State* L) {
 	return 1;
 }
 
+static yue::YueConfig get_config(lua_State* L) {
+	yue::YueConfig config;
+	lua_pushliteral(L, "lint_global");
+	lua_gettable(L, -2);
+	if (lua_isboolean(L, -1) != 0) {
+		config.lintGlobalVariable = lua_toboolean(L, -1) != 0;
+	}
+	lua_pop(L, 1);
+	lua_pushliteral(L, "implicit_return_root");
+	lua_gettable(L, -2);
+	if (lua_isboolean(L, -1) != 0) {
+		config.implicitReturnRoot = lua_toboolean(L, -1) != 0;
+	}
+	lua_pop(L, 1);
+	lua_pushliteral(L, "reserve_line_number");
+	lua_gettable(L, -2);
+	if (lua_isboolean(L, -1) != 0) {
+		config.reserveLineNumber = lua_toboolean(L, -1) != 0;
+	}
+	lua_pop(L, 1);
+	lua_pushliteral(L, "reserve_comment");
+	lua_gettable(L, -2);
+	if (lua_isboolean(L, -1) != 0) {
+		config.reserveComment = lua_toboolean(L, -1) != 0;
+	}
+	lua_pop(L, 1);
+	lua_pushliteral(L, "space_over_tab");
+	lua_gettable(L, -2);
+	if (lua_isboolean(L, -1) != 0) {
+		config.useSpaceOverTab = lua_toboolean(L, -1) != 0;
+	}
+	lua_pop(L, 1);
+	lua_pushliteral(L, "target");
+	lua_gettable(L, -2);
+	if (lua_isstring(L, -1) != 0) {
+		config.options["target"] = lua_tostring(L, -1);
+	}
+	lua_pop(L, 1);
+	return config;
+}
+
 static int yuetolua(lua_State* L) {
-	size_t size = 0;
-	const char* input = luaL_checklstring(L, 1, &size);
+	size_t len = 0;
+	std::string codes(luaL_checklstring(L, 1, &len), len);
 	yue::YueConfig config;
 	bool sameModule = false;
 	if (lua_gettop(L) == 2) {
 		luaL_checktype(L, 2, LUA_TTABLE);
-		lua_pushliteral(L, "lint_global");
-		lua_gettable(L, -2);
-		if (lua_isboolean(L, -1) != 0) {
-			config.lintGlobalVariable = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushliteral(L, "implicit_return_root");
-		lua_gettable(L, -2);
-		if (lua_isboolean(L, -1) != 0) {
-			config.implicitReturnRoot = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushliteral(L, "reserve_line_number");
-		lua_gettable(L, -2);
-		if (lua_isboolean(L, -1) != 0) {
-			config.reserveLineNumber = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushliteral(L, "reserve_comment");
-		lua_gettable(L, -2);
-		if (lua_isboolean(L, -1) != 0) {
-			config.reserveComment = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
-		lua_pushliteral(L, "space_over_tab");
-		lua_gettable(L, -2);
-		if (lua_isboolean(L, -1) != 0) {
-			config.useSpaceOverTab = lua_toboolean(L, -1) != 0;
-		}
-		lua_pop(L, 1);
+		config = get_config(L);
 		lua_pushliteral(L, "same_module");
 		lua_gettable(L, -2);
 		if (lua_isboolean(L, -1) != 0) {
@@ -117,24 +129,18 @@ static int yuetolua(lua_State* L) {
 			config.module = lua_tostring(L, -1);
 		}
 		lua_pop(L, 1);
-		lua_pushliteral(L, "target");
-		lua_gettable(L, -2);
-		if (lua_isstring(L, -1) != 0) {
-			config.options["target"] = lua_tostring(L, -1);
-		}
-		lua_pop(L, 1);
 	}
-	std::string s(input, size);
-	auto result = yue::YueCompiler(L, nullptr, sameModule).compile(s, config);
-	if (result.codes.empty() && !result.error.empty()) {
+	auto result = yue::YueCompiler(L, nullptr, sameModule).compile(codes, config);
+	if (result.error) {
 		lua_pushnil(L);
 	} else {
 		lua_pushlstring(L, result.codes.c_str(), result.codes.size());
 	}
-	if (result.error.empty()) {
-		lua_pushnil(L);
+	if (result.error) {
+		const auto& msg = result.error.value().displayMessage;
+		lua_pushlstring(L, msg.c_str(), msg.size());
 	} else {
-		lua_pushlstring(L, result.error.c_str(), result.error.size());
+		lua_pushnil(L);
 	}
 	if (result.globals) {
 		lua_createtable(L, static_cast<int>(result.globals->size()), 0);
@@ -156,6 +162,57 @@ static int yuetolua(lua_State* L) {
 	return 3;
 }
 
+static int yuecheck(lua_State* L) {
+	size_t len = 0;
+	std::string codes{luaL_checklstring(L, 1, &len), len};
+	yue::YueConfig config;
+	config.lintGlobalVariable = true;
+	if (lua_gettop(L) == 2) {
+		luaL_checktype(L, 2, LUA_TTABLE);
+		config = get_config(L);
+	}
+	auto result = yue::YueCompiler(L).compile(codes, config);
+	lua_createtable(L, 0, 0);
+	int i = 0;
+	if (result.error) {
+		const auto& error = result.error.value();
+		lua_createtable(L, 4, 0);
+		lua_pushliteral(L, "error");
+		lua_rawseti(L, -2, 1);
+		lua_pushlstring(L, error.msg.c_str(), error.msg.length());
+		lua_rawseti(L, -2, 2);
+		lua_pushinteger(L, error.line);
+		lua_rawseti(L, -2, 3);
+		lua_pushinteger(L, error.col);
+		lua_rawseti(L, -2, 4);
+		lua_rawseti(L, -2, ++i);
+	}
+	if (result.globals) {
+		for (const auto& global : *result.globals) {
+			lua_createtable(L, 4, 0);
+			lua_pushliteral(L, "global");
+			lua_rawseti(L, -2, 1);
+			lua_pushlstring(L, global.name.c_str(), global.name.length());
+			lua_rawseti(L, -2, 2);
+			lua_pushinteger(L, global.line);
+			lua_rawseti(L, -2, 3);
+			lua_pushinteger(L, global.col);
+			lua_rawseti(L, -2, 4);
+			lua_rawseti(L, -2, ++i);
+		}
+	}
+	if (result.error) {
+		lua_pushboolean(L, 0);
+		lua_insert(L, -2);
+		return 2;
+	} else {
+		lua_pushboolean(L, 1);
+		lua_insert(L, -2);
+		lua_pushlstring(L, result.codes.c_str(), result.codes.length());
+		return 3;
+	}
+}
+
 struct yue_stack {
 	int continuation;
 	yue::ast_node* node;
@@ -174,7 +231,7 @@ static int yuetoast(lua_State* L) {
 	}
 	yue::YueParser parser;
 	auto info = parser.parse<yue::File_t>({input, size});
-	if (info.node) {
+	if (!info.error) {
 		lua_createtable(L, 0, 0);
 		int tableIndex = lua_gettop(L);
 		lua_createtable(L, 0, 0);
@@ -300,7 +357,8 @@ static int yuetoast(lua_State* L) {
 		return 1;
 	} else {
 		lua_pushnil(L);
-		lua_pushlstring(L, info.error.c_str(), info.error.length());
+		const auto& msg = info.error.value().msg;
+		lua_pushlstring(L, msg.c_str(), msg.length());
 		return 2;
 	}
 }
@@ -308,6 +366,7 @@ static int yuetoast(lua_State* L) {
 static const luaL_Reg yuelib[] = {
 	{"to_lua", yuetolua},
 	{"to_ast", yuetoast},
+	{"check", yuecheck},
 	{"version", nullptr},
 	{"options", nullptr},
 	{"load_stacktraceplus", nullptr},

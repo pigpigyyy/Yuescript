@@ -56,7 +56,12 @@ end
 local function find_modulepath(name)
 	local suffix = "." .. yue.options.extension
 	local dirsep = yue.options.dirsep
-	local name_path = name:match("[\\/]") and name or name:gsub("%.", dirsep)
+	local name_path
+	if name:match("[\\/]") then
+		name_path = name:gsub("%" .. suffix .. "$", "")
+	else
+		name_path = name:gsub("%.", dirsep)
+	end
 	local file_exist, file_path
 	local tried = {}
 	local paths = {package.path, yue.options.path}

@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <algorithm>
 #include <list>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -26,25 +27,18 @@ using namespace std::string_literals;
 using namespace parserlib;
 
 struct ParseInfo {
+	struct Error {
+		std::string msg;
+		int line;
+		int col;
+	};
 	ast_ptr<false, ast_node> node;
-	std::string error;
+	std::optional<Error> error;
 	std::unique_ptr<input> codes;
 	bool exportDefault = false;
 	bool exportMacro = false;
 	std::string moduleName;
-	std::string errorMessage(std::string_view msg, const input_range* loc) const;
-};
-
-class ParserError : public std::logic_error {
-public:
-	explicit ParserError(const std::string& msg, const pos& begin, const pos& end)
-		: std::logic_error(msg)
-		, loc(begin, end) { }
-
-	explicit ParserError(const char* msg, const pos& begin, const pos& end)
-		: std::logic_error(msg)
-		, loc(begin, end) { }
-	input_range loc;
+	std::string errorMessage(std::string_view msg, int errLine, int errCol) const;
 };
 
 template <typename T>
@@ -53,21 +47,21 @@ struct identity {
 };
 
 #ifdef NDEBUG
-	#define NONE_AST_RULE(type) \
-		rule type;
+#define NONE_AST_RULE(type) \
+	rule type;
 
-	#define AST_RULE(type) \
-		rule type; \
-		ast<type##_t> type##_impl = type; \
-		inline rule& getRule(identity<type##_t>) { return type; }
+#define AST_RULE(type) \
+	rule type; \
+	ast<type##_t> type##_impl = type; \
+	inline rule& getRule(identity<type##_t>) { return type; }
 #else // NDEBUG
-	#define NONE_AST_RULE(type) \
-		rule type{#type, rule::initTag{}};
+#define NONE_AST_RULE(type) \
+	rule type{#type, rule::initTag{}};
 
-	#define AST_RULE(type) \
-		rule type{#type, rule::initTag{}}; \
-		ast<type##_t> type##_impl = type; \
-		inline rule& getRule(identity<type##_t>) { return type; }
+#define AST_RULE(type) \
+	rule type{#type, rule::initTag{}}; \
+	ast<type##_t> type##_impl = type; \
+	inline rule& getRule(identity<type##_t>) { return type; }
 #endif // NDEBUG
 
 extern std::unordered_set<std::string> LuaKeywords;
