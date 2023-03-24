@@ -380,7 +380,7 @@ YUE_API int luaopen_yue(lua_State* L) {
 	luaL_newlib(L, yuelib); // yue
 #else
 	lua_getglobal(L, "package");
-	lua_getfield(L, "loaded");
+	lua_getfield(L, -1, "loaded");
 	luaL_register(L, nullptr, yuelib); // yue
 #endif
 	lua_pushlstring(L, &yue::version.front(), yue::version.size()); // yue version
