@@ -44,7 +44,7 @@ static void openlibs(void* state) {
 	lua_State* L = static_cast<lua_State*>(state);
 	luaL_openlibs(L);
 #if LUA_VERSION_NUM > 501
-	luaL_requiref(L, "yue", luaopen_yue, 1);
+	luaL_requiref(L, "yue", luaopen_yue, 0);
 #else
 	lua_pushcfunction(L, luaopen_yue);
 	lua_call(L, 0, 0);
