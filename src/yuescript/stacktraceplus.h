@@ -266,23 +266,23 @@ function Dumper:DumpLocals (level)
 	if not name then
 		return
 	end
-	self:add("\tLocal variables:\r\n")
+	self:add("\tLocal variables:\n")
 	while name do
 		if type(value) == "number" then
-			self:add_f("%s%s = number: %g\r\n", prefix, name, value)
+			self:add_f("%s%s = number: %g\n", prefix, name, value)
 		elseif type(value) == "boolean" then
-			self:add_f("%s%s = boolean: %s\r\n", prefix, name, tostring(value))
+			self:add_f("%s%s = boolean: %s\n", prefix, name, tostring(value))
 		elseif type(value) == "string" then
-			self:add_f("%s%s = string: %q\r\n", prefix, name, value)
+			self:add_f("%s%s = string: %q\n", prefix, name, value)
 		elseif type(value) == "userdata" then
-			self:add_f("%s%s = %s\r\n", prefix, name, safe_tostring(value))
+			self:add_f("%s%s = %s\n", prefix, name, safe_tostring(value))
 		elseif type(value) == "nil" then
-			self:add_f("%s%s = nil\r\n", prefix, name)
+			self:add_f("%s%s = nil\n", prefix, name)
 		elseif type(value) == "table" then
 			if m_known_tables[value] then
-				self:add_f("%s%s = %s\r\n", prefix, name, m_known_tables[value])
+				self:add_f("%s%s = %s\n", prefix, name, m_known_tables[value])
 			elseif m_user_known_tables[value] then
-				self:add_f("%s%s = %s\r\n", prefix, name, m_user_known_tables[value])
+				self:add_f("%s%s = %s\n", prefix, name, m_user_known_tables[value])
 			else
 				local txt = "{"
 				for k,v in pairs(value) do
@@ -293,13 +293,13 @@ function Dumper:DumpLocals (level)
 					end
 					if next(value, k) then txt = txt..", " end
 				end
-				self:add_f("%s%s = %s  %s\r\n", prefix, name, safe_tostring(value), txt.."}")
+				self:add_f("%s%s = %s  %s\n", prefix, name, safe_tostring(value), txt.."}")
 			end
 		elseif type(value) == "function" then
 			local info = self.getinfo(value, "nS")
 			local fun_name = info.name or m_known_functions[value] or m_user_known_functions[value]
 			if info.what == "C" then
-				self:add_f("%s%s = C %s\r\n", prefix, name, (fun_name and ("function: " .. fun_name) or tostring(value)))
+				self:add_f("%s%s = C %s\n", prefix, name, (fun_name and ("function: " .. fun_name) or tostring(value)))
 			else
 				local source = info.short_src
 				if source:sub(2,7) == "string" then
@@ -307,10 +307,10 @@ function Dumper:DumpLocals (level)
 				end
 				--for k,v in pairs(info) do print(k,v) end
 				fun_name = fun_name or GuessFunctionName(info)
-				self:add_f("%s%s = Lua function '%s' (defined at line %d of chunk %s)\r\n", prefix, name, fun_name, info.linedefined, source)
+				self:add_f("%s%s = Lua function '%s' (defined at line %d of chunk %s)\n", prefix, name, fun_name, info.linedefined, source)
 			end
 		elseif type(value) == "thread" then
-			self:add_f("%sthread %q = %s\r\n", prefix, name, tostring(value))
+			self:add_f("%sthread %q = %s\n", prefix, name, tostring(value))
 		end
 		i = i + 1
 		name, value = self.getlocal(level, i)
@@ -383,20 +383,20 @@ function _M.stacktrace(thread, message, level)
 	local dumper = Dumper.new(thread)
 
 	if type(message) == "table" then
-		dumper:add("an error object {\r\n")
+		dumper:add("an error object {\n")
 		local first = true
 		for k,v in pairs(message) do
 			if first then
 				dumper:add("  ")
 				first = false
 			else
-				dumper:add(",\r\n  ")
+				dumper:add(",\n  ")
 			end
 			dumper:add(safe_tostring(k))
 			dumper:add(": ")
 			dumper:add(safe_tostring(v))
 		end
-		dumper:add("\r\n}")
+		dumper:add("\n}")
 	elseif type(message) == "string" then
 		local fname, line, msg = message:match('([^\n]+):(%d+): (.*)$')
 		if fname then
@@ -425,7 +425,7 @@ function _M.stacktrace(thread, message, level)
 		dumper:add(message)
 	end
 
-	dumper:add("\r\n")
+	dumper:add("\n")
 	dumper:add[[
 Stack Traceback
 ===============
@@ -444,20 +444,20 @@ Stack Traceback
 		info.source, info.currentline = getYueLineNumber(info.source, info.currentline)
 		if info.what == "main" then
 			if _M.simplified then
-				dumper:add_f("(%d) '%s':%d\r\n", level_to_show, info.source, info.currentline)
+				dumper:add_f("(%d) '%s':%d\n", level_to_show, info.source, info.currentline)
 			else
-				dumper:add_f("(%d) main chunk of file '%s' at line %d\r\n", level_to_show, info.source, info.currentline)
+				dumper:add_f("(%d) main chunk of file '%s' at line %d\n", level_to_show, info.source, info.currentline)
 			end
 		elseif info.what == "C" then
 			--print(info.namewhat, info.name)
 			--for k,v in pairs(info) do print(k,v, type(v)) end
 			local function_name = m_user_known_functions[info.func] or m_known_functions[info.func] or info.name or tostring(info.func)
-			dumper:add_f("(%d) %s C function '%s'\r\n", level_to_show, info.namewhat, function_name)
-			--dumper:add_f("%s%s = C %s\r\n", prefix, name, (m_known_functions[value] and ("function: " .. m_known_functions[value]) or tostring(value)))
+			dumper:add_f("(%d) %s C function '%s'\n", level_to_show, info.namewhat, function_name)
+			--dumper:add_f("%s%s = C %s\n", prefix, name, (m_known_functions[value] and ("function: " .. m_known_functions[value]) or tostring(value)))
 		elseif info.what == "tail" then
 			--print("tail")
 			--for k,v in pairs(info) do print(k,v, type(v)) end--print(info.namewhat, info.name)
-			dumper:add_f("(%d) tail call\r\n", level_to_show)
+			dumper:add_f("(%d) tail call\n", level_to_show)
 			dumper:DumpLocals(level)
 		elseif info.what == "Lua" then
 			local source = info.source
@@ -475,26 +475,26 @@ Stack Traceback
 			local function_type = (info.namewhat == "") and "function" or info.namewhat
 			if info.source and info.source:sub(1, 1) == "@" then
 				if _M.simplified then
-					dumper:add_f("(%d) '%s':%d%s\r\n", level_to_show, info.source:sub(2), info.currentline, was_guessed and " (guess)" or "")
+					dumper:add_f("(%d) '%s':%d%s\n", level_to_show, info.source:sub(2), info.currentline, was_guessed and " (guess)" or "")
 				else
-					dumper:add_f("(%d) Lua %s '%s' at file '%s':%d%s\r\n", level_to_show, function_type, function_name, info.source:sub(2), info.currentline, was_guessed and " (best guess)" or "")
+					dumper:add_f("(%d) Lua %s '%s' at file '%s':%d%s\n", level_to_show, function_type, function_name, info.source:sub(2), info.currentline, was_guessed and " (best guess)" or "")
 				end
 			elseif info.source and info.source:sub(1,1) == '#' then
 				if _M.simplified then
-					dumper:add_f("(%d) '%s':%d%s\r\n", level_to_show, info.source:sub(2), info.currentline, was_guessed and " (guess)" or "")
+					dumper:add_f("(%d) '%s':%d%s\n", level_to_show, info.source:sub(2), info.currentline, was_guessed and " (guess)" or "")
 				else
-					dumper:add_f("(%d) Lua %s '%s' at template '%s':%d%s\r\n", level_to_show, function_type, function_name, info.source:sub(2), info.currentline, was_guessed and " (best guess)" or "")
+					dumper:add_f("(%d) Lua %s '%s' at template '%s':%d%s\n", level_to_show, function_type, function_name, info.source:sub(2), info.currentline, was_guessed and " (best guess)" or "")
 				end
 			else
 				if _M.simplified then
-					dumper:add_f("(%d) '%s':%d\r\n", level_to_show, source, info.currentline)
+					dumper:add_f("(%d) '%s':%d\n", level_to_show, source, info.currentline)
 				else
-					dumper:add_f("(%d) Lua %s '%s' at chunk '%s':%d\r\n", level_to_show, function_type, function_name, source, info.currentline)
+					dumper:add_f("(%d) Lua %s '%s' at chunk '%s':%d\n", level_to_show, function_type, function_name, source, info.currentline)
 				end
 			end
 			dumper:DumpLocals(level)
 		else
-			dumper:add_f("(%d) unknown frame %s\r\n", level_to_show, info.what)
+			dumper:add_f("(%d) unknown frame %s\n", level_to_show, info.what)
 		end
 
 		level = level + 1
