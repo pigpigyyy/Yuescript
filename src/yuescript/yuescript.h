@@ -64,7 +64,9 @@ local function find_modulepath(name)
 	end
 	local file_exist, file_path
 	local tried = {}
-	local paths = {package.path, yue.options.path}
+	local paths = {}
+	paths[#paths + 1] = yue.options.path
+	paths[#paths + 1] = package.path
 	for i = 1, #paths do
 		local yue_path = paths[i]
 		for path in yue_path:gmatch("[^;]+") do

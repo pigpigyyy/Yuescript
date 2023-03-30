@@ -3852,10 +3852,21 @@ private:
 		_useModule = true;
 		if (!L) {
 			L = luaL_newstate();
+			int top = lua_gettop(L);
+			DEFER(lua_settop(L, top));
 			if (_luaOpen) {
 				_luaOpen(static_cast<void*>(L));
 			}
 			passOptions();
+			auto it = _config.options.find("path"s);
+			if (it != _config.options.end()) {
+				lua_getglobal(L, "package");
+				auto path = it->second + ';';
+				lua_pushlstring(L, path.c_str(), path.size());
+				lua_getfield(L, -2, "path");
+				lua_concat(L, 2);
+				lua_setfield(L, -2, "path");
+			}
 			_stateOwner = true;
 		}
 		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
@@ -8496,6 +8507,13 @@ YueCompiler::~YueCompiler() { }
 
 CompileInfo YueCompiler::compile(std::string_view codes, const YueConfig& config) {
 	return _compiler->compile(codes, config);
+}
+
+void YueCompiler::clear(void* luaState) {
+	auto L = static_cast<lua_State*>(luaState);
+	lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+	lua_pushnil(L);
+	lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE] = nil
 }
 
 } // namespace yue

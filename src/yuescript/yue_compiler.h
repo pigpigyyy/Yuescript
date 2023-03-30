@@ -82,6 +82,7 @@ public:
 		bool sameModule = false);
 	virtual ~YueCompiler();
 	CompileInfo compile(std::string_view codes, const YueConfig& config = {});
+	static void clear(void* luaState);
 
 private:
 	std::unique_ptr<YueCompilerImpl> _compiler;
