@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.1"sv;
+const std::string_view version = "0.16.2"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -2523,6 +2523,9 @@ private:
 		for (auto i = exprs.begin(), j = values.begin(); i != exprs.end(); ++i, ++j) {
 			auto expr = *i;
 			auto value = singleValueFrom(expr);
+			if (!value) {
+				throw CompileError("invalid destructure"sv, expr);
+			}
 			ast_node* destructNode = value->getByPath<SimpleValue_t, TableLit_t>();
 			if (destructNode || (destructNode = value->item.as<SimpleTable_t>())) {
 				if (*j != nil) {
