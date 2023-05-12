@@ -1,8 +1,10 @@
 ---
 sidebar: auto
+title: Reference
 ---
 
 # Yuescript
+
 <img src="/image/yuescript.svg" width="300px" height="300px" alt="logo"/>
 
 ## Introduction
@@ -1264,7 +1266,7 @@ catch err
 
 ## Attributes
 
-Syntax support for Lua 5.4 attributes. But you can use still use `const` declaration and get constant check functioning when targeting Lua versions below 5.4.
+Syntax support for Lua 5.4 attributes. But you can use still use `const` declaration and get constant check working when targeting Lua versions below 5.4.
 
 ```moonscript
 const a = 123
@@ -1274,6 +1276,19 @@ close _ = <close>: -> print "Out of scope."
 <pre>
 const a = 123
 close _ = &lt;close&gt;: -> print "Out of scope."
+</pre>
+</YueDisplay>
+
+You can do desctructuring with variables attributed as constant.
+
+```moonscript
+const {:a, :b, c, d} = tb
+-- a = 1
+```
+<YueDisplay>
+<pre>
+const {:a, :b, c, d} = tb
+-- a = 1
 </pre>
 </YueDisplay>
 
