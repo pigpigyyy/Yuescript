@@ -379,9 +379,12 @@ YUE_API int luaopen_yue(lua_State* L) {
 #if LUA_VERSION_NUM > 501
 	luaL_newlib(L, yuelib); // yue
 #else
-	lua_getglobal(L, "package");
-	lua_getfield(L, -1, "loaded");
-	luaL_register(L, nullptr, yuelib); // yue
+	lua_getglobal(L, "package"); // package
+	lua_getfield(L, -1, "loaded"); // package loaded
+	lua_createtable(L, 0, 0); // package loaded yue
+	lua_pushvalue(L, -1); // package loaded yue yue
+	lua_setfield(L, -3, "yue"); // loaded["yue"] = yue, package loaded yue
+	luaL_register(L, nullptr, yuelib); // package loaded yue
 #endif
 	lua_pushlstring(L, &yue::version.front(), yue::version.size()); // yue version
 	lua_setfield(L, -2, "version"); // yue["version"] = version, yue

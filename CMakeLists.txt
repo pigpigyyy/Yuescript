@@ -54,6 +54,10 @@ enable_language(CXX)
 include_directories(src src/3rdParty ${LUA_INCLUDE_DIR})
 add_definitions(-std=c++17 -O3 -fPIC)
 
+if (APPLE)
+	add_definitions(-Wno-deprecated-declarations)
+endif ()
+
 add_library(libyue MODULE
 	src/yuescript/ast.cpp
 	src/yuescript/parser.cpp
