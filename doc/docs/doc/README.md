@@ -760,6 +760,34 @@ export class Something
 </pre>
 </YueDisplay>
 
+Doing named export with destructuring.
+
+```moonscript
+export :loadstring, to_lua: tolua = yue
+export {itemA: {:fieldA = 'default'}} = tb
+```
+<YueDisplay>
+<pre>
+export :loadstring, to_lua: tolua = yue
+export {itemA: {:fieldA = 'default'}} = tb
+</pre>
+</YueDisplay>
+
+Export named items from module without creating local variables.
+
+```moonscript
+export.itemA = tb
+export.<index> = items
+export["a-b-c"] = 123
+```
+<YueDisplay>
+<pre>
+export.itemA = tb
+export.<index> = items
+export["a-b-c"] = 123
+</pre>
+</YueDisplay>
+
 * **Unnamed Export**  
 Unnamed export will add the target item into the array part of the exported table.
 

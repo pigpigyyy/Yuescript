@@ -2,15 +2,84 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.16.4
+
+### Added Features
+
+* Added -w option for Yuescript tool to recursively watch file changes under a target path and get codes recompiled.
+
+* Added different metamethod name literals checking for different Lua target versions.
+
+* Added checks for not using `break` statement in a for-loop scope.
+
+* Added compiler option for preserving comments before statements.  Using command line tool:
+  
+  ```sh
+  yue -c file.yue
+  ```
+  Using Lua lib:
+  ```lua
+  local yue = require("yue")
+  print yue.to_lua([[
+  -- a comment
+  f = ->
+  ]], {reserve_comment = true})
+  ```
+
+* Added `yue.check()` function to get compile errors in Lua table {{type, msg, line, col}}.
+
+* Added support for extending script search paths using `yue.options.path`.
+
+* Added new module export syntax for exporting items without creating local variables.
+  ```moonscript
+  export.<name> = "My module"
+  export.<call> = (...) -> -- ...
+  ```
+  compiles to:
+  ```lua
+  local _module_0 = setmetatable({ }, { })
+  getmetatable(_module_0).__name = "My module"
+  getmetatable(_module_0).__call = function(...) end
+  return _module_0
+  ```
+
+### Fixed Issues
+
+* Reduced max parser call stack size.
+
+* Refactored some syntax rules to speed up parsing.
+
+* Fixed default value issue when doing metatable destructuring.
+
+* Fixed a class syntax ambiguous issue when writting table block after a class declaration.
+
+* Improve number literal syntax to support hexadecimal point values, positive decimal exponents and hexadecimal exponents.
+
+* Prevented accessing scoped declared global variables multiple times when generating Lua codes.
+
+* Fixed parser running exponentially slow issue when parsing nested expressions.
+
+* Fixed exposing `yue` module as global variable by default.
+
+* Fixed a stack overflow issue in `yue.to_ast()`.
+
+* Fixed flatten level > 0 getting wrong AST issue in `yue.to_ast()` function.
+
+* Fixed missing indent check for comments in the beginning of `in_block` syntax rule.
+
+* Prevented `yue.loadfile()` throwing errors to match Lua `loadfile()` function behavior.
+
+* Fixed `yue` module registering issue for Lua 5.1 and LuaJIT.
+
 ## v0.15.12
 
 ### Added Features
 
 * yue.to_ast(): Reserve comment nodes followed by a statement in AST structures.
 * Added `while` clause line decorator.
-   ```moonscript
-   reader\parse_line! until reader\eof!
-   ```
+  ```moonscript
+  reader\parse_line! until reader\eof!
+  ```
   compiles to:
   ```lua
    while not reader:eof() do
@@ -19,7 +88,7 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
   ```
 * Supported underscores in number literal. `1_000_000`, `0xFF_EF_06`
 * Refactored some error messages with details instead of just "syntax error".
-* Added chaining assignment. `a = b = c = 0`
+* Added chaining assignment. `a = b = c = 0`
 
 ### Fixed Issues
 
