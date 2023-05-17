@@ -21,7 +21,14 @@ end
 pcall(tb.func)
 pcall(tb.func)
 pcall(tb.func)
-pcall((tb.func()))
+pcall((tb.func))
+pcall(((function()
+	local _base_0 = tb
+	local _fn_0 = _base_0.func
+	return _fn_0 and function(...)
+		return _fn_0(_base_0, ...)
+	end
+end)()), 1, 2, 3)
 pcall(tb.func, 1)
 pcall(tb.func, 1)
 if (xpcall(func, function(err)
@@ -29,7 +36,7 @@ if (xpcall(func, function(err)
 end, 1)) then
 	print("OK")
 end
-if xpcall(func, function(err)
+if xpcall((func), function(err)
 	return print(err)
 end, 1) then
 	print("OK")

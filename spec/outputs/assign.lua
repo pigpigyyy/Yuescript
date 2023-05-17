@@ -36,10 +36,10 @@ local x
 do
 	local f = getHandler()
 	if f then
-		x = ((function()
+		do
 			f()
-			return 123
-		end)())
+			x = 123
+		end
 	end
 end
 return _(function()

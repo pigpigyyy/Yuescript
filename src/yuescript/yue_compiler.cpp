@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.3"sv;
+const std::string_view version = "0.16.4"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -395,6 +395,8 @@ private:
 		int level;
 	};
 	std::list<GotoNode> gotos;
+	std::unordered_set<std::string> _exportedKeys;
+	std::unordered_set<std::string> _exportedMetaKeys;
 
 	enum class LocalMode {
 		None = 0,
@@ -778,7 +780,15 @@ private:
 	Value_t* singleValueFrom(ast_node* item) const {
 		if (auto unary = singleUnaryExpFrom(item)) {
 			if (unary->ops.empty()) {
-				return static_cast<Value_t*>(unary->expos.back());
+				Value_t* value = static_cast<Value_t*>(unary->expos.back());
+				if (auto chain = ast_cast<ChainValue_t>(value->item); chain && chain->items.size() == 1) {
+					if (auto exp = chain->getByPath<Callable_t, Parens_t, Exp_t>()) {
+						if (auto insideValue = singleValueFrom(exp)) {
+							return insideValue;
+						}
+					}
+				}
+				return value;
 			}
 		}
 		return nullptr;
@@ -3626,7 +3636,7 @@ private:
 				ClassDecl_t* classDecl = nullptr;
 				ast_ptr<false, ExpListAssign_t> assignment;
 				if (auto exportNode = stmt->content.as<Export_t>()) {
-					if (exportNode->assign) {
+					if (exportNode->assign && exportNode->target.is<ExpList_t>()) {
 						assignment = stmt->new_ptr<ExpListAssign_t>();
 						assignment->expList.set(exportNode->target);
 						assignment->action.set(exportNode->assign);
@@ -3694,7 +3704,7 @@ private:
 			}
 		}
 		if (isRoot && !_info.moduleName.empty() && !_info.exportMacro) {
-			block->statements.push_front(toAst<Statement_t>(_info.moduleName + (_info.exportDefault ? "=nil"s : "={}"s), block));
+			block->statements.push_front(toAst<Statement_t>(_info.moduleName + (_info.exportDefault ? "=nil"s : (_info.exportMetatable ? "=<>:{}"s : "={}"s)), block));
 		}
 		switch (usage) {
 			case ExpUsage::Closure:
@@ -7363,43 +7373,139 @@ private:
 		}
 	}
 
+	std::optional<std::string> getExportKey(ast_node* node) {
+		switch (node->getId()) {
+			case id<Name_t>(): {
+				return _parser.toString(node);
+			}
+			case id<String_t>(): {
+				auto strNode = static_cast<String_t*>(node);
+				switch (strNode->str->getId()) {
+					case id<DoubleString_t>(): {
+						auto str = static_cast<DoubleString_t*>(strNode->str.get());
+						if (str->segments.size() == 1) {
+							auto content = static_cast<DoubleStringContent_t*>(str->segments.front());
+							if (auto inner = content->content.as<DoubleStringInner_t>()) {
+								return _parser.toString(inner);
+							}
+						}
+						return std::nullopt;
+					}
+					case id<SingleString_t>(): {
+						auto str = _parser.toString(strNode->str);
+						Utils::replace(str, "\r\n"sv, "\n");
+						return str.substr(1, str.length() - 2);
+					}
+					case id<LuaString_t>(): {
+						auto str = static_cast<LuaString_t*>(strNode->str.get());
+						return _parser.toString(str->content);
+					}
+					default: {
+						YUEE("AST node mismatch", strNode->str);
+						return std::nullopt;
+					}
+				}
+			}
+			case id<Metamethod_t>(): {
+				auto metamethod = static_cast<Metamethod_t*>(node);
+				if (auto key = getExportKey(metamethod->item)) {
+					if (metamethod->item.is<Name_t>()) {
+						return "__"s + key.value();
+					} else {
+						return key;
+					}
+				}
+				return std::nullopt;
+			}
+			case id<DotChainItem_t>(): {
+				auto dotChain = static_cast<DotChainItem_t*>(node);
+				return getExportKey(dotChain->name);
+			}
+			case id<Exp_t>(): {
+				if (auto value = singleValueFrom(node)) {
+					if (auto str = value->item.as<String_t>()) {
+						return getExportKey(str);
+					}
+				}
+			}
+		}
+		return std::nullopt;
+	}
+
 	void transformExport(Export_t* exportNode, str_list& out) {
 		auto x = exportNode;
 		if (_scopes.size() > 1) {
 			throw CompileError("can not do module export outside the root block"sv, exportNode);
 		}
 		if (exportNode->assign) {
-			auto expList = exportNode->target.to<ExpList_t>();
-			if (expList->exprs.size() != exportNode->assign->values.size()) {
-				throw CompileError("left and right expressions must be matched in export statement"sv, x);
-			}
-			for (auto _exp : expList->exprs.objects()) {
-				auto exp = static_cast<Exp_t*>(_exp);
-				if (!variableFrom(exp) && !exp->getByPath<UnaryExp_t, Value_t, SimpleValue_t, TableLit_t>() && !exp->getByPath<UnaryExp_t, Value_t, SimpleTable_t>()) {
-					throw CompileError("left hand expressions must be variables in export statement"sv, x);
+			if (ast_is<Exp_t, DotChainItem_t>(exportNode->target)) {
+				if (auto name = getExportKey(exportNode->target)) {
+					if (auto dotChain = exportNode->target.as<DotChainItem_t>();
+						dotChain && dotChain->name.is<Metamethod_t>()) {
+						auto nameStr = name.value();
+						if (_exportedMetaKeys.find(nameStr) != _exportedMetaKeys.end()) {
+							throw CompileError("export module metamethod key \"" + nameStr + "\" duplicated"s, dotChain->name);
+						} else {
+							_exportedMetaKeys.insert(nameStr);
+						}
+					} else {
+						auto nameStr = name.value();
+						if (_exportedKeys.find(nameStr) != _exportedKeys.end()) {
+							throw CompileError("export module key \"" + nameStr + "\" duplicated"s, exportNode->target);
+						} else {
+							_exportedKeys.insert(nameStr);
+						}
+					}
 				}
-			}
-			auto assignment = x->new_ptr<ExpListAssign_t>();
-			assignment->expList.set(expList);
-			assignment->action.set(exportNode->assign);
-			transformAssignment(assignment, out);
-			str_list names = transformAssignDefs(expList, DefOp::Get);
-			auto info = extractDestructureInfo(assignment, true, false);
-			if (!info.destructures.empty()) {
-				for (const auto& destruct : info.destructures)
-					for (const auto& item : destruct.items)
-						if (!item.targetVar.empty())
-							names.push_back(item.targetVar);
-			}
-			if (_info.exportDefault) {
-				out.back().append(indent() + _info.moduleName + " = "s + names.back() + nlr(exportNode));
+				auto newChain = x->new_ptr<ChainValue_t>();
+				auto callable = toAst<Callable_t>(_info.moduleName, x);
+				newChain->items.push_front(callable);
+				newChain->items.push_back(exportNode->target);
+				auto exp = newExp(newChain, x);
+				auto expList = x->new_ptr<ExpList_t>();
+				expList->exprs.push_back(exp);
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				assignment->expList.set(expList);
+				assignment->action.set(exportNode->assign);
+				transformAssignment(assignment, out);
 			} else {
-				str_list lefts, rights;
-				for (const auto& name : names) {
-					lefts.push_back(_info.moduleName + "[\""s + name + "\"]"s);
-					rights.push_back(name);
+				auto expList = exportNode->target.to<ExpList_t>();
+				if (expList->exprs.size() != exportNode->assign->values.size()) {
+					throw CompileError("left and right expressions must be matched in export statement"sv, x);
 				}
-				out.back().append(indent() + join(lefts, ", "sv) + " = "s + join(rights, ", "sv) + nlr(exportNode));
+				for (auto _exp : expList->exprs.objects()) {
+					auto exp = static_cast<Exp_t*>(_exp);
+					if (!variableFrom(exp) && !exp->getByPath<UnaryExp_t, Value_t, SimpleValue_t, TableLit_t>() && !exp->getByPath<UnaryExp_t, Value_t, SimpleTable_t>()) {
+						throw CompileError("left hand expressions must be variables in export statement"sv, x);
+					}
+				}
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				assignment->expList.set(expList);
+				assignment->action.set(exportNode->assign);
+				transformAssignment(assignment, out);
+				str_list names = transformAssignDefs(expList, DefOp::Get);
+				auto info = extractDestructureInfo(assignment, true, false);
+				if (!info.destructures.empty()) {
+					for (const auto& destruct : info.destructures)
+						for (const auto& item : destruct.items)
+							if (!item.targetVar.empty())
+								names.push_back(item.targetVar);
+				}
+				if (_info.exportDefault) {
+					out.back().append(indent() + _info.moduleName + " = "s + names.back() + nlr(exportNode));
+				} else {
+					str_list lefts, rights;
+					for (const auto& name : names) {
+						if (_exportedKeys.find(name) != _exportedKeys.end()) {
+							throw CompileError("export module key \"" + name + "\" duplicated"s, x);
+						} else {
+							_exportedKeys.insert(name);
+						}
+						lefts.push_back(_info.moduleName + "[\""s + name + "\"]"s);
+						rights.push_back(name);
+					}
+					out.back().append(indent() + join(lefts, ", "sv) + " = "s + join(rights, ", "sv) + nlr(exportNode));
+				}
 			}
 		} else {
 			if (auto macro = exportNode->target.as<Macro_t>()) {

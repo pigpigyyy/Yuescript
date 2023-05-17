@@ -32,21 +32,17 @@ do
 	end)()
 	local b <close> = (function()
 		if not false then
-			return ((function()
-				if x then
-					return 1
-				end
-			end)())
+			if x then
+				return 1
+			end
 		end
 	end)()
 	local c <const> = (function()
 		if true then
-			return ((function()
-				local _exp_0 = x
-				if "abc" == _exp_0 then
-					return 998
-				end
-			end)())
+			local _exp_0 = x
+			if "abc" == _exp_0 then
+				return 998
+			end
 		end
 	end)()
 	local d <close> = (function()

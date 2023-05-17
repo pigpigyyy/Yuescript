@@ -93,6 +93,11 @@ YueParser::YueParser() {
 		return false;
 	});
 
+	export_expression_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("invalid export expression"sv, item.begin);
+		return false;
+	});
+
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
 	#define key(str) (expr(str) >> not_alpha_num)
@@ -666,29 +671,48 @@ YueParser::YueParser() {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->exportCount++;
 		return true;
-	}) >> (pl::user(space >> ExportDefault >> space >> Exp, [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		if (st->exportDefault) {
-			throw ParserError("export default has already been declared"sv, item.begin);
-		}
-		if (st->exportCount > 1) {
-			throw ParserError("there are items already being exported"sv, item.begin);
-		}
-		st->exportDefault = true;
-		return true;
-	})
-	| (not_(space >> ExportDefault) >> pl::user(true_(), [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		if (st->exportDefault && st->exportCount > 1) {
-			throw ParserError("can not export any more items when 'export default' is declared"sv, item.begin);
-		}
-		return true;
-	}) >> space >> ExpList >> -(space >> Assign))
-	| space >> pl::user(Macro, [](const item_t& item) {
-		State* st = reinterpret_cast<State*>(item.user_data);
-		st->exportMacro = true;
-		return true;
-	})) >> not_(space >> StatementAppendix);
+	}) >> (
+		pl::user(space >> ExportDefault >> space >> Exp, [](const item_t& item) {
+			State* st = reinterpret_cast<State*>(item.user_data);
+			if (st->exportDefault) {
+				throw ParserError("export default has already been declared"sv, item.begin);
+			}
+			if (st->exportCount > 1) {
+				throw ParserError("there are items already being exported"sv, item.begin);
+			}
+			st->exportDefault = true;
+			return true;
+		}) |
+		not_(space >> ExportDefault) >> pl::user(true_(), [](const item_t& item) {
+			State* st = reinterpret_cast<State*>(item.user_data);
+			if (st->exportDefault && st->exportCount > 1) {
+				throw ParserError("can not export any more items when 'export default' is declared"sv, item.begin);
+			}
+			return true;
+		}) >> (
+			and_(set(".[")) >> ((pl::user(and_('.' >> Metatable), [](const item_t& item) {
+				State* st = reinterpret_cast<State*>(item.user_data);
+				if (st->exportMetatable) {
+					throw ParserError("module metatable duplicated"sv, item.begin);
+				}
+				if (st->exportMetamethod) {
+					throw ParserError("metatable should be exported before metamethod"sv, item.begin);
+				}
+				st->exportMetatable = true;
+				return true;
+			}) | pl::user(and_(".<"), [](const item_t& item) {
+				State* st = reinterpret_cast<State*>(item.user_data);
+				st->exportMetamethod = true;
+				return true;
+			}) | true_()) >> (DotChainItem | index) >> space >> Assign | export_expression_error) |
+			space >> ExpList >> -(space >> Assign)
+		) |
+		space >> pl::user(Macro, [](const item_t& item) {
+			State* st = reinterpret_cast<State*>(item.user_data);
+			st->exportMacro = true;
+			return true;
+		})
+	) >> not_(space >> StatementAppendix);
 
 	VariablePair = ':' >> Variable;
 
@@ -897,6 +921,7 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 			res.moduleName = std::move(state.moduleName);
 			res.exportDefault = state.exportDefault;
 			res.exportMacro = state.exportMacro;
+			res.exportMetatable = !state.exportMetatable && state.exportMetamethod;
 		}
 	} catch (const ParserError& err) {
 		res.error = {err.what(), err.line, err.col};

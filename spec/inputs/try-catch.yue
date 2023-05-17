@@ -23,6 +23,7 @@ try tb.func
 try tb.func!
 try tb.func()
 try (tb.func!)
+try (tb\func(1, 2, 3))
 
 try tb.func 1
 try tb.func(1)
@@ -32,7 +33,7 @@ catch err
 	print err)
 	print "OK"
 
-if try func 1
+if try (func 1)
 catch err
 		print err
 	print "OK"

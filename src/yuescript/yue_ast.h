@@ -522,12 +522,12 @@ class FunLit_t;
 
 AST_NODE(SimpleValue)
 	ast_sel<true,
-	TableLit_t, ConstValue_t,
-	If_t, Switch_t, With_t, ClassDecl_t,
-	ForEach_t, For_t, While_t, Do_t, Try_t,
-	UnaryValue_t,
-	TblComprehension_t, Comprehension_t,
-	FunLit_t, Num_t, VarArg_t> value;
+		TableLit_t, ConstValue_t,
+		If_t, Switch_t, With_t, ClassDecl_t,
+		ForEach_t, For_t, While_t, Do_t, Try_t,
+		UnaryValue_t,
+		TblComprehension_t, Comprehension_t,
+		FunLit_t, Num_t, VarArg_t> value;
 	AST_MEMBER(SimpleValue, &value)
 AST_END(SimpleValue, "simple_value"sv)
 
@@ -708,7 +708,7 @@ class Macro_t;
 
 AST_NODE(Export)
 	ast_ptr<false, ExportDefault_t> def;
-	ast_sel<true, ExpList_t, Exp_t, Macro_t> target;
+	ast_sel<true, ExpList_t, Exp_t, Macro_t, DotChainItem_t> target;
 	ast_ptr<false, Assign_t> assign;
 	AST_MEMBER(Export, &def, &target, &assign)
 AST_END(Export, "export"sv)

@@ -214,7 +214,7 @@ tb[] = 2
 tb[] = 3
 
 x = 0
-_ = (if ntype(v) == "fndef" then x += 1) for v in *values
+_ = (if ntype(v) == "fndef" then x + 1) for v in *values
 
 
 hello =

@@ -37,6 +37,7 @@ struct ParseInfo {
 	std::unique_ptr<input> codes;
 	bool exportDefault = false;
 	bool exportMacro = false;
+	bool exportMetatable = false;
 	std::string moduleName;
 	std::string errorMessage(std::string_view msg, int errLine, int errCol) const;
 };
@@ -97,6 +98,8 @@ protected:
 		}
 		bool exportDefault = false;
 		bool exportMacro = false;
+		bool exportMetatable = false;
+		bool exportMetamethod = false;
 		int exportCount = 0;
 		int moduleFix = 0;
 		int expLevel = 0;
@@ -129,6 +132,7 @@ private:
 	NONE_AST_RULE(indentation_error);
 	NONE_AST_RULE(braces_expression_error);
 	NONE_AST_RULE(brackets_expression_error);
+	NONE_AST_RULE(export_expression_error);
 
 	NONE_AST_RULE(inc_exp_level);
 	NONE_AST_RULE(dec_exp_level);

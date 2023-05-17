@@ -29,7 +29,7 @@ export cbVal = do
 	(x)<- f
 	return x h
 
-export y = ->
+export yy = ->
 	h = 100
 	k = 100
 
@@ -84,3 +84,7 @@ export v2 = 2
 export v3 = class v4
 v5 = 5
 
+export.<"abc"> = 1
+export.<name> = "export"
+export.<call> = => {}
+export["a-b-c-x"] = 123

@@ -32,10 +32,10 @@ local t = {
 }
 return function(y, k)
 	if y == nil then
-		y = ((function()
+		do
 			x = 10 + 2
-			return x
-		end)())
+			y = x
+		end
 	end
 	if k == nil then
 		do

@@ -1,4 +1,4 @@
-local _module_0 = { }
+local _module_0 = setmetatable({ }, { })
 local a, b, c = 223, 343, 123
 _module_0["a"], _module_0["b"], _module_0["c"] = a, b, c
 local cool = "dad"
@@ -62,11 +62,12 @@ do
 	end)
 end
 _module_0["cbVal"] = cbVal
-y = function()
+local yy
+yy = function()
 	local h = 100
 	local k = 100
 end
-_module_0["y"] = y
+_module_0["yy"] = yy
 do
 	local _exp_0 = h
 	if 100 == _exp_0 or 150 == _exp_0 then
@@ -322,4 +323,10 @@ do
 end
 _module_0["v3"] = v3
 v5 = 5
+getmetatable(_module_0)["abc"] = 1
+getmetatable(_module_0).__name = "export"
+getmetatable(_module_0).__call = function(self)
+	return { }
+end
+_module_0["a-b-c-x"] = 123
 return _module_0
