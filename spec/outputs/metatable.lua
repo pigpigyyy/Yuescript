@@ -76,8 +76,14 @@ getmetatable(a).__index = tb
 getmetatable(a).__index = tb
 local mt = getmetatable(a)
 tb:func(#list)
-getmetatable(tb):__func(list)
-getmetatable(tb):__func(list)
+do
+	local _obj_0 = getmetatable(tb)
+	_obj_0["func"](_obj_0, list)
+end
+do
+	local _obj_0 = getmetatable(tb)
+	_obj_0["func"](_obj_0, list)
+end
 local index, setFunc
 do
 	local _obj_0 = getmetatable(require("module"))
@@ -86,7 +92,10 @@ end
 do
 	local _with_0 = tb
 	print(getmetatable(_with_0).__add, getmetatable(_with_0.x):__index("key"))
-	a = getmetatable(getmetatable(getmetatable(_with_0).__index).__add):__new(123)
+	do
+		local _obj_0 = getmetatable(getmetatable(getmetatable(_with_0).__index).__add)
+		a = _obj_0["new"](_obj_0, 123)
+	end
 	b = t(#getmetatable(_with_0).__close.test)
 	c = t(#getmetatable(_with_0).__close(_with_0.test))
 end
@@ -132,13 +141,23 @@ do
 	return _obj_0["value" .. tostring(x > y)](_obj_0, 123, ...)
 end
 do
-	f = getmetatable(tb):__value(123, ...)
-	f(getmetatable(tb):__value(123, ...))
-	getmetatable(tb):__value(123, ...)
-	return getmetatable(tb):__value(123, ...)
+	do
+		local _obj_0 = getmetatable(tb)
+		f = _obj_0['value'](_obj_0, 123, ...)
+	end
+	f((function(...)
+		local _obj_0 = getmetatable(tb)
+		return _obj_0['value'](_obj_0, 123, ...)
+	end)(...))
+	do
+		local _obj_0 = getmetatable(tb)
+		_obj_0['value'](_obj_0, 123, ...)
+	end
+	local _obj_0 = getmetatable(tb)
+	return _obj_0['value'](_obj_0, 123, ...)
 end
 do
-	f = getmetatable(tb).__value(123, ...)
+	f = getmetatable(tb)["value"](123, ...)
 	f = getmetatable(tb)["value" .. tostring(x < y)](123, ...)
 	f(getmetatable(tb)['value'](123, ...))
 	getmetatable(tb)[ [[ value

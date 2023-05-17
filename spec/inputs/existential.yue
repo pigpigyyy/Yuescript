@@ -49,7 +49,7 @@ with? io.open "test.txt", "w"
 	\write "hello"
 	\close!
 
-tb?.<a>? 123
+tb?.<call>? 123
 
 with? tb.<>?.<index>
 	.a = 1

@@ -201,7 +201,7 @@ do
 	local _obj_0 = tb
 	if _obj_0 ~= nil then
 		do
-			local _obj_1 = getmetatable(_obj_0).__a
+			local _obj_1 = getmetatable(_obj_0).__call
 			if _obj_1 ~= nil then
 				_obj_1(123)
 			end

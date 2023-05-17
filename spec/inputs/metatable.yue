@@ -37,14 +37,14 @@ a.<index> = tb
 mt = a.<>
 
 tb\func #list
-tb\<func>list
-tb\<func> list
+tb\<"func">list
+tb\<"func"> list
 
 import "module" as :<index>, <newindex>:setFunc
 
 with tb
 	print .<add>, .x\<index> "key"
-	a = .<index>.<add>\<new> 123
+	a = .<index>.<add>\<"new"> 123
 	b = t#.<close>.test
 	c = t #.<close> .test
 
@@ -70,13 +70,13 @@ do
 	return tb\<["value" .. tostring x > y]>(123, ...)
 
 do
-	f = tb\<value>(123, ...)
-	f tb\<value>(123, ...)
-	tb\<value>(123, ...)
-	return tb\<value> 123, ...
+	f = tb\<'value'>(123, ...)
+	f tb\<'value'>(123, ...)
+	tb\<'value'>(123, ...)
+	return tb\<'value'> 123, ...
 
 do
-	f = tb.<value> 123, ...
+	f = tb.<["value"]> 123, ...
 	f = tb.<"value#{x < y}">(123, ...)
 	f tb.<'value'> 123, ...
 	tb.<[[ value
