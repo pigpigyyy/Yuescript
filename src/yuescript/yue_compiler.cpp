@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.4"sv;
+const std::string_view version = "0.16.5"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -4638,7 +4638,9 @@ private:
 				auto meta = colon->name.to<Metamethod_t>();
 				switch (meta->item->getId()) {
 					case id<Name_t>(): {
-						auto newColon = toAst<ColonChainItem_t>("\\__"s + _parser.toString(meta->item), x);
+						auto name = _parser.toString(meta->item);
+						checkMetamethod(name, meta->item);
+						auto newColon = toAst<ColonChainItem_t>("\\__"s + name, x);
 						chain->items.push_back(newColon);
 						break;
 					}
@@ -4731,6 +4733,8 @@ private:
 				auto meta = dot->name.to<Metamethod_t>();
 				switch (meta->item->getId()) {
 					case id<Name_t>(): {
+						auto name = _parser.toString(meta->item);
+						checkMetamethod(name, meta->item);
 						auto newDot = toAst<DotChainItem_t>(".__"s + _parser.toString(meta->item), x);
 						chain->items.push_back(newDot);
 						break;
