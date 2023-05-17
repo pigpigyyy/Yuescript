@@ -783,7 +783,7 @@ export["a-b-c"] = 123
 <YueDisplay>
 <pre>
 export.itemA = tb
-export.<index> = items
+export.&lt;index&gt; = items
 export["a-b-c"] = 123
 </pre>
 </YueDisplay>
