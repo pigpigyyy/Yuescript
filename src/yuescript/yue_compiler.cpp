@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.5"sv;
+const std::string_view version = "0.16.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -5074,7 +5074,7 @@ private:
 				lua_pushlstring(L, str.c_str(), str.size());
 			} // cur pcall macroFunc args...
 		}
-		bool success = lua_pcall(L, (args ? static_cast<int>(args->size()) : 0) + 1, 2, 0) == 0;
+		bool success = lua_pcall(L, (args ? static_cast<int>(args->size()) : 0), 1, 0) == 0;
 		if (!success) { // cur err
 			std::string err = lua_tostring(L, -1);
 			throw CompileError("failed to expand macro: "s + err, x);
