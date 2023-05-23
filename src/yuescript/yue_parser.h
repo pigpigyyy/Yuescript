@@ -39,7 +39,7 @@ struct ParseInfo {
 	bool exportMacro = false;
 	bool exportMetatable = false;
 	std::string moduleName;
-	std::string errorMessage(std::string_view msg, int errLine, int errCol) const;
+	std::string errorMessage(std::string_view msg, int errLine, int errCol, int lineOffset = 0) const;
 };
 
 template <typename T>

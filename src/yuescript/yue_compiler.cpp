@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.6"sv;
+const std::string_view version = "0.16.7"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -250,7 +250,7 @@ public:
 					for (const auto& var : _globals) {
 						int line, col;
 						std::tie(line, col) = var.second;
-						globals->push_back({var.first, line, col});
+						globals->push_back({var.first, line + _config.lineOffset, col});
 					}
 					std::sort(globals->begin(), globals->end(), [](const GlobalVar& varA, const GlobalVar& varB) {
 						if (varA.line < varB.line) {
@@ -284,12 +284,13 @@ public:
 #endif // YUE_NO_MACRO
 				return {std::move(out.back()), std::nullopt, std::move(globals), std::move(options), parseTime, compileTime};
 			} catch (const CompileError& error) {
-				auto displayMessage = _info.errorMessage(error.what(), error.line, error.col);
+				auto displayMessage = _info.errorMessage(error.what(), error.line, error.col, _config.lineOffset);
 				return {
 					std::string(),
 					CompileInfo::Error{
 						error.what(),
-						error.line, error.col,
+						error.line + _config.lineOffset,
+						error.col,
 						displayMessage},
 					std::move(globals),
 					std::move(options),
@@ -302,18 +303,20 @@ public:
 					std::string(),
 					CompileInfo::Error{
 						error.msg,
-						error.line, error.col,
+						error.line + _config.lineOffset,
+						error.col,
 						""},
 					std::move(globals),
 					std::move(options),
 					parseTime, compileTime};
 			}
-			auto displayMessage = _info.errorMessage(error.msg, error.line, error.col);
+			auto displayMessage = _info.errorMessage(error.msg, error.line, error.col, _config.lineOffset);
 			return {
 				std::string(),
 				CompileInfo::Error{
 					error.msg,
-					error.line, error.col,
+					error.line + _config.lineOffset,
+					error.col,
 					displayMessage},
 				std::move(globals),
 				std::move(options),

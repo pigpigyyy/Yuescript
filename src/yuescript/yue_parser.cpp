@@ -976,7 +976,7 @@ void trim(std::string& str) {
 }
 } // namespace Utils
 
-std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCol) const {
+std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCol, int lineOffset) const {
 	const int ASCII = 255;
 	int length = errLine;
 	auto begin = codes->begin();
@@ -1009,7 +1009,7 @@ std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCo
 	}
 	Utils::replace(line, "\t"sv, " "sv);
 	std::ostringstream buf;
-	buf << errLine << ": "sv << msg << '\n'
+	buf << errLine + lineOffset << ": "sv << msg << '\n'
 		<< line << '\n'
 		<< std::string(col, ' ') << "^"sv;
 	return buf.str();
