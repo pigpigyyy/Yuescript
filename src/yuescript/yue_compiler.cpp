@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.7"sv;
+const std::string_view version = "0.16.8"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -4995,7 +4995,9 @@ private:
 			return std::to_string(x->m_begin.m_line + _config.lineOffset);
 		}
 		if (name == "FILE"sv) {
-			return _config.module.empty() ? "\"yuescript\""s : '"' + _config.module + '"';
+			auto moduleName = _config.module;
+			Utils::replace(moduleName, "\\"sv, "\\\\"sv);
+			return moduleName.empty() ? "\"yuescript\""s : '"' + moduleName + '"';
 		}
 		return Empty;
 	}
