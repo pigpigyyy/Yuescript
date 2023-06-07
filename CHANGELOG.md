@@ -2,6 +2,26 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.17.0
+
+### Added Features
+
+* Added In-expression syntax to do range checking. In-expression can be used in switch statement as a new clause.
+  ```moonscript
+  a = 5
+  if a in [1, 10] or a in (20, 30) or a in {77, 88} or a not in {100, 200}
+    print "(1 <= a <= 10) or (20 < a < 30) or (a == 77 or a == 88) or not (a == 100 or a == 200)"
+  
+  switch a when not in [1, 10]
+    print "not (1 <= a <= 10)"
+  ```
+* Added metamethod name checking for chain expression.
+
+### Fixed Issues
+
+* Fixed a LuaJIT module loading issue.
+* Fixed built-in $FILE macro does not escape backslash on Windows.
+
 ## v0.16.4
 
 ### Added Features

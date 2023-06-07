@@ -2355,6 +2355,52 @@ print "You're lucky!" unless math.random! > 0.1
 </pre>
 </YueDisplay>
 
+### In Expression
+
+You can write range checking code with an `in-expression`.
+
+```moonscript
+a = 5
+
+if a in [1, 10]
+  print "a is in range from 1 to 10"
+
+if a not in [1, 10]
+  print "a is not in range from 1 to 10"
+
+if a in (0, 11)
+  print "a is between 0 and 11 with open intervals"
+
+if a in {1, 3, 5, 7}
+  print "checking equality with discrete values"
+```
+<YueDisplay>
+<pre>
+a = 5
+
+if a in [1, 10]
+  print "a is in range from 1 to 10"
+
+if a not in [1, 10]
+  print "a is not in range from 1 to 10"
+
+if a in (0, 11)
+  print "a is between 0 and 11 with open intervals"
+
+if a in {1, 3, 5, 7}
+  print "checking equality with discrete values"
+</pre>
+</YueDisplay>
+
+```moonscript
+print "You're lucky!" unless math.random! > 0.1
+```
+<YueDisplay>
+<pre>
+print "You're lucky!" unless math.random! > 0.1
+</pre>
+</YueDisplay>
+
 ## Line Decorators
 
 For convenience, the for loop and if statement can be applied to single statements at the end of the line:
@@ -2522,6 +2568,53 @@ item = {}
 switch item
   when {pos: {:x = 50, :y = 200}}
     print "Vec2 #{x}, #{y}" -- table destructuring will still pass
+</pre>
+</YueDisplay>
+
+### Range Matching
+
+You can do range matching in a switch when clause using `In` expressions.
+
+```moonscript
+value = 5
+
+switch item
+  -- range checking with closed interval
+  when in [1, 3]
+    print "1 <= value <= 3"
+
+  -- range checking with open and closed interval
+  when in (6, 8]
+    print "6 < value <= 8"
+
+  -- not in range checking
+  when not in [1, 10)
+    print "not (1 < value <= 10)"
+
+  -- checking discrete values
+  when in {11, 21, 99}
+    print "value is 11, 21 or 99"
+```
+<YueDisplay>
+<pre>
+value = 5
+
+switch item
+  -- range checking with closed interval
+  when in [1, 3]
+    print "1 <= value <= 3"
+
+  -- range checking with open and closed interval
+  when in (6, 8]
+    print "6 < value <= 8"
+
+  -- not in range checking
+  when not in [1, 10)
+    print "not (1 < value <= 10)"
+
+  -- checking discrete values
+  when in {11, 21, 99}
+    print "value is 11, 21 or 99"
 </pre>
 </YueDisplay>
 
