@@ -11,16 +11,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "yuescript/ast.hpp"
 
 namespace parserlib {
-using namespace std::string_view_literals;
 
 #define AST_LEAF(type) \
 	COUNTER_INC; \
+	namespace yue { \
 	class type##_t : public ast_node { \
 	public: \
 		virtual int getId() const override { return COUNTER_READ; }
 
 #define AST_NODE(type) \
 	COUNTER_INC; \
+	namespace yue { \
 	class type##_t : public ast_container { \
 	public: \
 		virtual int getId() const override { return COUNTER_READ; }
@@ -34,10 +35,48 @@ using namespace std::string_view_literals;
 	virtual const std::string_view getName() const override { return name; } \
 	} \
 	; \
+	} \
 	template <> \
-	constexpr int id<type##_t>() { return COUNTER_READ; }
+	constexpr int id<yue::type##_t>() { return COUNTER_READ; }
 
 // clang-format off
+
+namespace yue {
+class ExpListLow_t;
+class TableBlock_t;
+class Attrib_t;
+class SimpleTable_t;
+class TableLit_t;
+class Assign_t;
+class Exp_t;
+class VariablePair_t;
+class NormalPair_t;
+class MetaVariablePair_t;
+class MetaNormalPair_t;
+class FnArgsDef_t;
+class ChainValue_t;
+class ExistentialOp_t;
+class Block_t;
+class Statement_t;
+class Body_t;
+class AssignableNameList_t;
+class StarExp_t;
+class CompInner_t;
+class AssignableChain_t;
+class UnaryExp_t;
+class Parens_t;
+class MacroName_t;
+class String_t;
+class ConstValue_t;
+class ClassDecl_t;
+class UnaryValue_t;
+class FunLit_t;
+class DefaultValue_t;
+class InvokeArgs_t;
+class TableBlockIndent_t;
+class Macro_t;
+class In_t;
+} // namespace yue
 
 AST_LEAF(Num)
 AST_END(Num, "num"sv)
@@ -101,10 +140,6 @@ AST_NODE(NameList)
 	AST_MEMBER(NameList, &sep, &names)
 AST_END(NameList, "name_list"sv)
 
-class ExpListLow_t;
-class TableBlock_t;
-class Attrib_t;
-
 AST_NODE(LocalValues)
 	ast_ptr<true, NameList_t> nameList;
 	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
@@ -125,10 +160,6 @@ AST_END(ConstAttrib, "const"sv)
 
 AST_LEAF(CloseAttrib)
 AST_END(CloseAttrib, "close"sv)
-
-class SimpleTable_t;
-class TableLit_t;
-class Assign_t;
 
 AST_NODE(LocalAttrib)
 	ast_sel<true, ConstAttrib_t, CloseAttrib_t> attrib;
@@ -152,16 +183,12 @@ AST_NODE(ImportLiteral)
 	AST_MEMBER(ImportLiteral, &sep, &inners)
 AST_END(ImportLiteral, "import_literal"sv)
 
-class Exp_t;
-
 AST_NODE(ImportFrom)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<true, ColonImportName_t, Variable_t> names;
 	ast_ptr<true, Exp_t> exp;
 	AST_MEMBER(ImportFrom, &sep, &names, &exp)
 AST_END(ImportFrom, "import_from"sv)
-
-class MacroName_t;
 
 AST_NODE(MacroNamePair)
 	ast_ptr<true, MacroName_t> key;
@@ -171,11 +198,6 @@ AST_END(MacroNamePair, "macro_name_pair"sv)
 
 AST_LEAF(ImportAllMacro)
 AST_END(ImportAllMacro, "import_all_macro"sv)
-
-class VariablePair_t;
-class NormalPair_t;
-class MetaVariablePair_t;
-class MetaNormalPair_t;
 
 AST_NODE(ImportTabLit)
 	ast_ptr<true, Seperator_t> sep;
@@ -209,12 +231,8 @@ AST_NODE(ShortTabAppending)
 	AST_MEMBER(ShortTabAppending, &assign)
 AST_END(ShortTabAppending, "short_table_appending"sv)
 
-class FnArgsDef_t;
-
 AST_LEAF(FnArrowBack)
 AST_END(FnArrowBack, "fn_arrow_back"sv)
-
-class ChainValue_t;
 
 AST_NODE(Backcall)
 	ast_ptr<false, FnArgsDef_t> argsDef;
@@ -235,18 +253,11 @@ AST_NODE(ExpList)
 	AST_MEMBER(ExpList, &sep, &exprs)
 AST_END(ExpList, "exp_list"sv)
 
-class TableBlock_t;
-
 AST_NODE(Return)
 	bool allowBlockMacroReturn = false;
 	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
 	AST_MEMBER(Return, &valueList)
 AST_END(Return, "return"sv)
-
-class ExistentialOp_t;
-class Assign_t;
-class Block_t;
-class Statement_t;
 
 AST_NODE(With)
 	ast_ptr<false, ExistentialOp_t> eop;
@@ -263,9 +274,9 @@ AST_NODE(SwitchList)
 AST_END(SwitchList, "switch_list"sv)
 
 AST_NODE(SwitchCase)
-	ast_ptr<true, SwitchList_t> valueList;
+	ast_sel<true, SwitchList_t, In_t> condition;
 	ast_sel<true, Block_t, Statement_t> body;
-	AST_MEMBER(SwitchCase, &valueList, &body)
+	AST_MEMBER(SwitchCase, &condition, &body)
 AST_END(SwitchCase, "switch_case"sv)
 
 AST_NODE(Switch)
@@ -306,8 +317,6 @@ AST_NODE(While)
 	AST_MEMBER(While, &type, &condition, &body)
 AST_END(While, "while"sv)
 
-class Body_t;
-
 AST_NODE(Repeat)
 	ast_ptr<true, Body_t> body;
 	ast_ptr<true, Exp_t> condition;
@@ -327,9 +336,6 @@ AST_NODE(For)
 	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(For, &varName, &startValue, &stopValue, &stepValue, &body)
 AST_END(For, "for"sv)
-
-class AssignableNameList_t;
-class StarExp_t;
 
 AST_NODE(ForEach)
 	ast_ptr<true, AssignableNameList_t> nameList;
@@ -354,8 +360,6 @@ AST_NODE(Try)
 	ast_ptr<false, CatchBlock_t> catchBlock;
 	AST_MEMBER(Try, &func, &catchBlock)
 AST_END(Try, "try"sv)
-
-class CompInner_t;
 
 AST_NODE(Comprehension)
 	ast_sel<true, Exp_t, Statement_t> value;
@@ -400,8 +404,6 @@ AST_NODE(CompInner)
 	AST_MEMBER(CompInner, &sep, &items)
 AST_END(CompInner, "comp_inner"sv)
 
-class TableBlock_t;
-
 AST_NODE(Assign)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<true, With_t, If_t, Switch_t, TableBlock_t, Exp_t> values;
@@ -423,14 +425,39 @@ AST_END(BinaryOperator, "binary_op"sv)
 AST_LEAF(UnaryOperator)
 AST_END(UnaryOperator, "unary_op"sv)
 
-class AssignableChain_t;
+AST_LEAF(InRangeOpen)
+AST_END(InRangeOpen, "in_range_open"sv)
+
+AST_LEAF(InRangeClose)
+AST_END(InRangeClose, "in_range_close"sv)
+
+AST_LEAF(NotIn)
+AST_END(NotIn, "not_in"sv)
+
+AST_NODE(InRange)
+	ast_sel<true, InRangeOpen_t, InRangeClose_t> open;
+	ast_ptr<true, Exp_t> openValue;
+	ast_ptr<true, Exp_t> closeValue;
+	ast_sel<true, InRangeOpen_t, InRangeClose_t> close;
+	AST_MEMBER(InRange, &open, &openValue, &closeValue, &close)
+AST_END(InRange, "in_range"sv)
+
+AST_NODE(InDiscrete)
+	ast_ptr<true, Seperator_t> sep;
+	ast_list<true, Exp_t> values;
+	AST_MEMBER(InDiscrete, &sep, &values)
+AST_END(InDiscrete, "in_discrete"sv)
+
+AST_NODE(In)
+	ast_ptr<false, NotIn_t> not_;
+	ast_sel<true, InRange_t, InDiscrete_t> item;
+	AST_MEMBER(In, &not_, &item)
+AST_END(In, "in"sv)
 
 AST_NODE(Assignable)
 	ast_sel<true, AssignableChain_t, Variable_t, SelfItem_t> item;
 	AST_MEMBER(Assignable, &item)
 AST_END(Assignable, "assignable"sv)
-
-class UnaryExp_t;
 
 AST_NODE(ExpOpValue)
 	ast_ptr<true, BinaryOperator_t> op;
@@ -445,9 +472,6 @@ AST_NODE(Exp)
 	ast_ptr<false, Exp_t> nilCoalesed;
 	AST_MEMBER(Exp, &sep, &pipeExprs, &opValues, &nilCoalesed)
 AST_END(Exp, "exp"sv)
-
-class Parens_t;
-class MacroName_t;
 
 AST_NODE(Callable)
 	ast_sel<true, Variable_t, SelfItem_t, Parens_t, MacroName_t> item;
@@ -464,8 +488,6 @@ AST_NODE(VariablePairDef)
 	ast_ptr<false, Exp_t> defVal;
 	AST_MEMBER(VariablePairDef, &pair, &defVal)
 AST_END(VariablePairDef, "variable_pair_def"sv)
-
-class String_t;
 
 AST_NODE(NormalPair)
 	ast_sel<true, KeyName_t, Exp_t, String_t> key;
@@ -514,11 +536,6 @@ AST_NODE(SimpleTable)
 	ast_sel_list<true, VariablePair_t, NormalPair_t, MetaVariablePair_t, MetaNormalPair_t> pairs;
 	AST_MEMBER(SimpleTable, &sep, &pairs)
 AST_END(SimpleTable, "simple_table"sv)
-
-class ConstValue_t;
-class ClassDecl_t;
-class UnaryValue_t;
-class FunLit_t;
 
 AST_NODE(SimpleValue)
 	ast_sel<true,
@@ -588,8 +605,6 @@ AST_NODE(ColonChainItem)
 	AST_MEMBER(ColonChainItem, &name)
 AST_END(ColonChainItem, "colon_chain_item"sv)
 
-class DefaultValue_t;
-
 AST_NODE(Slice)
 	ast_sel<true, Exp_t, DefaultValue_t> startValue;
 	ast_sel<true, Exp_t, DefaultValue_t> stopValue;
@@ -613,8 +628,6 @@ AST_END(ExistentialOp, "existential_op"sv)
 
 AST_LEAF(TableAppendingOp)
 AST_END(TableAppendingOp, "table_appending_op"sv)
-
-class InvokeArgs_t;
 
 AST_NODE(ChainValue)
 	ast_ptr<true, Seperator_t> sep;
@@ -640,8 +653,6 @@ AST_NODE(SpreadExp)
 	ast_ptr<true, Exp_t> exp;
 	AST_MEMBER(SpreadExp, &exp)
 AST_END(SpreadExp, "spread_exp"sv)
-
-class TableBlockIndent_t;
 
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
@@ -703,8 +714,6 @@ AST_END(Global, "global"sv)
 
 AST_LEAF(ExportDefault)
 AST_END(ExportDefault, "export_default"sv)
-
-class Macro_t;
 
 AST_NODE(Export)
 	ast_ptr<false, ExportDefault_t> def;
@@ -799,7 +808,8 @@ AST_END(UnaryValue, "unary_value"sv)
 AST_NODE(UnaryExp)
 	ast_list<false, UnaryOperator_t> ops;
 	ast_list<true, Value_t> expos;
-	AST_MEMBER(UnaryExp, &ops, &expos)
+	ast_ptr<false, In_t> inExp;
+	AST_MEMBER(UnaryExp, &ops, &expos, &inExp)
 AST_END(UnaryExp, "unary_exp"sv)
 
 AST_NODE(ExpListAssign)
@@ -868,8 +878,6 @@ AST_NODE(Statement)
 	ast_ptr<false, StatementSep_t> needSep;
 	AST_MEMBER(Statement, &sep, &comments, &content, &appendix, &needSep)
 AST_END(Statement, "statement"sv)
-
-class Block_t;
 
 AST_NODE(Body)
 	ast_sel<true, Block_t, Statement_t> content;

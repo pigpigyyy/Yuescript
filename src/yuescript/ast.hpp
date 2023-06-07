@@ -21,6 +21,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 namespace parserlib {
 
+using namespace std::string_view_literals;
+
 class ast_node;
 template <bool Required, class T>
 class ast_ptr;
@@ -50,7 +52,6 @@ struct Counter<0> {
 		enum { value = Counter<__LINE__ - 1>::value + 1 }; \
 	}
 
-class ast_node;
 template <class T>
 constexpr typename std::enable_if<std::is_base_of<ast_node, T>::value, int>::type
 id();

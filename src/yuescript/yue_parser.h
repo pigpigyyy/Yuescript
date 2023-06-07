@@ -25,6 +25,7 @@ namespace yue {
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 using namespace parserlib;
+using namespace parserlib::yue;
 
 struct ParseInfo {
 	struct Error {
@@ -85,9 +86,6 @@ public:
 
 	std::string toString(ast_node* node);
 	std::string toString(input::iterator begin, input::iterator end);
-
-	input encode(std::string_view input);
-	std::string decode(const input& input);
 
 protected:
 	ParseInfo parse(std::string_view codes, rule& r);
@@ -378,6 +376,12 @@ private:
 	AST_RULE(ConstValue)
 	AST_RULE(UnaryValue)
 	AST_RULE(UnaryExp)
+	AST_RULE(InRangeOpen)
+	AST_RULE(InRangeClose)
+	AST_RULE(NotIn)
+	AST_RULE(InRange)
+	AST_RULE(InDiscrete)
+	AST_RULE(In)
 	AST_RULE(ExpListAssign)
 	AST_RULE(IfLine)
 	AST_RULE(WhileLine)

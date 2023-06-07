@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.16.8"sv;
+const std::string_view version = "0.17.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -761,7 +761,7 @@ private:
 			}
 			case id<UnaryExp_t>(): {
 				auto unary = static_cast<UnaryExp_t*>(item);
-				if (unary->expos.size() == 1) {
+				if (unary->expos.size() == 1 && !unary->inExp) {
 					return unary;
 				}
 				return nullptr;
@@ -774,7 +774,7 @@ private:
 		BREAK_IF(!exp->opValues.empty());
 		BREAK_IF(exp->pipeExprs.size() != 1);
 		auto unary = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
-		BREAK_IF(unary->expos.size() != 1);
+		BREAK_IF(unary->expos.size() != 1 || unary->inExp);
 		return unary;
 		BLOCK_END
 		return nullptr;
@@ -1028,9 +1028,12 @@ private:
 	}
 
 	std::string singleVariableFrom(ast_node* expList, bool accessing) {
-		if (!ast_is<Exp_t, ExpList_t>(expList)) return Empty;
+		if (!ast_is<Exp_t, ExpList_t, Value_t>(expList)) return Empty;
 		BLOCK_START
-		auto value = singleValueFrom(expList);
+		auto value = ast_cast<Value_t>(expList);
+		if (!value) {
+			value = singleValueFrom(expList);
+		}
 		BREAK_IF(!value);
 		auto chainValue = value->item.as<ChainValue_t>();
 		BREAK_IF(!chainValue);
@@ -1155,6 +1158,24 @@ private:
 			return true;
 		}
 		return false;
+	}
+
+	UnaryExp_t* unaryGeneratingAnonFunc(Exp_t* exp) {
+		if (!exp) return nullptr;
+		BLOCK_START
+		BREAK_IF(exp->nilCoalesed);
+		BREAK_IF(!exp->opValues.empty());
+		BREAK_IF(exp->pipeExprs.size() != 1);
+		auto unary = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
+		BREAK_IF(unary->expos.size() != 1);
+		BREAK_IF(!unary->inExp);
+		auto value = static_cast<Value_t*>(unary->expos.back());
+		auto varName = singleVariableFrom(value, false);
+		if (varName.empty() || !isLocal(varName)) {
+			return unary;
+		}
+		BLOCK_END
+		return nullptr;
 	}
 
 	void pushFunctionScope() {
@@ -1970,6 +1991,12 @@ private:
 		} else if (isPureNilCoalesed(exp)) {
 			auto expList = assignment->expList.get();
 			transformNilCoalesedExp(exp, out, ExpUsage::Assignment, expList);
+			return;
+		} else if (auto unary = unaryGeneratingAnonFunc(exp)) {
+			std::string preDefine = getPreDefineLine(assignment);
+			auto expList = assignment->expList.get();
+			transformUnaryExp(unary, out, ExpUsage::Assignment, expList);
+			out.back().insert(0, preDefine);
 			return;
 		}
 		auto singleVal = singleValueFrom(exp);
@@ -3134,7 +3161,7 @@ private:
 
 	void transform_pipe_exp(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		if (values.size() == 1 && usage == ExpUsage::Closure) {
-			transform_unary_exp(static_cast<UnaryExp_t*>(values.front()), out);
+			transformUnaryExp(static_cast<UnaryExp_t*>(values.front()), out, ExpUsage::Closure);
 		} else {
 			auto x = values.front();
 			auto arg = newExp(static_cast<UnaryExp_t*>(x), x);
@@ -3404,7 +3431,7 @@ private:
 	void transformSimpleValue(SimpleValue_t* simpleValue, str_list& out) {
 		auto value = simpleValue->value.get();
 		switch (value->getId()) {
-			case id<ConstValue_t>(): transform_const_value(static_cast<ConstValue_t*>(value), out); break;
+			case id<ConstValue_t>(): transformConstValue(static_cast<ConstValue_t*>(value), out); break;
 			case id<If_t>(): transformIf(static_cast<If_t*>(value), out, ExpUsage::Closure); break;
 			case id<Switch_t>(): transformSwitch(static_cast<Switch_t*>(value), out, ExpUsage::Closure); break;
 			case id<With_t>(): transformWithClosure(static_cast<With_t*>(value), out); break;
@@ -3414,7 +3441,7 @@ private:
 			case id<While_t>(): transformWhileClosure(static_cast<While_t*>(value), out); break;
 			case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Closure); break;
 			case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Closure); break;
-			case id<UnaryValue_t>(): transform_unary_value(static_cast<UnaryValue_t*>(value), out); break;
+			case id<UnaryValue_t>(): transformUnaryValue(static_cast<UnaryValue_t*>(value), out); break;
 			case id<TblComprehension_t>(): transformTblComprehension(static_cast<TblComprehension_t*>(value), out, ExpUsage::Closure); break;
 			case id<TableLit_t>(): transformTableLit(static_cast<TableLit_t*>(value), out); break;
 			case id<Comprehension_t>(): transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Closure); break;
@@ -4049,6 +4076,9 @@ private:
 					return;
 				} else if (isPureNilCoalesed(exp)) {
 					transformNilCoalesedExp(exp, out, ExpUsage::Return);
+					return;
+				} else if (auto unary = unaryGeneratingAnonFunc(exp)) {
+					transformUnaryExp(unary, out, ExpUsage::Return);
 					return;
 				}
 			}
@@ -5363,7 +5393,7 @@ private:
 		out.push_back('(' + join(temp, ", "sv) + ')');
 	}
 
-	void transform_unary_value(UnaryValue_t* unary_value, str_list& out) {
+	void transformUnaryValue(UnaryValue_t* unary_value, str_list& out) {
 		str_list temp;
 		for (auto _op : unary_value->ops.objects()) {
 			std::string op = _parser.toString(_op);
@@ -5376,7 +5406,124 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transform_unary_exp(UnaryExp_t* unary_exp, str_list& out) {
+	void transformUnaryExp(UnaryExp_t* unary_exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		auto x = unary_exp;
+		if (unary_exp->inExp) {
+			std::string varName;
+			if (unary_exp->ops.empty() && unary_exp->expos.size() == 1) {
+				auto value = static_cast<Value_t*>(unary_exp->expos.back());
+				varName = singleVariableFrom(value, false);
+				if (!isLocal(varName)) {
+					varName.clear();
+				}
+			}
+			if (varName.empty()) {
+				str_list temp;
+				if (usage == ExpUsage::Closure) {
+					pushFunctionScope();
+					pushAnonVarArg();
+					pushScope();
+				} else if (usage == ExpUsage::Assignment) {
+					temp.push_back(indent() + "do"s + nll(x));
+					pushScope();
+				}
+				auto newUnaryExp = x->new_ptr<UnaryExp_t>();
+				newUnaryExp->ops.dup(unary_exp->ops);
+				newUnaryExp->expos.dup(unary_exp->expos);
+				auto exp = newExp(newUnaryExp, x);
+				auto newVar = getUnusedName("_val_"sv);
+				auto assignExp = toAst<Exp_t>(newVar, x);
+				auto assignment = assignmentFrom(assignExp, exp, x);
+				transformAssignment(assignment, temp);
+				if (auto range = unary_exp->inExp->item.as<InRange_t>()) {
+					str_list tmp;
+					transformExp(range->openValue, tmp, ExpUsage::Closure);
+					transformExp(range->closeValue, tmp, ExpUsage::Closure);
+					if (usage == ExpUsage::Assignment) {
+						str_list tmpList;
+						transformExp(static_cast<Exp_t*>(assignList->exprs.front()), tmpList, ExpUsage::Closure);
+						_buf << indent() << tmpList.back() << " = "sv;
+					} else {
+						_buf << indent() << "return "sv;
+					}
+					if (unary_exp->inExp->not_) {
+						_buf << "not ("sv;
+					}
+					_buf << tmp.front() << (range->open.is<InRangeOpen_t>() ? " < "sv : " <= "sv) << newVar << " and "sv << newVar << (range->close.is<InRangeOpen_t>() ? " < "sv : " <= "sv) << tmp.back();
+					if (unary_exp->inExp->not_) {
+						_buf << ")"sv;
+					}
+					_buf << nll(x);
+					temp.push_back(clearBuf());
+				} else {
+					auto discrete = unary_exp->inExp->item.to<InDiscrete_t>();
+					str_list tmp;
+					for (auto exp : discrete->values.objects()) {
+						transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
+					}
+					_buf << indent() << "return "sv;
+					if (unary_exp->inExp->not_) {
+						_buf << "not ("sv;
+					}
+					for (const auto& exp : tmp) {
+						_buf << exp << " == "sv << newVar;
+						if (exp != tmp.back()) {
+							_buf << " or "sv;
+						}
+					}
+					if (unary_exp->inExp->not_) {
+						_buf << ")"sv;
+					}
+					_buf << nll(x);
+					temp.push_back(clearBuf());
+				}
+				if (usage == ExpUsage::Closure) {
+					temp.push_front(anonFuncStart() + nll(x));
+					popScope();
+					temp.push_back(indent() + anonFuncEnd());
+					out.push_back(join(temp));
+					popAnonVarArg();
+					popFunctionScope();
+				} else if (usage == ExpUsage::Assignment) {
+					popScope();
+					temp.push_back(indent() + "end"s + nll(x));
+					out.push_back(join(temp));
+				} else {
+					out.push_back(join(temp));
+				}
+			} else {
+				if (auto range = unary_exp->inExp->item.as<InRange_t>()) {
+					str_list tmp;
+					transformExp(range->openValue, tmp, ExpUsage::Closure);
+					transformExp(range->closeValue, tmp, ExpUsage::Closure);
+					if (unary_exp->inExp->not_) {
+						_buf << "not "sv;
+					}
+					_buf << '(' << tmp.front() << (range->open.is<InRangeOpen_t>() ? " < "sv : " <= "sv) << varName << " and "sv << varName << (range->close.is<InRangeOpen_t>() ? " < "sv : " <= "sv) << tmp.back();
+					_buf << ')';
+					out.push_back(clearBuf());
+				} else {
+					auto discrete = unary_exp->inExp->item.to<InDiscrete_t>();
+					str_list tmp;
+					for (auto exp : discrete->values.objects()) {
+						transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
+					}
+					if (unary_exp->inExp->not_) {
+						_buf << "not "sv;
+					}
+					_buf << '(';
+					for (const auto& exp : tmp) {
+						_buf << exp << " == "sv << varName;
+						if (exp != tmp.back()) {
+							_buf << " or "sv;
+						}
+					}
+					_buf << ')';
+					out.push_back(clearBuf());
+				}
+			}
+			return;
+		}
 		if (unary_exp->ops.empty() && unary_exp->expos.size() == 1) {
 			transformValue(static_cast<Value_t*>(unary_exp->expos.back()), out);
 			return;
@@ -7322,7 +7469,7 @@ private:
 		out.push_back(join(temp));
 	}
 
-	void transform_const_value(ConstValue_t* const_value, str_list& out) {
+	void transformConstValue(ConstValue_t* const_value, str_list& out) {
 		out.push_back(_parser.toString(const_value));
 	}
 
@@ -8216,7 +8363,20 @@ private:
 		std::string tabCheckVar;
 		for (auto branch_ : branches) {
 			auto branch = static_cast<SwitchCase_t*>(branch_);
-			if (auto value = singleValueFrom(branch->valueList);
+			if (auto inExp = branch->condition.as<In_t>()) {
+				auto unary = branch->new_ptr<UnaryExp_t>();
+				unary->expos.push_back(toAst<Value_t>(objVar, branch));
+				unary->inExp.set(inExp);
+				transformUnaryExp(unary, temp, ExpUsage::Closure);
+				temp.back() = indent() + (firstBranch ? "if "s : "elseif "s) + temp.back() + " then"s + nll(branch);
+				pushScope();
+				transform_plain_body(branch->body, temp, usage, assignList);
+				popScope();
+				firstBranch = false;
+				continue;
+			}
+			auto valueList = branch->condition.to<SwitchList_t>();
+			if (auto value = singleValueFrom(valueList);
 				value && (value->item.is<SimpleTable_t>() || value->getByPath<SimpleValue_t, TableLit_t>())) {
 				if (!firstBranch) {
 					temp.push_back(indent() + "else"s + nll(branch));
@@ -8245,7 +8405,7 @@ private:
 				}
 				temp.back().append(indent() + "if "s + tabCheckVar + " then"s + nll(branch));
 				pushScope();
-				auto assignment = assignmentFrom(static_cast<Exp_t*>(branch->valueList->exprs.front()), toAst<Exp_t>(objVar, branch), branch);
+				auto assignment = assignmentFrom(static_cast<Exp_t*>(valueList->exprs.front()), toAst<Exp_t>(objVar, branch), branch);
 				auto info = extractDestructureInfo(assignment, true, false);
 				transformAssignment(assignment, temp, true);
 				str_list conds;
@@ -8283,7 +8443,7 @@ private:
 				temp.push_back(indent() + (firstBranch ? "if"s : "elseif"s));
 				firstBranch = false;
 				str_list tmp;
-				const auto& exprs = branch->valueList->exprs.objects();
+				const auto& exprs = valueList->exprs.objects();
 				for (auto exp_ : exprs) {
 					auto exp = static_cast<Exp_t*>(exp_);
 					transformExp(exp, tmp, ExpUsage::Closure);

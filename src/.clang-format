@@ -14,4 +14,11 @@ AlignEscapedNewlines: DontAlign
 AlwaysBreakBeforeMultilineStrings: true
 FixNamespaceComments: true
 UseTab: Always
+AlignOperands: AlignAfterOperator
+AllowShortLambdasOnASingleLine: Empty
+LambdaBodyIndentation: Signature
+AlignAfterOpenBracket: DontAlign
+ContinuationIndentWidth: 4
+ObjCBlockIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
 ...

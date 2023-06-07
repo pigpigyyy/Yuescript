@@ -317,7 +317,7 @@ YueParser::YueParser() {
 	with_exp = ExpList >> -(space >> Assign);
 
 	With = key("with") >> -ExistentialOp >> space >> disable_do_chain_arg_table_block_rule(with_exp) >> space >> body_with("do");
-	SwitchCase = key("when") >> disable_chain_rule(disable_arg_table_block_rule(SwitchList)) >> space >> body_with("then");
+	SwitchCase = key("when") >> (disable_chain_rule(disable_arg_table_block_rule(SwitchList)) | space >> In) >> space >> body_with("then");
 	switch_else = key("else") >> space >> body;
 
 	switch_block =
@@ -454,12 +454,19 @@ YueParser::YueParser() {
 	expo_value = exponential_operator >> *space_break >> space >> Value;
 	expo_exp = Value >> *(space >> expo_value);
 
+	InRangeOpen = true_();
+	InRangeClose = true_();
+	NotIn = true_();
+	InRange = ('(' >> InRangeOpen | '[' >> InRangeClose) >> space >> Exp >> space >> ',' >> space >> Exp >> space >> (')' >> InRangeOpen | ']' >> InRangeClose);
+	InDiscrete = '{' >> Seperator >> space >> Exp >> *(space >> ',' >> space >> Exp) >> space >> '}';
+	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete);
+
 	UnaryOperator =
 		'-' >> not_(set(">=") | space_one) |
 		'#' |
 		'~' >> not_('=' | space_one) |
 		key("not");
-	UnaryExp = *(UnaryOperator >> space) >> expo_exp;
+	UnaryExp = *(UnaryOperator >> space) >> expo_exp >> -(space >> In);
 
 	pipe_operator = "|>";
 	pipe_value = pipe_operator >> *space_break >> space >> UnaryExp;
@@ -916,7 +923,7 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	error_list errors;
 	try {
 		State state;
-		res.node.set(pl::parse(*(res.codes), r, errors, &state));
+		res.node.set(::yue::parse(*(res.codes), r, errors, &state));
 		if (state.exportCount > 0) {
 			res.moduleName = std::move(state.moduleName);
 			res.exportDefault = state.exportDefault;
@@ -950,14 +957,6 @@ std::string YueParser::toString(ast_node* node) {
 
 std::string YueParser::toString(input::iterator begin, input::iterator end) {
 	return _converter.to_bytes(std::wstring(begin, end));
-}
-
-input YueParser::encode(std::string_view codes) {
-	return _converter.from_bytes(&codes.front(), &codes.back() + 1);
-}
-
-std::string YueParser::decode(const input& codes) {
-	return _converter.to_bytes(codes);
 }
 
 namespace Utils {
