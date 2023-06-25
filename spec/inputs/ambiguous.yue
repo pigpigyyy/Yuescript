@@ -23,6 +23,27 @@ for i = 1, 10
 	goto abc
 	(print) 5
 
+macro lua = (code)-> {
+	:code
+	type: "lua"
+}
+
+do
+	print()
+	1 |> b |> (a)
+	print()
+	<- (fn)
+
+do
+	print()
+	() <- async_fn()
+	print()
+	$lua[==[
+		--[[a comment to insert]]
+		(haha)()
+	]==]
+	nil
+
 macro v = -> 'print 123'
 do
 	global *

@@ -64,12 +64,12 @@ do
 		local _with_0 = io.open("file.txt")
 		_with_0:write("Hello")
 		return _with_0
-	end)();
+	end)()
 	local _ <close> = setmetatable({ }, {
 		__close = function(self)
 			return print("second")
 		end
-	});
+	})
 	local _ <close> = setmetatable({ }, {
 		__close = function()
 			return print("first")
@@ -86,11 +86,11 @@ do
 	_defers[#_defers + 1] = function()
 		return print(3)
 	end
-	local _ <close> = _defers;
+	local _ <close> = _defers
 	_defers[#_defers + 1] = function()
 		return print(2)
 	end
-	local _ <close> = _defers;
+	local _ <close> = _defers
 	_defers[#_defers + 1] = function()
 		return print(1)
 	end

@@ -138,4 +138,25 @@ ast_node* parse(input& i, rule& g, error_list& el, void* ud) {
 	return st.front();
 }
 
+/** check if the start part of given input matches grammar.
+	The parse procedures of each rule parsed are executed
+	before this function returns, if parsing succeeds.
+	@param i input.
+	@param g root rule of grammar.
+	@param ud user data, passed to the parse procedures.
+	@return true on parsing success, false on failure.
+*/
+ast_node* start_with(input& i, rule& g, error_list& el, void* ud) {
+	ast_stack st;
+	if (!start_with(i, g, el, &st, ud)) {
+		for (auto node : st) {
+			delete node;
+		}
+		st.clear();
+		return nullptr;
+	}
+	assert(st.size() == 1);
+	return st.front();
+}
+
 } // namespace parserlib

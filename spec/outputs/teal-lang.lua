@@ -1,13 +1,13 @@
 local a = {
 	value = 123
-};
-local b = a.value;
+}
+local b = a.value
 local add = function(a, b)
 	return a + b
 end
 local s = add(a.value, b)
-print(s);
-local Point = {};
+print(s)
+local Point = {}
 Point.new = function(x, y)
 local point = setmetatable({ }, {
 	__index = Point
@@ -21,7 +21,7 @@ Point.move = function(self, dx, dy)
 	self.y = self.y + dy
 end
 local p = Point.new(100, 100)
-p:move(50, 50);
+p:move(50, 50)
 local filter = function(tab, handler)
 	local _accum_0 = { }
 	local _len_0 = 1

@@ -853,13 +853,6 @@ YueParser::YueParser() {
 	ChainAssign = Seperator >> Exp >> +(space >> '=' >> space >> Exp >> space >> and_('=')) >> space >> Assign;
 
 	StatementAppendix = (IfLine | WhileLine | CompInner) >> space;
-	StatementSep = and_(
-		*space_break >> check_indent_match >> space >> (
-			set("($'\"") |
-			"[[" |
-			"[="
-		)
-	);
 	Statement =
 		Seperator >>
 		-(
@@ -876,8 +869,9 @@ YueParser::YueParser() {
 			StatementAppendix >> empty_block_error
 		) >>
 		space >>
-		-StatementAppendix >>
-		-StatementSep;
+		-StatementAppendix;
+
+	StatementSep = white >> (set("('\"") | "[[" | "[=");
 
 	Body = in_block | Statement;
 
@@ -904,6 +898,32 @@ YueParser::YueParser() {
 	File = -shebang >> -Block >> white >> stop;
 }
 // clang-format on
+
+bool YueParser::startWith(std::string_view codes, rule& r) {
+	std::unique_ptr<input> converted;
+	if (codes.substr(0, 3) == "\xEF\xBB\xBF"sv) {
+		codes = codes.substr(3);
+	}
+	try {
+		if (!codes.empty()) {
+			converted = std::make_unique<input>(_converter.from_bytes(&codes.front(), &codes.back() + 1));
+		} else {
+			converted = std::make_unique<input>();
+		}
+	} catch (const std::range_error&) {
+		return false;
+	}
+	error_list errors;
+	try {
+		State state;
+		return ::yue::start_with(*converted, r, errors, &state);
+	} catch (const ParserError&) {
+		return false;
+	} catch (const std::logic_error&) {
+		return false;
+	}
+	return true;
+}
 
 ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	ParseInfo res;

@@ -1,4 +1,4 @@
-assert(item == nil);
+assert(item == nil)
 local v = (item == nil)
 if f1() then
 	print("OK")
@@ -170,11 +170,11 @@ do
 	end)()
 	print(a)
 end
-local x = 0;
+local x = 0
 local function f(a)
 	return a + 1
 end
-x = x + f(3);
+x = x + f(3)
 function tb:func()
 	print(123)
 end
@@ -277,7 +277,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(268));
+print("current line: " .. tostring(268))
 -- TODO
 do
 	print(1)

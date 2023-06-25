@@ -875,8 +875,7 @@ AST_NODE(Statement)
 		Backcall_t, LocalAttrib_t, PipeBody_t, ExpListAssign_t, ChainAssign_t
 	> content;
 	ast_ptr<false, StatementAppendix_t> appendix;
-	ast_ptr<false, StatementSep_t> needSep;
-	AST_MEMBER(Statement, &sep, &comments, &content, &appendix, &needSep)
+	AST_MEMBER(Statement, &sep, &comments, &content, &appendix)
 AST_END(Statement, "statement"sv)
 
 AST_NODE(Body)

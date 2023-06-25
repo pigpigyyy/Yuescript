@@ -1,14 +1,14 @@
 local a:{string:number} = {
 	value = 123
-};
-local b:number = a.value;
+}
+local b:number = a.value
 local function add(a:number, b:number):number
 
 	return a + b
 
 end
 local s = add(a.value, b)
-print(s);
+print(s)
 local record Point
 	x: number
 	y: number
@@ -28,7 +28,7 @@ function Point:move(dx:number, dy:number)
 
 end
 local p:Point = Point.new(100, 100)
-p:move(50, 50);
+p:move(50, 50)
 local function filter(tab:{string}, handler:function(item:string):boolean):{string}
 
 	local _accum_0 = { }

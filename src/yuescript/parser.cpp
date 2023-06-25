@@ -1567,10 +1567,11 @@ expr user(const expr& e, const user_handler& handler) {
 	@param i input.
 	@param g root rule of grammar.
 	@param el list of errors.
-	@param d user data, passed to the parse procedures.
+	@param st ast object stack.
+	@param ud user data, passed to the parse procedures.
 	@return true on parsing success, false on failure.
 */
-bool parse(input& i, rule& g, error_list& el, void* d, void* ud) {
+bool parse(input& i, rule& g, error_list& el, void* st, void* ud) {
 	// prepare context
 	_context con(i, ud);
 
@@ -1591,7 +1592,32 @@ bool parse(input& i, rule& g, error_list& el, void* d, void* ud) {
 	}
 
 	// success; execute the parse procedures
-	con.do_parse_procs(d);
+	con.do_parse_procs(st);
+	return true;
+}
+
+/** check the start part of given input.
+	The parse procedures of each rule parsed are executed
+	before this function returns, if parsing succeeds.
+	@param i input.
+	@param g root rule of grammar.
+	@param el list of errors.
+	@param st ast object stack.
+	@param ud user data, passed to the parse procedures.
+	@return true on parsing success, false on failure.
+*/
+bool start_with(input& i, rule& g, error_list& el, void* st, void* ud) {
+	// prepare context
+	_context con(i, ud);
+
+	// parse grammar
+	if (!con.parse_non_term(g)) {
+		el.push_back(_syntax_error(con));
+		return false;
+	}
+
+	// success; execute the parse procedures
+	con.do_parse_procs(st);
 	return true;
 }
 

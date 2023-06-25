@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.0"sv;
+const std::string_view version = "0.17.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1496,25 +1496,6 @@ private:
 			}
 			case id<ChainAssign_t>(): transformChainAssign(static_cast<ChainAssign_t*>(content), out); break;
 			default: YUEE("AST node mismatch", content); break;
-		}
-		if (statement->needSep && !out.empty() && !out.back().empty()) {
-			auto index = std::string::npos;
-			if (_config.reserveLineNumber) {
-				index = out.back().rfind(" -- "sv);
-			} else {
-				index = out.back().find_last_not_of('\n');
-				if (index != std::string::npos) index++;
-			}
-			if (index != std::string::npos) {
-				auto ending = out.back().substr(0, index);
-				auto ind = ending.find_last_of(" \t\n"sv);
-				if (ind != std::string::npos) {
-					ending = ending.substr(ind + 1);
-				}
-				if (LuaKeywords.find(ending) == LuaKeywords.end()) {
-					out.back().insert(index, ";"sv);
-				}
-			}
 		}
 	}
 
@@ -3543,8 +3524,6 @@ private:
 				}
 				lst->appendix.set(stmt->appendix);
 				stmt->appendix.set(nullptr);
-				lst->needSep.set(stmt->needSep);
-				stmt->needSep.set(nullptr);
 				auto exp = lastExpFromStatement(lst);
 				BREAK_IF(!exp);
 				for (auto val : pipeBody->values.objects()) {
@@ -3753,22 +3732,6 @@ private:
 				returnNode->valueList.set(expListLow);
 				returnNode->allowBlockMacroReturn = true;
 				last->content.set(returnNode);
-				last->needSep.set(nullptr);
-				auto bLast = ++nodes.rbegin();
-				if (bLast != nodes.rend()) {
-					bool isMacro = false;
-					BLOCK_START
-					BREAK_IF(expListLow->exprs.size() != 1);
-					auto exp = static_cast<Exp_t*>(expListLow->exprs.back());
-					BREAK_IF(!exp->opValues.empty());
-					auto chainValue = exp->getByPath<UnaryExp_t, Value_t, ChainValue_t>();
-					BREAK_IF(!chainValue);
-					isMacro = isMacroChain(chainValue);
-					BLOCK_END
-					if (!isMacro) {
-						ast_to<Statement_t>(*bLast)->needSep.set(nullptr);
-					}
-				}
 				BLOCK_END
 				break;
 			}
@@ -3802,11 +3765,6 @@ private:
 					}
 					newAssignment->action.set(assign);
 					last->content.set(newAssignment);
-					last->needSep.set(nullptr);
-					auto bLast = ++nodes.rbegin();
-					if (bLast != nodes.rend()) {
-						static_cast<Statement_t*>(*bLast)->needSep.set(nullptr);
-					}
 				} else if (!last->content.is<BreakLoop_t>()) {
 					throw CompileError("expecting assignable statement or break loop"sv, last);
 				}
@@ -3818,6 +3776,28 @@ private:
 			str_list temp;
 			for (auto node : nodes) {
 				transformStatement(static_cast<Statement_t*>(node), temp);
+				if (_parser.startWith<StatementSep_t>(temp.back())) {
+					auto rit = ++temp.rbegin();
+					if (rit != temp.rend() && !rit->empty()) {
+						auto index = std::string::npos;
+						if (_config.reserveLineNumber) {
+							index = rit->rfind(" -- "sv);
+						} else {
+							index = rit->find_last_not_of('\n');
+							if (index != std::string::npos) index++;
+						}
+						if (index != std::string::npos) {
+							auto ending = rit->substr(0, index);
+							auto ind = ending.find_last_of(" \t\n"sv);
+							if (ind != std::string::npos) {
+								ending = ending.substr(ind + 1);
+							}
+							if (LuaKeywords.find(ending) == LuaKeywords.end()) {
+								rit->insert(index, ";"sv);
+							}
+						}
+					}
+				}
 			}
 			out.push_back(join(temp));
 		} else {

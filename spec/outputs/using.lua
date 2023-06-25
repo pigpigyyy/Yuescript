@@ -22,7 +22,7 @@ _ = function()
 	local hello = hello or 2
 end
 do
-	local a = { };
+	local a = { }
 	_(function()
 		local x, y = a[1], a[2]
 	end)

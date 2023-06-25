@@ -84,11 +84,17 @@ public:
 		return parse(codes, rEnd).node;
 	}
 
+	template <class AST>
+	bool startWith(std::string_view codes) {
+		return startWith(codes, getRule<AST>());
+	}
+
 	std::string toString(ast_node* node);
 	std::string toString(input::iterator begin, input::iterator end);
 
 protected:
 	ParseInfo parse(std::string_view codes, rule& r);
+	bool startWith(std::string_view codes, rule& r);
 
 	struct State {
 		State() {
@@ -387,8 +393,8 @@ private:
 	AST_RULE(WhileLine)
 	AST_RULE(BreakLoop)
 	AST_RULE(StatementAppendix)
-	AST_RULE(StatementSep)
 	AST_RULE(Statement)
+	AST_RULE(StatementSep);
 	AST_RULE(YueLineComment)
 	AST_RULE(MultilineCommentInner)
 	AST_RULE(YueMultilineComment)

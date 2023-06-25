@@ -25,6 +25,21 @@ for i = 1, 10 do
 	(print)(5)
 end
 do
+	print();
+	(a)(b(1))
+	print();
+	(fn)(function() end)
+end
+do
+	print()
+	async_fn(function()
+		print();
+--[[a comment to insert]]
+		(haha)()
+		return nil
+	end)
+end
+do
 	print(123)
 end
 do
