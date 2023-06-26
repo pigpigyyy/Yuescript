@@ -328,6 +328,7 @@ static int yuetoast(lua_State* L) {
 								lua_pop(L, 1);
 								break;
 							}
+							[[fallthrough]];
 						}
 						default: {
 							auto len = lua_objlen(L, tableIndex);

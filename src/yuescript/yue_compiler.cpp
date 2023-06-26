@@ -202,6 +202,7 @@ public:
 								} else if (auto exportNode = stmt->content.as<Export_t>()) {
 									if (exportNode->target.is<Macro_t>()) break;
 								}
+								[[fallthrough]];
 							default:
 								throw CompileError("macro exporting module only accepts macro definition, macro importing and macro expansion in place"sv, stmt);
 								break;
@@ -1951,6 +1952,7 @@ private:
 					out.back().insert(0, preDefine);
 					return;
 				}
+				break;
 			}
 			case id<TableBlock_t>(): {
 				auto tableBlock = static_cast<TableBlock_t*>(value);
@@ -1961,6 +1963,7 @@ private:
 					out.back().insert(0, preDefine);
 					return;
 				}
+				break;
 			}
 		}
 		auto exp = ast_cast<Exp_t>(value);
@@ -3776,7 +3779,7 @@ private:
 			str_list temp;
 			for (auto node : nodes) {
 				transformStatement(static_cast<Statement_t*>(node), temp);
-				if (_parser.startWith<StatementSep_t>(temp.back())) {
+				if (!temp.empty() && _parser.startWith<StatementSep_t>(temp.back())) {
 					auto rit = ++temp.rbegin();
 					if (rit != temp.rend() && !rit->empty()) {
 						auto index = std::string::npos;
