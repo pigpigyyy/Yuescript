@@ -345,6 +345,7 @@
     <ClCompile Include="..\..\src\yuescript\ast.cpp" />
     <ClCompile Include="..\..\src\yuescript\parser.cpp" />
     <ClCompile Include="..\..\src\yuescript\yuescript.cpp" />
+    <ClCompile Include="..\..\src\yuescript\yue_ast.cpp" />
     <ClCompile Include="..\..\src\yuescript\yue_compiler.cpp" />
     <ClCompile Include="..\..\src\yuescript\yue_parser.cpp" />
     <ClCompile Include="..\..\src\3rdParty\efsw\Debug.cpp" />

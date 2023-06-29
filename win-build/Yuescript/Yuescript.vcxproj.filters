@@ -202,6 +202,9 @@
     <ClCompile Include="..\..\src\3rdParty\efsw\platform\win\ThreadImpl.cpp">
       <Filter>src\efsw\win</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\yuescript\yue_ast.cpp">
+      <Filter>src\yuescript</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\3rdParty\lua\lapi.h">
