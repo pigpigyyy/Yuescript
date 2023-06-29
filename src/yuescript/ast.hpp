@@ -98,16 +98,18 @@ public:
 	using select_last_t = typename select_last<Ts...>::type;
 
 	template <class... Args>
-	select_last_t<Args...>* getByPath() {
+	select_last_t<Args...>* get_by_path() {
 		int types[] = {id<Args>()...};
-		return static_cast<select_last_t<Args...>*>(getByTypeIds(std::begin(types), std::end(types)));
+		return static_cast<select_last_t<Args...>*>(get_by_type_ids(std::begin(types), std::end(types)));
 	}
 
-	virtual bool visitChild(const std::function<bool(ast_node*)>& func);
+	virtual bool visit_child(const std::function<bool(ast_node*)>& func);
 
-	virtual int getId() const = 0;
+	virtual int get_id() const = 0;
 
-	virtual const std::string_view getName() const = 0;
+	virtual const std::string_view get_name() const = 0;
+
+	virtual std::string to_string(void*) const { return {}; }
 
 	template <class T>
 	inline ast_ptr<false, T> new_ptr() const {
@@ -121,7 +123,7 @@ public:
 
 private:
 	int _ref;
-	ast_node* getByTypeIds(int* begin, int* end);
+	ast_node* get_by_type_ids(int* begin, int* end);
 };
 
 template <class T>
@@ -130,12 +132,12 @@ id() { return 0; }
 
 template <class T>
 T* ast_cast(ast_node* node) {
-	return node && id<T>() == node->getId() ? static_cast<T*>(node) : nullptr;
+	return node && id<T>() == node->get_id() ? static_cast<T*>(node) : nullptr;
 }
 
 template <class T>
 T* ast_to(ast_node* node) {
-	assert(node->getId() == id<T>());
+	assert(node->get_id() == id<T>());
 	return static_cast<T*>(node);
 }
 
@@ -143,7 +145,7 @@ template <class... Args>
 bool ast_is(ast_node* node) {
 	if (!node) return false;
 	bool result = false;
-	int i = node->getId();
+	int i = node->get_id();
 	using swallow = bool[];
 	(void)swallow{result || (result = id<Args>() == i)...};
 	return result;
@@ -181,7 +183,7 @@ public:
 
 	virtual traversal traverse(const std::function<traversal(ast_node*)>& func) override;
 
-	virtual bool visitChild(const std::function<bool(ast_node*)>& func) override;
+	virtual bool visit_child(const std::function<bool(ast_node*)>& func) override;
 
 private:
 	ast_member_vector m_members;
@@ -235,13 +237,13 @@ public:
 
 	template <class T>
 	T* to() const {
-		assert(m_ptr && m_ptr->getId() == id<T>());
+		assert(m_ptr && m_ptr->get_id() == id<T>());
 		return static_cast<T*>(m_ptr);
 	}
 
 	template <class T>
 	bool is() const {
-		return m_ptr && m_ptr->getId() == id<T>();
+		return m_ptr && m_ptr->get_id() == id<T>();
 	}
 
 	void set(ast_node* node) {
@@ -333,7 +335,7 @@ public:
 
 private:
 	virtual bool accept(ast_node* node) override {
-		return node && (std::is_same<ast_node, T>() || id<T>() == node->getId());
+		return node && (std::is_same<ast_node, T>() || id<T>() == node->get_id());
 	}
 };
 
@@ -380,7 +382,7 @@ private:
 		if (!node) return false;
 		using swallow = bool[];
 		bool result = false;
-		(void)swallow{result || (result = id<Args>() == node->getId())...};
+		(void)swallow{result || (result = id<Args>() == node->get_id())...};
 		return result;
 	}
 };
@@ -515,7 +517,7 @@ public:
 
 private:
 	virtual bool accept(ast_node* node) override {
-		return node && (std::is_same<ast_node, T>() || id<T>() == node->getId());
+		return node && (std::is_same<ast_node, T>() || id<T>() == node->get_id());
 	}
 };
 
@@ -557,7 +559,7 @@ private:
 		if (!node) return false;
 		using swallow = bool[];
 		bool result = false;
-		(void)swallow{result || (result = id<Args>() == node->getId())...};
+		(void)swallow{result || (result = id<Args>() == node->get_id())...};
 		return result;
 	}
 };

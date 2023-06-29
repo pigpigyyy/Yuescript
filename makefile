@@ -211,7 +211,7 @@ endif
 wasm: clean
 	@$(MAKE) generic CC='emcc' AR='emar rcu' RANLIB='emranlib' -C $(SRC_PATH)/3rdParty/lua
 	@mkdir -p doc/docs/.vuepress/public/js
-	@emcc $(SRC_PATH)/yue_wasm.cpp $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/parser.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/3rdParty/lua/liblua.a -O2 -o doc/docs/.vuepress/public/js/yuescript.js -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty/lua -std=c++17 --bind -fexceptions -Wno-deprecated-declarations
+	@emcc $(SRC_PATH)/yue_wasm.cpp $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/yue_ast.cpp $(SRC_PATH)/yuescript/parser.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/3rdParty/lua/liblua.a -O2 -o doc/docs/.vuepress/public/js/yuescript.js -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty/lua -std=c++17 --bind -fexceptions -Wno-deprecated-declarations
 	@${MAKE} clean
 
 # Debug build for gdb debugging
@@ -230,7 +230,7 @@ endif
 	@echo -n "Total build time: "
 	@$(END_TIME)
 
-$(BUILD_PATH)/yue.so: $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/yuescript/parser.cpp
+$(BUILD_PATH)/yue.so: $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/yue_ast.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/yuescript/parser.cpp
 	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty -I $(LUAI) -L $(LUAL) -llua -o $@ -fPIC -shared $?
 
 # Standard, non-optimized release build

@@ -240,11 +240,11 @@ static int yuetoast(lua_State* L) {
 		lua_createtable(L, 0, 0);
 		int cacheIndex = lua_gettop(L);
 		auto getName = [&](yue::ast_node* node) {
-			int id = node->getId();
+			int id = node->get_id();
 			lua_rawgeti(L, cacheIndex, id);
 			if (lua_isnil(L, -1) != 0) {
 				lua_pop(L, 1);
-				auto name = node->getName();
+				auto name = node->get_name();
 				lua_pushlstring(L, &name.front(), name.length());
 				lua_pushvalue(L, -1);
 				lua_rawseti(L, cacheIndex, id);
@@ -268,7 +268,7 @@ static int yuetoast(lua_State* L) {
 			switch (continuation) {
 				case 0: {
 					if (!current.children) {
-						node->visitChild([&](yue::ast_node* child) {
+						node->visit_child([&](yue::ast_node* child) {
 							if (yue::ast_is<yue::Seperator_t>(child)) {
 								current.hasSep = true;
 								return false;

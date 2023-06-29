@@ -22,18 +22,18 @@ do
 		end
 	end)()
 end
-local _table_0 = 232
+local _obj_0 = 232
 local something
 do
-	local _obj_0 = a(table)
-	something = _obj_0.something
+	local _obj_1 = a(table)
+	something = _obj_1.something
 end
 if indent then
 	local okay, well
 	do
-		local _obj_0 = tables[100]
-		okay, well = _obj_0.okay, (function()
-			local _base_0 = _obj_0
+		local _obj_1 = tables[100]
+		okay, well = _obj_1.okay, (function()
+			local _base_0 = _obj_1
 			local _fn_0 = _base_0.well
 			return _fn_0 and function(...)
 				return _fn_0(_base_0, ...)
@@ -66,13 +66,13 @@ do
 	local Player = require("player")
 	local C, Ct, Cmt
 	do
-		local _obj_0 = require("lpeg")
-		C, Ct, Cmt = _obj_0.C, _obj_0.Ct, _obj_0.Cmt
+		local _obj_1 = require("lpeg")
+		C, Ct, Cmt = _obj_1.C, _obj_1.Ct, _obj_1.Cmt
 	end
 	local one, two, ch
 	do
-		local _obj_0 = require("export")
-		one, two, ch = _obj_0[1], _obj_0[2], _obj_0.Something.umm[1]
+		local _obj_1 = require("export")
+		one, two, ch = _obj_1[1], _obj_1[2], _obj_1.Something.umm[1]
 	end
 	local Another = require("export").Another
 end
@@ -84,8 +84,8 @@ end
 do
 	local func, ifVar
 	do
-		local _obj_0 = require("org.package.module")
-		func, ifVar = _obj_0["function"], _obj_0["if"]
+		local _obj_1 = require("org.package.module")
+		func, ifVar = _obj_1["function"], _obj_1["if"]
 	end
 end
 do
@@ -93,14 +93,14 @@ do
 	local index = getmetatable(require("m")).__index
 	local f, c
 	do
-		local _obj_0 = require("m")
-		f = _obj_0.e
-		c = getmetatable(_obj_0).__pairs
+		local _obj_1 = require("m")
+		f = _obj_1.e
+		c = getmetatable(_obj_1).__pairs
 	end
 	local d = require("m").c
 	local g, i
 	do
-		local _obj_0 = require("m")
-		g, i = _obj_0[1], getmetatable(_obj_0[2]).__close
+		local _obj_1 = require("m")
+		g, i = _obj_1[1], getmetatable(_obj_1[2]).__close
 	end
 end

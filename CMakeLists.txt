@@ -61,6 +61,7 @@ endif ()
 add_library(libyue MODULE
 	src/yuescript/ast.cpp
 	src/yuescript/parser.cpp
+	src/yuescript/yue_ast.cpp
 	src/yuescript/yue_parser.cpp
 	src/yuescript/yue_compiler.cpp
 	src/yuescript/yuescript.cpp
@@ -71,10 +72,11 @@ target_link_libraries(libyue ${LUA_LIBRARIES})
 
 add_executable(yue
 	src/yuescript/ast.cpp
-	src/yuescript/yue_compiler.cpp
-	src/yuescript/yue_parser.cpp
-	src/yuescript/yuescript.cpp
 	src/yuescript/parser.cpp
+	src/yuescript/yue_ast.cpp
+	src/yuescript/yue_parser.cpp
+	src/yuescript/yue_compiler.cpp
+	src/yuescript/yuescript.cpp
 	src/yue.cpp
 )
 

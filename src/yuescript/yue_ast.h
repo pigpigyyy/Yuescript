@@ -17,14 +17,16 @@ namespace parserlib {
 	namespace yue { \
 	class type##_t : public ast_node { \
 	public: \
-		virtual int getId() const override { return COUNTER_READ; }
+		virtual int get_id() const override { return COUNTER_READ; } \
+		virtual std::string to_string(void*) const override;
 
 #define AST_NODE(type) \
 	COUNTER_INC; \
 	namespace yue { \
 	class type##_t : public ast_container { \
 	public: \
-		virtual int getId() const override { return COUNTER_READ; }
+		virtual int get_id() const override { return COUNTER_READ; } \
+		virtual std::string to_string(void*) const override;
 
 #define AST_MEMBER(type, ...) \
 	type##_t() { \
@@ -32,7 +34,7 @@ namespace parserlib {
 	}
 
 #define AST_END(type, name) \
-	virtual const std::string_view getName() const override { return name; } \
+	virtual const std::string_view get_name() const override { return name; } \
 	} \
 	; \
 	} \
@@ -362,7 +364,7 @@ AST_NODE(Try)
 AST_END(Try, "try"sv)
 
 AST_NODE(Comprehension)
-	ast_sel<true, Exp_t, Statement_t> value;
+	ast_sel<true, Exp_t, /*non-syntax-rule*/ Statement_t> value;
 	ast_ptr<true, CompInner_t> forLoop;
 	AST_MEMBER(Comprehension, &value, &forLoop)
 AST_END(Comprehension, "comp"sv)
@@ -659,8 +661,9 @@ AST_NODE(TableLit)
 	ast_sel_list<false,
 		VariablePairDef_t, NormalPairDef_t, SpreadExp_t, NormalDef_t,
 		MetaVariablePairDef_t, MetaNormalPairDef_t,
-		VariablePair_t, NormalPair_t, Exp_t, TableBlockIndent_t,
-		MetaVariablePair_t, MetaNormalPair_t> values;
+		VariablePair_t, NormalPair_t, Exp_t,
+		MetaVariablePair_t, MetaNormalPair_t,
+		/*non-syntax-rule*/ TableBlockIndent_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit, "table_lit"sv)
 
@@ -900,5 +903,18 @@ AST_NODE(File)
 AST_END(File, "file"sv)
 
 // clang-format on
+
+struct YueFormat {
+	int indent = 0;
+	bool spaceOverTab = false;
+	int tabSpaces = 4;
+	std::string toString(ast_node* node);
+
+	Converter converter;
+	void pushScope();
+	void popScope();
+	std::string convert(const ast_node* node);
+	std::string ind() const;
+};
 
 } // namespace parserlib
