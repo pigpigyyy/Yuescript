@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.2"sv;
+const std::string_view version = "0.17.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -5429,7 +5429,13 @@ private:
 					for (auto exp : discrete->values.objects()) {
 						transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
 					}
-					_buf << indent() << "return "sv;
+					if (usage == ExpUsage::Assignment) {
+						str_list tmpList;
+						transformExp(static_cast<Exp_t*>(assignList->exprs.front()), tmpList, ExpUsage::Closure);
+						_buf << indent() << tmpList.back() << " = "sv;
+					} else {
+						_buf << indent() << "return "sv;
+					}
 					if (unary_exp->inExp->not_) {
 						_buf << "not ("sv;
 					}

@@ -11,6 +11,11 @@ do
 	local _val_0 = (tb.x.y(...))
 	d = not (1 <= _val_0 and _val_0 <= 3)
 end
+local has
+do
+	local _val_0 = "foo"
+	has = "bar" == _val_0 or "foo" == _val_0
+end
 if (1 == a) and (2 == b or 3 == b or 4 == b) or (function()
 	local _val_0 = c
 	return 1 <= _val_0 and _val_0 <= 10

@@ -910,7 +910,7 @@ struct YueFormat {
 	int tabSpaces = 4;
 	std::string toString(ast_node* node);
 
-	Converter converter;
+	Converter converter{};
 	void pushScope();
 	void popScope();
 	std::string convert(const ast_node* node);
