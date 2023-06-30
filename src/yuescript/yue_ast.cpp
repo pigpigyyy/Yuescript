@@ -116,7 +116,11 @@ std::string UpdateOp_t::to_string(void* ud) const {
 }
 std::string BinaryOperator_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
-	return info->convert(this);
+	auto op = info->convert(this);
+	if (op == "!="sv) {
+		return "~="s;
+	}
+	return op;
 }
 std::string UnaryOperator_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -1041,7 +1045,7 @@ std::string FnArgsDef_t::to_string(void* ud) const {
 	if (shadowOption) {
 		line += (line.empty() ? ""s : " "s) + shadowOption->to_string(ud);
 	}
-	return '(' + line + ')';
+	return line.empty() ? ""s : '(' + line + ')';
 }
 std::string FunLit_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
