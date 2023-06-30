@@ -317,18 +317,18 @@ YueParser::YueParser() {
 	with_exp = ExpList >> -(space >> Assign);
 
 	With = key("with") >> -ExistentialOp >> space >> disable_do_chain_arg_table_block_rule(with_exp) >> space >> body_with("do");
-	SwitchCase = key("when") >> (disable_chain_rule(disable_arg_table_block_rule(SwitchList)) | space >> In) >> space >> body_with("then");
+	SwitchCase = key("when") >> space >> (disable_chain_rule(disable_arg_table_block_rule(SwitchList)) | In) >> space >> body_with("then");
 	switch_else = key("else") >> space >> body;
 
 	switch_block =
 		*(line_break >> *space_break >> check_indent_match >> space >> SwitchCase) >>
 		-(line_break >> *space_break >> check_indent_match >> space >> switch_else);
 
-	exp_not_tab = not_(SimpleTable | TableLit) >> space >> Exp;
+	exp_not_tab = not_(SimpleTable | TableLit) >> Exp;
 
 	SwitchList = Seperator >> (
-		and_(SimpleTable | TableLit) >> space >> Exp |
-		exp_not_tab >> *(space >> ',' >> exp_not_tab)
+		and_(SimpleTable | TableLit) >> Exp |
+		exp_not_tab >> *(space >> ',' >> space >> exp_not_tab)
 	);
 	Switch = key("switch") >> space >> Exp >>
 		space >> Seperator >> (
@@ -458,8 +458,8 @@ YueParser::YueParser() {
 	InRangeClose = true_();
 	NotIn = true_();
 	InRange = ('(' >> InRangeOpen | '[' >> InRangeClose) >> space >> Exp >> space >> ',' >> space >> Exp >> space >> (')' >> InRangeOpen | ']' >> InRangeClose);
-	InDiscrete = '{' >> Seperator >> space >> Exp >> *(space >> ',' >> space >> Exp) >> space >> '}';
-	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete);
+	InDiscrete = '{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab) >> space >> '}';
+	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete | Exp);
 
 	UnaryOperator =
 		'-' >> not_(set(">=") | space_one) |

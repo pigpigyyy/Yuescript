@@ -452,7 +452,7 @@ AST_END(InDiscrete, "in_discrete"sv)
 
 AST_NODE(In)
 	ast_ptr<false, NotIn_t> not_;
-	ast_sel<true, InRange_t, InDiscrete_t> item;
+	ast_sel<true, InRange_t, InDiscrete_t, Exp_t> item;
 	AST_MEMBER(In, &not_, &item)
 AST_END(In, "in"sv)
 

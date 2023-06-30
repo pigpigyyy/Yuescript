@@ -24,5 +24,22 @@ switch val
 
 do return y not in (a, b)
 
+do
+	exist = item in list
+	check item in list
+
+do
+	item = get!
+	exist = item in list
+	check item in list
+
+do
+	item = get!
+	list = {1, 2, 3}
+	exist = item in list
+	check item in list
+	check item in {1, 2, 3}
+	check item in {[1]: 1, [2]: 2, [3]: 3}
+
 nil
 
