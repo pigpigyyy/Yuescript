@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.4"sv;
+const std::string_view version = "0.17.5"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -6926,8 +6926,9 @@ private:
 			switch (content->get_id()) {
 				case id<DoubleStringInner_t>(): {
 					auto str = _parser.toString(content);
-					Utils::replace(str, "\r\n"sv, "\n");
+					Utils::replace(str, "\r\n"sv, "\n"sv);
 					Utils::replace(str, "\n"sv, "\\n"sv);
+					Utils::replace(str, "\\#"sv, "#"sv);
 					temp.push_back('\"' + str + '\"');
 					break;
 				}

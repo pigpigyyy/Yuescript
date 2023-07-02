@@ -137,6 +137,7 @@ private:
 	NONE_AST_RULE(braces_expression_error);
 	NONE_AST_RULE(brackets_expression_error);
 	NONE_AST_RULE(export_expression_error);
+	NONE_AST_RULE(invalid_interpolation_error);
 
 	NONE_AST_RULE(inc_exp_level);
 	NONE_AST_RULE(dec_exp_level);

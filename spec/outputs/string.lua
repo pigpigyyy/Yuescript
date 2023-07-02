@@ -29,6 +29,7 @@ local c = "hello " .. tostring(5 + 1)
 local d = tostring(hello(world))
 local e = tostring(1) .. " " .. tostring(2) .. " " .. tostring(3)
 local f = [[hello #{world} world]]
+local g = "#{hello world}"
 a = 'hello #{hello} hello'
 b = '#{hello} hello'
 c = 'hello #{hello}'

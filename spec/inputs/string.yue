@@ -51,6 +51,7 @@ d = "#{hello world}"
 e = "#{1} #{2} #{3}"
 
 f = [[hello #{world} world]]
+g = "\#{hello world}"
 
 --
 

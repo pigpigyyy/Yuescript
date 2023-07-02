@@ -98,6 +98,11 @@ YueParser::YueParser() {
 		return false;
 	});
 
+	invalid_interpolation_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("invalid string interpolation"sv, item.begin);
+		return false;
+	});
+
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
 	#define key(str) (expr(str) >> not_alpha_num)
@@ -529,9 +534,9 @@ YueParser::YueParser() {
 	single_string_inner = '\\' >> set("'\\") | not_('\'') >> any_char;
 	SingleString = '\'' >> *single_string_inner >> '\'';
 
-	interp = "#{" >> space >> Exp >> space >> '}';
-	double_string_plain = '\\' >> set("\"\\") | not_('"') >> any_char;
-	DoubleStringInner = +(not_(interp) >> double_string_plain);
+	interp = "#{" >> space >> (Exp >> space >> '}' | invalid_interpolation_error);
+	double_string_plain = '\\' >> set("\"\\#") | not_('"') >> any_char;
+	DoubleStringInner = +(not_("#{") >> double_string_plain);
 	DoubleStringContent = DoubleStringInner | interp;
 	DoubleString = '"' >> Seperator >> *DoubleStringContent >> '"';
 	String = DoubleString | SingleString | LuaString;
