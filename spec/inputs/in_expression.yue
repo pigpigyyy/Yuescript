@@ -36,7 +36,7 @@ do
 do
 	item = get!
 	list = {1, 2, 3}
-	exist = item in list
+	not_exist = item not in list
 	check item in list
 	check item in {1, 2, 3}
 	check item in {[1]: 1, [2]: 2, [3]: 3}

@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.5"sv;
+const std::string_view version = "0.17.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -5483,6 +5483,9 @@ private:
 					}
 					popAnonVarArg();
 					popFunctionScope();
+					if (unary_exp->inExp->not_) {
+						temp.front().insert(0, "not "s);
+					}
 					out.push_back(join(temp));
 					return;
 				}

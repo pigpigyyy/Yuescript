@@ -92,7 +92,7 @@ do
 		2,
 		3
 	}
-	local exist = (#list > 0 and (function()
+	local not_exist = not (#list > 0 and (function()
 		for _index_0 = 1, #list do
 			if list[_index_0] == item then
 				return true
