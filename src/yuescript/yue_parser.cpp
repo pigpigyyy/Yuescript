@@ -103,6 +103,11 @@ YueParser::YueParser() {
 		return false;
 	});
 
+	confusing_unary_not_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("deprecated unary operator not"sv, item.begin);
+		return false;
+	});
+
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
 	#define key(str) (expr(str) >> not_alpha_num)
@@ -464,7 +469,7 @@ YueParser::YueParser() {
 	NotIn = true_();
 	InRange = ('(' >> InRangeOpen | '[' >> InRangeClose) >> space >> Exp >> space >> ',' >> space >> Exp >> space >> (')' >> InRangeOpen | ']' >> InRangeClose);
 	InDiscrete = '{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab) >> space >> '}';
-	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete | Exp);
+	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete | key("not") >> confusing_unary_not_error | Exp);
 
 	UnaryOperator =
 		'-' >> not_(set(">=") | space_one) |
