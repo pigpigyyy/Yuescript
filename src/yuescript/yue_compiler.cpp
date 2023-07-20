@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.7"sv;
+const std::string_view version = "0.17.8"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1161,6 +1161,9 @@ private:
 		auto unary = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
 		BREAK_IF(unary->expos.size() != 1);
 		BREAK_IF(!unary->inExp);
+		if (unary->inExp->item.is<Exp_t>()) {
+			return unary;
+		}
 		auto value = static_cast<Value_t*>(unary->expos.back());
 		auto varName = singleVariableFrom(value, false);
 		if (varName.empty() || !isLocal(varName)) {
@@ -5416,7 +5419,11 @@ private:
 					_buf << "\tif "sv << itemVar << "=="sv << varName << '\n';
 					_buf << "\t\t"sv << findVar << "=true\n"sv;
 					_buf << "\t\tbreak\n"sv;
-					_buf << findVar;
+					if (unary_exp->inExp->not_) {
+						_buf << "not "sv << findVar;
+					} else {
+						_buf << findVar;
+					}
 					auto blockStr = clearBuf();
 					auto checkBlock = toAst<Block_t>(blockStr, inExp);
 					block->statements.dup(checkBlock->statements);
@@ -5437,30 +5444,44 @@ private:
 					out.push_back(join(temp));
 					return;
 				} else {
-					pushFunctionScope();
-					pushAnonVarArg();
-					pushScope();
-					auto arrayCheck = [&]() {
+					auto arrayCheck = [&](bool exist) {
 						auto indexVar = getUnusedName("_index_");
 						_buf << indent() << "for "sv << indexVar << " = 1, #"sv << checkVar << " do"sv << nll(x);
 						incIndentOffset();
 						_buf << indent() << "if "sv << checkVar << '[' << indexVar << "] == "sv << varName << " then"sv << nll(x);
 						incIndentOffset();
-						_buf << indent() << "return true"sv << nll(x);
+						_buf << indent() << "return "sv << (exist ? "true"sv : "false"sv) << nll(x);
 						decIndentOffset();
 						_buf << indent() << "end"sv << nll(x);
 						decIndentOffset();
 						_buf << indent() << "end"sv << nll(x);
-						_buf << indent() << "return false"sv << nll(x);
+						_buf << indent() << "return "sv << (exist ? "false"sv : "true"sv) << nll(x);
 						temp.push_back(clearBuf());
 					};
-					bool useShortCheck = !varName.empty() && !checkVar.empty() && isLocal(checkVar);
+					bool useShortCheck = (usage == ExpUsage::Closure) && !varName.empty() && !checkVar.empty() && isLocal(checkVar);
 					if (useShortCheck) {
-						arrayCheck();
-						temp.push_front("(#"s + checkVar + " > 0 and "s + anonFuncStart() + nll(x));
-						popScope();
-						temp.push_back(indent() + anonFuncEnd() + ')');
+						if (usage == ExpUsage::Return) {
+							arrayCheck(!unary_exp->inExp->not_);
+						} else {
+							pushFunctionScope();
+							pushAnonVarArg();
+							pushScope();
+							arrayCheck(true);
+							temp.push_front("(#"s + checkVar + " > 0 and "s + anonFuncStart() + nll(x));
+							popScope();
+							temp.push_back(indent() + anonFuncEnd() + ')');
+							if (unary_exp->inExp->not_) {
+								temp.front().insert(0, "not "s);
+							}
+							popAnonVarArg();
+							popFunctionScope();
+						}
 					} else {
+						if (usage == ExpUsage::Closure) {
+							pushFunctionScope();
+							pushAnonVarArg();
+							pushScope();
+						}
 						if (checkVar.empty() || !isLocal(checkVar)) {
 							checkVar = getUnusedName("_check_"sv);
 							auto assignment = assignmentFrom(toAst<Exp_t>(checkVar, inExp), inExp, inExp);
@@ -5476,15 +5497,16 @@ private:
 							auto assignment = assignmentFrom(assignExp, exp, x);
 							transformAssignment(assignment, temp);
 						}
-						arrayCheck();
-						temp.push_front(anonFuncStart() + nll(x));
-						popScope();
-						temp.push_back(indent() + anonFuncEnd());
-					}
-					popAnonVarArg();
-					popFunctionScope();
-					if (unary_exp->inExp->not_) {
-						temp.front().insert(0, "not "s);
+						if (usage == ExpUsage::Return) {
+							arrayCheck(!unary_exp->inExp->not_);
+						} else {
+							arrayCheck(!unary_exp->inExp->not_);
+							temp.push_front(anonFuncStart() + nll(x));
+							popScope();
+							temp.push_back(indent() + anonFuncEnd());
+							popAnonVarArg();
+							popFunctionScope();
+						}
 					}
 					out.push_back(join(temp));
 					return;

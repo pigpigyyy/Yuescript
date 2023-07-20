@@ -39,7 +39,14 @@ do
 	not_exist = item not in list
 	check item in list
 	check item in {1, 2, 3}
-	check item in {[1]: 1, [2]: 2, [3]: 3}
+	check item(...) in {[1]: 1, [2]: 2, [3]: 3}
+
+do
+	check -> x in tb
+	check -> x not in tb
+	local x, tb
+	check -> return x in tb
+	check -> x not in tb
 
 nil
 
