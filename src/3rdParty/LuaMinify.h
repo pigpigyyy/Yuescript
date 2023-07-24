@@ -2089,16 +2089,23 @@ local function FormatYue(ast, lineMap)
 	local formatStatlist, formatExpr
 	
 	local function joinStatementsSafe(out, b, sep)
+		if #out < 1 then
+			return ''
+		end
 		local aa = ''
+		local spaceSep = b:sub(1,1) == ' '
 		for i = #out, 1, -1 do
 			local a = out[i]
+			if a:sub(-1,-1) == ' ' then
+				spaceSep = true
+			end
 			aa = a:match("([^%s])%s*$")
 			if aa then
 				break
 			end
 		end
 		sep = sep or ' '
-		if (out[#out] or ''):sub(-1,-1) == ' ' then
+		if spaceSep then
 			sep = ''
 		end
 		local bb = b:match("^%s*([^%s])")
