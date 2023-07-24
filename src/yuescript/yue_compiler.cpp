@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.8"sv;
+const std::string_view version = "0.17.9"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -435,7 +435,7 @@ private:
 	struct ClassMember {
 		std::string item;
 		MemType type;
-		ast_node* node;
+		ast_ptr<true, ast_node> node;
 	};
 
 	struct DestructItem {

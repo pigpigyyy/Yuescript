@@ -246,6 +246,7 @@ int main(int narg, const char** args) {
 #ifndef YUE_COMPILER_ONLY
 		"   -e str   Execute a file or raw codes\n"
 		"   -m       Generate minified codes\n"
+		"   -r       Rewrite output to match original line numbers\n"
 #endif // YUE_COMPILER_ONLY
 		"   -t path  Specify where to place compiled files\n"
 		"   -o file  Write output to file\n"
@@ -409,6 +410,7 @@ int main(int narg, const char** args) {
 		return 0;
 	}
 	bool minify = false;
+	bool rewrite = false;
 #endif // YUE_COMPILER_ONLY
 	yue::YueConfig config;
 	config.implicitReturnRoot = true;
@@ -522,6 +524,8 @@ int main(int narg, const char** args) {
 			}
 		} else if (arg == "-m"sv) {
 			minify = true;
+		} else if (arg == "-r"sv) {
+			rewrite = true;
 #endif // YUE_COMPILER_ONLY
 		} else if (arg == "-s"sv) {
 			config.useSpaceOverTab = true;
@@ -607,6 +611,16 @@ int main(int narg, const char** args) {
 		std::cout << "Error: -o can not be used with multiple input files\n"sv;
 		return 1;
 	}
+#ifndef YUE_COMPILER_ONLY
+	if (minify || rewrite) {
+		if (minify) {
+			rewrite = false;
+		}
+		if (rewrite) {
+			config.reserveLineNumber = true;
+		}
+	}
+#endif // YUE_COMPILER_ONLY
 #ifndef YUE_NO_WATCHER
 	if (watchFiles) {
 		auto fullWorkPath = fs::absolute(fs::path(workPath)).string();
@@ -744,7 +758,7 @@ int main(int narg, const char** args) {
 	DEFER({
 		if (L) lua_close(L);
 	});
-	if (minify) {
+	if (minify || rewrite) {
 		L = luaL_newstate();
 		luaL_openlibs(L);
 		pushLuaminify(L);
@@ -766,7 +780,7 @@ int main(int narg, const char** args) {
 			errs.push_back(msg);
 		} else {
 #ifndef YUE_COMPILER_ONLY
-			if (minify) {
+			if (minify || rewrite) {
 				std::ifstream input(file, std::ios::in);
 				if (input) {
 					std::string s;
@@ -780,27 +794,24 @@ int main(int narg, const char** args) {
 					input.close();
 					int top = lua_gettop(L);
 					DEFER(lua_settop(L, top));
-					lua_pushvalue(L, -1);
+					lua_getfield(L, -1, rewrite ? "FormatYue" : "FormatMini");
 					lua_pushlstring(L, s.c_str(), s.size());
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						ret = 2;
 						std::string err = lua_tostring(L, -1);
-						errs.push_back("Failed to minify: "s + file + '\n' + err + '\n');
+						errs.push_back((rewrite ? "Failed to rewrite: "s : "Failed to minify: "s) + file + '\n' + err + '\n');
 					} else {
 						size_t size = 0;
-						const char* minifiedCodes = lua_tolstring(L, -1, &size);
+						const char* transformedCodes = lua_tolstring(L, -1, &size);
 						if (writeToFile) {
 							std::ofstream output(file, std::ios::trunc | std::ios::out);
-							output.write(minifiedCodes, size);
+							output.write(transformedCodes, size);
 							output.close();
-							std::cout << "Minified built "sv << file << '\n';
+							std::cout << (rewrite ? "Rewrited built "sv : "Minified built "sv) << file << '\n';
 						} else {
-							std::cout << minifiedCodes << '\n';
+							std::cout << transformedCodes << '\n';
 						}
 					}
-				} else {
-					ret = 2;
-					errs.push_back("Failed to minify: "s + file + '\n');
 				}
 			} else {
 				std::cout << msg;
