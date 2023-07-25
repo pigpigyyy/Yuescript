@@ -2,7 +2,7 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
-## v0.17.0
+## v0.17.10
 
 ### Added Features
 
@@ -14,13 +14,21 @@ The implementation for the original Moonscript language 0.5.0 can be found in th
   
   switch a when not in [1, 10]
     print "not (1 <= a <= 10)"
+  
+  if item in list
+  	print "item existed in a list"
   ```
 * Added metamethod name checking for chain expression.
+* Added feature to reformat the expressions passed as macro function arguments to the formated code strings.
+* Added -r option to rewrite compiled Lua code output to match original Yuescript code line numbers.
 
 ### Fixed Issues
 
 * Fixed a LuaJIT module loading issue.
 * Fixed built-in $FILE macro does not escape backslash on Windows.
+* Fixed more ambiguous Lua codes generation cases.
+* Fixed syntax error should throw for invalid interpolation.
+* Fixed an AST object life expired before accessing issue.
 
 ## v0.16.4
 

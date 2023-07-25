@@ -1156,21 +1156,17 @@ std::string UnaryExp_t::to_string(void* ud) const {
 }
 std::string InRange_t::to_string(void* ud) const {
 	auto valueStr = openValue->to_string(ud);
-	return "in "s + (open.is<InRangeOpen_t>() ? "("s : "["s + (valueStr[0] == '[' ? " "s : ""s)) + valueStr + ", "s + closeValue->to_string(ud) + (close.is<InRangeOpen_t>() ? ')' : ']');
+	return (open.is<InRangeOpen_t>() ? "("s : "["s + (valueStr[0] == '[' ? " "s : ""s)) + valueStr + ", "s + closeValue->to_string(ud) + (close.is<InRangeOpen_t>() ? ')' : ']');
 }
 std::string InDiscrete_t::to_string(void* ud) const {
 	str_list temp;
 	for (auto value : values.objects()) {
 		temp.emplace_back(value->to_string(ud));
 	}
-	return "in "s + '{' + join(temp, ", "sv) + '}';
+	return '{' + join(temp, ", "sv) + '}';
 }
 std::string In_t::to_string(void* ud) const {
-	if (not_) {
-		return "not "s + item->to_string(ud);
-	} else {
-		return item->to_string(ud);
-	}
+	return (not_ ? "not "s : ""s) + "in "s + item->to_string(ud);
 }
 std::string ExpListAssign_t::to_string(void* ud) const {
 	if (action) {
