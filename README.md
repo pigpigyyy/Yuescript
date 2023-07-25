@@ -88,6 +88,7 @@ Usage: yue [options|files|directories] ...
    -h       Print this message
    -e str   Execute a file or raw codes
    -m       Generate minified codes
+   -r       Rewrite output to match original line numbers
    -t path  Specify where to place compiled files
    -o file  Write output to file
    -s       Use spaces in generated codes instead of tabs
