@@ -2093,10 +2093,12 @@ local function FormatYue(ast, lineMap)
 			return ''
 		end
 		local aa = ''
-		local spaceSep = b:sub(1,1) == ' '
+		local b1 = b:sub(1,1)
+		local spaceSep = b1 == ' ' or b1 == '\n'
 		for i = #out, 1, -1 do
 			local a = out[i]
-			if a:sub(-1,-1) == ' ' then
+			local a1 = a:sub(-1,-1)
+			if a1 == ' ' or a1 == '\n' then
 				spaceSep = true
 			end
 			aa = a:match("([^%s])%s*$")
