@@ -4035,7 +4035,7 @@ private:
 	}
 #else
 	void transformMacro(Macro_t* macro, str_list&, bool) {
-		throw CompileError("macro feature not supported"sv, macro));
+		throw CompileError("macro feature not supported"sv, macro);
 	}
 #endif // YUE_NO_MACRO
 
@@ -4949,7 +4949,7 @@ private:
 
 	void transformMacroInPlace(MacroInPlace_t* macroInPlace) {
 #ifdef YUE_NO_MACRO
-		throw CompileError("macro feature not supported"sv, macroInPlace));
+		throw CompileError("macro feature not supported"sv, macroInPlace);
 #else // YUE_NO_MACRO
 		auto x = macroInPlace;
 		pushCurrentModule(); // cur
@@ -5304,7 +5304,7 @@ private:
 			return;
 #else
 			(void)allowBlockMacroReturn;
-			throw CompileError("macro feature not supported"sv, chainValue));
+			throw CompileError("macro feature not supported"sv, chainValue);
 #endif // YUE_NO_MACRO
 		}
 		const auto& chainList = chainValue->items.objects();
@@ -8139,7 +8139,7 @@ private:
 						case id<MacroName_t>():
 						case id<MacroNamePair_t>():
 						case id<ImportAllMacro_t>(): {
-							throw CompileError("macro feature not supported"sv, item));
+							throw CompileError("macro feature not supported"sv, item);
 							break;
 						}
 #else // YUE_NO_MACRO
@@ -8241,7 +8241,7 @@ private:
 			}
 #else // YUE_NO_MACRO
 			if (importAllMacro) {
-				throw CompileError("macro feature not supported"sv, import->target));
+				throw CompileError("macro feature not supported"sv, import->target);
 			}
 #endif // YUE_NO_MACRO
 			if (newTab->items.empty()) {
@@ -8891,10 +8891,14 @@ CompileInfo YueCompiler::compile(std::string_view codes, const YueConfig& config
 }
 
 void YueCompiler::clear(void* luaState) {
+#ifndef YUE_NO_MACRO
 	auto L = static_cast<lua_State*>(luaState);
 	lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
 	lua_pushnil(L);
 	lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE] = nil
+#else
+	(void)(luaState);
+#endif // YUE_NO_MACRO
 }
 
 } // namespace yue
