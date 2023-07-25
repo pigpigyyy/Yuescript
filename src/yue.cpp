@@ -143,7 +143,12 @@ fs::path getTargetFileDirty(const fs::path& file, const fs::path& workPath, cons
 }
 
 #ifndef YUE_NO_WATCHER
+
+#ifndef YUE_COMPILER_ONLY
+static std::string compileFile(const fs::path& file, yue::YueConfig conf, const fs::path& workPath, const fs::path& targetPath, bool minify, bool rewrite) {
+#else
 static std::string compileFile(const fs::path& file, yue::YueConfig conf, const fs::path& workPath, const fs::path& targetPath) {
+#endif // YUE_COMPILER_ONLY
 	auto srcFile = fs::absolute(file);
 	auto targetFile = getTargetFileDirty(srcFile, workPath, targetPath);
 	if (targetFile.empty()) return std::string();
@@ -184,6 +189,26 @@ static std::string compileFile(const fs::path& file, yue::YueConfig conf, const 
 			std::ofstream output(targetFile, std::ios::trunc | std::ios::out);
 			if (output) {
 				const auto& codes = result.codes;
+#ifndef YUE_COMPILER_ONLY
+				if (minify || rewrite) {
+					lua_State* L = luaL_newstate();
+					DEFER(lua_close(L));
+					luaL_openlibs(L);
+					pushLuaminify(L);
+					lua_getfield(L, -1, rewrite ? "FormatYue" : "FormatMini");
+					lua_pushlstring(L, codes.c_str(), codes.size());
+					if (lua_pcall(L, 1, 1, 0) != 0) {
+						std::string err = lua_tostring(L, -1);
+						return (rewrite ? "Failed to rewrite: "s : "Failed to minify: "s) + modulePath.string() + '\n' + err + '\n';
+					} else {
+						size_t size = 0;
+						const char* transformedCodes = lua_tolstring(L, -1, &size);
+						output.write(transformedCodes, size);
+						output.close();
+						return (rewrite ? "Rewritten built "s : "Minified built "s) + modulePath.string() + '\n';
+					}
+				}
+#endif // YUE_COMPILER_ONLY
 				if (conf.reserveLineNumber) {
 					auto head = "-- [yue]: "s + modulePath.string() + '\n';
 					output.write(head.c_str(), head.size());
@@ -206,7 +231,11 @@ public:
 	void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string) override {
 		switch (action) {
 			case efsw::Actions::Add:
+#ifndef YUE_COMPILER_ONLY
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath, minify, rewrite); !res.empty()) {
+#else // YUE_COMPILER_ONLY
 				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath); !res.empty()) {
+#endif // YUE_COMPILER_ONLY
 					std::cout << res;
 				}
 				break;
@@ -223,7 +252,11 @@ public:
 				break;
 			}
 			case efsw::Actions::Modified:
+#ifndef YUE_COMPILER_ONLY
+				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath, minify, rewrite); !res.empty()) {
+#else // YUE_COMPILER_ONLY
 				if (auto res = compileFile(fs::path(dir) / filename, config, workPath, targetPath); !res.empty()) {
+#endif // YUE_COMPILER_ONLY
 					std::cout << res;
 				}
 				break;
@@ -236,6 +269,10 @@ public:
 	yue::YueConfig config;
 	fs::path workPath;
 	fs::path targetPath;
+#ifndef YUE_COMPILER_ONLY
+	bool rewrite = false;
+	bool minify = false;
+#endif // YUE_COMPILER_ONLY
 };
 #endif // YUE_NO_WATCHER
 
@@ -631,7 +668,11 @@ int main(int narg, const char** args) {
 		std::list<std::future<std::string>> results;
 		for (const auto& file : files) {
 			auto task = std::async(std::launch::async, [=]() {
+#ifndef YUE_COMPILER_ONLY
+				return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath, minify, rewrite);
+#else
 				return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath);
+#endif // YUE_COMPILER_ONLY
 			});
 			results.push_back(std::move(task));
 		}
@@ -646,6 +687,14 @@ int main(int narg, const char** args) {
 		listener.config = config;
 		listener.workPath = fullWorkPath;
 		listener.targetPath = fullTargetPath;
+#ifndef YUE_COMPILER_ONLY
+		listener.minify = minify;
+		if (minify) {
+			listener.rewrite = false;
+		} else {
+			listener.rewrite = rewrite;
+		}
+#endif // YUE_COMPILER_ONLY
 		fileWatcher.addWatch(workPath, &listener, true);
 		fileWatcher.watch();
 		while (true) {
@@ -807,7 +856,7 @@ int main(int narg, const char** args) {
 							std::ofstream output(file, std::ios::trunc | std::ios::out);
 							output.write(transformedCodes, size);
 							output.close();
-							std::cout << (rewrite ? "Rewrited built "sv : "Minified built "sv) << file << '\n';
+							std::cout << (rewrite ? "Rewritten built "sv : "Minified built "sv) << file << '\n';
 						} else {
 							std::cout << transformedCodes << '\n';
 						}
