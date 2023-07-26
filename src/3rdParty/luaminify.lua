@@ -1737,6 +1737,12 @@ local function Format_Mini(ast)
 			return a.."\n"..b
 		end]]
 		sep = sep or ' '
+		if sep == ';' then
+			local token = a:match("([%w_]+)%s*$")
+			if token == "then" or token == "do" then
+				sep = ' '
+			end
+		end
 		local aa, bb = a:sub(-1,-1), b:sub(1,1)
 		if UpperChars[aa] or LowerChars[aa] or aa == '_' then
 			if not (UpperChars[bb] or LowerChars[bb] or bb == '_' or Digits[bb]) then
@@ -2094,9 +2100,15 @@ local function FormatYue(ast, lineMap)
 				break
 			end
 		end
+		aa = aa or ''
 		sep = sep or ' '
 		if spaceSep then
 			sep = ''
+		elseif sep == ';' then
+			local token = aa:match("([%w_]+)%s*$")
+			if token == "then" or token == "do" then
+				sep = ' '
+			end
 		end
 		local bb = b:match("^%s*([^%s])")
 		if UpperChars[aa] or LowerChars[aa] or aa == '_' then
