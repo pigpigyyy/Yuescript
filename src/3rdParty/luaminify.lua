@@ -1,4 +1,3 @@
-R"lua_codes(
 --[[
 The MIT License (MIT)
 
@@ -45,7 +44,7 @@ local function PrintTable(tb, atIndent)
 			out = out..(useNewlines and baseIndent or '')
 			if type(k) == 'number' then
 				--nothing to do
-			elseif type(k) == 'string' and k:match("^[A-Za-z_][A-Za-z0-9_]*$") then 
+			elseif type(k) == 'string' and k:match("^[A-Za-z_][A-Za-z0-9_]*$") then
 				out = out..k.." = "
 			elseif type(k) == 'string' then
 				out = out.."[\""..k.."\"] = "
@@ -307,9 +306,7 @@ local Scope = {
 		end
 	end
 }
-)lua_codes"
 
-R"lua_codes(
 --
 -- ParseLua.lua
 --
@@ -547,7 +544,7 @@ local function LexLua(src)
 			--get the initial char
 			local thisLine = line
 			local thisChar = char
-			--local errorAt = ":"..line..":"..char..":> "
+			-- local errorAt = ":"..line..":"..char..":> "
 			local c = peek()
 
 			--symbol to emit
@@ -953,9 +950,7 @@ local function ParseLua(src)
 		--
 		return true, nodeFunc
 	end
-)lua_codes"
 
-R"lua_codes(
 	function ParsePrimaryExpr(scope)
 		local tokenList = {}
 
@@ -1297,9 +1292,7 @@ R"lua_codes(
 	ParseExpr = function(scope)
 		return ParseSubExpr(scope, 0)
 	end
-)lua_codes"
 
-R"lua_codes(
 	local function ParseStatement(scope)
 		local stat = nil
 		local tokenList = {}
@@ -1723,9 +1716,7 @@ R"lua_codes(
 	--print("Last Token: "..PrintTable(tok:Peek()))
 	return st, main
 end
-)lua_codes"
 
-R"lua_codes(
 --
 -- FormatMini.lua
 --
@@ -1752,7 +1743,6 @@ local function Format_Mini(ast)
 				--bb is a symbol, can join without sep
 				return a..b
 			elseif bb == '(' then
-				print("==============>>>",aa,bb)
 				--prevent ambiguous syntax
 				return a..sep..b
 			else
@@ -1774,7 +1764,7 @@ local function Format_Mini(ast)
 				--don't want to accidentally call last statement, can't join directly
 				return a..sep..b
 			else
-			--print("asdf", '"'..a..'"', '"'..b..'"')
+				--print("asdf", '"'..a..'"', '"'..b..'"')
 				return a..b
 			end
 		end
@@ -2081,9 +2071,7 @@ local function Format_Mini(ast)
 	ast.Scope:ObfuscateVariables()
 	return formatStatlist(ast)
 end
-)lua_codes"
 
-R"lua_codes(
 local function FormatYue(ast, lineMap)
 	local currentLine = 1
 	local formatStatlist, formatExpr
@@ -2496,5 +2484,3 @@ return {
 		end
 	end
 }
-)lua_codes";
-
