@@ -168,7 +168,7 @@ local function yue_require(name)
 	insert_loader()
 	local success, res = xpcall(require, function(err)
 		return yue_traceback(err, 2)
-	end)
+	end, name)
 	if success then
 		return res
 	else
