@@ -971,6 +971,7 @@ thing = {1, 2}
 print a, b
 ```
 <YueDisplay>
+
 <pre>
 thing = {1, 2}
 
@@ -1295,7 +1296,7 @@ catch err
 
 ## Attributes
 
-Syntax support for Lua 5.4 attributes. But you can use still use `const` declaration and get constant check working when targeting Lua versions below 5.4.
+Syntax support for Lua 5.4 attributes. But you can still use `const` declaration and get constant check working when targeting Lua versions below 5.4.
 
 ```moonscript
 const a = 123
@@ -2374,6 +2375,9 @@ if a in (0, 11)
 
 if a in {1, 3, 5, 7}
   print "checking equality with discrete values"
+
+if a in list
+  print "checking if `a` is in a list"
 ```
 <YueDisplay>
 <pre>
@@ -2390,6 +2394,9 @@ if a in (0, 11)
 
 if a in {1, 3, 5, 7}
   print "checking equality with discrete values"
+
+if a in list
+  print "checking if `a` is in a list"
 </pre>
 </YueDisplay>
 

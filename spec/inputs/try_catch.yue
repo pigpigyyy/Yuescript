@@ -50,5 +50,11 @@ do
 	catch err
 		print err
 
+do
+	try
+		func 1, 2, 3
+
+	try func 1, 2, 3
+
 nil
 

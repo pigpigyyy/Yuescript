@@ -72,7 +72,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.17.12"sv;
+const std::string_view version = "0.17.13"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -7950,6 +7950,20 @@ private:
 			auto body = x->new_ptr<Body_t>();
 			body->content.set(tryNode->catchBlock->body);
 			funLit->body.set(body);
+		}
+		if (auto tryBlock = tryNode->func.as<Block_t>()) {
+			BLOCK_START
+			BREAK_IF(tryBlock->statements.size() != 1);
+			auto stmt = static_cast<Statement_t*>(tryBlock->statements.front());
+			auto expListAssign = stmt->content.as<ExpListAssign_t>();
+			BREAK_IF(expListAssign->action);
+			auto value = singleValueFrom(expListAssign->expList);
+			BREAK_IF(!value);
+			auto chainValue = value->item.as<ChainValue_t>();
+			BREAK_IF(!chainValue);
+			BREAK_IF(!isChainValueCall(chainValue));
+			tryNode->func.set(expListAssign->expList->exprs.front());
+			BLOCK_END
 		}
 		if (auto tryBlock = tryNode->func.as<Block_t>()) {
 			auto tryExp = toAst<Exp_t>("->"sv, x);

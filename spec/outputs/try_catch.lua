@@ -1,8 +1,6 @@
-xpcall(function()
-	return func(1, 2, 3)
-end, function(err)
+xpcall(func, function(err)
 	return print(err)
-end)
+end, 1, 2, 3)
 xpcall(func, function(err)
 	return print(err)
 end, 1, 2, 3)
@@ -11,11 +9,9 @@ pcall(function()
 	return func(1, 2, 3)
 end)
 do
-	local success, result = xpcall(function()
-		return func(1, 2, 3)
-	end, function(err)
+	local success, result = xpcall(func, function(err)
 		return print(err)
-	end)
+	end, 1, 2, 3)
 	success, result = pcall(func, 1, 2, 3)
 end
 pcall(tb.func)
@@ -57,5 +53,9 @@ do
 	if success then
 		print(result)
 	end
+end
+do
+pcall(func, 1, 2, 3)
+pcall(func, 1, 2, 3)
 end
 return nil

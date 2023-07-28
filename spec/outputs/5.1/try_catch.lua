@@ -68,4 +68,8 @@ do
 		print(result)
 	end
 end
+do
+pcall(func, 1, 2, 3)
+pcall(func, 1, 2, 3)
+end
 return nil
