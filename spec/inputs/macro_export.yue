@@ -1,6 +1,6 @@
-import "macro-todo" as $
+import "macro_todo" as $
 
-import "macro-todo" as {$, :$todo}
+import "macro_todo" as {$, :$todo}
 
 export macro config = (debugging = true)->
 	global debugMode = debugging == "true"

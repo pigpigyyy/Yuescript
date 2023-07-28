@@ -106,9 +106,12 @@ local function yue_loader(name)
 	return concat(tried, "\n\t")
 end
 local function yue_call(f, ...)
-	return xpcall(f, function(err)
-		return yue.traceback(err, 1)
-	end, ...)
+	local args = {...}
+	return xpcall(function()
+		return f(unpack(args))
+	end, function(err)
+		return yue.traceback(err, 2)
+	end)
 end
 yue_loadstring = function(...)
 	local options, str, chunk_name, mode, env = get_options(...)
@@ -166,9 +169,11 @@ local function yue_traceback(err, level)
 end
 local function yue_require(name)
 	insert_loader()
-	local success, res = xpcall(require, function(err)
-		return yue_traceback(err, 2)
-	end, name)
+	local success, res = xpcall(function()
+		return require(name)
+	end, function(err)
+		return yue_traceback(err, 3)
+	end)
 	if success then
 		return res
 	else

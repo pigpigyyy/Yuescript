@@ -1,9 +1,9 @@
-import "macro-export" as {
+import "macro_export" as {
 	$, -- import all macros
 	$config: $myconfig, -- rename macro $config to $myconfig
 }
 
-import "macro-todo" as $
+import "macro_todo" as $
 
 $asserts item == nil
 

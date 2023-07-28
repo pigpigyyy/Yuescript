@@ -1,4 +1,4 @@
-import "macro-teal" as $
+import "macro_teal" as $
 
 $local "a:{string:number}", {value:123}
 $local "b:number", a.value
