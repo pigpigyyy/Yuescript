@@ -93,10 +93,20 @@ static void get_config(lua_State* L, yue::YueConfig& config) {
 		config.useSpaceOverTab = lua_toboolean(L, -1) != 0;
 	}
 	lua_pop(L, 1);
-	lua_pushliteral(L, "target");
+	lua_pushliteral(L, "options");
 	lua_gettable(L, -2);
-	if (lua_isstring(L, -1) != 0) {
-		config.options["target"] = lua_tostring(L, -1);
+	if (lua_istable(L, -1) != 0) {
+		lua_pushnil(L); // options startKey
+		while (lua_next(L, -2) != 0) { // options key value
+			size_t len = 0;
+			auto pstr = lua_tolstring(L, -2, &len);
+			std::string key{pstr, len};
+			pstr = lua_tolstring(L, -1, &len);
+			std::string value{pstr, len};
+			config.options[key] = value;
+			lua_pop(L, 1); // options key
+		}
+		lua_pop(L, 1); // options
 	}
 	lua_pop(L, 1);
 }

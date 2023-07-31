@@ -510,6 +510,7 @@ int main(int narg, const char** args) {
 				}
 				lua_setglobal(L, "arg");
 				std::ifstream input(evalStr, std::ios::in);
+				int argNum = 2;
 				if (input) {
 					auto ext = fs::path(evalStr).extension().string();
 					for (auto& ch : ext) ch = std::tolower(ch);
@@ -523,12 +524,38 @@ int main(int narg, const char** args) {
 						std::istreambuf_iterator<char>());
 					lua_pushlstring(L, s.c_str(), s.size());
 					lua_pushlstring(L, evalStr.c_str(), evalStr.size());
+					if (ext != ".lua") {
+						argNum = 3;
+						lua_newtable(L);
+						lua_newtable(L);
+						for (int j = i; j < narg; j++) {
+							std::string argItem = args[j];
+							if (argItem.size() > 2 && argItem.substr(0, 2) == "--"sv && argItem.substr(2, 1) != "-"sv) {
+								auto argStr = argItem.substr(2);
+								yue::Utils::trim(argStr);
+								size_t idx = argStr.find('=');
+								if (idx != std::string::npos) {
+									auto key = argStr.substr(0, idx);
+									auto value = argStr.substr(idx + 1);
+									yue::Utils::trim(key);
+									yue::Utils::trim(value);
+									lua_pushlstring(L, key.c_str(), key.size());
+									lua_pushlstring(L, value.c_str(), value.size());
+								} else {
+									lua_pushlstring(L, argStr.c_str(), argStr.size());
+									lua_pushliteral(L, "");
+								}
+								lua_rawset(L, -3);
+							}
+						}
+						lua_setfield(L, -2, "options");
+					}
 				} else {
 					pushYue(L, "loadstring"sv);
 					lua_pushlstring(L, evalStr.c_str(), evalStr.size());
 					lua_pushliteral(L, "=(eval str)");
 				}
-				if (lua_pcall(L, 2, 2, 0) != 0) {
+				if (lua_pcall(L, argNum, 2, 0) != 0) {
 					std::cout << lua_tostring(L, -1) << '\n';
 					return 1;
 				}
