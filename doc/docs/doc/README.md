@@ -151,7 +151,10 @@ f!
   reserve_line_number = true,
   lint_global = true,
   space_over_tab = false,
-  target = "5.4"
+  options = {
+    target = "5.4",
+    path = "/script"
+  }
 })
 ```
 
