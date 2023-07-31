@@ -5366,9 +5366,10 @@ private:
 
 	void transformUnaryValue(UnaryValue_t* unary_value, str_list& out) {
 		str_list temp;
+		int target = getLuaTarget(unary_value);
 		for (auto _op : unary_value->ops.objects()) {
 			std::string op = _parser.toString(_op);
-			if (op == "~"sv && getLuaTarget(_op) < 503) {
+			if (op == "~"sv && target < 503) {
 				throw CompileError("bitwise operator is not available when not targeting Lua version 5.3 or higher"sv, _op);
 			}
 			temp.push_back(op == "not"sv ? op + ' ' : op);
@@ -5630,9 +5631,10 @@ private:
 			return;
 		}
 		std::string unary_op;
+		int target = getLuaTarget(unary_exp);
 		for (auto _op : unary_exp->ops.objects()) {
 			std::string op = _parser.toString(_op);
-			if (op == "~"sv && getLuaTarget(_op) < 503) {
+			if (op == "~"sv && target < 503) {
 				throw CompileError("bitwise operator is not available when not targeting Lua version 5.3 or higher"sv, _op);
 			}
 			unary_op.append(op == "not"sv ? op + ' ' : op);
