@@ -5411,7 +5411,7 @@ private:
 							BREAK_IF(!simpleValue);
 							auto varArg = simpleValue->value.as<VarArg_t>();
 							BREAK_IF(!varArg);
-							throw CompileError("can not use variant arguments assignment statement in macro"sv, x);
+							throw CompileError("can not use variadic arguments assignment statement in macro"sv, x);
 							BLOCK_END
 						}
 					}
