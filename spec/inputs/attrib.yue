@@ -1,9 +1,17 @@
+const a, b, c, d = 1, 2, 3, 4
+
 do
 	close a, b = setmetatable {},__close:=> print "closed"
 	const c, d = 123, 'abc'
 
 	close a, b
 	const c, d
+
+do
+	const a, {b, c}, {d} = f!, f1!
+
+do
+	const a, {b, c}, {d} = f!
 
 do
 	close v = if flag
@@ -22,27 +30,24 @@ do
 	close d =
 		:value if a ?? b
 
-macro defer = (item)-> "close _ = #{item}"
-macro defer_f = (func)-> "close _ = setmetatable {},__close:#{func}"
-
 do
-	$defer with io.open "file.txt"
+	close _ = with io.open "file.txt"
 		\write "Hello"
 	
-	$defer setmetatable {},__close:=> print "second"
+	close _ = <close>: -> print "second"
 
-	$defer_f -> print "first"
+	close _ = <close>: -> print "first"
 
-_defers = setmetatable {},__close:=>
+_defers = setmetatable {}, __close: =>
 	@[#@]!
 	@[#@] = nil
 
-macro defer_i = (item)-> "
-_defers[#_defers + 1] = #{item}
-close _ = _defers"
+def = (item)->
+	_defers[#_defers + 1] = item
+	_defers
 
 do
-	$defer_i -> print 3
-	$defer_i -> print 2
-	$defer_i -> print 1
+	close _ = def -> print 3
+	close _ = def -> print 2
+	close _ = def -> print 1
 
