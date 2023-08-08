@@ -220,5 +220,50 @@ join = function(...)
 			return _fn_0(_base_0, ...)
 		end
 	end)(...))
+	local _
+	_ = function()
+		local list = {
+			1,
+			2,
+			3,
+			4,
+			5
+		}
+		local fn
+		fn = function(ok)
+			return ok, table.unpack(list)
+		end
+		return (function(_arg_0, ...)
+			local ok = _arg_0
+			print(ok, ...)
+			local fn_many_args
+			fn_many_args = function()
+				return 10, nil, 20, nil, 30
+			end
+			return (function(...)
+				print(select("#", ...))
+				return print(...)
+			end)(fn_many_args())
+		end)(fn(true))
+	end
+	do
+		(function(...)
+			return print(...)
+		end)((function()
+			if true then
+				return 1, 2
+			end
+		end)())
+	end
+	do
+		(function(_arg_0, ...)
+			local a = _arg_0
+			return print(a, select('#', ...))
+		end)((function()
+			if not true then
+				return 1, 2
+			end
+		end)())
+	end
 	return nil
 end

@@ -3619,14 +3619,82 @@ private:
 				auto varArg = simpleValue->value.as<VarArg_t>();
 				BREAK_IF(!varArg);
 				auto assignAction = static_cast<Assign_t*>(expListAssign->action.get());
-				bool isExps = true;
-				for (auto item : assignAction->values.objects()) {
-					if (!ast_is<Exp_t, TableBlock_t>(item)) {
-						isExps = false;
-						break;
+				auto newInvoke = assignAction->new_ptr<InvokeArgs_t>();
+				if (auto appendix = stmt->appendix.get()) {
+					switch (appendix->item->get_id()) {
+						case id<IfLine_t>(): {
+							auto if_line = static_cast<IfLine_t*>(appendix->item.get());
+							auto ifNode = appendix->new_ptr<If_t>();
+							ifNode->type.set(if_line->type);
+							ifNode->nodes.push_back(if_line->condition);
+							auto expList = appendix->new_ptr<ExpList_t>();
+							for (auto val : assignAction->values.objects()) {
+								switch (val->get_id()) {
+									case id<If_t>():
+									case id<Switch_t>():
+									case id<With_t>(): {
+										auto simpleValue = val->new_ptr<SimpleValue_t>();
+										simpleValue->value.set(val);
+										auto exp = newExp(simpleValue, val);
+										expList->exprs.push_back(exp);
+										break;
+									}
+									case id<TableBlock_t>(): {
+										auto tableBlock = static_cast<TableBlock_t*>(val);
+										auto tabLit = val->new_ptr<TableLit_t>();
+										tabLit->values.dup(tableBlock->values);
+										auto simpleValue = val->new_ptr<SimpleValue_t>();
+										simpleValue->value.set(tabLit);
+										auto exp = newExp(simpleValue, val);
+										expList->exprs.push_back(exp);
+										break;
+									}
+									case id<Exp_t>(): {
+										expList->exprs.push_back(val);
+										break;
+									}
+									default: YUEE("AST node mismatch", val); break;
+								}
+							}
+							auto newExpListAssign = assignAction->new_ptr<ExpListAssign_t>();
+							newExpListAssign->expList.set(expList);
+							auto newStmt = assignAction->new_ptr<Statement_t>();
+							newStmt->content.set(newExpListAssign);
+							ifNode->nodes.push_back(newStmt);
+							auto newSVal = ifNode->new_ptr<SimpleValue_t>();
+							newSVal->value.set(ifNode);
+							newInvoke->args.push_back(newExp(newSVal, newSVal));
+							break;
+						}
+						case id<WhileLine_t>(): {
+							throw CompileError("while-loop line decorator is not supported here"sv, appendix->item.get());
+							break;
+						}
+						case id<CompInner_t>(): {
+							throw CompileError("for-loop line decorator is not supported here"sv, appendix->item.get());
+							break;
+						}
+						default: YUEE("AST node mismatch", appendix->item.get()); break;
 					}
 				}
-				BREAK_IF(!isExps);
+				if (newInvoke->args.empty()) {
+					for (auto item : assignAction->values.objects()) {
+						switch (item->get_id()) {
+							case id<With_t>():
+							case id<If_t>():
+							case id<Switch_t>(): {
+								auto sVal = item->new_ptr<SimpleValue_t>();
+								sVal->value.set(item);
+								newInvoke->args.push_back(newExp(sVal, item));
+								break;
+							}
+							case id<TableBlock_t>():
+							case id<Exp_t>():
+								newInvoke->args.push_back(item);
+								break;
+						}
+					}
+				}
 				auto x = *nodes.begin();
 				auto newBlock = x->new_ptr<Block_t>();
 				if (it != nodes.begin()) {
@@ -3685,8 +3753,6 @@ private:
 				newCallable->item.set(newParens);
 				auto newChainValue = x->new_ptr<ChainValue_t>();
 				newChainValue->items.push_back(newCallable);
-				auto newInvoke = x->new_ptr<InvokeArgs_t>();
-				newInvoke->args.dup(assignAction->values);
 				newChainValue->items.push_back(newInvoke);
 				auto newItem = newExp(newChainValue, x);
 				auto newItemList = x->new_ptr<ExpList_t>();

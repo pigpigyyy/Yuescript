@@ -52,5 +52,27 @@ join = (...) ->
 	f_colon f!\func
 	f_colon f(...)\func
 
+	_ = ->
+		list = {1, 2, 3, 4, 5}
+		fn = (ok) ->
+		  ok, table.unpack list
+		ok, ... = fn true
+		print ok, ...
+
+		fn_many_args = ->
+		  10, nil, 20, nil, 30
+
+		... = fn_many_args!
+		print select "#", ...
+		print ...
+
+	do
+		... = 1, 2 if true
+		print ...
+
+	do
+		a, ... = 1, 2 unless true
+		print a, select '#', ...
+
 	nil
 
