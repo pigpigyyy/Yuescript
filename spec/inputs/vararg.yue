@@ -74,5 +74,23 @@ join = (...) ->
 		a, ... = 1, 2 unless true
 		print a, select '#', ...
 
+	do
+		... = switch x when 1
+			with tb
+				.x = 123
+		else
+			tb2
+		print ...
+
+	do
+		... = 1, 2, if cond
+			3, 4, 5
+		print ...
+
+	do
+		tb, ... =
+			name: "abc"
+			value: 123
+		print ...
 	nil
 

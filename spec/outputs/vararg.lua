@@ -265,5 +265,37 @@ join = function(...)
 			end
 		end)())
 	end
+	do
+		(function(...)
+			return print(...)
+		end)((function()
+			local _exp_0 = x
+			if 1 == _exp_0 then
+				local _with_0 = tb
+				_with_0.x = 123
+				return _with_0
+			else
+				return tb2
+			end
+		end)())
+	end
+	do
+		(function(...)
+			return print(...)
+		end)(1, 2, (function()
+			if cond then
+				return 3, 4, 5
+			end
+		end)())
+	end
+	do
+		(function(_arg_0, ...)
+			local tb = _arg_0
+			return print(...)
+		end)({
+			name = "abc",
+			value = 123
+		})
+	end
 	return nil
 end
