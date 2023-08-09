@@ -1181,6 +1181,28 @@ print "OK"
 </pre>
 </YueDisplay>
 
+## Varargs Assignment
+
+You can assign the results returned from a function  to a varargs symbol `...`. And then access its content using the Lua way.
+```moonscript
+list = {1, 2, 3, 4, 5}
+fn = (ok) -> ok, table.unpack list
+ok, ... = fn true
+count = select '#', ...
+first = select 1, ...
+print ok, count, first
+```
+<YueDisplay>
+<pre>
+list = {1, 2, 3, 4, 5}
+fn = (ok) -> ok, table.unpack list
+ok, ... = fn true
+count = select '#', ...
+first = select 1, ...
+print ok, count, first
+</pre>
+</YueDisplay>
+
 ## Whitespace
 
 Yuescript is a whitespace significant language. You have to write some code block in the same indent with space **' '** or tab **'\t'** like function body, value list and some control blocks. And expressions containing different whitespaces might mean different things. Tab is treated like 4 space, but it's better not mix the use of spaces and tabs.
@@ -1299,7 +1321,7 @@ catch err
 
 ## Attributes
 
-Syntax support for Lua 5.4 attributes. But you can still use `const` declaration and get constant check working when targeting Lua versions below 5.4.
+Syntax support for Lua 5.4 attributes. And you can still use both the `const` and `close` declaration and get constant check and scoped callback working when targeting Lua versions below 5.4.
 
 ```moonscript
 const a = 123
