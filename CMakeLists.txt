@@ -160,10 +160,6 @@ elseif (${CMAKE_BUILD_TYPE} MATCHES "Release")
 	target_compile_definitions(yue PRIVATE NDEBUG)
 endif()
 
-if (CMAKE_DL_LIBS)
-	target_link_options(yue PRIVATE -ldl)
-endif()
-
 find_package(Threads REQUIRED)
 if (APPLE)
 	set(MAC_LIBS "-framework CoreFoundation" "-framework CoreServices")
@@ -175,7 +171,7 @@ else ()
 endif()
 	
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_link_options(yue PRIVATE -lstdc++fs)
+	target_link_options(yue PRIVATE -lstdc++fs -ldl)
 endif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 install(CODE "")
