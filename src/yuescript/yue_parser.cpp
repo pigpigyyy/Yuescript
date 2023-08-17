@@ -59,7 +59,8 @@ YueParser::YueParser() {
 	white = space >> *(line_break >> space);
 	alpha_num = range('a', 'z') | range('A', 'Z') | range('0', '9') | '_';
 	not_alpha_num = not_(alpha_num);
-	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *alpha_num;
+	Name = (range('a', 'z') | range('A', 'Z') | '_') >> *alpha_num >> not_(larger(255));
+	UnicodeName = (range('a', 'z') | range('A', 'Z') | '_' | larger(255)) >> *(larger(255) | alpha_num);
 	num_expo = set("eE") >> -set("+-") >> num_char;
 	num_expo_hex = set("pP") >> -set("+-") >> num_char;
 	lj_num = -set("uU") >> set("lL") >> set("lL");
@@ -160,23 +161,34 @@ YueParser::YueParser() {
 
 	#define body (in_block | Statement | empty_block_error)
 
-	Variable = pl::user(Name, [](const item_t& item) {
+	Variable = pl::user(Name | UnicodeName, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) st->buffer += static_cast<char>(*it);
+		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) {
+			if (*it > 255) {
+				st->buffer.clear();
+				return true;
+			}
+			st->buffer += static_cast<char>(*it);
+		}
 		auto isValid = Keywords.find(st->buffer) == Keywords.end();
 		if (isValid) {
-			if (st->buffer == st->moduleName) {
-				st->moduleFix++;
-				st->moduleName = "_module_"s + std::to_string(st->moduleFix);
+			if (st->buffer[0] == '_') {
+				st->usedNames.insert(st->buffer);
 			}
 		}
 		st->buffer.clear();
 		return isValid;
 	});
 
-	LabelName = pl::user(Name, [](const item_t& item) {
+	LabelName = pl::user(UnicodeName, [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
-		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) st->buffer += static_cast<char>(*it);
+		for (auto it = item.begin->m_it; it != item.end->m_it; ++it) {
+			if (*it > 255) {
+				st->buffer.clear();
+				return true;
+			}
+			st->buffer += static_cast<char>(*it);
+		}
 		auto isValid = LuaKeywords.find(st->buffer) == LuaKeywords.end();
 		st->buffer.clear();
 		return isValid;
@@ -191,12 +203,12 @@ YueParser::YueParser() {
 	});
 
 	Self = '@';
-	SelfName = '@' >> Name;
+	SelfName = '@' >> (Name | UnicodeName);
 	SelfClass = "@@";
-	SelfClassName = "@@" >> Name;
+	SelfClassName = "@@" >> (Name | UnicodeName);
 
 	SelfItem = SelfClassName | SelfClass | SelfName | Self;
-	KeyName = SelfItem | Name;
+	KeyName = SelfItem | Name | UnicodeName;
 	VarArg = "...";
 
 	check_indent = pl::user(plain_space, [](const item_t& item) {
@@ -275,7 +287,7 @@ YueParser::YueParser() {
 	import_name_list = Seperator >> *space_break >> space >> import_name >> *((+space_break | space >> ',' >> *space_break) >> space >> import_name);
 	ImportFrom = import_name_list >> *space_break >> space >> key("from") >> space >> Exp;
 
-	ImportLiteralInner = (range('a', 'z') | range('A', 'Z') | set("_-")) >> *(alpha_num | '-');
+	ImportLiteralInner = (range('a', 'z') | range('A', 'Z') | set("_-") | larger(255)) >> *(alpha_num | '-' | larger(255));
 	import_literal_chain = Seperator >> ImportLiteralInner >> *('.' >> ImportLiteralInner);
 	ImportLiteral = (
 			'\'' >> import_literal_chain >> '\''
@@ -608,8 +620,8 @@ YueParser::YueParser() {
 		DotChainItem >> -ExistentialOp |
 		Slice |
 		index >> -ExistentialOp;
-	DotChainItem = '.' >> (Name | Metatable | Metamethod);
-	ColonChainItem = (expr('\\') | "::") >> (LuaKeyword | Name | Metamethod);
+	DotChainItem = '.' >> (Name | Metatable | Metamethod | UnicodeName);
+	ColonChainItem = (expr('\\') | "::") >> (LuaKeyword | Name | Metamethod | UnicodeName);
 	invoke_chain = Invoke >> -ExistentialOp >> -chain_items;
 	colon_chain = ColonChainItem >> -ExistentialOp >> -invoke_chain;
 
@@ -779,10 +791,10 @@ YueParser::YueParser() {
 	FnArrow = expr("->") | "=>";
 	FunLit = -FnArgsDef >> space >> FnArrow >> -(space >> Body);
 
-	MacroName = '$' >> Name;
+	MacroName = '$' >> UnicodeName;
 	macro_args_def = '(' >> white >> -FnArgDefList >> white >> ')';
 	MacroLit = -(macro_args_def >> space) >> "->" >> space >> Body;
-	Macro = key("macro") >> space >> Name >> space >> '=' >> space >> MacroLit;
+	Macro = key("macro") >> space >> UnicodeName >> space >> '=' >> space >> MacroLit;
 	MacroInPlace = '$' >> space >> "->" >> space >> Body;
 
 	NameList = Seperator >> Variable >> *(space >> ',' >> space >> Variable);
@@ -955,7 +967,15 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 		State state;
 		res.node.set(::yue::parse(*(res.codes), r, errors, &state));
 		if (state.exportCount > 0) {
-			res.moduleName = std::move(state.moduleName);
+			int index = 0;
+			std::string moduleName;
+			auto moduleStr = "_module_"s;
+			do {
+				moduleName = moduleStr + std::to_string(index);
+				index++;
+			} while (state.usedNames.find(moduleName) != state.usedNames.end());
+			res.moduleName = moduleName;
+			res.usedNames = std::move(state.usedNames);
 			res.exportDefault = state.exportDefault;
 			res.exportMacro = state.exportMacro;
 			res.exportMetatable = !state.exportMetatable && state.exportMetamethod;

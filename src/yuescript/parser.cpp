@@ -341,6 +341,41 @@ private:
 	}
 };
 
+// right interval expression.
+class _larger : public _expr {
+public:
+	// constructor from ansi string.
+	_larger(size_t value)
+		: m_value(value) {
+	}
+
+	// parse with whitespace
+	virtual bool parse_non_term(_context& con) const override {
+		return _parse(con);
+	}
+
+	// parse terminal
+	virtual bool parse_term(_context& con) const override {
+		return _parse(con);
+	}
+
+private:
+	size_t m_value;
+
+	// internal parse
+	bool _parse(_context& con) const {
+		if (!con.end()) {
+			size_t ch = con.symbol();
+			if (ch > m_value) {
+				con.next_col();
+				return true;
+			}
+		}
+		con.set_error_pos();
+		return false;
+	}
+};
+
 // base class for unary expressions
 class _unary : public _expr {
 public:
@@ -1501,6 +1536,10 @@ expr set(const char* s) {
 */
 expr range(int min, int max) {
 	return _private::construct_expr(new _set(min, max));
+}
+
+expr larger(size_t value) {
+	return _private::construct_expr(new _larger(value));
 }
 
 /** creates an expression which increments the line counter

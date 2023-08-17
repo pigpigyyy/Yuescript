@@ -1,0 +1,49 @@
+import "unicode.macro_todo" as $
+import "unicode.macro_todo" as {$, $todo: $待办}
+
+export macro 配置 = (调试 = true)->
+	global 调试模式 = 调试 == "true"
+	global 调试宏 = true
+	""
+
+export macro 显示宏 = (名称, 结果)->
+	if 调试宏 then "
+do
+	文本 = #{结果}
+	print '[宏 ' .. #{名称} .. ']'
+	print 文本
+	文本
+"
+	else
+		结果
+
+export macro 断言集 = (条件)->
+	if 调试模式
+		$显示宏 "断言集", "assert #{条件}"
+	else
+		""
+
+export macro 断言 = (条件)->
+	if 调试模式
+		$显示宏 "断言", "assert #{条件}"
+	else
+		"#{条件}"
+
+export macro 复制 = (源, 目标, ...)->
+	$断言集(
+		源 != "_源_" and 源 != "_目标_" and 目标 != "_源_" and 目标 != "_目标_"
+		"复制目标的参数不能是 _源_ or _目标_"
+	)
+	"
+do
+	local _源_, _目标_
+	with _目标_ = #{目标}
+		with _源_ = #{源}
+#{table.concat for 字段 in *{...} do "
+			_目标_.#{字段} = _源_.#{字段}
+"}"
+
+$ ->
+	global 调试模式 = true
+	global 调试宏 = true
+

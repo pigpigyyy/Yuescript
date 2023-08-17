@@ -74,7 +74,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.18.1"sv;
+const std::string_view version = "0.19.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -621,7 +621,7 @@ private:
 		do {
 			newName = nameStr + std::to_string(index);
 			index++;
-		} while (isSolidDefined(newName));
+		} while (isSolidDefined(newName) || _info.usedNames.find(newName) != _info.usedNames.end());
 		return newName;
 	}
 
@@ -966,6 +966,7 @@ private:
 		EndWithEOP,
 		HasEOP,
 		HasKeyword,
+		HasUnicode,
 		Macro,
 		Metatable,
 		MetaFieldInvocation
@@ -989,10 +990,20 @@ private:
 		ChainType type = ChainType::Common;
 		for (auto item : chainValue->items.objects()) {
 			if (auto colonChain = ast_cast<ColonChainItem_t>(item)) {
-				if (ast_is<LuaKeyword_t>(colonChain->name)) {
-					type = ChainType::HasKeyword;
-				} else if (auto meta = colonChain->name.as<Metamethod_t>(); meta && !meta->item.is<Name_t>()) {
-					return ChainType::MetaFieldInvocation;
+				switch (colonChain->name->get_id()) {
+					case id<LuaKeyword_t>():
+						type = ChainType::HasKeyword;
+						break;
+					case id<UnicodeName_t>():
+						type = ChainType::HasUnicode;
+						break;
+					case id<Metamethod_t>(): {
+						auto meta = static_cast<Metamethod_t*>(colonChain->name.get());
+						if (!meta->item.is<Name_t>()) {
+							return ChainType::MetaFieldInvocation;
+						}
+						break;
+					}
 				}
 			} else if (ast_is<ExistentialOp_t>(item)) {
 				return ChainType::HasEOP;
@@ -1019,6 +1030,30 @@ private:
 		return tmp.back();
 		BLOCK_END
 		return Empty;
+	}
+
+	std::string unicodeVariableFrom(UnicodeName_t* uname) {
+		std::ostringstream buf;
+		for (auto it = uname->m_begin.m_it; it != uname->m_end.m_it; ++it) {
+			auto ch = *it;
+			if (ch > 255) {
+				buf << "_u"sv << std::hex << ch;
+			} else {
+				buf << static_cast<char>(ch);
+			}
+		}
+		return buf.str();
+	}
+
+	std::string variableToString(Variable_t* var) {
+		switch (var->name->get_id()) {
+			case id<Name_t>():
+				return _parser.toString(var->name);
+			case id<UnicodeName_t>(): {
+				return unicodeVariableFrom(static_cast<UnicodeName_t*>(var->name.get()));
+			}
+			default: YUEE("AST node mismatch", var->name); return std::string();
+		}
 	}
 
 	std::string singleVariableFrom(ast_node* expList, bool accessing) {
@@ -1067,9 +1102,11 @@ private:
 			auto firstItem = chainItems.back();
 			if (auto callable = ast_cast<Callable_t>(firstItem)) {
 				switch (callable->item->get_id()) {
-					case id<Variable_t>():
-						checkConst(_parser.toString(callable->item.get()), callable->item.get());
+					case id<Variable_t>(): {
+						auto var = static_cast<Variable_t*>(callable->item.get());
+						checkConst(variableToString(var), callable->item.get());
 						return true;
+					}
 					case id<SelfItem_t>():
 						return true;
 				}
@@ -1123,7 +1160,7 @@ private:
 		if (auto assignableChain = ast_cast<AssignableChain_t>(assignable->item)) {
 			return isAssignable(assignableChain->items.objects());
 		} else if (auto variable = assignable->item.as<Variable_t>()) {
-			checkConst(_parser.toString(variable), variable);
+			checkConst(variableToString(variable), variable);
 		}
 		return true;
 	}
@@ -1524,8 +1561,9 @@ private:
 		Mark
 	};
 
-	str_list transformAssignDefs(ExpList_t* expList, DefOp op) {
-		str_list defs;
+	using DefList = std::list<std::pair<std::string, std::string>>;
+	DefList transformAssignDefs(ExpList_t* expList, DefOp op) {
+		DefList defs;
 		for (auto exp_ : expList->exprs.objects()) {
 			auto exp = static_cast<Exp_t*>(exp_);
 			if (auto value = singleValueFrom(exp)) {
@@ -1535,21 +1573,27 @@ private:
 					auto callable = ast_cast<Callable_t>(chain->items.front());
 					BREAK_IF(!callable);
 					std::string name;
+					std::string unicodeName;
 					if (auto var = callable->item.as<Variable_t>()) {
-						name = _parser.toString(var);
+						name = variableToString(var);
+						if (var->name.is<UnicodeName_t>()) {
+							unicodeName = _parser.toString(var->name);
+						}
 					} else if (auto self = callable->item.as<SelfItem_t>()) {
-						if (self->name.is<Self_t>()) name = "self"sv;
+						if (self->name.is<Self_t>()) {
+							name = "self"sv;
+						}
 					}
 					BREAK_IF(name.empty());
 					switch (op) {
 						case DefOp::Mark:
-							if (addToScope(name)) defs.push_back(name);
+							if (addToScope(name)) defs.emplace_back(name, unicodeName);
 							break;
 						case DefOp::Check:
-							if (!isDefined(name)) defs.push_back(name);
+							if (!isDefined(name)) defs.emplace_back(name, unicodeName);
 							break;
 						case DefOp::Get:
-							defs.push_back(name);
+							defs.emplace_back(name, unicodeName);
 							break;
 					}
 					BLOCK_END
@@ -1559,6 +1603,15 @@ private:
 			}
 		}
 		return defs;
+	}
+
+	std::string toLocalDecl(const DefList& defs) {
+		if (defs.empty()) return Empty;
+		str_list items;
+		for (const auto& def : defs) {
+			items.emplace_back(def.first);
+		}
+		return indent() + "local "s + join(items, ", "sv);
 	}
 
 	std::string toLocalDecl(const str_list& defs) {
@@ -1991,6 +2044,7 @@ private:
 					return;
 				}
 				case ChainType::HasKeyword:
+				case ChainType::HasUnicode:
 				case ChainType::Macro:
 					transformChainValue(chainValue, out, ExpUsage::Assignment, expList);
 					return;
@@ -2348,9 +2402,10 @@ private:
 					}
 					auto vp = static_cast<VariablePair_t*>(pair);
 					auto name = _parser.toString(vp->name);
+					auto uname = vp->name->name.as<UnicodeName_t>();
 					auto chain = toAst<ChainValue_t>('.' + name, vp->name);
 					pairs.push_back({toAst<Exp_t>(name, vp).get(),
-						name,
+						uname ? variableToString(vp->name) : name,
 						chain,
 						defVal});
 					break;
@@ -2365,12 +2420,12 @@ private:
 					auto np = static_cast<NormalPair_t*>(pair);
 					ast_ptr<true, ast_node> keyIndex;
 					if (np->key) {
-						if (auto key = np->key->get_by_path<Name_t>()) {
-							auto keyNameStr = _parser.toString(key);
-							if (LuaKeywords.find(keyNameStr) != LuaKeywords.end()) {
-								keyIndex = toAst<Exp_t>('"' + keyNameStr + '"', key).get();
+						if (auto keyName = np->key.as<KeyName_t>(); keyName && ast_is<Name_t, UnicodeName_t>(keyName->name)) {
+							auto keyNameStr = _parser.toString(keyName->name);
+							if (keyName->name.is<UnicodeName_t>() || LuaKeywords.find(keyNameStr) != LuaKeywords.end()) {
+								keyIndex = toAst<Exp_t>('"' + keyNameStr + '"', keyName->name).get();
 							} else {
-								keyIndex = toAst<DotChainItem_t>('.' + keyNameStr, key).get();
+								keyIndex = toAst<DotChainItem_t>('.' + keyNameStr, keyName->name).get();
 							}
 						} else if (auto key = np->key->get_by_path<SelfItem_t>()) {
 							auto callable = np->new_ptr<Callable_t>();
@@ -2719,7 +2774,17 @@ private:
 							} else if (destruct.items.size() == 1 && !singleValueFrom(*j)) {
 								auto p = destruct.value.get();
 								auto parens = p->new_ptr<Parens_t>();
-								parens->expr.set(p);
+								if (auto tableBlock = ast_cast<TableBlock_t>(p)) {
+									auto tableLit = p->new_ptr<TableLit_t>();
+									tableLit->values.dup(tableBlock->values);
+									auto simpleValue = p->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(tableLit);
+									parens->expr.set(newExp(simpleValue, p));
+								} else if (ast_is<Exp_t>(p)) {
+									parens->expr.set(p);
+								} else {
+									YUEE("AST node mismatch", p);
+								}
 								auto callable = p->new_ptr<Callable_t>();
 								callable->item.set(parens);
 								auto chainValue = p->new_ptr<ChainValue_t>();
@@ -2818,11 +2883,13 @@ private:
 					BREAK_IF(chain->items.size() < 2);
 					if (chain->items.size() == 2) {
 						if (auto callable = ast_cast<Callable_t>(chain->items.front())) {
-							ast_node* var = callable->item.as<Variable_t>();
-							if (auto self = callable->item.as<SelfItem_t>()) {
-								var = self->name.as<Self_t>();
+							if (auto var = callable->item.as<Variable_t>()) {
+								BREAK_IF(isLocal(variableToString(var)));
+							} else if (auto self = callable->item.as<SelfItem_t>()) {
+								if (auto var = self->name.as<Self_t>()) {
+									BREAK_IF(isLocal(_parser.toString(var)));
+								}
 							}
-							BREAK_IF(var && isLocal(_parser.toString(var)));
 						}
 					}
 					auto tmpChain = x->new_ptr<ChainValue_t>();
@@ -2919,7 +2986,7 @@ private:
 					}
 					std::string preDefine = toLocalDecl(defs);
 					for (const auto& def : defs) {
-						addToScope(def);
+						addToScope(def.first);
 					}
 					if (preDefine.empty()) {
 						transformExpList(expList, temp);
@@ -2932,7 +2999,7 @@ private:
 				} else {
 					std::string preDefine = toLocalDecl(defs);
 					for (const auto& def : defs) {
-						addToScope(def);
+						addToScope(def.first);
 					}
 					transformExpList(expList, temp);
 					std::string left = std::move(temp.back());
@@ -3623,47 +3690,7 @@ private:
 				if (auto appendix = stmt->appendix.get()) {
 					switch (appendix->item->get_id()) {
 						case id<IfLine_t>(): {
-							auto if_line = static_cast<IfLine_t*>(appendix->item.get());
-							auto ifNode = appendix->new_ptr<If_t>();
-							ifNode->type.set(if_line->type);
-							ifNode->nodes.push_back(if_line->condition);
-							auto expList = appendix->new_ptr<ExpList_t>();
-							for (auto val : assignAction->values.objects()) {
-								switch (val->get_id()) {
-									case id<If_t>():
-									case id<Switch_t>():
-									case id<With_t>(): {
-										auto simpleValue = val->new_ptr<SimpleValue_t>();
-										simpleValue->value.set(val);
-										auto exp = newExp(simpleValue, val);
-										expList->exprs.push_back(exp);
-										break;
-									}
-									case id<TableBlock_t>(): {
-										auto tableBlock = static_cast<TableBlock_t*>(val);
-										auto tabLit = val->new_ptr<TableLit_t>();
-										tabLit->values.dup(tableBlock->values);
-										auto simpleValue = val->new_ptr<SimpleValue_t>();
-										simpleValue->value.set(tabLit);
-										auto exp = newExp(simpleValue, val);
-										expList->exprs.push_back(exp);
-										break;
-									}
-									case id<Exp_t>(): {
-										expList->exprs.push_back(val);
-										break;
-									}
-									default: YUEE("AST node mismatch", val); break;
-								}
-							}
-							auto newExpListAssign = assignAction->new_ptr<ExpListAssign_t>();
-							newExpListAssign->expList.set(expList);
-							auto newStmt = assignAction->new_ptr<Statement_t>();
-							newStmt->content.set(newExpListAssign);
-							ifNode->nodes.push_back(newStmt);
-							auto newSVal = ifNode->new_ptr<SimpleValue_t>();
-							newSVal->value.set(ifNode);
-							newInvoke->args.push_back(newExp(newSVal, newSVal));
+							throw CompileError("if line decorator is not supported here"sv, appendix->item.get());
 							break;
 						}
 						case id<WhileLine_t>(): {
@@ -3790,7 +3817,7 @@ private:
 				str_list doCloses;
 				pushScope();
 				for (auto var : localAttrib->leftList.objects()) {
-					auto varName = _parser.toString(ast_to<Variable_t>(var));
+					auto varName = variableToString(ast_to<Variable_t>(var));
 					auto closeVar = getUnusedName("_close_"sv);
 					addToScope(closeVar);
 					getCloses.push_back(closeVar + "=assert "s + varName + ".<close>"s);
@@ -3845,7 +3872,7 @@ private:
 						case id<LocalValues_t>(): {
 							auto values = local->item.to<LocalValues_t>();
 							for (auto name : values->nameList->names.objects()) {
-								local->forceDecls.push_back(_parser.toString(name));
+								local->forceDecls.push_back(variableToString(static_cast<Variable_t*>(name)));
 							}
 							break;
 						}
@@ -3888,10 +3915,10 @@ private:
 					if (info.assignment) {
 						auto defs = transformAssignDefs(info.assignment->expList, DefOp::Get);
 						for (const auto& def : defs) {
-							if (std::isupper(def[0]) && capital) {
-								capital->decls.push_back(def);
+							if (std::isupper(def.first[0]) && capital) {
+								capital->decls.push_back(def.first);
 							} else if (any) {
-								any->decls.push_back(def);
+								any->decls.push_back(def.first);
 							}
 						}
 					}
@@ -3911,7 +3938,7 @@ private:
 				}
 				if (classDecl) {
 					if (auto variable = classDecl->name->item.as<Variable_t>()) {
-						auto className = _parser.toString(variable);
+						auto className = variableToString(variable);
 						if (!className.empty()) {
 							if (std::isupper(className[0]) && capital) {
 								capital->decls.push_back(className);
@@ -4378,7 +4405,7 @@ private:
 			auto def = static_cast<FnArgDef_t*>(_def);
 			auto& arg = argItems.emplace_back();
 			switch (def->name->get_id()) {
-				case id<Variable_t>(): arg.name = _parser.toString(def->name); break;
+				case id<Variable_t>(): arg.name = variableToString(static_cast<Variable_t*>(def->name.get())); break;
 				case id<SelfItem_t>(): {
 					assignSelf = true;
 					if (def->op) {
@@ -4391,13 +4418,21 @@ private:
 					switch (selfName->name->get_id()) {
 						case id<SelfClassName_t>(): {
 							auto clsName = static_cast<SelfClassName_t*>(selfName->name.get());
-							arg.name = _parser.toString(clsName->name);
+							if (clsName->name.is<UnicodeName_t>()) {
+								arg.name = unicodeVariableFrom(static_cast<UnicodeName_t*>(clsName->name.get()));
+							} else {
+								arg.name = _parser.toString(clsName->name);
+							}
 							arg.assignSelf = _parser.toString(clsName);
 							break;
 						}
 						case id<SelfName_t>(): {
 							auto sfName = static_cast<SelfName_t*>(selfName->name.get());
-							arg.name = _parser.toString(sfName->name);
+							if (sfName->name.is<UnicodeName_t>()) {
+								arg.name = unicodeVariableFrom(static_cast<UnicodeName_t*>(sfName->name.get()));
+							} else {
+								arg.name = _parser.toString(sfName->name);
+							}
 							arg.assignSelf = _parser.toString(sfName);
 							break;
 						}
@@ -4466,7 +4501,7 @@ private:
 			case id<SelfClassName_t>(): {
 				auto clsName = static_cast<SelfClassName_t*>(name);
 				auto nameStr = _parser.toString(clsName->name);
-				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
+				if (clsName->name.is<UnicodeName_t>() || LuaKeywords.find(nameStr) != LuaKeywords.end()) {
 					out.push_back("self.__class[\""s + nameStr + "\"]"s);
 					if (invoke) {
 						if (auto invokePtr = invoke.as<Invoke_t>()) {
@@ -4487,7 +4522,7 @@ private:
 			case id<SelfName_t>(): {
 				auto sfName = static_cast<SelfClassName_t*>(name);
 				auto nameStr = _parser.toString(sfName->name);
-				if (LuaKeywords.find(nameStr) != LuaKeywords.end()) {
+				if (sfName->name.is<UnicodeName_t>() || LuaKeywords.find(nameStr) != LuaKeywords.end()) {
 					out.push_back("self[\""s + nameStr + "\"]"s);
 					if (invoke) {
 						if (auto invokePtr = invoke.as<Invoke_t>()) {
@@ -5028,7 +5063,7 @@ private:
 					if (!ast_is<Invoke_t, InvokeArgs_t>(followItem)) {
 						throw CompileError("colon chain item must be followed by invoke arguments"sv, colonItem);
 					}
-					if (colonItem->name.is<LuaKeyword_t>()) {
+					if (ast_is<LuaKeyword_t, UnicodeName_t>(colonItem->name)) {
 						std::string callVar;
 						auto block = x->new_ptr<Block_t>();
 						{
@@ -5044,7 +5079,7 @@ private:
 							}
 							auto exp = newExp(chainValue, x);
 							callVar = singleVariableFrom(exp, true);
-							if (callVar.empty()) {
+							if (callVar.empty() || !isLocal(callVar)) {
 								callVar = getUnusedName("_call_"s);
 								auto assignment = x->new_ptr<ExpListAssign_t>();
 								assignment->expList.set(toAst<ExpList_t>(callVar, x));
@@ -5337,8 +5372,8 @@ private:
 						throw CompileError("macro table field \"locals\" must be a table of strings"sv, x);
 					}
 					auto name = lua_tolstring(L, -1, &len);
-					if (_parser.match<Variable_t>({name, len})) {
-						localVars.push_back(std::string(name, len));
+					if (auto varNode = toAst<Variable_t>({name, len}, x)) {
+						localVars.push_back(variableToString(varNode));
 					} else {
 						throw CompileError("macro table field \"locals\" must contain names for local variables, got \""s + std::string(name, len) + '"', x);
 					}
@@ -5562,6 +5597,10 @@ private:
 	}
 
 	void transformDotChainItem(DotChainItem_t* dotChainItem, str_list& out) {
+		if (auto uname = dotChainItem->name.as<UnicodeName_t>()) {
+			out.push_back("[\""s + _parser.toString(uname) + "\"]"s);
+			return;
+		}
 		auto name = _parser.toString(dotChainItem->name);
 		if (LuaKeywords.find(name) != LuaKeywords.end()) {
 			out.push_back("[\""s + name + "\"]"s);
@@ -5882,7 +5921,7 @@ private:
 	}
 
 	void transformVariable(Variable_t* name, str_list& out) {
-		out.push_back(_parser.toString(name));
+		out.push_back(variableToString(name));
 	}
 
 	void transformNum(Num_t* num, str_list& out) {
@@ -5993,9 +6032,9 @@ private:
 						case id<KeyName_t>(): {
 							auto keyName = static_cast<KeyName_t*>(key);
 							ast_ptr<false, ast_node> chainItem;
-							if (auto name = keyName->name.as<Name_t>()) {
+							if (ast_is<Name_t, UnicodeName_t>(keyName->name)) {
 								auto dotItem = x->new_ptr<DotChainItem_t>();
-								dotItem->name.set(name);
+								dotItem->name.set(keyName->name);
 								chainItem = dotItem.get();
 							} else {
 								auto selfName = keyName->name.to<SelfItem_t>();
@@ -6503,7 +6542,7 @@ private:
 				endWithSlice = true;
 				if (listVar.empty() && chainList.size() == 2) {
 					if (auto var = chainList.front()->get_by_path<Variable_t>()) {
-						listVar = _parser.toString(var);
+						listVar = variableToString(var);
 						if (!isLocal(listVar)) listVar.clear();
 					}
 				}
@@ -6668,7 +6707,7 @@ private:
 
 	void transformForHead(Variable_t* var, Exp_t* startVal, Exp_t* stopVal, ForStepValue_t* stepVal, str_list& out) {
 		str_list temp;
-		std::string varName = _parser.toString(var);
+		std::string varName = variableToString(var);
 		transformExp(startVal, temp, ExpUsage::Closure);
 		transformExp(stopVal, temp, ExpUsage::Closure);
 		if (stepVal) {
@@ -7092,12 +7131,18 @@ private:
 
 	void transform_variable_pair(VariablePair_t* pair, str_list& out) {
 		auto name = _parser.toString(pair->name);
+		if (pair->name->name.is<UnicodeName_t>()) {
+			std::string varName = variableToString(pair->name);
+			out.push_back("[\""s + name + "\"] = "s + varName);
+			name = varName;
+		} else {
+			out.push_back(name + " = "s + name);
+		}
 		if (_config.lintGlobalVariable && !isLocal(name)) {
 			if (_globals.find(name) == _globals.end()) {
 				_globals[name] = {pair->name->m_begin.m_line, pair->name->m_begin.m_col};
 			}
 		}
-		out.push_back(name + " = "s + name);
 	}
 
 	void transform_normal_pair(NormalPair_t* pair, str_list& out, bool assignClass) {
@@ -7162,6 +7207,11 @@ private:
 				}
 				break;
 			}
+			case id<UnicodeName_t>(): {
+				auto nameStr = _parser.toString(name);
+				out.push_back("[\""s + nameStr + "\"]"s);
+				break;
+			}
 			default: YUEE("AST node mismatch", name); break;
 		}
 	}
@@ -7214,16 +7264,17 @@ private:
 		}
 	}
 
-	std::pair<std::string, bool> defineClassVariable(Assignable_t* assignable) {
+	std::tuple<std::string, bool, std::string> defineClassVariable(Assignable_t* assignable) {
 		if (auto variable = assignable->item.as<Variable_t>()) {
-			auto name = _parser.toString(variable);
+			auto name = variableToString(variable);
+			auto realName = variable->name.is<UnicodeName_t>() ? _parser.toString(variable->name) : name;
 			if (addToScope(name)) {
-				return {name, true};
+				return {name, true, realName};
 			} else {
-				return {name, false};
+				return {name, false, realName};
 			}
 		}
-		return {Empty, false};
+		return {Empty, false, Empty};
 	}
 
 	void transformClassDeclClosure(ClassDecl_t* classDecl, str_list& out) {
@@ -7249,29 +7300,30 @@ private:
 		auto extend = classDecl->extend.get();
 		std::string className;
 		std::string assignItem;
+		std::string classTextName;
 		if (assignable) {
 			if (!isAssignable(assignable)) {
 				throw CompileError("left hand expression is not assignable"sv, assignable);
 			}
 			bool newDefined = false;
-			std::tie(className, newDefined) = defineClassVariable(assignable);
+			std::tie(className, newDefined, classTextName) = defineClassVariable(assignable);
 			if (newDefined) {
 				temp.push_back(indent() + "local "s + className + nll(classDecl));
 			}
-			if (className.empty()) {
+			if (classTextName.empty()) {
 				if (auto chain = ast_cast<AssignableChain_t>(assignable->item)) {
 					if (auto dotChain = ast_cast<DotChainItem_t>(chain->items.back())) {
-						className = '\"' + _parser.toString(dotChain->name) + '\"';
+						classTextName = '\"' + _parser.toString(dotChain->name) + '\"';
 					} else if (auto index = ast_cast<Exp_t>(chain->items.back())) {
 						if (auto name = index->get_by_path<UnaryExp_t, Value_t, String_t>()) {
 							transformString(name, temp);
-							className = std::move(temp.back());
+							classTextName = std::move(temp.back());
 							temp.pop_back();
 						}
 					}
 				}
 			} else {
-				className = '\"' + className + '\"';
+				classTextName = '\"' + classTextName + '\"';
 			}
 			pushScope();
 			transformAssignable(assignable, temp);
@@ -7279,9 +7331,17 @@ private:
 			assignItem = std::move(temp.back());
 			temp.pop_back();
 		} else if (expList) {
-			auto name = singleVariableFrom(expList, true);
-			if (!name.empty()) {
-				className = '\"' + name + '\"';
+			if (auto value = singleValueFrom(expList); value->item.is<ChainValue_t>()) {
+				auto chainValue = static_cast<ChainValue_t*>(value->item.get());
+				if (auto callable = ast_cast<Callable_t>(chainValue->items.front()); callable && chainValue->items.size() == 1) {
+					if (auto self = callable->item.as<SelfItem_t>()) {
+						if (auto selfVar = self->name.as<Self_t>()) {
+							classTextName = "\"self\"";
+						}
+					} else if (auto var = callable->item.as<Variable_t>()) {
+						classTextName = '\"' + _parser.toString(var) + '\"';
+					}
+				}
 			}
 		}
 		temp.push_back(indent() + "do"s + nll(classDecl));
@@ -7296,7 +7356,9 @@ private:
 					ClassDecl_t* clsDecl = nullptr;
 					if (auto assignment = assignmentFrom(statement)) {
 						auto names = transformAssignDefs(assignment->expList.get(), DefOp::Mark);
-						varDefs.insert(varDefs.end(), names.begin(), names.end());
+						for (const auto& name : names) {
+							varDefs.push_back(name.first);
+						}
 						auto info = extractDestructureInfo(assignment, true, false);
 						if (!info.destructures.empty()) {
 							for (const auto& destruct : info.destructures)
@@ -7320,8 +7382,9 @@ private:
 					}
 					if (clsDecl) {
 						std::string clsName;
+						std::string clsTextName;
 						bool newDefined = false;
-						std::tie(clsName, newDefined) = defineClassVariable(clsDecl->name);
+						std::tie(clsName, newDefined, clsTextName) = defineClassVariable(clsDecl->name);
 						if (newDefined) varDefs.push_back(clsName);
 					}
 				}
@@ -7437,9 +7500,9 @@ private:
 			}
 		}
 		_buf << indent(1) << "__base = "sv << baseVar;
-		if (!className.empty()) {
+		if (!classTextName.empty()) {
 			_buf << ","sv << nll(classDecl);
-			_buf << indent(1) << "__name = "sv << className;
+			_buf << indent(1) << "__name = "sv << classTextName;
 		}
 		if (extend) {
 			_buf << ","sv << nll(classDecl);
@@ -7546,12 +7609,15 @@ private:
 				type = MemType::Property;
 				auto name = ast_cast<SelfName_t>(selfItem->name);
 				if (!name) throw CompileError("invalid class poperty name"sv, selfItem->name);
-				newSuperCall = classVar + ".__parent."s + _parser.toString(name->name);
+				if (name->name.is<UnicodeName_t>()) {
+					newSuperCall = classVar + ".__parent[\""s + _parser.toString(name->name) + "\"]"s;
+				} else {
+					newSuperCall = classVar + ".__parent."s + _parser.toString(name->name);
+				}
 			} else {
 				auto x = keyName;
-				auto nameNode = keyName->name.as<Name_t>();
-				if (!nameNode) break;
-				auto name = _parser.toString(nameNode);
+				if (!ast_is<Name_t, UnicodeName_t>(keyName->name)) break;
+				auto name = _parser.toString(keyName->name);
 				if (name == "new"sv) {
 					type = MemType::Builtin;
 					keyName->name.set(toAst<Name_t>("__init"sv, x));
@@ -7563,7 +7629,7 @@ private:
 			normal_pair->value->traverse([&](ast_node* node) {
 				if (node->get_id() == id<ClassDecl_t>()) return traversal::Return;
 				if (auto chainValue = ast_cast<ChainValue_t>(node)) {
-					if (auto callable = ast_cast<Callable_t>(chainValue->items.front())) {
+					if (auto callable = ast_cast<Callable_t>(chainValue->items.front()); callable && callable->item.is<Variable_t>()) {
 						auto var = callable->item.get();
 						if (_parser.toString(var) == "super"sv) {
 							auto insertSelfToArguments = [&](ast_node* item) {
@@ -7763,7 +7829,7 @@ private:
 					}
 					if (clsDecl) {
 						auto variable = clsDecl->name.as<Variable_t>();
-						if (!isDefined(_parser.toString(variable))) return traversal::Stop;
+						if (!isDefined(variableToString(variable))) return traversal::Stop;
 					}
 					return traversal::Return;
 				}
@@ -7817,9 +7883,11 @@ private:
 		switch (item->get_id()) {
 			case id<ClassDecl_t>(): {
 				auto classDecl = static_cast<ClassDecl_t*>(item);
-				if (classDecl->name && classDecl->name->item->get_id() == id<Variable_t>()) {
-					markVarsGlobal(GlobalMode::Any);
-					addGlobalVar(_parser.toString(classDecl->name->item), classDecl->name->item);
+				if (classDecl->name) {
+					if (auto var = classDecl->name->item.as<Variable_t>()) {
+						markVarsGlobal(GlobalMode::Any);
+						addGlobalVar(variableToString(var), classDecl->name->item);
+					}
 				}
 				transformClassDecl(classDecl, out, ExpUsage::Common);
 				break;
@@ -7837,7 +7905,8 @@ private:
 				if (values->valueList) {
 					auto expList = x->new_ptr<ExpList_t>();
 					for (auto name : values->nameList->names.objects()) {
-						addGlobalVar(_parser.toString(name), name);
+						auto var = static_cast<Variable_t*>(name);
+						addGlobalVar(variableToString(var), var);
 						auto callable = x->new_ptr<Callable_t>();
 						callable->item.set(name);
 						auto chainValue = x->new_ptr<ChainValue_t>();
@@ -7858,7 +7927,8 @@ private:
 					transformAssignment(assignment, out);
 				} else {
 					for (auto name : values->nameList->names.objects()) {
-						addGlobalVar(_parser.toString(name), name);
+						auto var = static_cast<Variable_t*>(name);
+						addGlobalVar(variableToString(var), var);
 					}
 				}
 				break;
@@ -7938,14 +8008,14 @@ private:
 						dotChain && dotChain->name.is<Metamethod_t>()) {
 						auto nameStr = name.value();
 						if (_exportedMetaKeys.find(nameStr) != _exportedMetaKeys.end()) {
-							throw CompileError("export module metamethod key \"" + nameStr + "\" duplicated"s, dotChain->name);
+							throw CompileError("export module metamethod key \""s + nameStr + "\" duplicated"s, dotChain->name);
 						} else {
 							_exportedMetaKeys.insert(nameStr);
 						}
 					} else {
 						auto nameStr = name.value();
 						if (_exportedKeys.find(nameStr) != _exportedKeys.end()) {
-							throw CompileError("export module key \"" + nameStr + "\" duplicated"s, exportNode->target);
+							throw CompileError("export module key \""s + nameStr + "\" duplicated"s, exportNode->target);
 						} else {
 							_exportedKeys.insert(nameStr);
 						}
@@ -7977,26 +8047,30 @@ private:
 				assignment->expList.set(expList);
 				assignment->action.set(exportNode->assign);
 				transformAssignment(assignment, out);
-				str_list names = transformAssignDefs(expList, DefOp::Get);
+				auto names = transformAssignDefs(expList, DefOp::Get);
 				auto info = extractDestructureInfo(assignment, true, false);
 				if (!info.destructures.empty()) {
 					for (const auto& destruct : info.destructures)
 						for (const auto& item : destruct.items)
-							if (!item.targetVar.empty())
-								names.push_back(item.targetVar);
+							if (!item.targetVar.empty()) {
+								auto dot = ast_cast<DotChainItem_t>(item.structure->items.back());
+								auto uname = dot->name.as<UnicodeName_t>();
+								names.emplace_back(item.targetVar, uname ? _parser.toString(uname) : Empty);
+							}
 				}
 				if (_info.exportDefault) {
-					out.back().append(indent() + _info.moduleName + " = "s + names.back() + nlr(exportNode));
+					out.back().append(indent() + _info.moduleName + " = "s + names.back().first + nlr(exportNode));
 				} else {
 					str_list lefts, rights;
 					for (const auto& name : names) {
-						if (_exportedKeys.find(name) != _exportedKeys.end()) {
-							throw CompileError("export module key \"" + name + "\" duplicated"s, x);
+						auto realName = name.second.empty() ? name.first : name.second;
+						if (_exportedKeys.find(realName) != _exportedKeys.end()) {
+							throw CompileError("export module key \""s + realName + "\" duplicated"s, x);
 						} else {
-							_exportedKeys.insert(name);
+							_exportedKeys.insert(realName);
 						}
-						lefts.push_back(_info.moduleName + "[\""s + name + "\"]"s);
-						rights.push_back(name);
+						lefts.push_back(_info.moduleName + "[\""s + realName + "\"]"s);
+						rights.push_back(name.first);
 					}
 					out.back().append(indent() + join(lefts, ", "sv) + " = "s + join(rights, ", "sv) + nlr(exportNode));
 				}
@@ -8020,16 +8094,18 @@ private:
 				assignment->expList.set(assignList);
 				for (auto exp : expList->exprs.objects()) {
 					if (auto classDecl = exp->get_by_path<UnaryExp_t, Value_t, SimpleValue_t, ClassDecl_t>()) {
-						if (classDecl->name && classDecl->name->item->get_id() == id<Variable_t>()) {
-							transformClassDecl(classDecl, temp, ExpUsage::Common);
-							auto name = _parser.toString(classDecl->name->item);
-							assignment->expList.set(toAst<ExpList_t>(_info.moduleName + "[\""s + name + "\"]"s, x));
-							auto assign = x->new_ptr<Assign_t>();
-							assign->values.push_back(toAst<Exp_t>(name, x));
-							assignment->action.set(assign);
-							transformAssignment(assignment, temp);
-							assignment->expList.set(assignList);
-							continue;
+						if (classDecl->name) {
+							if (auto var = classDecl->name->item.as<Variable_t>()) {
+								transformClassDecl(classDecl, temp, ExpUsage::Common);
+								auto name = variableToString(var);
+								assignment->expList.set(toAst<ExpList_t>(_info.moduleName + "[\""s + name + "\"]"s, x));
+								auto assign = x->new_ptr<Assign_t>();
+								assign->values.push_back(toAst<Exp_t>(name, x));
+								assignment->action.set(assign);
+								transformAssignment(assignment, temp);
+								assignment->expList.set(assignList);
+								continue;
+							}
 						}
 					}
 					auto assign = x->new_ptr<Assign_t>();
@@ -8180,7 +8256,7 @@ private:
 		auto x = tryNode;
 		ast_ptr<true, Exp_t> errHandler;
 		if (tryNode->catchBlock) {
-			auto errHandleStr = "("s + _parser.toString(tryNode->catchBlock->err) + ")->"s;
+			auto errHandleStr = "("s + variableToString(tryNode->catchBlock->err) + ")->"s;
 			errHandler.set(toAst<Exp_t>(errHandleStr, x->func));
 			auto funLit = simpleSingleValueFrom(errHandler)->value.to<FunLit_t>();
 			auto body = x->new_ptr<Body_t>();
@@ -8582,7 +8658,7 @@ private:
 		assignment->action.set(assign);
 		transformAssignment(assignment, out);
 		if (auto var = ast_cast<Variable_t>(target)) {
-			auto moduleName = _parser.toString(var);
+			auto moduleName = variableToString(var);
 			markVarConst(moduleName);
 		} else {
 			markDestructureConst(assignment);
@@ -9001,7 +9077,7 @@ private:
 			auto assign = x->new_ptr<Assign_t>();
 			str_list vars;
 			for (auto varNode : listA->names.objects()) {
-				auto var = _parser.toString(varNode);
+				auto var = variableToString(static_cast<Variable_t*>(varNode));
 				forceAddToScope(var);
 				vars.push_back(var);
 				auto callable = x->new_ptr<Callable_t>();
@@ -9038,7 +9114,7 @@ private:
 				for (auto name : listA->names.objects()) {
 					auto closeName = getUnusedName("_close_"sv);
 					leftVars.push_back(closeName);
-					rightVars.push_back(_parser.toString(name));
+					rightVars.push_back(variableToString(static_cast<Variable_t*>(name)));
 					addToScope(closeName);
 				}
 				popScope();
@@ -9052,7 +9128,7 @@ private:
 		if (!listA->names.empty()) {
 			str_list vars;
 			for (auto name : listA->names.objects()) {
-				auto var = _parser.toString(name);
+				auto var = variableToString(static_cast<Variable_t*>(name));
 				forceAddToScope(var);
 				vars.push_back(var);
 			}
@@ -9161,7 +9237,7 @@ private:
 		if (getLuaTarget(label) < 502) {
 			throw CompileError("label statement is not available when not targeting Lua version 5.2 or higher"sv, label);
 		}
-		auto labelStr = _parser.toString(label->label);
+		auto labelStr = unicodeVariableFrom(label->label->name);
 		int currentScope = _gotoScopes.top();
 		if (static_cast<int>(_labels.size()) <= currentScope) {
 			_labels.resize(currentScope + 1, std::nullopt);
@@ -9182,7 +9258,7 @@ private:
 		if (getLuaTarget(gotoNode) < 502) {
 			throw CompileError("goto statement is not available when not targeting Lua version 5.2 or higher"sv, gotoNode);
 		}
-		auto labelStr = _parser.toString(gotoNode->label);
+		auto labelStr = unicodeVariableFrom(gotoNode->label->name);
 		gotos.push_back({gotoNode, labelStr, _gotoScopes.top(), static_cast<int>(_scopes.size())});
 		out.push_back(indent() + "goto "s + labelStr + nll(gotoNode));
 	}

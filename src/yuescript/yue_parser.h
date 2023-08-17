@@ -40,6 +40,7 @@ struct ParseInfo {
 	bool exportMacro = false;
 	bool exportMetatable = false;
 	std::string moduleName;
+	std::unordered_set<std::string> usedNames;
 	std::string errorMessage(std::string_view msg, int errLine, int errCol, int lineOffset = 0) const;
 };
 
@@ -105,16 +106,15 @@ protected:
 		bool exportMetatable = false;
 		bool exportMetamethod = false;
 		int exportCount = 0;
-		int moduleFix = 0;
 		int expLevel = 0;
 		size_t stringOpen = 0;
-		std::string moduleName = "_module_0"s;
 		std::string buffer;
 		std::stack<int> indents;
 		std::stack<bool> noDoStack;
 		std::stack<bool> noChainBlockStack;
 		std::stack<bool> noTableBlockStack;
 		std::stack<bool> noForStack;
+		std::unordered_set<std::string> usedNames;
 	};
 
 	template <class T>
@@ -254,6 +254,7 @@ private:
 
 	AST_RULE(Num);
 	AST_RULE(Name);
+	AST_RULE(UnicodeName);
 	AST_RULE(Variable);
 	AST_RULE(LabelName);
 	AST_RULE(LuaKeyword);

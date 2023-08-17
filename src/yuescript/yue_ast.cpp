@@ -69,6 +69,10 @@ std::string Name_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	return info->convert(this);
 }
+std::string UnicodeName_t::to_string(void* ud) const {
+	auto info = reinterpret_cast<YueFormat*>(ud);
+	return info->convert(this);
+}
 std::string Self_t::to_string(void*) const {
 	return "@"s;
 }

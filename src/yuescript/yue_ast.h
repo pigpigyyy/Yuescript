@@ -86,13 +86,16 @@ AST_END(Num, "num"sv)
 AST_LEAF(Name)
 AST_END(Name, "name"sv)
 
+AST_LEAF(UnicodeName)
+AST_END(UnicodeName, "unicode_name"sv)
+
 AST_NODE(Variable)
-	ast_ptr<true, Name_t> name;
+	ast_sel<true, Name_t, UnicodeName_t> name;
 	AST_MEMBER(Variable, &name)
 AST_END(Variable, "variable"sv)
 
 AST_NODE(LabelName)
-	ast_ptr<true, Name_t> name;
+	ast_ptr<true, UnicodeName_t> name;
 	AST_MEMBER(LabelName, &name)
 AST_END(LabelName, "label_name"sv)
 
@@ -105,7 +108,7 @@ AST_LEAF(Self)
 AST_END(Self, "self"sv)
 
 AST_NODE(SelfName)
-	ast_ptr<true, Name_t> name;
+	ast_sel<true, Name_t, UnicodeName_t> name;
 	AST_MEMBER(SelfName, &name)
 AST_END(SelfName, "self_name"sv)
 
@@ -113,7 +116,7 @@ AST_LEAF(SelfClass)
 AST_END(SelfClass, "self_class"sv)
 
 AST_NODE(SelfClassName)
-	ast_ptr<true, Name_t> name;
+	ast_sel<true, Name_t, UnicodeName_t> name;
 	AST_MEMBER(SelfClassName, &name)
 AST_END(SelfClassName, "self_class_name"sv)
 
@@ -123,7 +126,7 @@ AST_NODE(SelfItem)
 AST_END(SelfItem, "self_item"sv)
 
 AST_NODE(KeyName)
-	ast_sel<true, SelfItem_t, Name_t> name;
+	ast_sel<true, SelfItem_t, Name_t, UnicodeName_t> name;
 	AST_MEMBER(KeyName, &name)
 AST_END(KeyName, "key_name"sv)
 
@@ -597,12 +600,12 @@ AST_NODE(Metamethod)
 AST_END(Metamethod, "metamethod"sv)
 
 AST_NODE(DotChainItem)
-	ast_sel<true, Name_t, Metatable_t, Metamethod_t> name;
+	ast_sel<true, Name_t, Metatable_t, Metamethod_t, UnicodeName_t> name;
 	AST_MEMBER(DotChainItem, &name)
 AST_END(DotChainItem, "dot_chain_item"sv)
 
 AST_NODE(ColonChainItem)
-	ast_sel<true, LuaKeyword_t, Name_t, Metamethod_t> name;
+	ast_sel<true, Name_t, LuaKeyword_t, Metamethod_t, UnicodeName_t> name;
 	bool switchToDot = false;
 	AST_MEMBER(ColonChainItem, &name)
 AST_END(ColonChainItem, "colon_chain_item"sv)
@@ -761,7 +764,7 @@ AST_NODE(FunLit)
 AST_END(FunLit, "fun_lit"sv)
 
 AST_NODE(MacroName)
-	ast_ptr<true, Name_t> name;
+	ast_ptr<true, UnicodeName_t> name;
 	AST_MEMBER(MacroName, &name)
 AST_END(MacroName, "macro_name"sv)
 
@@ -777,7 +780,7 @@ AST_NODE(MacroInPlace)
 AST_END(MacroInPlace, "macro_in_place"sv)
 
 AST_NODE(Macro)
-	ast_ptr<true, Name_t> name;
+	ast_ptr<true, UnicodeName_t> name;
 	ast_ptr<true, MacroLit_t> macroLit;
 	AST_MEMBER(Macro, &name, &macroLit)
 AST_END(Macro, "macro"sv)

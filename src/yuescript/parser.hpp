@@ -346,6 +346,8 @@ expr set(const char* s);
 */
 expr range(int min, int max);
 
+expr larger(size_t value);
+
 /** creates an expression which increments the line counter
 	and resets the column counter when the given expression
 	is parsed successfully; used for newline characters.

@@ -1,16 +1,18 @@
-x["do"](x, "work")
+local _call_0 = x
+_call_0["do"](_call_0, "work")
 func((function()
-	local _call_0 = a["do"](a)
-	local _call_1 = _call_0["end"](_call_0, "OK")
-	return _call_1["if"](_call_1, "abc", 123)
+	local _call_1 = a
+	local _call_2 = _call_1["do"](_call_1)
+	local _call_3 = _call_2["end"](_call_2, "OK")
+	return _call_3["if"](_call_3, "abc", 123)
 end)())
-local _call_0 = b["function"]
-local _call_1 = _call_0["do"](_call_0)
-local _call_2 = _call_1["while"](_call_1, "OK")
-local res = _call_2["if"](_call_2, "def", 998)
-local _call_3 = c["repeat"]["if"]
-local _call_4 = _call_3["then"](_call_3, "xyz")
-_call_4["else"](_call_4, res)
+local _call_1 = b["function"]
+local _call_2 = _call_1["do"](_call_1)
+local _call_3 = _call_2["while"](_call_2, "OK")
+local res = _call_3["if"](_call_3, "def", 998)
+local _call_4 = c["repeat"]["if"]
+local _call_5 = _call_4["then"](_call_4, "xyz")
+_call_5["else"](_call_5, res)
 print(self["for"], self.__class["function"](self.__class, 123))
 do
 	local fcolor = message:match("<%w*>")
