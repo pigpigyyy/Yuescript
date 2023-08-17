@@ -67,14 +67,6 @@
 		打印 ...
 
 	do
-		... = 1, 2 if true
-		打印 ...
-
-	do
-		变量a, ... = 1, 2 unless true
-		打印 变量a, select '#', ...
-
-	do
 		... = switch 变量x when 1
 			with 表
 				.变量x = 123

@@ -67,14 +67,6 @@ join = (...) ->
 		print ...
 
 	do
-		... = 1, 2 if true
-		print ...
-
-	do
-		a, ... = 1, 2 unless true
-		print a, select '#', ...
-
-	do
 		... = switch x when 1
 			with tb
 				.x = 123

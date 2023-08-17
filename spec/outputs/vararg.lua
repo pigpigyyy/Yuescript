@@ -250,25 +250,6 @@ join = function(...)
 		(function(...)
 			return print(...)
 		end)((function()
-			if true then
-				return 1, 2
-			end
-		end)())
-	end
-	do
-		(function(_arg_0, ...)
-			local a = _arg_0
-			return print(a, select('#', ...))
-		end)((function()
-			if not true then
-				return 1, 2
-			end
-		end)())
-	end
-	do
-		(function(...)
-			return print(...)
-		end)((function()
 			local _exp_0 = x
 			if 1 == _exp_0 then
 				local _with_0 = tb

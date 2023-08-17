@@ -250,25 +250,6 @@ _u8fde_u63a5 = function(...)
 		(function(...)
 			return _u6253_u5370(...)
 		end)((function()
-			if true then
-				return 1, 2
-			end
-		end)())
-	end
-	do
-		(function(_arg_0, ...)
-			local _u53d8_u91cfa = _arg_0
-			return _u6253_u5370(_u53d8_u91cfa, select('#', ...))
-		end)((function()
-			if not true then
-				return 1, 2
-			end
-		end)())
-	end
-	do
-		(function(...)
-			return _u6253_u5370(...)
-		end)((function()
 			local _exp_0 = _u53d8_u91cfx
 			if 1 == _exp_0 then
 				local _with_0 = _u8868
