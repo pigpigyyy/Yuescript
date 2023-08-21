@@ -43,7 +43,7 @@ apple =
 p apple.color, apple.<index> if apple.<>?
 
 -- js-like export syntax
-export yuescript = "月之脚本"
+export 🌛 = "月之脚本"
 ```
 <YueDisplay>
 <pre>
@@ -75,7 +75,7 @@ apple =
 p apple.color, apple.&lt;index&gt; if apple.&lt;&gt;?
 
 -- js-like export syntax
-export yuescript = "月之脚本"
+export 🌛 = "月之脚本"
 </pre>
 </YueDisplay>
 
@@ -3024,6 +3024,54 @@ some_instance_method = (...)=> @@ ...
 <YueDisplay>
 <pre>
 some_instance_method = (...)=> @@ ...
+</pre>
+</YueDisplay>
+
+### Constructor Property Promotion
+
+To reduce the boilerplate code for definition of simple value objects. You can write a simple class like:
+
+```moonscript
+class Something
+  new: (@foo, @bar, @@biz, @@baz) =>
+
+-- Which is short for
+
+class Something
+  new: (foo, bar, biz, baz) =>
+    @foo = foo
+    @bar = bar
+    @@biz = biz
+    @@baz = baz
+```
+<YueDisplay>
+<pre>
+class Something
+  new: (@foo, @bar, @@biz, @@baz) =>
+
+-- Which is short for
+
+class Something
+  new: (foo, bar, biz, baz) =>
+    @foo = foo
+    @bar = bar
+    @@biz = biz
+    @@baz = baz
+</pre>
+</YueDisplay>
+
+You can also use this syntax for a common function to initialize a object's fields.
+
+```moonscript
+new = (@fieldA, @fieldB)=> @
+obj = new {}, 123, "abc"
+print obj
+```
+<YueDisplay>
+<pre>
+new = (@fieldA, @fieldB)=> @
+obj = new {}, 123, "abc"
+print obj
 </pre>
 </YueDisplay>
 
