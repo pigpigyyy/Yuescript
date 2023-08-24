@@ -1,7 +1,7 @@
 /*
 ** $Id: lua.h $
 ** Lua - A Scripting Language
-** Lua.org, PUC-Rio, Brazil (http://www.lua.org)
+** Lua.org, PUC-Rio, Brazil (www.lua.org)
 ** See Copyright Notice at the end of this file
 */
 
@@ -13,20 +13,19 @@
 #include <stddef.h>
 
 
-#include "luaconf.h"
-
-
-#define LUA_VERSION_MAJOR	"5"
-#define LUA_VERSION_MINOR	"4"
-#define LUA_VERSION_RELEASE	"5"
-
-#define LUA_VERSION_NUM			504
-#define LUA_VERSION_RELEASE_NUM		(LUA_VERSION_NUM * 100 + 5)
-
-#define LUA_VERSION	"Lua " LUA_VERSION_MAJOR "." LUA_VERSION_MINOR
-#define LUA_RELEASE	LUA_VERSION "." LUA_VERSION_RELEASE
-#define LUA_COPYRIGHT	LUA_RELEASE "  Copyright (C) 1994-2022 Lua.org, PUC-Rio"
+#define LUA_COPYRIGHT	LUA_RELEASE "  Copyright (C) 1994-2023 Lua.org, PUC-Rio"
 #define LUA_AUTHORS	"R. Ierusalimschy, L. H. de Figueiredo, W. Celes"
+
+
+#define LUA_VERSION_MAJOR_N	5
+#define LUA_VERSION_MINOR_N	4
+#define LUA_VERSION_RELEASE_N	6
+
+#define LUA_VERSION_NUM  (LUA_VERSION_MAJOR_N * 100 + LUA_VERSION_MINOR_N)
+#define LUA_VERSION_RELEASE_NUM  (LUA_VERSION_NUM * 100 + LUA_VERSION_RELEASE_N)
+
+
+#include "luaconf.h"
 
 
 /* mark for precompiled code ('<esc>Lua') */
@@ -131,6 +130,16 @@ typedef void * (*lua_Alloc) (void *ud, void *ptr, size_t osize, size_t nsize);
 typedef void (*lua_WarnFunction) (void *ud, const char *msg, int tocont);
 
 
+/*
+** Type used by the debug API to collect debug information
+*/
+typedef struct lua_Debug lua_Debug;
+
+
+/*
+** Functions to be called by the debugger in specific events
+*/
+typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
 
 
 /*
@@ -153,7 +162,8 @@ extern const char lua_ident[];
 LUA_API lua_State *(lua_newstate) (lua_Alloc f, void *ud);
 LUA_API void       (lua_close) (lua_State *L);
 LUA_API lua_State *(lua_newthread) (lua_State *L);
-LUA_API int        (lua_resetthread) (lua_State *L, lua_State *from);
+LUA_API int        (lua_closethread) (lua_State *L, lua_State *from);
+LUA_API int        (lua_resetthread) (lua_State *L);  /* Deprecated! */
 
 LUA_API lua_CFunction (lua_atpanic) (lua_State *L, lua_CFunction panicf);
 
@@ -442,12 +452,6 @@ LUA_API void (lua_closeslot) (lua_State *L, int idx);
 #define LUA_MASKLINE	(1 << LUA_HOOKLINE)
 #define LUA_MASKCOUNT	(1 << LUA_HOOKCOUNT)
 
-typedef struct lua_Debug lua_Debug;  /* activation record */
-
-
-/* Functions to be called by the debugger in specific events */
-typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
-
 
 LUA_API int (lua_getstack) (lua_State *L, int level, lua_Debug *ar);
 LUA_API int (lua_getinfo) (lua_State *L, const char *what, lua_Debug *ar);
@@ -491,8 +495,19 @@ struct lua_Debug {
 /* }====================================================================== */
 
 
+#define LUAI_TOSTRAUX(x)	#x
+#define LUAI_TOSTR(x)		LUAI_TOSTRAUX(x)
+
+#define LUA_VERSION_MAJOR	LUAI_TOSTR(LUA_VERSION_MAJOR_N)
+#define LUA_VERSION_MINOR	LUAI_TOSTR(LUA_VERSION_MINOR_N)
+#define LUA_VERSION_RELEASE	LUAI_TOSTR(LUA_VERSION_RELEASE_N)
+
+#define LUA_VERSION	"Lua " LUA_VERSION_MAJOR "." LUA_VERSION_MINOR
+#define LUA_RELEASE	LUA_VERSION "." LUA_VERSION_RELEASE
+
+
 /******************************************************************************
-* Copyright (C) 1994-2022 Lua.org, PUC-Rio.
+* Copyright (C) 1994-2023 Lua.org, PUC-Rio.
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the

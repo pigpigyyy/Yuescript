@@ -70,6 +70,12 @@
 #endif
 
 
+#if defined(LUA_USE_IOS)
+#define LUA_USE_POSIX
+#define LUA_USE_DLOPEN
+#endif
+
+
 /*
 @@ LUAI_IS32INT is true iff 'int' has (at least) 32 bits.
 */
@@ -250,6 +256,15 @@
 #endif
 
 #endif
+
+
+/*
+** LUA_IGMARK is a mark to ignore all after it when building the
+** module name (e.g., used to build the luaopen_ function name).
+** Typically, the sufix after the mark is the module version,
+** as in "mod-v1.2.so".
+*/
+#define LUA_IGMARK		"-"
 
 /* }================================================================== */
 

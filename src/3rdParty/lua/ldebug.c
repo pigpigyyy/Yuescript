@@ -426,7 +426,7 @@ static const char *getobjname (const Proto *p, int lastpc, int reg,
 */
 static void kname (const Proto *p, int c, const char **name) {
   TValue *kvalue = &p->k[c];
-  *name = (ttisstring(kvalue)) ? svalue(kvalue) : "?";
+  *name = (ttisstring(kvalue)) ? getstr(tsvalue(kvalue)) : "?";
 }
 
 
@@ -569,7 +569,7 @@ static const char *getobjname (const Proto *p, int lastpc, int reg,
         int b = (op == OP_LOADK) ? GETARG_Bx(i)
                                  : GETARG_Ax(p->code[pc + 1]);
         if (ttisstring(&p->k[b])) {
-          *name = svalue(&p->k[b]);
+          *name = getstr(tsvalue(&p->k[b]));
           return "constant";
         }
         break;
@@ -627,7 +627,7 @@ static const char *funcnamefromcode (lua_State *L, const Proto *p,
     default:
       return NULL;  /* cannot find a reasonable name */
   }
-  *name = getstr(G(L)->tmname[tm]) + 2;
+  *name = getshrstr(G(L)->tmname[tm]) + 2;
   return "metamethod";
 }
 
@@ -656,18 +656,19 @@ static const char *funcnamefromcall (lua_State *L, CallInfo *ci,
 
 
 /*
-** Check whether pointer 'o' points to some value in the stack
-** frame of the current function. Because 'o' may not point to a
-** value in this stack, we cannot compare it with the region
-** boundaries (undefined behaviour in ISO C).
+** Check whether pointer 'o' points to some value in the stack frame of
+** the current function and, if so, returns its index.  Because 'o' may
+** not point to a value in this stack, we cannot compare it with the
+** region boundaries (undefined behavior in ISO C).
 */
-static int isinstack (CallInfo *ci, const TValue *o) {
-  StkId pos;
-  for (pos = ci->func.p + 1; pos < ci->top.p; pos++) {
-    if (o == s2v(pos))
-      return 1;
+static int instack (CallInfo *ci, const TValue *o) {
+  int pos;
+  StkId base = ci->func.p + 1;
+  for (pos = 0; base + pos < ci->top.p; pos++) {
+    if (o == s2v(base + pos))
+      return pos;
   }
-  return 0;  /* not found */
+  return -1;  /* not found */
 }
 
 
@@ -708,9 +709,11 @@ static const char *varinfo (lua_State *L, const TValue *o) {
   const char *kind = NULL;
   if (isLua(ci)) {
     kind = getupvalname(ci, o, &name);  /* check whether 'o' is an upvalue */
-    if (!kind && isinstack(ci, o))  /* no? try a register */
-      kind = getobjname(ci_func(ci)->p, currentpc(ci),
-                        cast_int(cast(StkId, o) - (ci->func.p + 1)), &name);
+    if (!kind) {  /* not an upvalue? */
+      int reg = instack(ci, o);  /* try a register */
+      if (reg >= 0)  /* is 'o' a register? */
+        kind = getobjname(ci_func(ci)->p, currentpc(ci), reg, &name);
+    }
   }
   return formatvarinfo(L, kind, name);
 }
@@ -845,7 +848,7 @@ static int changedline (const Proto *p, int oldpc, int newpc) {
   if (p->lineinfo == NULL)  /* no debug information? */
     return 0;
   if (newpc - oldpc < MAXIWTHABS / 2) {  /* not too far apart? */
-    int delta = 0;  /* line diference */
+    int delta = 0;  /* line difference */
     int pc = oldpc;
     for (;;) {
       int lineinfo = p->lineinfo[++pc];
@@ -859,6 +862,28 @@ static int changedline (const Proto *p, int oldpc, int newpc) {
   /* either instructions are too far apart or there is an absolute line
      info in the way; compute line difference explicitly */
   return (luaG_getfuncline(p, oldpc) != luaG_getfuncline(p, newpc));
+}
+
+
+/*
+** Traces Lua calls. If code is running the first instruction of a function,
+** and function is not vararg, and it is not coming from an yield,
+** calls 'luaD_hookcall'. (Vararg functions will call 'luaD_hookcall'
+** after adjusting its variable arguments; otherwise, they could call
+** a line/count hook before the call hook. Functions coming from
+** an yield already called 'luaD_hookcall' before yielding.)
+*/
+int luaG_tracecall (lua_State *L) {
+  CallInfo *ci = L->ci;
+  Proto *p = ci_func(ci)->p;
+  ci->u.l.trap = 1;  /* ensure hooks will be checked */
+  if (ci->u.l.savedpc == p->code) {  /* first instruction (not resuming)? */
+    if (p->is_vararg)
+      return 0;  /* hooks will start at VARARGPREP instruction */
+    else if (!(ci->callstatus & CIST_HOOKYIELD))  /* not yieded? */
+      luaD_hookcall(L, ci);  /* check 'call' hook */
+  }
+  return 1;  /* keep 'trap' on */
 }
 
 
