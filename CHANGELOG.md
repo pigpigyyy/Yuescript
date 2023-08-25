@@ -2,17 +2,26 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
-## v0.18.1
+## v0.19.1
 
 ### Added Features
 
+* Added unicode identifier support.
+  
+  ```moonscript
+  🌛 = 🏷️: "月之脚本"
+  print 🌛.🏷️
+  ```
+  
 * Implemented '...' for variable declaration within scope using anonymous functions.
+  
   ```moonscript
   ok, ... = fn!
   if ok
     print select '#', ...
     print select 1, ...
   ```
+  
 * Added close-variables support for Lua version targets below 5.4.
 
 ## v0.17.10

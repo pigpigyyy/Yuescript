@@ -2622,7 +2622,7 @@ switch item
 
   -- not in range checking
   when not in [1, 10)
-    print "not (1 < value <= 10)"
+    print "not (1 <= value < 10)"
 
   -- checking discrete values
   when in {11, 21, 99}
@@ -2643,7 +2643,7 @@ switch item
 
   -- not in range checking
   when not in [1, 10)
-    print "not (1 < value <= 10)"
+    print "not (1 <= value < 10)"
 
   -- checking discrete values
   when in {11, 21, 99}
