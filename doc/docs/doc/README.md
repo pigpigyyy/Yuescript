@@ -898,6 +898,7 @@ x = y = z = f!
 ### Explicit Locals
 ```moonscript
 do
+  local a = 1
   local *
   print "forward declare all variables as locals"
   x = -> 1 + y + z
@@ -905,6 +906,7 @@ do
   global instance = Item\new!
 
 do
+  local X = 1
   local ^
   print "only forward declare upper case variables"
   a = 1
@@ -913,6 +915,7 @@ do
 <YueDisplay>
 <pre>
 do
+  local a = 1
   local *
   print "forward declare all variables as locals"
   x = -> 1 + y + z
@@ -920,6 +923,7 @@ do
   global instance = Item\new!
 
 do
+  local X = 1
   local ^
   print "only forward declare upper case variables"
   a = 1
@@ -930,12 +934,14 @@ do
 ### Explicit Globals
 ```moonscript
 do
+  global a = 1
   global *
   print "declare all variables as globals"
   x = -> 1 + y + z
   y, z = 2, 3
 
 do
+  global X = 1
   global ^
   print "only declare upper case variables as globals"
   a = 1
@@ -945,12 +951,14 @@ do
 <YueDisplay>
 <pre>
 do
+  global a = 1
   global *
   print "declare all variables as globals"
   x = -> 1 + y + z
   y, z = 2, 3
 
 do
+  global X = 1
   global ^
   print "only declare upper case variables as globals"
   a = 1
@@ -2541,6 +2549,35 @@ msg = switch math.random(1, 5)
   when 1 then "you are lucky"
   when 2 then "you are almost lucky"
   else "not so lucky"
+</pre>
+</YueDisplay>
+
+If you want to write code with one less indent when writing a switch statement, you can put the first when clause on the statement start line, and then all other clauses can be written with one less indent.
+
+```moonscript
+switch math.random(1, 5)
+  when 1
+    print "you are lucky" -- two indents
+  else
+    print "not so lucky"
+
+switch math.random(1, 5) when 1
+  print "you are lucky" -- one indent
+else
+  print "not so lucky"
+```
+<YueDisplay>
+<pre>
+switch math.random(1, 5)
+  when 1
+    print "you are lucky" -- two indents
+  else
+    print "not so lucky"
+
+switch math.random(1, 5) when 1
+  print "you are lucky" -- one indent
+else
+  print "not so lucky"
 </pre>
 </YueDisplay>
 

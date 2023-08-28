@@ -46,31 +46,75 @@ module.exports = {
 		['script', { src: '/js/yuescript.js' }],
 	],
 
+	locales: {
+		'/': {
+			lang: 'en-US',
+			title: 'Yuescript',
+			description: 'A language that compiles to Lua'
+		},
+
+		'/zh/': {
+			lang: 'zh-CN',
+			title: '月之脚本',
+			description: '一门编译到 Lua 的语言'
+		}
+	},
+
 	/**
 	 * Theme configuration, here is the default theme configuration for VuePress.
 	 *
 	 * ref：https://v1.vuepress.vuejs.org/theme/default-theme-config.html
 	 */
 	themeConfig: {
-		repo: '',
-		editLinks: false,
-		docsDir: '',
-		editLinkText: '',
-		lastUpdated: false,
-		nav: [
-			{
-				text: 'Document',
-				link: '/doc/'
+		locales: {
+			'/': {
+				selectText: 'Languages',
+				label: 'English',
+				repo: '',
+				editLinks: false,
+				docsDir: '',
+				editLinkText: '',
+				lastUpdated: false,
+				nav: [
+					{
+						text: 'Document',
+						link: '/doc/'
+					},
+					{
+						text: 'Try yue!',
+						link: '/try/',
+					},
+					{
+						text: 'Github',
+						link: 'https://github.com/pigpigyyy/Yuescript'
+					}
+				],
 			},
-			{
-				text: 'Try yue!',
-				link: '/try/',
+
+			'/zh/': {
+				selectText: '选择语言',
+				label: '简体中文',
+				repo: '',
+				editLinks: false,
+				docsDir: '',
+				editLinkText: '',
+				lastUpdated: false,
+				nav: [
+					{
+						text: '文档',
+						link: '/zh/doc/'
+					},
+					{
+						text: '试一试!',
+						link: '/zh/try/',
+					},
+					{
+						text: 'Github',
+						link: 'https://github.com/pigpigyyy/Yuescript'
+					}
+				],
 			},
-			{
-				text: 'Github',
-				link: 'https://github.com/pigpigyyy/Yuescript'
-			}
-		],
+		}
 	},
 
 	/**
