@@ -9,7 +9,7 @@ title: 参考手册
 
 ## 介绍
 
-月之脚本是一种动态语言，可以编译为Lua。它是[Moonscript](https://github.com/leafo/moonscript)的方言。用月之脚本编写的代码既有表现力又非常简洁。它适合编写一些更易于维护的代码，并在嵌入 Lua 的环境中运行，如游戏或网站服务器。
+月之脚本（Yuescript）是一种动态语言，可以编译为Lua。它是[Moonscript](https://github.com/leafo/moonscript)的方言。用月之脚本编写的代码既有表现力又非常简洁。它适合编写一些更易于维护的代码，并在嵌入 Lua 的环境中运行，如游戏或网站服务器。
 
 Yue（月）是中文中“月亮”的名称。
 
@@ -2049,7 +2049,7 @@ slice = [item for item in *items[,,2]]
 </pre>
 </YueDisplay>
 
-## For 循环
+## for 循环
 
 Lua中有两种for循环形式，数字型和通用型：
 
@@ -2148,7 +2148,7 @@ print func_b! -- 打印 table 对象
 
 这样做是为了避免在不需要返回循环结果的函数，创建无效的返回值表格。
 
-## Repeat 循环
+## repeat 循环
 
 repeat循环是从Lua语言中搬过来的相似语法：
 
@@ -2169,7 +2169,7 @@ until i == 0
 </pre>
 </YueDisplay>
 
-## While 循环
+## while 循环
 
 在月之脚本中的while循环有四种写法：
 
@@ -2441,7 +2441,7 @@ reader\parse_line! until reader\eof!
 </pre>
 </YueDisplay>
 
-## Switch 语句
+## switch 语句
 
 switch语句是为了简化检查一系列相同值的if语句而提供的简写语法。要注意用于比较检查的目标值只会计算一次。和if语句一样，switch语句在最后可以接一个else代码块来处理没有匹配的情况。在生成的Lua代码中，进行比较是使用==操作符完成的。
 
@@ -2802,7 +2802,7 @@ class Cupboard extends Shelf
 </pre>
 </YueDisplay>
 
-### Super 关键字
+### super 关键字
 
 **super** 是一个特殊的关键字，可以用两种不同的方式使用：它可以被视为一个对象，或者可以像函数一样被调用。它只在类的内部出现时有特殊功能。
 
@@ -3160,7 +3160,7 @@ assert y.__class.__parent ~= X -- X 不是 Y 的父类
 </pre>
 </YueDisplay>
 
-## With 语句
+## with 语句
 
 在编写Lua代码时，我们在创建对象后的常见操作是立即调用这个对象一系列操作函数并设置一系列属性。
 
@@ -3369,7 +3369,7 @@ run_callback my_object\write
 </pre>
 </YueDisplay>
 
-## Using 语句：避免有破坏性的赋值
+## using 语句：避免有破坏性的赋值
 
 虽然Lua的变量作用域可以在减少我们编写的代码的复杂性上提供很大的帮助，但随着代码量的增加，事情可能会变得难以管理。考虑以下代码片段：
 
