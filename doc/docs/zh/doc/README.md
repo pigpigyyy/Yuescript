@@ -128,7 +128,7 @@ require("yue")("你的脚本入口文件")
 当你在同一路径下把 "你的脚本入口文件.yue" 编译成了 "你的脚本入口文件.lua" 时，仍然可以使用这个代码加载 .lua 代码文件。在其余的月之脚本文件中，只需正常使用 **require** 或 **import**进行脚本引用即可。错误消息中的代码行号也会被正确处理。
 
 * **用法 2**  
-手动引入月之脚本模块并重写消息。
+手动引入月之脚本模块并重写错误消息来帮助调试。
 ```lua
 local yue = require("yue")
 local success, result = xpcall(function()
@@ -165,28 +165,28 @@ f!
 使用命令: yue [选项|文件|目录] ...
 
    -h       打印此消息
-   -e str   执行文件或原始代码
-   -m       生成压缩代码
-   -r       重写输出以匹配原始行号
-   -t path  指定放置编译文件的位置
-   -o file  将输出写入文件
+   -e str   执行一个文件或一段原始代码
+   -m       生成压缩后的代码
+   -r       重写输出的Lua代码以匹配原始代码中的行号
+   -t path  指定放置编译结果文件的位置
+   -o file  将输出写到指定的文件中
    -s       在生成的代码中使用空格代替制表符
    -p       将输出写入标准输出
-   -b       转储编译时间（不写输出）
-   -g       转储在NAME LINE COLUMN中使用的全局变量
-   -l       从源代码写入行号
-   -c       从源代码保留语句前的注释
-   -w path  观察更改并编译目录下的每个文件
-   -v       打印版本
-   --       从标准输入读取，打印到标准输出
-            (必须是第一个且唯一的参数)
+   -b       输出编译时间（不写输出）
+   -g       以“名称 行号 列号”的形式输出代码中使用的全局变量
+   -l       在输出的每一行代码的末尾写上原代码的行号
+   -c       在输出的代码中保留语句前的注释
+   -w path  监测目录下的文件更改并重新编译生成目录下的文件
+   -v       打印版本号
+   --       从标准输入读取原始代码，打印到编译结果到标准输出
+            (必须是第一个且是唯一的参数)
 
-   --target=version  指定编译器将生成的Lua版本代码
-                     (版本只能是 5.1, 5.2, 5.3 或 5.4)
+   --target=version  指定编译器将生成的Lua代码版本号
+                     (版本号只能是 5.1, 5.2, 5.3 或 5.4)
    --path=path_str   将额外的Lua搜索路径字符串追加到package.path
 
-   不带选项执行以进入REPL，在单行输入符号 '$' 后
-   开始或是停止多行输入模式
+   不添加任何选项执行命令可以进入REPL模式，
+   在单行输入符号 '$' 并换行后，可以开始或是停止多行输入模式
 ```
 &emsp;&emsp;使用案例：  
 &emsp;&emsp;递归编译当前路径下扩展名为 **.yue** 的每个月之脚本文件： **yue .**  
@@ -225,7 +225,7 @@ $asserts item ~= nil
 $config false
 value = $assert item
 
--- 传递的表达式被视为字符串
+-- 宏函数参数传递的表达式会被转换为字符串
 macro and = (...)-> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
@@ -254,7 +254,7 @@ $asserts item ~= nil
 $config false
 value = $assert item
 
--- 传递的表达式被视为字符串
+-- 宏函数参数传递的表达式会被转换为字符串
 macro and = (...)-> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
@@ -2044,6 +2044,7 @@ slice = [item for item in *items[2,]]
 slice = [item for item in *items[,,2]]
 ```
 <YueDisplay>
+
 <pre>
 slice = [item for item in *items[,,2]]
 </pre>
