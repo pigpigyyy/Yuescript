@@ -1,8 +1,8 @@
 local hello = yeah.hello
 local holla, world
 do
-	local _obj_0 = table["cool"]
-	holla, world = _obj_0.holla, _obj_0.world
+	local _obj_1 = table["cool"]
+	holla, world = _obj_1.holla, _obj_1.world
 end
 local x, y, z = items.x, (function()
 	local _base_0 = items
@@ -13,9 +13,9 @@ local x, y, z = items.x, (function()
 end)(), items.z
 local master, ghost
 do
-	local _obj_0 = find("mytable")
-	master, ghost = _obj_0.master, (function()
-		local _base_0 = _obj_0
+	local _obj_1 = find("mytable")
+	master, ghost = _obj_1.master, (function()
+		local _base_0 = _obj_1
 		local _fn_0 = _base_0.ghost
 		return _fn_0 and function(...)
 			return _fn_0(_base_0, ...)

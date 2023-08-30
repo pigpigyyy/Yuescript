@@ -974,12 +974,13 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 				moduleName = moduleStr + std::to_string(index);
 				index++;
 			} while (state.usedNames.find(moduleName) != state.usedNames.end());
+			state.usedNames.insert(moduleName);
 			res.moduleName = moduleName;
-			res.usedNames = std::move(state.usedNames);
 			res.exportDefault = state.exportDefault;
 			res.exportMacro = state.exportMacro;
 			res.exportMetatable = !state.exportMetatable && state.exportMetamethod;
 		}
+		res.usedNames = std::move(state.usedNames);
 	} catch (const ParserError& err) {
 		res.error = {err.what(), err.line, err.col};
 		return res;

@@ -1,8 +1,8 @@
 local _u4f60_u597d = _u597d_u7684["你好"]
 local _u597d_u5440, _u4e16_u754c
 do
-	local _obj_0 = _u8868["酷"]
-	_u597d_u5440, _u4e16_u754c = _obj_0["好呀"], _obj_0["世界"]
+	local _obj_1 = _u8868["酷"]
+	_u597d_u5440, _u4e16_u754c = _obj_1["好呀"], _obj_1["世界"]
 end
 local _u5b57_u6bb5x, _u5b57_u6bb5y, _u5b57_u6bb5z = _u9053_u5177_u7ec4["字段x"], (function()
 	local _base_0 = _u9053_u5177_u7ec4
@@ -13,9 +13,9 @@ local _u5b57_u6bb5x, _u5b57_u6bb5y, _u5b57_u6bb5z = _u9053_u5177_u7ec4["字段x"
 end)(), _u9053_u5177_u7ec4["字段z"]
 local _u9886_u4e3b, _ud83d_udc7b
 do
-	local _obj_0 = _u627e_u5230("我的表")
-	_u9886_u4e3b, _ud83d_udc7b = _obj_0["领主"], (function()
-		local _base_0 = _obj_0
+	local _obj_1 = _u627e_u5230("我的表")
+	_u9886_u4e3b, _ud83d_udc7b = _obj_1["领主"], (function()
+		local _base_0 = _obj_1
 		local _fn_0 = _base_0["👻"]
 		return _fn_0 and function(...)
 			return _fn_0(_base_0, ...)
