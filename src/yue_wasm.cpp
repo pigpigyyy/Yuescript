@@ -140,15 +140,16 @@ std::string exec(const std::string& codes) {
 	execStr(R"yuescript(
 _G.__output = {}
 _G.print = (...)->
-	len = select "#", ...
-	strs = {}
-	for i = 1, len
-		strs[#strs + 1] = tostring select i, ...
-	_G.__output[#_G.__output + 1] = table.concat strs, "\n"
+	_G.__output[] = table.concat [tostring select i, ... for i = 1, select "#", ...], " "
+	_G.__output[] = "\n"
+_io_write = io.write
+_G.io.write = (...)->
+	_G.__output[] = table.concat [tostring select i, ... for i = 1, select "#", ...]
+	_io_write ...
 	)yuescript");
 	std::string res2 = execStr(codes);
 	std::string res1 = execStr(R"yuescript(
-res = table.concat _G.__output, "\n"
+res = table.concat _G.__output
 return res if res ~= ""
 	)yuescript");
 	if (res1.empty()) {
