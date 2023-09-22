@@ -41,6 +41,10 @@ do
 		c
 		from z
 
+do
+	import p from "yue"
+	import item from 'module.part'
+	import x1, y1, \z1 from "mymodule"
 
 do
 	import 'module'

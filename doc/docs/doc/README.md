@@ -687,6 +687,8 @@ do
   import insert, concat from table
   -- report error when assigning to insert, concat
   import C, Ct, Cmt from require "lpeg"
+  -- shortcut for implicit requiring
+  import x, y, z from 'mymodule'
 
 -- shortcut for requring a module
 do
@@ -708,6 +710,8 @@ do
   import insert, concat from table
   -- report error when assigning to insert, concat
   import C, Ct, Cmt from require "lpeg"
+  -- shortcut for implicit requiring
+  import x, y, z from 'mymodule'
 
 -- shortcut for requring a module
 do

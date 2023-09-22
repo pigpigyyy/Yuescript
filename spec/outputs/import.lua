@@ -57,6 +57,29 @@ do
 	local a, b, c = z.a, z.b, z.c
 end
 do
+	local p
+	do
+		local _obj_1 = require("yue")
+		p = _obj_1.p
+	end
+	local item
+	do
+		local _obj_1 = require('module.part')
+		item = _obj_1.item
+	end
+	local x1, y1, z1
+	do
+		local _obj_1 = require("mymodule")
+		x1, y1, z1 = _obj_1.x1, _obj_1.y1, (function()
+			local _base_0 = _obj_1
+			local _fn_0 = _base_0.z1
+			return _fn_0 and function(...)
+				return _fn_0(_base_0, ...)
+			end
+		end)()
+	end
+end
+do
 	local module = require('module')
 	local module_x = require('module_x')
 	local d_a_s_h_e_s = require("d-a-s-h-e-s")

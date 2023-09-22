@@ -74,7 +74,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.19.2"sv;
+const std::string_view version = "0.19.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -8375,13 +8375,18 @@ private:
 	void transformImportFrom(ImportFrom_t* import, str_list& out) {
 		str_list temp;
 		auto x = import;
-		auto objVar = singleVariableFrom(import->exp, true);
+		auto objVar = singleVariableFrom(import->item, true);
 		ast_ptr<false, ExpListAssign_t> objAssign;
 		if (objVar.empty()) {
 			objVar = getUnusedName("_obj_"sv);
 			auto expList = toAst<ExpList_t>(objVar, x);
 			auto assign = x->new_ptr<Assign_t>();
-			assign->values.push_back(import->exp);
+			if (import->item.is<Exp_t>()) {
+				assign->values.push_back(import->item);
+			} else {
+				auto exp = toAst<Exp_t>("require "s + _parser.toString(import->item.to<ImportLiteral_t>()), import->item);
+				assign->values.push_back(exp);
+			}
 			auto assignment = x->new_ptr<ExpListAssign_t>();
 			assignment->expList.set(expList);
 			assignment->action.set(assign);

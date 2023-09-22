@@ -685,6 +685,8 @@ do
   import insert, concat from table
   -- 当给 insert, concat 变量赋值时，编译器会报告错误
   import C, Ct, Cmt from require "lpeg"
+  -- 快捷写法引入模块的子项
+  import x, y, z from 'mymodule'
 
 -- 快捷地导入一个模块
 do
@@ -706,6 +708,8 @@ do
   import insert, concat from table
   -- 当给 insert, concat 变量赋值时，编译器会报告错误
   import C, Ct, Cmt from require "lpeg"
+  -- 快捷写法引入模块的子项
+  import x, y, z from 'mymodule'
 
 -- 快捷地导入一个模块
 do

@@ -269,7 +269,7 @@ std::string ImportFrom_t::to_string(void* ud) const {
 	for (auto name : names.objects()) {
 		temp.emplace_back(name->to_string(ud));
 	}
-	return join(temp, ", "sv) + " from "s + exp->to_string(ud);
+	return join(temp, ", "sv) + " from "s + item->to_string(ud);
 }
 std::string MacroNamePair_t::to_string(void* ud) const {
 	return key->to_string(ud) + ": "s + value->to_string(ud);

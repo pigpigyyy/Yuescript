@@ -191,8 +191,8 @@ AST_END(ImportLiteral, "import_literal"sv)
 AST_NODE(ImportFrom)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<true, ColonImportName_t, Variable_t> names;
-	ast_ptr<true, Exp_t> exp;
-	AST_MEMBER(ImportFrom, &sep, &names, &exp)
+	ast_sel<true, ImportLiteral_t, Exp_t> item;
+	AST_MEMBER(ImportFrom, &sep, &names, &item)
 AST_END(ImportFrom, "import_from"sv)
 
 AST_NODE(MacroNamePair)
