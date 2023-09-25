@@ -286,6 +286,7 @@ YueParser::YueParser() {
 	import_name = ColonImportName | Variable;
 	import_name_list = Seperator >> *space_break >> space >> import_name >> *((+space_break | space >> ',' >> *space_break) >> space >> import_name);
 	ImportFrom = import_name_list >> *space_break >> space >> key("from") >> space >> (ImportLiteral | not_(String) >> Exp);
+	FromImport = key("from") >> space >> (ImportLiteral | not_(String) >> Exp) >> *space_break >> space >> key("import") >> space >> import_name_list;
 
 	ImportLiteralInner = (range('a', 'z') | range('A', 'Z') | set("_-") | larger(255)) >> *(alpha_num | '-' | larger(255));
 	import_literal_chain = Seperator >> ImportLiteralInner >> *('.' >> ImportLiteralInner);
@@ -324,7 +325,7 @@ YueParser::YueParser() {
 
 	ImportAs = ImportLiteral >> -(space >> key("as") >> space >> (ImportTabLit | Variable | ImportAllMacro));
 
-	Import = key("import") >> space >> (ImportAs | ImportFrom);
+	Import = key("import") >> space >> (ImportAs | ImportFrom) | FromImport;
 
 	Label = "::" >> LabelName >> "::";
 

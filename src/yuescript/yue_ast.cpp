@@ -271,6 +271,13 @@ std::string ImportFrom_t::to_string(void* ud) const {
 	}
 	return join(temp, ", "sv) + " from "s + item->to_string(ud);
 }
+std::string FromImport_t::to_string(void* ud) const {
+	str_list temp;
+	for (auto name : names.objects()) {
+		temp.emplace_back(name->to_string(ud));
+	}
+	return "from "s + item->to_string(ud) + " import "s + join(temp, ", "sv);
+}
 std::string MacroNamePair_t::to_string(void* ud) const {
 	return key->to_string(ud) + ": "s + value->to_string(ud);
 }
@@ -294,6 +301,9 @@ std::string ImportAs_t::to_string(void* ud) const {
 	return join(temp, " "s);
 }
 std::string Import_t::to_string(void* ud) const {
+	if (ast_is<FromImport_t>(content)) {
+		return content->to_string(ud);
+	}
 	return "import "s + content->to_string(ud);
 }
 std::string Label_t::to_string(void* ud) const {

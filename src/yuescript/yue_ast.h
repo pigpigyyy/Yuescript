@@ -195,6 +195,13 @@ AST_NODE(ImportFrom)
 	AST_MEMBER(ImportFrom, &sep, &names, &item)
 AST_END(ImportFrom, "import_from"sv)
 
+AST_NODE(FromImport)
+	ast_sel<true, ImportLiteral_t, Exp_t> item;
+	ast_ptr<true, Seperator_t> sep;
+	ast_sel_list<true, ColonImportName_t, Variable_t> names;
+	AST_MEMBER(FromImport, &item, &sep, &names)
+AST_END(FromImport, "from_import"sv)
+
 AST_NODE(MacroNamePair)
 	ast_ptr<true, MacroName_t> key;
 	ast_ptr<true, MacroName_t> value;
@@ -217,7 +224,7 @@ AST_NODE(ImportAs)
 AST_END(ImportAs, "import_as"sv)
 
 AST_NODE(Import)
-	ast_sel<true, ImportAs_t, ImportFrom_t> content;
+	ast_sel<true, ImportAs_t, ImportFrom_t, FromImport_t> content;
 	AST_MEMBER(Import, &content)
 AST_END(Import, "import"sv)
 

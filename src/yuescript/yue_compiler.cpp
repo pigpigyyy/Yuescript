@@ -74,7 +74,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.19.3"sv;
+const std::string_view version = "0.19.4"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -8372,19 +8372,19 @@ private:
 		}
 	}
 
-	void transformImportFrom(ImportFrom_t* import, str_list& out) {
+	void transformImportFrom(ImportFrom_t* importNode, str_list& out) {
 		str_list temp;
-		auto x = import;
-		auto objVar = singleVariableFrom(import->item, true);
+		auto x = importNode;
+		auto objVar = singleVariableFrom(importNode->item, true);
 		ast_ptr<false, ExpListAssign_t> objAssign;
 		if (objVar.empty()) {
 			objVar = getUnusedName("_obj_"sv);
 			auto expList = toAst<ExpList_t>(objVar, x);
 			auto assign = x->new_ptr<Assign_t>();
-			if (import->item.is<Exp_t>()) {
-				assign->values.push_back(import->item);
+			if (importNode->item.is<Exp_t>()) {
+				assign->values.push_back(importNode->item);
 			} else {
-				auto exp = toAst<Exp_t>("require "s + _parser.toString(import->item.to<ImportLiteral_t>()), import->item);
+				auto exp = toAst<Exp_t>("require "s + _parser.toString(importNode->item.to<ImportLiteral_t>()), importNode->item);
 				assign->values.push_back(exp);
 			}
 			auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -8394,7 +8394,7 @@ private:
 		}
 		auto expList = x->new_ptr<ExpList_t>();
 		auto assign = x->new_ptr<Assign_t>();
-		for (auto name : import->names.objects()) {
+		for (auto name : importNode->names.objects()) {
 			switch (name->get_id()) {
 				case id<Variable_t>(): {
 					auto var = static_cast<Variable_t*>(name);
@@ -8443,9 +8443,9 @@ private:
 		if (objAssign) {
 			auto preDef = toLocalDecl(transformAssignDefs(expList, DefOp::Mark));
 			if (!preDef.empty()) {
-				temp.push_back(preDef + nll(import));
+				temp.push_back(preDef + nll(importNode));
 			}
-			temp.push_back(indent() + "do"s + nll(import));
+			temp.push_back(indent() + "do"s + nll(importNode));
 			pushScope();
 			transformAssignment(objAssign, temp);
 		}
@@ -8455,13 +8455,20 @@ private:
 		transformAssignment(assignment, temp);
 		if (objAssign) {
 			popScope();
-			temp.push_back(indent() + "end"s + nlr(import));
+			temp.push_back(indent() + "end"s + nlr(importNode));
 		}
 		out.push_back(join(temp));
 		auto vars = getAssignVars(assignment);
 		for (const auto& var : vars) {
 			markVarConst(var);
 		}
+	}
+
+	void transformFromImport(FromImport_t* importNode, str_list& out) {
+		auto importFrom = importNode->new_ptr<ImportFrom_t>();
+		importFrom->names.dup(importNode->names);
+		importFrom->item.set(importNode->item);
+		transformImportFrom(importFrom, out);
 	}
 
 	std::string moduleNameFrom(ImportLiteral_t* literal) {
@@ -8678,6 +8685,9 @@ private:
 				break;
 			case id<ImportFrom_t>():
 				transformImportFrom(static_cast<ImportFrom_t*>(content), out);
+				break;
+			case id<FromImport_t>():
+				transformFromImport(static_cast<FromImport_t*>(content), out);
 				break;
 			default: YUEE("AST node mismatch", content); break;
 		}

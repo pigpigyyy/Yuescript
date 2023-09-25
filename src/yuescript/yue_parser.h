@@ -277,6 +277,7 @@ private:
 	AST_RULE(ImportLiteralInner);
 	AST_RULE(ImportLiteral);
 	AST_RULE(ImportFrom);
+	AST_RULE(FromImport);
 	AST_RULE(MacroNamePair);
 	AST_RULE(ImportAllMacro);
 	AST_RULE(ImportTabLit);
