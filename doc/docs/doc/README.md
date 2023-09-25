@@ -689,6 +689,8 @@ do
   import C, Ct, Cmt from require "lpeg"
   -- shortcut for implicit requiring
   import x, y, z from 'mymodule'
+  -- import with Python style
+  from 'mymodule' import x, y, z
 
 -- shortcut for requring a module
 do
@@ -712,6 +714,8 @@ do
   import C, Ct, Cmt from require "lpeg"
   -- shortcut for implicit requiring
   import x, y, z from 'mymodule'
+  -- import with Python style
+  from 'mymodule' import x, y, z
 
 -- shortcut for requring a module
 do

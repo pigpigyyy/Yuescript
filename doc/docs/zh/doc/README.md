@@ -687,6 +687,8 @@ do
   import C, Ct, Cmt from require "lpeg"
   -- 快捷写法引入模块的子项
   import x, y, z from 'mymodule'
+  -- 使用Python风格的导入
+  from 'mymodule' import x, y, z
 
 -- 快捷地导入一个模块
 do
@@ -710,6 +712,8 @@ do
   import C, Ct, Cmt from require "lpeg"
   -- 快捷写法引入模块的子项
   import x, y, z from 'mymodule'
+  -- 使用Python风格的导入
+  from 'mymodule' import x, y, z
 
 -- 快捷地导入一个模块
 do
