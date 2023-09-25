@@ -690,7 +690,7 @@ do
   -- shortcut for implicit requiring
   import x, y, z from 'mymodule'
   -- import with Python style
-  from 'mymodule' import x, y, z
+  from 'module' import a, b, c
 
 -- shortcut for requring a module
 do
@@ -715,7 +715,7 @@ do
   -- shortcut for implicit requiring
   import x, y, z from 'mymodule'
   -- import with Python style
-  from 'mymodule' import x, y, z
+  from 'module' import a, b, c
 
 -- shortcut for requring a module
 do
