@@ -71,6 +71,12 @@ do
 					|> f2 2
 					|> f3 3
 					|> f4 4
+	
+	const x = y
+		|> z
+
+	close a = b
+		|> c
 
 x = 123 |> a |> b or 456 |> c |> d or a.if\then("abc") or a?.b\c?(123) or x\y
 

@@ -74,7 +74,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.19.4"sv;
+const std::string_view version = "0.19.5"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -909,6 +909,10 @@ private:
 				} else {
 					return static_cast<Exp_t*>(expListAssign->expList->exprs.back());
 				}
+			}
+			case id<LocalAttrib_t>(): {
+				auto attribNode = static_cast<LocalAttrib_t*>(stmt->content.get());
+				return lastExpFromAssign(attribNode->assign);
 			}
 			case id<Export_t>(): {
 				auto exportNode = static_cast<Export_t*>(stmt->content.get());

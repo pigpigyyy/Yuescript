@@ -103,6 +103,8 @@ do
 	_2, _3, _4 = 1, 2, f(3)
 	local _5
 	_5 = f4(f3(f2(f1(v, 1), 2), 3), 4)
+	local x <const> = z(y)
+	local a <close> = c(b)
 end
 local x = b(a(123)) or d(c(456)) or (function()
 	local _call_0 = a["if"]
