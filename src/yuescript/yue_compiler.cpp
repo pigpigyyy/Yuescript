@@ -74,7 +74,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.19.5"sv;
+const std::string_view version = "0.19.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -2632,6 +2632,7 @@ private:
 						break;
 					default: YUEE("AST node mismatch", destructNode); break;
 				}
+				if (dlist->empty()) throw CompileError("expect items to be destructured"sv, destructNode);
 				for (auto item : *dlist) {
 					switch (item->get_id()) {
 						case id<MetaVariablePairDef_t>(): {

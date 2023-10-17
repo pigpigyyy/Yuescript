@@ -286,7 +286,9 @@ YueParser::YueParser() {
 	import_name = ColonImportName | Variable;
 	import_name_list = Seperator >> *space_break >> space >> import_name >> *((+space_break | space >> ',' >> *space_break) >> space >> import_name);
 	ImportFrom = import_name_list >> *space_break >> space >> key("from") >> space >> (ImportLiteral | not_(String) >> Exp);
-	FromImport = key("from") >> space >> (ImportLiteral | not_(String) >> Exp) >> *space_break >> space >> key("import") >> space >> import_name_list;
+	from_import_name_list_line = import_name >> *(space >> ',' >> space >> import_name);
+	from_import_name_in_block = +space_break >> advance_match >> ensure(space >> from_import_name_list_line >> *(-(space >> ',') >> +space_break >> check_indent_match >> space >> from_import_name_list_line), pop_indent);
+	FromImport = key("from") >> space >> (ImportLiteral | not_(String) >> Exp) >> *space_break >> space >> key("import") >> space >> Seperator >> (from_import_name_list_line >> -(space >> ',') >> -from_import_name_in_block | from_import_name_in_block);
 
 	ImportLiteralInner = (range('a', 'z') | range('A', 'Z') | set("_-") | larger(255)) >> *(alpha_num | '-' | larger(255));
 	import_literal_chain = Seperator >> ImportLiteralInner >> *('.' >> ImportLiteralInner);
@@ -653,6 +655,14 @@ YueParser::YueParser() {
 		SpreadExp |
 		NormalDef;
 
+	table_value_list = table_value >> *(space >> ',' >> space >> table_value);
+
+	table_lit_line = (
+		push_indent_match >> (space >> table_value_list >> pop_indent | pop_indent)
+	) | (
+		space
+	);
+
 	table_lit_lines = space_break >> table_lit_line >> *(-(space >> ',') >> space_break >> table_lit_line) >> -(space >> ',');
 
 	TableLit =
@@ -661,14 +671,6 @@ YueParser::YueParser() {
 		-(space >> ',') >>
 		-table_lit_lines >>
 		white >> '}';
-
-	table_value_list = table_value >> *(space >> ',' >> space >> table_value);
-
-	table_lit_line = (
-		push_indent_match >> (space >> table_value_list >> pop_indent | pop_indent)
-	) | (
-		space
-	);
 
 	table_block_inner = Seperator >> key_value_line >> *(+space_break >> key_value_line);
 	TableBlock = +space_break >> advance_match >> ensure(table_block_inner, pop_indent);

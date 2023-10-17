@@ -113,6 +113,22 @@ do
 	local a, b, c = z.a, z.b, z.c
 end
 do
+	local Object, GameObject, Transform, MonoBehaviour, Vector3, Quaternion = UnityEngine.Object, UnityEngine.GameObject, UnityEngine.Transform, UnityEngine.MonoBehaviour, UnityEngine.Vector3, UnityEngine.Quaternion
+	local speed = 10
+end
+do
+	local Object, GameObject, Transform, MonoBehaviour, Vector3, Quaternion = UnityEngine.Object, UnityEngine.GameObject, UnityEngine.Transform, UnityEngine.MonoBehaviour, UnityEngine.Vector3, UnityEngine.Quaternion
+	local speed = 10
+end
+do
+	local Object, GameObject, Transform, MonoBehaviour, Vector3, Quaternion = UnityEngine.Object, UnityEngine.GameObject, UnityEngine.Transform, UnityEngine.MonoBehaviour, UnityEngine.Vector3, UnityEngine.Quaternion
+	update(speed)
+end
+do
+	local Object, GameObject, Transform, MonoBehaviour, Vector3, Quaternion = UnityEngine.Object, UnityEngine.GameObject, UnityEngine.Transform, UnityEngine.MonoBehaviour, UnityEngine.Vector3, UnityEngine.Quaternion
+	update(speed)
+end
+do
 	local module = require('module')
 	local module_x = require('module_x')
 	local d_a_s_h_e_s = require("d-a-s-h-e-s")

@@ -76,6 +76,42 @@ do
 		c
 
 do
+	from UnityEngine import Object
+		GameObject
+		Transform
+		MonoBehaviour
+		Vector3
+		Quaternion
+
+	speed = 10
+
+do
+	from UnityEngine import Object, GameObject,
+		Transform
+		MonoBehaviour
+		Vector3
+		Quaternion
+
+	speed = 10
+
+do
+	from UnityEngine import Object, GameObject,
+		Transform,
+		MonoBehaviour
+		Vector3, Quaternion
+
+	update speed
+
+do
+	from UnityEngine import
+		Object, GameObject,
+		Transform,
+		MonoBehaviour
+		Vector3, Quaternion
+
+	update speed
+
+do
 	import 'module'
 	import 'module_x'
 	import "d-a-s-h-e-s"

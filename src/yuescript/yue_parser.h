@@ -177,6 +177,8 @@ private:
 	NONE_AST_RULE(in_block);
 	NONE_AST_RULE(import_name);
 	NONE_AST_RULE(import_name_list);
+	NONE_AST_RULE(from_import_name_list_line);
+	NONE_AST_RULE(from_import_name_in_block);
 	NONE_AST_RULE(import_literal_chain);
 	NONE_AST_RULE(import_tab_item);
 	NONE_AST_RULE(import_tab_list);
