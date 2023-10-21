@@ -416,47 +416,47 @@ Note the evaluation behavior of chained comparisons:
 
 ```moonscript
 v = (x)->
-   print x
-   x
+	print x
+	x
 
 print v(1) < v(2) <= v(3)
 --[[
-   output:
-   2
-   1
-   3
-   true
+	output:
+	2
+	1
+	3
+	true
 ]]
 
 print v(1) > v(2) <= v(3)
 --[[
-   output:
-   2
-   1
-   false
+	output:
+	2
+	1
+	false
 ]]
 ```
 <YueDisplay>
 <pre>
 v = (x)->
-   print x
-   x
+	print x
+	x
 
 print v(1) < v(2) <= v(3)
 --[[
-   output:
-   2
-   1
-   3
-true
+	output:
+	2
+	1
+	3
+	true
 ]]
 
 print v(1) > v(2) <= v(3)
 --[[
-   output:
-   2
-   1
-   false
+	output:
+	2
+	1
+	false
 ]]
 </pre>
 </YueDisplay>

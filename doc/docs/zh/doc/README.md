@@ -413,47 +413,47 @@ print 1 <= a <= 10
 
 ```moonscript
 v = (x)->
-   print x
-   x
+	print x
+	x
 
 print v(1) < v(2) <= v(3)
 --[[
-   输出：
-   2
-   1
-   3
-   true
+	输出：
+	2
+	1
+	3
+	true
 ]]
 
 print v(1) > v(2) <= v(3)
 --[[
-   输出：
-   2
-   1
-   false
+	输出：
+	2
+	1
+	false
 ]]
 ```
 <YueDisplay>
 <pre>
 v = (x)->
-   print x
-   x
+	print x
+	x
 
 print v(1) < v(2) <= v(3)
 --[[
-   输出：
-   2
-   1
-   3
-   true
+	输出：
+	2
+	1
+	3
+	true
 ]]
 
 print v(1) > v(2) <= v(3)
 --[[
-   输出：
-   2
-   1
-   false
+	输出：
+	2
+	1
+	false
 ]]
 </pre>
 </YueDisplay>
