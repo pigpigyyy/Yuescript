@@ -2,10 +2,20 @@ f((function()
 	local _val_0 = -a ^ 2
 	return 1 == _val_0 or 2 == _val_0 or 3 == _val_0
 end)())
+f((function()
+	local _val_0 = -a ^ 2
+	return 1 == _val_0 or 2 == _val_0 or 3 == _val_0
+end)())
 local has
 do
 	local _val_0 = "foo"
 	has = "bar" == _val_0 or "foo" == _val_0
+end
+if (1 == a) and (function()
+	local _val_0 = b
+	return 2 == _val_0 or 3 == _val_0 or 4 == _val_0
+end)() then
+	print(a, b, c)
 end
 if (1 == a) and (function()
 	local _val_0 = b
@@ -71,6 +81,11 @@ do
 		2,
 		3
 	}
+	list = {
+		1,
+		2,
+		3
+	}
 	local not_exist
 	do
 		local _find_0 = false
@@ -91,6 +106,7 @@ do
 		end
 		return false
 	end)()))
+	check((1 == item or 2 == item or 3 == item))
 	check((1 == item or 2 == item or 3 == item))
 	check((function(...)
 		local _check_0 = {
