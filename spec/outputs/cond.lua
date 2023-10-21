@@ -345,4 +345,21 @@ do
 		v = 2
 	end
 end
+do
+	local condChain = 1 < 2 and 2 <= 2 and 2 < 3 and 3 == 3 and 3 > 2 and 2 >= 1 and 1 == 1 and 1 < 3 and 3 ~= 5
+	local v
+	v = function(x)
+		print(x)
+		return x
+	end
+	local evaluation
+	do
+		local _cond_0 = v(2)
+		evaluation = v(1) < _cond_0 and _cond_0 <= v(3)
+	end
+	do
+		local _cond_0 = v(2)
+		evaluation = v(1) > _cond_0 and _cond_0 <= v(3)
+	end
+end
 return nil

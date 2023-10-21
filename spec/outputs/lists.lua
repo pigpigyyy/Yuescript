@@ -273,10 +273,73 @@ for _index_0 = 1, #test do
 	local thing = test[_index_0]
 	print(thing)
 end
-return function()
+_ = function()
 	local _list_0 = rows
 	for _index_0 = 1, #_list_0 do
 		local row = _list_0[_index_0]
 		a = b
 	end
 end
+do
+	local _with_0 = tb
+	f(_with_0[a])
+	f({
+		a
+	})
+	local _list_0 = f
+	for _index_0 = a, #_list_0 do
+		local v = _list_0[_index_0]
+		print(v)
+	end
+	f({ })
+	do
+		local _obj_0 = f
+		_obj_0[#_obj_0 + 1] = x
+	end
+	_with_0[a] = x
+	a = x[1]
+	_with_0[#_with_0 + 1] = x
+	do
+		local _check_0 = _with_0[1]
+		local _find_0 = false
+		for _index_0 = 1, #_check_0 do
+			local _item_0 = _check_0[_index_0]
+			if _item_0 == a then
+				_find_0 = true
+				break
+			end
+		end
+		c = _find_0
+	end
+	c = (1 == a)
+	c = (1 == a)
+	do
+		local _check_0 = {
+			1
+		}
+		local _find_0 = false
+		for _index_0 = 1, #_check_0 do
+			local _item_0 = _check_0[_index_0]
+			if _item_0 == a then
+				_find_0 = true
+				break
+			end
+		end
+		c = _find_0
+	end
+end
+do
+	a, b = hello[1], hello[2]
+	local name, job
+	do
+		local _obj_0 = person
+		name, job = _obj_0[1], _obj_0[2]
+		if name == nil then
+			name = "nameless"
+		end
+		if job == nil then
+			job = "jobless"
+		end
+	end
+end
+return nil

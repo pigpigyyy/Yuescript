@@ -109,6 +109,11 @@ YueParser::YueParser() {
 		return false;
 	});
 
+	table_key_pair_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("can not put hash pair in a list"sv, item.begin);
+		return false;
+	});
+
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
 	#define key(str) (expr(str) >> not_alpha_num)
@@ -342,7 +347,7 @@ YueParser::YueParser() {
 	with_exp = ExpList >> -(space >> Assign);
 
 	With = key("with") >> -ExistentialOp >> space >> disable_do_chain_arg_table_block_rule(with_exp) >> space >> body_with("do");
-	SwitchCase = key("when") >> space >> (disable_chain_rule(disable_arg_table_block_rule(SwitchList)) | In) >> space >> body_with("then");
+	SwitchCase = key("when") >> space >> disable_chain_rule(disable_arg_table_block_rule(SwitchList)) >> space >> body_with("then");
 	switch_else = key("else") >> space >> body;
 
 	switch_block =
@@ -449,7 +454,37 @@ YueParser::YueParser() {
 	CatchBlock = line_break >> *space_break >> check_indent_match >> space >> key("catch") >> space >> Variable >> space >> in_block;
 	Try = key("try") >> space >> (in_block | Exp) >> -CatchBlock;
 
-	Comprehension = '[' >> not_('[') >> space >> disable_for_rule(Exp) >> space >> CompInner >> space >> ']';
+	list_value =
+		and_(
+			VariablePairDef |
+			NormalPairDef |
+			MetaVariablePairDef |
+			MetaNormalPairDef
+		) >> table_key_pair_error |
+		SpreadListExp |
+		NormalDef;
+
+	list_value_list = +(space >> ',' >> space >> list_value);
+
+	list_lit_line = (
+		push_indent_match >> (space >> list_value >> -list_value_list >> pop_indent | pop_indent)
+	) | (
+		space
+	);
+
+	list_lit_lines = space_break >> list_lit_line >> *(-(space >> ',') >> space_break >> list_lit_line) >> -(space >> ',');
+
+	Comprehension = '[' >> not_('[') >>
+		Seperator >> space >> (
+			disable_for_rule(list_value) >> space >> (
+				CompInner >> space >> ']' |
+				(list_value_list >> -(space >> ',') | space >> ',')  >> -list_lit_lines >> white >> ']'
+			) |
+			list_lit_lines >> white >> ']' |
+			white >> ']' >> not_(space >> '=')
+		);
+
+	(space >> disable_for_rule(Exp) >> space >> CompInner >> space >> ']');
 	CompValue = ',' >> space >> Exp;
 	TblComprehension = and_('{') >> ('{' >> space >> disable_for_rule(Exp >> space >> -(CompValue >> space)) >> CompInner >> space >> '}' | braces_expression_error);
 
@@ -479,12 +514,11 @@ YueParser::YueParser() {
 	expo_value = exponential_operator >> *space_break >> space >> Value;
 	expo_exp = Value >> *(space >> expo_value);
 
-	InRangeOpen = true_();
-	InRangeClose = true_();
 	NotIn = true_();
-	InRange = ('(' >> InRangeOpen | '[' >> InRangeClose) >> space >> Exp >> space >> ',' >> space >> Exp >> space >> (')' >> InRangeOpen | ']' >> InRangeClose);
-	InDiscrete = '{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab) >> space >> '}';
-	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InRange | InDiscrete | and_(key("not")) >> confusing_unary_not_error | Exp);
+	InDiscrete =
+		'[' >> Seperator >> space >> exp_not_tab >> (+(space >> ',' >> space >> exp_not_tab) | space >> ',') >> space >> ']' |
+		'{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab) >> space >> '}';
+	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InDiscrete | and_(key("not")) >> confusing_unary_not_error | Exp);
 
 	UnaryOperator =
 		'-' >> not_(set(">=") | space_one) |
@@ -635,7 +669,7 @@ YueParser::YueParser() {
 		space >> ',' >>
 		space >> (Exp | DefaultValue) >>
 		space >> (',' >> space >> Exp | DefaultValue) >>
-		space >> ']';
+		space >> (']' | slice_expression_error);
 
 	Invoke = Seperator >> (
 		fn_args |
@@ -646,6 +680,7 @@ YueParser::YueParser() {
 	);
 
 	SpreadExp = "..." >> space >> Exp;
+	SpreadListExp = "..." >> space >> Exp;
 
 	table_value =
 		VariablePairDef |
@@ -667,8 +702,7 @@ YueParser::YueParser() {
 
 	TableLit =
 		space >> '{' >> Seperator >>
-		-(space >> table_value_list) >>
-		-(space >> ',') >>
+		-(space >> table_value_list >> -(space >> ',')) >>
 		-table_lit_lines >>
 		white >> '}';
 
@@ -834,7 +868,7 @@ YueParser::YueParser() {
 	});
 
 	InvokeArgs =
-		not_(set("-~")) >> space >> Seperator >> (
+		not_(set("-~") | "[]") >> space >> Seperator >> (
 			Exp >> *(space >> ',' >> space >> Exp) >> -(space >> invoke_args_with_table) |
 			arg_table_block |
 			leading_spaces_error
@@ -849,6 +883,11 @@ YueParser::YueParser() {
 
 	brackets_expression_error = pl::user(true_(), [](const item_t& item) {
 		throw ParserError("syntax error in bracket expression"sv, item.begin);
+		return false;
+	});
+
+	slice_expression_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("syntax error in slice expression"sv, item.begin);
 		return false;
 	});
 

@@ -351,4 +351,21 @@ do
 		_u53d8_u91cfv = 2
 	end
 end
+do
+	local _u94fe_u5f0f_u6bd4_u8f83 = 1 < 2 and 2 <= 2 and 2 < 3 and 3 == 3 and 3 > 2 and 2 >= 1 and 1 == 1 and 1 < 3 and 3 ~= 5
+	local _u503c
+	_u503c = function(_u8f93_u5165)
+		_u6253_u5370(_u8f93_u5165)
+		return _u8f93_u5165
+	end
+	local _u6c42_u503c
+	do
+		local _cond_0 = _u503c(2)
+		_u6c42_u503c = _u503c(1) < _cond_0 and _cond_0 <= _u503c(3)
+	end
+	do
+		local _cond_0 = _u503c(2)
+		_u6c42_u503c = _u503c(1) > _cond_0 and _cond_0 <= _u503c(3)
+	end
+end
 return nil

@@ -78,6 +78,8 @@ class InvokeArgs_t;
 class TableBlockIndent_t;
 class Macro_t;
 class In_t;
+class NormalDef_t;
+class SpreadListExp_t;
 } // namespace yue
 
 AST_LEAF(Num)
@@ -286,7 +288,7 @@ AST_NODE(SwitchList)
 AST_END(SwitchList, "switch_list"sv)
 
 AST_NODE(SwitchCase)
-	ast_sel<true, SwitchList_t, In_t> condition;
+	ast_ptr<true, SwitchList_t> condition;
 	ast_sel<true, Block_t, Statement_t> body;
 	AST_MEMBER(SwitchCase, &condition, &body)
 AST_END(SwitchCase, "switch_case"sv)
@@ -374,9 +376,10 @@ AST_NODE(Try)
 AST_END(Try, "try"sv)
 
 AST_NODE(Comprehension)
-	ast_sel<true, Exp_t, /*non-syntax-rule*/ Statement_t> value;
-	ast_ptr<true, CompInner_t> forLoop;
-	AST_MEMBER(Comprehension, &value, &forLoop)
+	ast_ptr<true, Seperator_t> sep;
+	ast_sel_list<false, NormalDef_t, SpreadListExp_t, CompInner_t,
+		/*non-syntax-rule*/ Statement_t> items;
+	AST_MEMBER(Comprehension, &sep, &items)
 AST_END(Comprehension, "comp"sv)
 
 AST_NODE(CompValue)
@@ -437,22 +440,8 @@ AST_END(BinaryOperator, "binary_op"sv)
 AST_LEAF(UnaryOperator)
 AST_END(UnaryOperator, "unary_op"sv)
 
-AST_LEAF(InRangeOpen)
-AST_END(InRangeOpen, "in_range_open"sv)
-
-AST_LEAF(InRangeClose)
-AST_END(InRangeClose, "in_range_close"sv)
-
 AST_LEAF(NotIn)
 AST_END(NotIn, "not_in"sv)
-
-AST_NODE(InRange)
-	ast_sel<true, InRangeOpen_t, InRangeClose_t> open;
-	ast_ptr<true, Exp_t> openValue;
-	ast_ptr<true, Exp_t> closeValue;
-	ast_sel<true, InRangeOpen_t, InRangeClose_t> close;
-	AST_MEMBER(InRange, &open, &openValue, &closeValue, &close)
-AST_END(InRange, "in_range"sv)
 
 AST_NODE(InDiscrete)
 	ast_ptr<true, Seperator_t> sep;
@@ -462,7 +451,7 @@ AST_END(InDiscrete, "in_discrete"sv)
 
 AST_NODE(In)
 	ast_ptr<false, NotIn_t> not_;
-	ast_sel<true, InRange_t, InDiscrete_t, Exp_t> item;
+	ast_sel<true, InDiscrete_t, Exp_t> item;
 	AST_MEMBER(In, &not_, &item)
 AST_END(In, "in"sv)
 
@@ -666,6 +655,11 @@ AST_NODE(SpreadExp)
 	AST_MEMBER(SpreadExp, &exp)
 AST_END(SpreadExp, "spread_exp"sv)
 
+AST_NODE(SpreadListExp)
+	ast_ptr<true, Exp_t> exp;
+	AST_MEMBER(SpreadListExp, &exp)
+AST_END(SpreadListExp, "spread_list_exp"sv)
+
 AST_NODE(TableLit)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<false,
@@ -673,7 +667,7 @@ AST_NODE(TableLit)
 		MetaVariablePairDef_t, MetaNormalPairDef_t,
 		VariablePair_t, NormalPair_t, Exp_t,
 		MetaVariablePair_t, MetaNormalPair_t,
-		/*non-syntax-rule*/ TableBlockIndent_t> values;
+		/*non-syntax-rule*/ TableBlockIndent_t, SpreadListExp_t> values;
 	AST_MEMBER(TableLit, &sep, &values)
 AST_END(TableLit, "table_lit"sv)
 

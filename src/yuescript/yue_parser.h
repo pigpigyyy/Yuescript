@@ -136,9 +136,11 @@ private:
 	NONE_AST_RULE(indentation_error);
 	NONE_AST_RULE(braces_expression_error);
 	NONE_AST_RULE(brackets_expression_error);
+	NONE_AST_RULE(slice_expression_error);
 	NONE_AST_RULE(export_expression_error);
 	NONE_AST_RULE(invalid_interpolation_error);
 	NONE_AST_RULE(confusing_unary_not_error);
+	NONE_AST_RULE(table_key_pair_error);
 
 	NONE_AST_RULE(inc_exp_level);
 	NONE_AST_RULE(dec_exp_level);
@@ -202,6 +204,10 @@ private:
 	NONE_AST_RULE(for_key);
 	NONE_AST_RULE(for_args);
 	NONE_AST_RULE(for_in);
+	NONE_AST_RULE(list_value);
+	NONE_AST_RULE(list_value_list);
+	NONE_AST_RULE(list_lit_line);
+	NONE_AST_RULE(list_lit_lines);
 	NONE_AST_RULE(comp_clause);
 	NONE_AST_RULE(chain);
 	NONE_AST_RULE(chain_list);
@@ -352,6 +358,7 @@ private:
 	AST_RULE(ExistentialOp);
 	AST_RULE(TableAppendingOp);
 	AST_RULE(SpreadExp);
+	AST_RULE(SpreadListExp);
 	AST_RULE(TableLit);
 	AST_RULE(TableBlock);
 	AST_RULE(TableBlockIndent);
@@ -388,10 +395,7 @@ private:
 	AST_RULE(ConstValue);
 	AST_RULE(UnaryValue);
 	AST_RULE(UnaryExp);
-	AST_RULE(InRangeOpen);
-	AST_RULE(InRangeClose);
 	AST_RULE(NotIn);
-	AST_RULE(InRange);
 	AST_RULE(InDiscrete);
 	AST_RULE(In);
 	AST_RULE(ExpListAssign);

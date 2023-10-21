@@ -2,41 +2,16 @@ _u51fd_u6570((function()
 	local _val_0 = -_u53d8_u91cfa ^ 2
 	return 1 == _val_0 or 2 == _val_0 or 3 == _val_0
 end)())
-local _u53d8_u91cfa, _u53d8_u91cfb = (function(...)
-	local _val_0 = _u51fd_u6570x(...)
-	return not (1 <= _val_0 and _val_0 <= 3)
-end)(...), 2
-local _u53d8_u91cfd
-do
-	local _val_0 = (_u5bf9_u8c61["字段x"]["字段y"](...))
-	_u53d8_u91cfd = not (1 <= _val_0 and _val_0 <= 3)
-end
 local _u5728_u7684
 do
 	local _val_0 = "东"
 	_u5728_u7684 = "东" == _val_0 or "西" == _val_0
 end
-if (1 == _u53d8_u91cfa) and (2 == _u53d8_u91cfb or 3 == _u53d8_u91cfb or 4 == _u53d8_u91cfb) or (function()
-	local _val_0 = _u53d8_u91cfc
-	return 1 <= _val_0 and _val_0 <= 10
+if (1 == _u53d8_u91cfa) and (function()
+	local _val_0 = _u53d8_u91cfb
+	return 2 == _val_0 or 3 == _val_0 or 4 == _val_0
 end)() then
 	_u6253_u5370(_u53d8_u91cfa, _u53d8_u91cfb, _u53d8_u91cfc)
-end
-do
-	local _exp_0 = _u503c
-	if 1 == _exp_0 or 2 == _exp_0 or 3 == _exp_0 then
-		_u6253_u5370("1, 2, 3")
-	elseif not (0 < _exp_0 and _exp_0 <= 100) then
-		_u6253_u5370("非 (0 < 值 <= 100)")
-	elseif (200 <= _exp_0 and _exp_0 < 300) then
-		_u6253_u5370("200 <= 值 < 300)")
-	elseif not (333 == _exp_0 or 444 == _exp_0 or 555 == _exp_0) then
-		_u6253_u5370("非 333, 444 或 555")
-	end
-end
-do
-	local _val_0 = _u53d8_u91cfy
-	return not (_u5f00_u59cb < _val_0 and _val_0 < _u7ed3_u675f)
 end
 do
 	local _u5b58_u5728

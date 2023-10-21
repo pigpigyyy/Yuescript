@@ -389,6 +389,80 @@ tb::func! if tb != nil
 </pre>
 </YueDisplay>
 
+### Chaining Comparisons
+
+Comparisons can be arbitrarily chained:
+
+```moonscript
+print 1 < 2 <= 2 < 3 == 3 > 2 >= 1 == 1 < 3 != 5
+-- output: true
+
+a = 5
+print 1 <= a <= 10
+-- output: true
+```
+<YueDisplay>
+<pre>
+print 1 < 2 <= 2 < 3 == 3 > 2 >= 1 == 1 < 3 != 5
+-- output: true
+
+a = 5
+print 1 <= a <= 10
+-- output: true
+</pre>
+</YueDisplay>
+
+Note the evaluation behavior of chained comparisons:
+
+```moonscript
+v = (x)->
+   print x
+   x
+
+print v(1) < v(2) <= v(3)
+--[[
+   output:
+   2
+   1
+   3
+   true
+]]
+
+print v(1) > v(2) <= v(3)
+--[[
+   output:
+   2
+   1
+   false
+]]
+```
+<YueDisplay>
+<pre>
+v = (x)->
+   print x
+   x
+
+print v(1) < v(2) <= v(3)
+--[[
+   output:
+   2
+   1
+   3
+true
+]]
+
+print v(1) > v(2) <= v(3)
+--[[
+   output:
+   2
+   1
+   false
+]]
+</pre>
+</YueDisplay>
+
+The middle expression is only evaluated once, rather than twice as it would be if the expression were written as `v(1) < v(2) and v(2) <= v(3)`. However, the order of evaluations in a chained comparison is undefined. It is strongly recommended not to use expressions with side effects (such as printing) in chained comparisons. If side effects are required, the short-circuit `and` operator should be used explicitly.
+
 ### Table Appending
 The **[] =** operator is used to append values to tables.
 
@@ -984,17 +1058,17 @@ Typically when you see a table literal, {1,2,3}, it is on the right hand side of
 This is best explained with examples. Here is how you would unpack the first two values from a table:
 
 ```moonscript
-thing = {1, 2}
+thing = [1, 2]
 
-{a, b} = thing
+[a, b] = thing
 print a, b
 ```
 <YueDisplay>
 
 <pre>
-thing = {1, 2}
+thing = [1, 2]
 
-{a, b} = thing
+[a, b] = thing
 print a, b
 </pre>
 </YueDisplay>
@@ -1921,6 +1995,19 @@ t = {
 </pre>
 </YueDisplay>
 
+Lua tables have both an array part and a hash part, but sometimes you want to make a semantic distinction between array and hash usage when writing Lua tables. Then you can write Lua table with **[ ]** instead of **{ }** to represent an array table and writing any key value pair in a list table won't be allowed.
+
+```moonscript
+some_values = [ 1, 2, 3, 4 ]
+list_with_one_element = [ 1, ]
+```
+<YueDisplay>
+<pre>
+some_values = [ 1, 2, 3, 4 ]
+list_with_one_element = [ 1, ]
+</pre>
+</YueDisplay>
+
 ## Comprehensions
 
 Comprehensions provide a convenient syntax for constructing a new table by iterating over some existing object and applying an expression to its values. There are two kinds of comprehensions: list comprehensions and table comprehensions. They both produce Lua tables; list comprehensions accumulate values into an array-like table, and table comprehensions let you set both the key and the value on each iteration.
@@ -1930,12 +2017,12 @@ Comprehensions provide a convenient syntax for constructing a new table by itera
 The following creates a copy of the items table but with all the values doubled.
 
 ```moonscript
-items = { 1, 2, 3, 4 }
+items = [ 1, 2, 3, 4 ]
 doubled = [item * 2 for i, item in ipairs items]
 ```
 <YueDisplay>
 <pre>
-items = { 1, 2, 3, 4 }
+items = [ 1, 2, 3, 4 ]
 doubled = [item * 2 for i, item in ipairs items]
 </pre>
 </YueDisplay>
@@ -1969,18 +2056,18 @@ The for and when clauses can be chained as much as desired. The only requirement
 Using multiple for clauses is the same as using nested loops:
 
 ```moonscript
-x_coords = {4, 5, 6, 7}
-y_coords = {9, 2, 3}
+x_coords = [4, 5, 6, 7]
+y_coords = [9, 2, 3]
 
-points = [{x, y} for x in *x_coords \
+points = [ [x, y] for x in *x_coords \
 for y in *y_coords]
 ```
 <YueDisplay>
 <pre>
-x_coords = {4, 5, 6, 7}
-y_coords = {9, 2, 3}
+x_coords = [4, 5, 6, 7]
+y_coords = [9, 2, 3]
 
-points = [{x, y} for x in *x_coords \
+points = [ [x, y] for x in *x_coords \
 for y in *y_coords]
 </pre>
 </YueDisplay>
@@ -2035,12 +2122,12 @@ no_color = {k, v for k, v in pairs thing when k != "color"}
 The **\*** operator is also supported. Here we create a square root look up table for a few numbers.
 
 ```moonscript
-numbers = {1, 2, 3, 4}
+numbers = [1, 2, 3, 4]
 sqrts = {i, math.sqrt i for i in *numbers}
 ```
 <YueDisplay>
 <pre>
-numbers = {1, 2, 3, 4}
+numbers = [1, 2, 3, 4]
 sqrts = {i, math.sqrt i for i in *numbers}
 </pre>
 </YueDisplay>
@@ -2405,15 +2492,6 @@ You can write range checking code with an `in-expression`.
 ```moonscript
 a = 5
 
-if a in [1, 10]
-  print "a is in range from 1 to 10"
-
-if a not in [1, 10]
-  print "a is not in range from 1 to 10"
-
-if a in (0, 11)
-  print "a is between 0 and 11 with open intervals"
-
 if a in {1, 3, 5, 7}
   print "checking equality with discrete values"
 
@@ -2423,15 +2501,6 @@ if a in list
 <YueDisplay>
 <pre>
 a = 5
-
-if a in [1, 10]
-  print "a is in range from 1 to 10"
-
-if a not in [1, 10]
-  print "a is not in range from 1 to 10"
-
-if a in (0, 11)
-  print "a is between 0 and 11 with open intervals"
 
 if a in {1, 3, 5, 7}
   print "checking equality with discrete values"
@@ -2646,53 +2715,6 @@ item = {}
 switch item
   when {pos: {:x = 50, :y = 200}}
     print "Vec2 #{x}, #{y}" -- table destructuring will still pass
-</pre>
-</YueDisplay>
-
-### Range Matching
-
-You can do range matching in a switch when clause using `In` expressions.
-
-```moonscript
-value = 5
-
-switch item
-  -- range checking with closed interval
-  when in [1, 3]
-    print "1 <= value <= 3"
-
-  -- range checking with open and closed interval
-  when in (6, 8]
-    print "6 < value <= 8"
-
-  -- not in range checking
-  when not in [1, 10)
-    print "not (1 <= value < 10)"
-
-  -- checking discrete values
-  when in {11, 21, 99}
-    print "value is 11, 21 or 99"
-```
-<YueDisplay>
-<pre>
-value = 5
-
-switch item
-  -- range checking with closed interval
-  when in [1, 3]
-    print "1 <= value <= 3"
-
-  -- range checking with open and closed interval
-  when in (6, 8]
-    print "6 < value <= 8"
-
-  -- not in range checking
-  when not in [1, 10)
-    print "not (1 <= value < 10)"
-
-  -- checking discrete values
-  when in {11, 21, 99}
-    print "value is 11, 21 or 99"
 </pre>
 </YueDisplay>
 

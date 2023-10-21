@@ -182,12 +182,6 @@ std::string ConstValue_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	return info->convert(this);
 }
-std::string InRangeOpen_t::to_string(void*) const {
-	return {};
-}
-std::string InRangeClose_t::to_string(void*) const {
-	return {};
-}
 std::string NotIn_t::to_string(void*) const {
 	return {};
 }
@@ -569,8 +563,18 @@ std::string Try_t::to_string(void* ud) const {
 	return join(temp, "\n"sv);
 }
 std::string Comprehension_t::to_string(void* ud) const {
-	auto valueStr = value->to_string(ud);
-	return '[' + (valueStr[0] == '[' ? " "s : ""s) + valueStr + ' ' + forLoop->to_string(ud) + ']';
+	str_list temp;
+	for (const auto& item : items.objects()) {
+		temp.push_back(item->to_string(ud));
+	}
+	if (temp.size() > 0) {
+		temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
+	}
+	if (items.size() != 2 || !ast_is<CompInner_t>(items.back())) {
+		return '[' + join(temp, ", "sv) + ']';
+	} else {
+		return '[' + join(temp, " "sv) + ']';
+	}
 }
 std::string CompValue_t::to_string(void* ud) const {
 	return value->to_string(ud);
@@ -828,6 +832,9 @@ std::string Invoke_t::to_string(void* ud) const {
 	}
 }
 std::string SpreadExp_t::to_string(void* ud) const {
+	return "..."s + exp->to_string(ud);
+}
+std::string SpreadListExp_t::to_string(void* ud) const {
 	return "..."s + exp->to_string(ud);
 }
 std::string TableLit_t::to_string(void* ud) const {
@@ -1167,10 +1174,6 @@ std::string UnaryExp_t::to_string(void* ud) const {
 		line += ' ' + inExp->to_string(ud);
 	}
 	return line;
-}
-std::string InRange_t::to_string(void* ud) const {
-	auto valueStr = openValue->to_string(ud);
-	return (open.is<InRangeOpen_t>() ? "("s : "["s + (valueStr[0] == '[' ? " "s : ""s)) + valueStr + ", "s + closeValue->to_string(ud) + (close.is<InRangeOpen_t>() ? ')' : ']');
 }
 std::string InDiscrete_t::to_string(void* ud) const {
 	str_list temp;

@@ -67,6 +67,24 @@ normal = (hello) ->
 test = x 1,2,3,4,5
 print thing for thing in *test
 
--> a = b for row in *rows
+_ = -> a = b for row in *rows
 
+with tb
+	f [a] -- indexing
+	f [a,] -- list with one element
+	print v for v in *f[a,] -- table slicing in for-loop
+	f [] -- empty list
+	f[] = x -- table appending to f
+	[a] = x -- assign to tb[a]
+	[a,] = x -- list destructuring for x
+	[] = x -- table appending to tb
+	c = a in [1] -- check if a in tb[1]
+	c = a in [1,] -- check if a == 1
+	c = a in {1} -- check if a == 1
+	c = a in {1,} -- check if a == 1
 
+do
+	[a, b] = hello
+	[name = "nameless", job = "jobless"] = person
+
+nil

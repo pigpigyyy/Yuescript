@@ -40,6 +40,8 @@ ya = { 1,2,3, key: 100, 343, "hello", umm: 232 }
 x = { 1,2,
 	4343, 343 ,343 }
 
+x = [ 1,2,
+	4343, 343 ,343 ]
 
 g, p = {
 	1,2, nowy: "yes", 3,4,
@@ -51,6 +53,12 @@ annother = {
 	3,4,5
 	6,7,8
 }
+
+annother = [
+	1,2,3
+	3,4,5
+	6,7,8
+]
 
 yeah = {
 	[232]: 3434, "helo"
@@ -255,12 +263,24 @@ tbMixA = {
 	11
 }
 
+tbMixA = [
+	...[i for i = 1, 10]
+	11
+]
+
 tbMixB = {
 	... ... -- only the first item in vararg been accessed here
 	... {...}
 	... {......}
 	1, 2, 3
 }
+
+tbMixB = [
+	... ... -- only the first item in vararg been accessed here
+	... {...}
+	... {......}
+	1, 2, 3
+]
 
 const template = {
 	foo: "Hello"

@@ -226,6 +226,17 @@ do
 	else
 		2
 
+do
+	condChain = 1 < 2 <= 2 < 3 == 3 > 2 >= 1 == 1 < 3 != 5
+
+	v = (x)->
+		print x
+		x
+
+	evaluation = v(1) < v(2) <= v(3)
+
+	evaluation = v(1) > v(2) <= v(3)
+
 nil
 
 
