@@ -40,7 +40,7 @@ ya = { 1,2,3, key: 100, 343, "hello", umm: 232 }
 x = { 1,2,
 	4343, 343 ,343 }
 
-x = [ 1,2,
+x1 = [ 1,2,
 	4343, 343 ,343 ]
 
 g, p = {
@@ -258,24 +258,24 @@ tbMix = {
 	... -- perform the Lua table behavior here
 }
 
-tbMixA = {
+do tbMixA = {
 	...[i for i = 1, 10]
 	11
 }
 
-tbMixA = [
+do tbMixA = [
 	...[i for i = 1, 10]
 	11
 ]
 
-tbMixB = {
+do tbMixB = {
 	... ... -- only the first item in vararg been accessed here
 	... {...}
 	... {......}
 	1, 2, 3
 }
 
-tbMixB = [
+do tbMixB = [
 	... ... -- only the first item in vararg been accessed here
 	... {...}
 	... {......}

@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.1"sv;
+const std::string_view version = "0.20.2"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1976,10 +1976,15 @@ private:
 				return;
 			}
 			case id<Comprehension_t>(): {
+				auto comp = static_cast<Comprehension_t*>(value);
 				auto expList = assignment->expList.get();
-				std::string preDefine = getPreDefineLine(assignment);
-				transformComprehension(static_cast<Comprehension_t*>(value), out, ExpUsage::Assignment, expList);
-				out.back().insert(0, preDefine);
+				if (comp->items.size() == 2 && ast_is<CompInner_t>(comp->items.back())) {
+					std::string preDefine = getPreDefineLine(assignment);
+					transformComprehension(comp, out, ExpUsage::Assignment, expList);
+					out.back().insert(0, preDefine);
+				} else {
+					transformComprehension(comp, out, ExpUsage::Assignment, expList);
+				}
 				return;
 			}
 			case id<TblComprehension_t>(): {

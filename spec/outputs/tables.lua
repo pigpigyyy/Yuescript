@@ -52,7 +52,7 @@ local x = {
 	343,
 	343
 }
-x = {
+local x1 = {
 	1,
 	2,
 	4343,
@@ -428,149 +428,159 @@ do
 	end
 	tbMix = _tab_0
 end
-local tbMixA
 do
-	local _tab_0 = { }
-	local _obj_0
+	local tbMixA
 	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		for i = 1, 10 do
-			_accum_0[_len_0] = i
-			_len_0 = _len_0 + 1
+		local _tab_0 = { }
+		local _obj_0
+		do
+			local _accum_0 = { }
+			local _len_0 = 1
+			for i = 1, 10 do
+				_accum_0[_len_0] = i
+				_len_0 = _len_0 + 1
+			end
+			_obj_0 = _accum_0
 		end
-		_obj_0 = _accum_0
-	end
-	local _idx_0 = 1
-	for _key_0, _value_0 in pairs(_obj_0) do
-		if _idx_0 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
-			_idx_0 = _idx_0 + 1
-		else
-			_tab_0[_key_0] = _value_0
+		local _idx_0 = 1
+		for _key_0, _value_0 in pairs(_obj_0) do
+			if _idx_0 == _key_0 then
+				_tab_0[#_tab_0 + 1] = _value_0
+				_idx_0 = _idx_0 + 1
+			else
+				_tab_0[_key_0] = _value_0
+			end
 		end
+		_tab_0[#_tab_0 + 1] = 11
+		tbMixA = _tab_0
 	end
-	_tab_0[#_tab_0 + 1] = 11
-	tbMixA = _tab_0
 end
 do
-	local _tab_0 = { }
-	local _obj_0
+	local tbMixA
 	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		for i = 1, 10 do
-			_accum_0[_len_0] = i
-			_len_0 = _len_0 + 1
+		local _tab_0 = { }
+		local _obj_0
+		do
+			local _accum_0 = { }
+			local _len_0 = 1
+			for i = 1, 10 do
+				_accum_0[_len_0] = i
+				_len_0 = _len_0 + 1
+			end
+			_obj_0 = _accum_0
 		end
-		_obj_0 = _accum_0
-	end
-	local _idx_0 = #_tab_0 + 1
-	for _index_0 = 1, #_obj_0 do
-		local _value_0 = _obj_0[_index_0]
-		_tab_0[_idx_0] = _value_0
-		_idx_0 = _idx_0 + 1
-	end
-	_tab_0[#_tab_0 + 1] = 11
-	tbMixA = _tab_0
-end
-local tbMixB
-do
-	local _tab_0 = { }
-	local _obj_0 = ...
-	local _idx_0 = 1
-	for _key_0, _value_0 in pairs(_obj_0) do
-		if _idx_0 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
+		local _idx_0 = #_tab_0 + 1
+		for _index_0 = 1, #_obj_0 do
+			local _value_0 = _obj_0[_index_0]
+			_tab_0[_idx_0] = _value_0
 			_idx_0 = _idx_0 + 1
-		else
-			_tab_0[_key_0] = _value_0
 		end
+		_tab_0[#_tab_0 + 1] = 11
+		tbMixA = _tab_0
 	end
-	local _obj_1 = {
-		...
-	}
-	local _idx_1 = 1
-	for _key_0, _value_0 in pairs(_obj_1) do
-		if _idx_1 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
+end
+do
+	local tbMixB
+	do
+		local _tab_0 = { }
+		local _obj_0 = ...
+		local _idx_0 = 1
+		for _key_0, _value_0 in pairs(_obj_0) do
+			if _idx_0 == _key_0 then
+				_tab_0[#_tab_0 + 1] = _value_0
+				_idx_0 = _idx_0 + 1
+			else
+				_tab_0[_key_0] = _value_0
+			end
+		end
+		local _obj_1 = {
+			...
+		}
+		local _idx_1 = 1
+		for _key_0, _value_0 in pairs(_obj_1) do
+			if _idx_1 == _key_0 then
+				_tab_0[#_tab_0 + 1] = _value_0
+				_idx_1 = _idx_1 + 1
+			else
+				_tab_0[_key_0] = _value_0
+			end
+		end
+		local _obj_2
+		do
+			local _tab_1 = { }
+			local _obj_3 = ...
+			local _idx_2 = 1
+			for _key_0, _value_0 in pairs(_obj_3) do
+				if _idx_2 == _key_0 then
+					_tab_1[#_tab_1 + 1] = _value_0
+					_idx_2 = _idx_2 + 1
+				else
+					_tab_1[_key_0] = _value_0
+				end
+			end
+			_obj_2 = _tab_1
+		end
+		local _idx_2 = 1
+		for _key_0, _value_0 in pairs(_obj_2) do
+			if _idx_2 == _key_0 then
+				_tab_0[#_tab_0 + 1] = _value_0
+				_idx_2 = _idx_2 + 1
+			else
+				_tab_0[_key_0] = _value_0
+			end
+		end
+		_tab_0[#_tab_0 + 1] = 1
+		_tab_0[#_tab_0 + 1] = 2
+		_tab_0[#_tab_0 + 1] = 3
+		tbMixB = _tab_0
+	end
+end
+do
+	local tbMixB
+	do
+		local _tab_0 = { }
+		local _obj_0 = ...
+		local _idx_0 = #_tab_0 + 1
+		for _index_0 = 1, #_obj_0 do
+			local _value_0 = _obj_0[_index_0]
+			_tab_0[_idx_0] = _value_0
+			_idx_0 = _idx_0 + 1
+		end
+		local _obj_1 = {
+			...
+		}
+		local _idx_1 = #_tab_0 + 1
+		for _index_0 = 1, #_obj_1 do
+			local _value_0 = _obj_1[_index_0]
+			_tab_0[_idx_1] = _value_0
 			_idx_1 = _idx_1 + 1
-		else
-			_tab_0[_key_0] = _value_0
 		end
-	end
-	local _obj_2
-	do
-		local _tab_1 = { }
-		local _obj_3 = ...
-		local _idx_2 = 1
-		for _key_0, _value_0 in pairs(_obj_3) do
-			if _idx_2 == _key_0 then
-				_tab_1[#_tab_1 + 1] = _value_0
-				_idx_2 = _idx_2 + 1
-			else
-				_tab_1[_key_0] = _value_0
+		local _obj_2
+		do
+			local _tab_1 = { }
+			local _obj_3 = ...
+			local _idx_2 = 1
+			for _key_0, _value_0 in pairs(_obj_3) do
+				if _idx_2 == _key_0 then
+					_tab_1[#_tab_1 + 1] = _value_0
+					_idx_2 = _idx_2 + 1
+				else
+					_tab_1[_key_0] = _value_0
+				end
 			end
+			_obj_2 = _tab_1
 		end
-		_obj_2 = _tab_1
-	end
-	local _idx_2 = 1
-	for _key_0, _value_0 in pairs(_obj_2) do
-		if _idx_2 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
+		local _idx_2 = #_tab_0 + 1
+		for _index_0 = 1, #_obj_2 do
+			local _value_0 = _obj_2[_index_0]
+			_tab_0[_idx_2] = _value_0
 			_idx_2 = _idx_2 + 1
-		else
-			_tab_0[_key_0] = _value_0
 		end
+		_tab_0[#_tab_0 + 1] = 1
+		_tab_0[#_tab_0 + 1] = 2
+		_tab_0[#_tab_0 + 1] = 3
+		tbMixB = _tab_0
 	end
-	_tab_0[#_tab_0 + 1] = 1
-	_tab_0[#_tab_0 + 1] = 2
-	_tab_0[#_tab_0 + 1] = 3
-	tbMixB = _tab_0
-end
-do
-	local _tab_0 = { }
-	local _obj_0 = ...
-	local _idx_0 = #_tab_0 + 1
-	for _index_0 = 1, #_obj_0 do
-		local _value_0 = _obj_0[_index_0]
-		_tab_0[_idx_0] = _value_0
-		_idx_0 = _idx_0 + 1
-	end
-	local _obj_1 = {
-		...
-	}
-	local _idx_1 = #_tab_0 + 1
-	for _index_0 = 1, #_obj_1 do
-		local _value_0 = _obj_1[_index_0]
-		_tab_0[_idx_1] = _value_0
-		_idx_1 = _idx_1 + 1
-	end
-	local _obj_2
-	do
-		local _tab_1 = { }
-		local _obj_3 = ...
-		local _idx_2 = 1
-		for _key_0, _value_0 in pairs(_obj_3) do
-			if _idx_2 == _key_0 then
-				_tab_1[#_tab_1 + 1] = _value_0
-				_idx_2 = _idx_2 + 1
-			else
-				_tab_1[_key_0] = _value_0
-			end
-		end
-		_obj_2 = _tab_1
-	end
-	local _idx_2 = #_tab_0 + 1
-	for _index_0 = 1, #_obj_2 do
-		local _value_0 = _obj_2[_index_0]
-		_tab_0[_idx_2] = _value_0
-		_idx_2 = _idx_2 + 1
-	end
-	_tab_0[#_tab_0 + 1] = 1
-	_tab_0[#_tab_0 + 1] = 2
-	_tab_0[#_tab_0 + 1] = 3
-	tbMixB = _tab_0
 end
 local template <const> = {
 	foo = "Hello",
