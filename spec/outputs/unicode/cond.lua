@@ -361,11 +361,19 @@ do
 	local _u6c42_u503c
 	do
 		local _cond_0 = _u503c(2)
-		_u6c42_u503c = _u503c(1) < _cond_0 and _cond_0 <= _u503c(3)
+		if not (_u503c(1) < _cond_0) then
+			_u6c42_u503c = false
+		else
+			_u6c42_u503c = _cond_0 <= _u503c(3)
+		end
 	end
 	do
 		local _cond_0 = _u503c(2)
-		_u6c42_u503c = _u503c(1) > _cond_0 and _cond_0 <= _u503c(3)
+		if not (_u503c(1) > _cond_0) then
+			_u6c42_u503c = false
+		else
+			_u6c42_u503c = _cond_0 <= _u503c(3)
+		end
 	end
 end
 return nil

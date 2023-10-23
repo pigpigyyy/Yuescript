@@ -355,11 +355,162 @@ do
 	local evaluation
 	do
 		local _cond_0 = v(2)
-		evaluation = v(1) < _cond_0 and _cond_0 <= v(3)
+		if not (v(1) < _cond_0) then
+			evaluation = false
+		else
+			evaluation = _cond_0 <= v(3)
+		end
 	end
 	do
 		local _cond_0 = v(2)
-		evaluation = v(1) > _cond_0 and _cond_0 <= v(3)
+		if not (v(1) > _cond_0) then
+			evaluation = false
+		else
+			evaluation = _cond_0 <= v(3)
+		end
 	end
+end
+do
+	do
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			a = false
+		else
+			local _cond_1 = v(3)
+			if not (_cond_0 < _cond_1) then
+				a = false
+			else
+				a = _cond_1 < v(4)
+			end
+		end
+	end
+	a = x and y or (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(3)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(4)
+			end
+		end
+	end)()
+	a = (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(3)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(4)
+			end
+		end
+	end)() or x and y
+	a = x and y or (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(3)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(4)
+			end
+		end
+	end)() or w and z
+	a = (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			return _cond_0 < v(3)
+		end
+	end)() and (function()
+		local _cond_0 = v(4)
+		if not (b < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(5)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(6)
+			end
+		end
+	end)()
+	a = x and y or (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			return _cond_0 < v(3)
+		end
+	end)() and (function()
+		local _cond_0 = v(4)
+		if not (b < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(5)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(6)
+			end
+		end
+	end)()
+	a = (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			return _cond_0 < v(3)
+		end
+	end)() and (function()
+		local _cond_0 = v(4)
+		if not (b < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(5)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(6)
+			end
+		end
+	end)() or x and y
+	a = x and y or (function()
+		local _cond_0 = v(2)
+		if not (v(1) < _cond_0) then
+			return false
+		else
+			return _cond_0 < v(3)
+		end
+	end)() and (function()
+		local _cond_0 = v(4)
+		if not (b < _cond_0) then
+			return false
+		else
+			local _cond_1 = v(5)
+			if not (_cond_0 < _cond_1) then
+				return false
+			else
+				return _cond_1 < v(6)
+			end
+		end
+	end)() or w and z
+	local v1, v2, v3, v4, v5, v6
+	a = v1 < v2 and v2 < v3 and v3 < v4
+	a = x and y or v1 < v2 and v2 < v3 and v3 < v4
+	a = v1 < v2 and v2 < v3 and v3 < v4 or x and y
+	a = x and y or v1 < v2 and v2 < v3 and v3 < v4 or w and z
+	a = v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6
+	a = x and y or v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6
+	a = v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6 or x and y
+	a = x and y or v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6 or w and z
 end
 return nil

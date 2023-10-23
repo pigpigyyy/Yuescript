@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.0"sv;
+const std::string_view version = "0.20.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1207,19 +1207,16 @@ private:
 
 	bool isConditionChaining(Exp_t* exp) {
 		int conditionChaining = 0;
-		for (const auto& opValue_ : exp->opValues.objects()) {
+		for (auto opValue_ : exp->opValues.objects()) {
 			auto opValue = static_cast<ExpOpValue_t*>(opValue_);
 			auto op = _parser.toString(opValue->op);
 			if (isConditionChainingOperator(op)) {
 				conditionChaining++;
-				if (conditionChaining > 1) {
-					return true;
-				}
-			} else {
-				conditionChaining = 0;
+			} else if (conditionChaining > 0) {
+				return false;
 			}
 		}
-		return false;
+		return conditionChaining > 1 && conditionChaining == static_cast<int>(exp->opValues.size());
 	}
 
 	UnaryExp_t* unaryGeneratingAnonFunc(Exp_t* exp) {
@@ -3369,14 +3366,14 @@ private:
 		std::list<std::pair<std::string, ast_list<true, UnaryExp_t>*>> chains;
 		chains.emplace_back(std::string(), &exp->pipeExprs);
 		int conditionChainCount = 0;
-		str_list evalLines;
-		auto checkChains = [&]() {
+		auto checkChains = [&]()-> ast_ptr<false, Exp_t> {
 			std::optional<str_list> result;
 			if (conditionChainCount > 1) {
-				bool needWrapping = false;
-				str_list conds;
-				str_list preDefines;
-				std::list<std::variant<std::string, ast_ptr<false, Exp_t>>> stack;
+				ast_ptr<false, Exp_t> newCondExp;
+				ast_ptr<false, ExpListAssign_t> preDefine;
+				ast_sel_list<true, IfCond_t, Block_t, Statement_t>* nodes = nullptr;
+				std::list<std::variant<std::string, ast_list<true, UnaryExp_t>>> stack;
+				pushScope();
 				for (const auto& item : chains) {
 					if (!item.first.empty()) {
 						stack.push_back(item.first);
@@ -3393,9 +3390,7 @@ private:
 								if (varName.empty()) {
 									if (auto sval = static_cast<Value_t*>(unary->expos.front())->item.as<SimpleValue_t>()) {
 										if (ast_is<ConstValue_t, Num_t>(sval->value)) {
-											auto condExp = unary->new_ptr<Exp_t>();
-											condExp->pipeExprs.dup(*item.second);
-											stack.push_back(condExp);
+											stack.push_back(*item.second);
 											goto reduce;
 										}
 									}
@@ -3404,77 +3399,125 @@ private:
 						}
 						if (varName.empty() || !isLocal(varName)) {
 							varName = getUnusedName("_cond_"sv);
+							addToScope(varName);
 							auto condExp = node->new_ptr<Exp_t>();
 							condExp->pipeExprs.dup(*item.second);
 							auto varExp = toAst<Exp_t>(varName, node);
 							auto assignment = assignmentFrom(varExp, condExp, node);
-							if (!needWrapping) {
-								needWrapping = true;
-								if (usage == ExpUsage::Closure) {
-									pushFunctionScope();
-									pushAnonVarArg();
-									pushScope();
-								} else if (usage == ExpUsage::Assignment) {
-									pushScope();
-								}
-							}
-							transformAssignment(assignment, preDefines);
-							stack.push_back(varExp);
+							preDefine = assignment;
+							stack.push_back(varExp->pipeExprs);
 							goto reduce;
 						}
 					}
 					{
-						auto condExp = node->new_ptr<Exp_t>();
-						condExp->pipeExprs.dup(*item.second);
-						stack.push_back(condExp);
+						stack.push_back(*item.second);
 					}
-					reduce:
+					reduce: {
 						if (stack.size() == 3) {
-							str_list tmp;
-							auto one = std::get<ast_ptr<false, Exp_t>>(stack.front()).get();
-							transformExp(one, tmp, ExpUsage::Closure);
+							auto condExp = exp->new_ptr<Exp_t>();
+							const auto& one = std::get<ast_list<true, UnaryExp_t>>(stack.front());
+							condExp->pipeExprs.dup(one);
 							stack.pop_front();
-							auto two = std::get<std::string>(stack.front());
-							tmp.push_back(two);
+							auto opValue = exp->new_ptr<ExpOpValue_t>();
+							const auto& two = std::get<std::string>(stack.front());
+							auto op = toAst<BinaryOperator_t>(two, exp);
+							opValue->op.set(op);
 							stack.pop_front();
-							auto three = std::get<ast_ptr<false, Exp_t>>(stack.front()).get();
-							transformExp(three, tmp, ExpUsage::Closure);
-							conds.push_back(join(tmp, " "sv));
-						}
-				}
-				auto condStr = join(conds, " and "sv);
-				if (needWrapping && usage == ExpUsage::Closure) {
-					str_list closureLines{anonFuncStart() + nll(exp)};
-					closureLines.insert(closureLines.end(), preDefines.begin(), preDefines.end());
-					closureLines.push_back(indent() + "return "s + condStr + nll(exp));
-					popScope();
-					closureLines.push_back(indent() + anonFuncEnd());
-					temp.push_back(join(closureLines));
-					popAnonVarArg();
-					popFunctionScope();
-				} else {
-					temp.push_back(condStr);
-					if (!preDefines.empty()) {
-						evalLines.insert(evalLines.end(), preDefines.begin(), preDefines.end());
-						if (usage == ExpUsage::Assignment) {
-							popScope();
+							const auto& three = std::get<ast_list<true, UnaryExp_t>>(stack.front());
+							opValue->pipeExprs.dup(three);
+							condExp->opValues.push_back(opValue);
+							if (preDefine) {
+								auto ifNode = exp->new_ptr<If_t>();
+								ifNode->type.set(toAst<IfType_t>("unless"sv, exp));
+								auto ifCond = exp->new_ptr<IfCond_t>();
+								ifCond->condition.set(condExp);
+								ifNode->nodes.push_back(ifCond);
+								ifNode->nodes.push_back(toAst<Statement_t>("false"sv, exp));
+								if (newCondExp) {
+									if (nodes) {
+										auto block = exp->new_ptr<Block_t>();
+										auto stmt = exp->new_ptr<Statement_t>();
+										stmt->content.set(preDefine);
+										preDefine.set(nullptr);
+										block->statements.push_back(stmt);
+										auto simpleValue = exp->new_ptr<SimpleValue_t>();
+										simpleValue->value.set(ifNode);
+										auto explist = exp->new_ptr<ExpList_t>();
+										explist->exprs.push_back(newExp(simpleValue, exp));
+										auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+										expListAssign->expList.set(explist);
+										stmt = exp->new_ptr<Statement_t>();
+										stmt->content.set(expListAssign);
+										block->statements.push_back(stmt);
+										nodes->push_back(block);
+										nodes = &ifNode->nodes;
+									} else {
+										auto ifNodePrev = exp->new_ptr<If_t>();
+										ifNodePrev->type.set(toAst<IfType_t>("unless"sv, exp));
+										auto ifCondPrev = exp->new_ptr<IfCond_t>();
+										ifCondPrev->condition.set(newCondExp);
+										ifNodePrev->nodes.push_back(ifCondPrev);
+										ifNodePrev->nodes.push_back(toAst<Statement_t>("false", exp));
+										auto simpleValue = exp->new_ptr<SimpleValue_t>();
+										simpleValue->value.set(ifNodePrev);
+										newCondExp.set(newExp(simpleValue, exp));
+										nodes = &ifNodePrev->nodes;
+									}
+								} else {
+									auto block = exp->new_ptr<Block_t>();
+									auto stmt = exp->new_ptr<Statement_t>();
+									stmt->content.set(preDefine);
+									preDefine.set(nullptr);
+									block->statements.push_back(stmt);
+									auto simpleValue = exp->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(ifNode);
+									auto explist = exp->new_ptr<ExpList_t>();
+									explist->exprs.push_back(newExp(simpleValue, exp));
+									auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+									expListAssign->expList.set(explist);
+									stmt = exp->new_ptr<Statement_t>();
+									stmt->content.set(expListAssign);
+									block->statements.push_back(stmt);
+									auto body = exp->new_ptr<Body_t>();
+									body->content.set(block);
+									auto doNode = exp->new_ptr<Do_t>();
+									doNode->body.set(body);
+									simpleValue = exp->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(doNode);
+									newCondExp.set(newExp(simpleValue, exp));
+									nodes = &ifNode->nodes;
+								}
+							} else {
+								if (newCondExp) {
+									if (nodes) {
+										auto explist = exp->new_ptr<ExpList_t>();
+										explist->exprs.push_back(condExp);
+										auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+										expListAssign->expList.set(explist);
+										auto stmt = exp->new_ptr<Statement_t>();
+										stmt->content.set(expListAssign);
+										nodes->push_back(stmt);
+									} else {
+										auto opValue = exp->new_ptr<ExpOpValue_t>();
+										opValue->op.set(toAst<BinaryOperator_t>("and"sv, exp));
+										opValue->pipeExprs.dup(condExp->pipeExprs);
+										newCondExp->opValues.push_back(opValue);
+										newCondExp->opValues.dup(condExp->opValues);
+									}
+								} else {
+									newCondExp.set(condExp);
+								}
+							}
 						}
 					}
 				}
-			} else {
-				for (const auto& item : chains) {
-					if (!item.first.empty()) {
-						temp.push_back(item.first);
-					}
-					transform_pipe_exp(item.second->objects(), temp, ExpUsage::Closure);
-				}
+				popScope();
+				return newCondExp;
 			}
-			conditionChainCount = 0;
-			chains.clear();
+			return nullptr;
 		};
-		str_list preDefines;
-		for (auto _opValue : exp->opValues.objects()) {
-			auto opValue = static_cast<ExpOpValue_t*>(_opValue);
+		for (auto opValue_ : exp->opValues.objects()) {
+			auto opValue = static_cast<ExpOpValue_t*>(opValue_);
 			transformBinaryOperator(opValue->op, temp);
 			auto op = temp.back();
 			temp.pop_back();
@@ -3482,43 +3525,63 @@ private:
 				conditionChainCount++;
 				chains.emplace_back(op, &opValue->pipeExprs);
 			} else {
-				checkChains();
+				if (auto e = checkChains()) {
+					transformExp(e, temp, ExpUsage::Closure);
+				} else {
+					for (const auto& item : chains) {
+						if (!item.first.empty()) {
+							temp.push_back(item.first);
+						}
+						transform_pipe_exp(item.second->objects(), temp, ExpUsage::Closure);
+					}
+				}
+				chains.clear();
+				conditionChainCount = 0;
 				temp.push_back(op);
-				transform_pipe_exp(opValue->pipeExprs.objects(), temp, ExpUsage::Closure);
+				chains.emplace_back(Empty, &opValue->pipeExprs);
 			}
 		}
-		checkChains();
-		auto condStr = join(temp, " "sv);
-		switch (usage) {
-			case ExpUsage::Closure: {
+		if (auto e = checkChains()) {
+			if (!temp.empty()) {
+				transformExp(e, temp, ExpUsage::Closure);
+				auto condStr = join(temp, " "sv);
 				out.push_back(condStr);
-				break;
-			}
-			case ExpUsage::Assignment: {
-				auto assignment = exp->new_ptr<ExpListAssign_t>();
-				assignment->expList.set(assignList);
-				auto assign = exp->new_ptr<Assign_t>();
-				assign->values.push_back(toAst<Exp_t>(condStr, exp));
-				assignment->action.set(assign);
-				if (evalLines.empty()) {
-					transformAssignment(assignment, out);
-				} else {
-					evalLines.push_front(indent() + "do"s + nll(exp));
-					evalLines.push_front(getPreDefineLine(assignment));
-					pushScope();
-					transformAssignment(assignment, evalLines);
-					popScope();
-					evalLines.push_back(indent() + "end"s + nlr(exp));
-					out.push_back(join(evalLines));
+			} else {
+				switch (usage) {
+					case ExpUsage::Closure:
+						transformExp(e, out, ExpUsage::Closure);
+						break;
+					case ExpUsage::Assignment: {
+						auto assignment = exp->new_ptr<ExpListAssign_t>();
+						assignment->expList.set(assignList);
+						auto assign = exp->new_ptr<Assign_t>();
+						assign->values.push_back(e);
+						assignment->action.set(assign);
+						transformAssignment(assignment, out);
+						break;
+					}
+					case ExpUsage::Return: {
+						auto expListLow = exp->new_ptr<ExpListLow_t>();
+						expListLow->exprs.push_back(e);
+						auto returnNode = exp->new_ptr<Return_t>();
+						returnNode->valueList.set(expListLow);
+						transformReturn(returnNode, out);
+						break;
+					}
+					default:
+						YUEE("invalid expression usage", exp);
+						break;
 				}
-				break;
 			}
-			case ExpUsage::Return: {
-				evalLines.push_back(indent() + "return "s + condStr + nll(exp));
-				out.push_back(join(evalLines));
-				break;
+		} else {
+			for (const auto& item : chains) {
+				if (!item.first.empty()) {
+					temp.push_back(item.first);
+				}
+				transform_pipe_exp(item.second->objects(), temp, ExpUsage::Closure);
 			}
-			default: YUEE("invalid expression usage", exp); break;
+			auto condStr = join(temp, " "sv);
+			out.push_back(condStr);
 		}
 	}
 
