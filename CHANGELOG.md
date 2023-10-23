@@ -2,6 +2,55 @@
 
 The implementation for the original Moonscript language 0.5.0 can be found in the `0.5.0` branch of Yuescript. The Moonscript with fixes and new features is in the main branch of Yuescript. Here are the changelogs for each Yuescript version.
 
+## v0.20.2
+
+### Added Features
+
+* Added chaining comparisons and list syntax [] with disallowing key value pairs in it.
+
+  ```moonscript
+  x = 2
+  res = 1 < x < 3  -- true in Yuescript, like Python.
+  print res
+  
+  list_with_only_one_element = [1,]
+  list = [
+    1
+    2
+    3
+    abc: 123 -- will report error here
+  ]
+  [a = 1, b = 2] = tab_to_be_destructured
+  ```
+
+* Added `from "module" import ...` syntax.
+
+  ```moonscript
+  from "CS" import
+    System
+    UnityEngine
+
+  from UnityEngine import
+    Object
+    GameObject
+    Transform
+    MonoBehaviour
+    Vector3
+    Quaternion
+  ```
+
+* Added `import ... from "module"` syntax.
+
+  ```moonscript
+  import a, b, c from "module"
+  ```
+
+### Fixed Issues
+
+* Fixed issue #150. Cannot use pipes on new line with const declarations.
+* Fixed issue #148. No output when running code in online compiler.
+* Fixed inline variable renaming rule to prevent naming conflicts.
+
 ## v0.19.1
 
 ### Added Features
