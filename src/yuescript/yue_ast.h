@@ -787,7 +787,7 @@ AST_NODE(Macro)
 AST_END(Macro, "macro"sv)
 
 AST_NODE(NameOrDestructure)
-	ast_sel<true, Variable_t, TableLit_t> item;
+	ast_sel<true, Variable_t, TableLit_t, Comprehension_t> item;
 	AST_MEMBER(NameOrDestructure, &item)
 AST_END(NameOrDestructure, "name_or_des"sv)
 

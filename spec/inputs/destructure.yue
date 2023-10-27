@@ -80,6 +80,8 @@ do
 	for {x,y} in *thing
 		print x,y
 
+	for [x,y] in *thing
+		print x,y
 
 --
 
@@ -178,8 +180,14 @@ do
 	for {left = "null", right = false} in *tuples
 		print left, right
 
+	for [left = "null", right = false] in *tuples
+		print left, right
+
 do
 	{_, a, _, b} = tb -- list placeholder
+
+do
+	[a, _, b, _] = tb -- list placeholder
 
 do
 	{x: a.b = 1, y: a.c = 2} = x.x.x

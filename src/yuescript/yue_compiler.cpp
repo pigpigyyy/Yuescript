@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.2"sv;
+const std::string_view version = "0.20.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -6836,6 +6836,13 @@ private:
 					varAfter.push_back(vars.back());
 					break;
 				case id<TableLit_t>(): {
+					auto desVar = getUnusedName("_des_"sv);
+					destructPairs.emplace_back(item, toAst<Exp_t>(desVar, x));
+					vars.push_back(desVar);
+					varAfter.push_back(desVar);
+					break;
+				}
+				case id<Comprehension_t>(): {
 					auto desVar = getUnusedName("_des_"sv);
 					destructPairs.emplace_back(item, toAst<Exp_t>(desVar, x));
 					vars.push_back(desVar);

@@ -124,6 +124,11 @@ do
 		local x, y = _des_0[1], _des_0[2]
 		print(x, y)
 	end
+	for _index_0 = 1, #thing do
+		local _des_0 = thing[_index_0]
+		local x, y = _des_0[1], _des_0[2]
+		print(x, y)
+	end
 end
 do
 	do
@@ -370,12 +375,31 @@ do
 		end
 		print(left, right)
 	end
+	local _list_1 = tuples
+	for _index_0 = 1, #_list_1 do
+		local _des_0 = _list_1[_index_0]
+		local left, right = _des_0[1], _des_0[2]
+		if left == nil then
+			left = "null"
+		end
+		if right == nil then
+			right = false
+		end
+		print(left, right)
+	end
 end
 do
 	local a, b
 	do
 		local _obj_0 = tb
 		a, b = _obj_0[2], _obj_0[4]
+	end
+end
+do
+	local a, b
+	do
+		local _obj_0 = tb
+		a, b = _obj_0[1], _obj_0[3]
 	end
 end
 do

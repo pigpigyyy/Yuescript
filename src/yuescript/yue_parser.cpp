@@ -835,7 +835,7 @@ YueParser::YueParser() {
 	MacroInPlace = '$' >> space >> "->" >> space >> Body;
 
 	NameList = Seperator >> Variable >> *(space >> ',' >> space >> Variable);
-	NameOrDestructure = Variable | TableLit;
+	NameOrDestructure = Variable | TableLit | Comprehension;
 	AssignableNameList = Seperator >> NameOrDestructure >> *(space >> ',' >> space >> NameOrDestructure);
 
 	FnArrowBack = '<' >> set("-=");
