@@ -30,7 +30,7 @@ inventory =
       count: 3
 
 -- pipe operator
-{1, 2, 3}
+[1, 2, 3]
   |> map (x)-> x * 2
   |> filter (x)-> x > 4
   |> reduce 0, (a, b)-> a + b
@@ -62,7 +62,7 @@ inventory =
       count: 3
 
 -- pipe operator
-{1, 2, 3}
+[1, 2, 3]
   |> map (x)-> x * 2
   |> filter (x)-> x > 4
   |> reduce 0, (a, b)-> a + b
@@ -339,7 +339,7 @@ import "utils" as {
   $, -- symbol to import all macros
   $foreach: $each -- rename macro $foreach to $each
 }
-{1, 2, 3} |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
+[1, 2, 3] |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
 ```
 <YueDisplay>
 <pre>
@@ -355,7 +355,7 @@ import "utils" as {
   $, -- symbol to import all macros
   $foreach: $each -- rename macro $foreach to $each
 }
-{1, 2, 3} |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
+[1, 2, 3] |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
 ]]
 </pre>
 </YueDisplay>
@@ -467,12 +467,12 @@ The middle expression is only evaluated once, rather than twice as it would be i
 The **[] =** operator is used to append values to tables.
 
 ```moonscript
-tab = {}
+tab = []
 tab[] = "Value"
 ```
 <YueDisplay>
 <pre>
-tab = {}
+tab = []
 tab[] = "Value"
 </pre>
 </YueDisplay>
@@ -1106,27 +1106,27 @@ This also works with nested data structures as well:
 
 ```moonscript
 obj2 = {
-  numbers: {1,2,3,4}
+  numbers: [1, 2, 3, 4]
   properties: {
     color: "green"
     height: 13.5
   }
 }
 
-{numbers: {first, second}} = obj2
+{numbers: [first, second]} = obj2
 print first, second, color
 ```
 <YueDisplay>
 <pre>
 obj2 = {
-  numbers: {1,2,3,4}
+  numbers: [1, 2, 3, 4]
   properties: {
     color: "green"
     height: 13.5
   }
 }
 
-{numbers: {first, second}} = obj2
+{numbers: [first, second]} = obj2
 print first, second, color
 </pre>
 </YueDisplay>
@@ -1135,7 +1135,7 @@ If the destructuring statement is complicated, feel free to spread it out over a
 
 ```moonscript
 {
-  numbers: {first, second}
+  numbers: [first, second]
   properties: {
     color: color
   }
@@ -1144,7 +1144,7 @@ If the destructuring statement is complicated, feel free to spread it out over a
 <YueDisplay>
 <pre>
 {
-  numbers: {first, second}
+  numbers: [first, second]
   properties: {
     color: color
   }
@@ -1188,11 +1188,11 @@ You can write default values while doing destructuring like:
 You can use `_` as placeholder when doing a list destructuring:
 
 ```moonscript
-{_, two, _, four} = items
+[_, two, _, four] = items
 ```
 <YueDisplay>
 <pre>
-{_, two, _, four} = items
+[_, two, _, four] = items
 </pre>
 </YueDisplay>
 
@@ -1201,22 +1201,22 @@ You can use `_` as placeholder when doing a list destructuring:
 Destructuring can also show up in places where an assignment implicitly takes place. An example of this is a for loop:
 
 ```moonscript
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
+tuples = [
+  ["hello", "world"]
+  ["egg", "head"]
+]
 
-for {left, right} in *tuples
+for [left, right] in *tuples
   print left, right
 ```
 <YueDisplay>
 <pre>
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
+tuples = [
+  ["hello", "world"]
+  ["egg", "head"]
+]
 
-for {left, right} in *tuples
+for [left, right] in *tuples
   print left, right
 </pre>
 </YueDisplay>
@@ -1275,7 +1275,7 @@ print "OK"
 
 You can assign the results returned from a function  to a varargs symbol `...`. And then access its content using the Lua way.
 ```moonscript
-list = {1, 2, 3, 4, 5}
+list = [1, 2, 3, 4, 5]
 fn = (ok) -> ok, table.unpack list
 ok, ... = fn true
 count = select '#', ...
@@ -1284,7 +1284,7 @@ print ok, count, first
 ```
 <YueDisplay>
 <pre>
-list = {1, 2, 3, 4, 5}
+list = [1, 2, 3, 4, 5]
 fn = (ok) -> ok, table.unpack list
 ok, ... = fn true
 count = select '#', ...
@@ -1731,36 +1731,36 @@ my_func 5, 6, 7,
 Because tables also use the comma as a delimiter, this indentation syntax is helpful for letting values be part of the argument list instead of being part of the table.
 
 ```moonscript
-x = {
+x = [
   1, 2, 3, 4, a_func 4, 5,
     5, 6,
   8, 9, 10
-}
+]
 ```
 <YueDisplay>
 <pre>
-x = {
+x = [
   1, 2, 3, 4, a_func 4, 5,
     5, 6,
   8, 9, 10
-}
+]
 </pre>
 </YueDisplay>
 
 Although uncommon, notice how we can give a deeper indentation for function arguments if we know we will be using a lower indentation further on.
 
 ```moonscript
-y = { my_func 1, 2, 3,
+y = [ my_func 1, 2, 3,
    4, 5,
   5, 6, 7
-}
+]
 ```
 <YueDisplay>
 <pre>
-y = { my_func 1, 2, 3,
+y = [ my_func 1, 2, 3,
    4, 5,
   5, 6, 7
-}
+]
 </pre>
 </YueDisplay>
 
@@ -1826,12 +1826,12 @@ print @value
 You can specify a placeholder for where you want the backcall function to go as a parameter.
 
 ```moonscript
-(x) <- map _, {1, 2, 3}
+(x) <- map _, [1, 2, 3]
 x * 2
 ```
 <YueDisplay>
 <pre>
-(x) <- map _, {1, 2, 3}
+(x) <- map _, [1, 2, 3]
 x * 2
 </pre>
 </YueDisplay>
@@ -1862,11 +1862,11 @@ print result, msg
 Like in Lua, tables are delimited in curly braces.
 
 ```moonscript
-some_values = { 1, 2, 3, 4 }
+some_values = [1, 2, 3, 4]
 ```
 <YueDisplay>
 <pre>
-some_values = { 1, 2, 3, 4 }
+some_values = [1, 2, 3, 4]
 </pre>
 </YueDisplay>
 
@@ -1895,14 +1895,14 @@ The curly braces can be left off if a single table of key value pairs is being a
 profile =
   height: "4 feet",
   shoe_size: 13,
-  favorite_foods: {"ice cream", "donuts"}
+  favorite_foods: ["ice cream", "donuts"]
 ```
 <YueDisplay>
 <pre>
 profile =
   height: "4 feet",
   shoe_size: 13,
-  favorite_foods: {"ice cream", "donuts"}
+  favorite_foods: ["ice cream", "donuts"]
 </pre>
 </YueDisplay>
 
@@ -1998,13 +1998,13 @@ t = {
 Lua tables have both an array part and a hash part, but sometimes you want to make a semantic distinction between array and hash usage when writing Lua tables. Then you can write Lua table with **[ ]** instead of **{ }** to represent an array table and writing any key value pair in a list table won't be allowed.
 
 ```moonscript
-some_values = [ 1, 2, 3, 4 ]
-list_with_one_element = [ 1, ]
+some_values = [1, 2, 3, 4]
+list_with_one_element = [1, ]
 ```
 <YueDisplay>
 <pre>
-some_values = [ 1, 2, 3, 4 ]
-list_with_one_element = [ 1, ]
+some_values = [1, 2, 3, 4]
+list_with_one_element = [1, ]
 </pre>
 </YueDisplay>
 
@@ -2137,12 +2137,12 @@ The key-value tuple in a table comprehension can also come from a single express
 In this example we convert an array of pairs to a table where the first item in the pair is the key and the second is the value.
 
 ```moonscript
-tuples = {{"hello", "world"}, {"foo", "bar"}}
+tuples = [ ["hello", "world"], ["foo", "bar"]]
 tbl = {unpack tuple for tuple in *tuples}
 ```
 <YueDisplay>
 <pre>
-tuples = { {"hello", "world"}, {"foo", "bar"} }
+tuples = [ ["hello", "world"], ["foo", "bar"]]
 tbl = {unpack tuple for tuple in *tuples}
 </pre>
 </YueDisplay>
@@ -2371,14 +2371,14 @@ while i < 10
 continue can also be used with loop expressions to prevent that iteration from accumulating into the result. This examples filters the array table into just even numbers:
 
 ```moonscript
-my_numbers = {1, 2, 3, 4, 5, 6}
+my_numbers = [1, 2, 3, 4, 5, 6]
 odds = for x in *my_numbers
   continue if x % 2 == 1
   x
 ```
 <YueDisplay>
 <pre>
-my_numbers = {1, 2, 3, 4, 5, 6}
+my_numbers = [1, 2, 3, 4, 5, 6]
 odds = for x in *my_numbers
   continue if x % 2 == 1
   x
@@ -2492,7 +2492,7 @@ You can write range checking code with an `in-expression`.
 ```moonscript
 a = 5
 
-if a in {1, 3, 5, 7}
+if a in [1, 3, 5, 7]
   print "checking equality with discrete values"
 
 if a in list
@@ -2502,7 +2502,7 @@ if a in list
 <pre>
 a = 5
 
-if a in {1, 3, 5, 7}
+if a in [1, 3, 5, 7]
   print "checking equality with discrete values"
 
 if a in list
@@ -2780,7 +2780,7 @@ Consider the example below, the clothes property is shared amongst all instances
 
 ```moonscript
 class Person
-  clothes: {}
+  clothes: []
   give_item: (name)=>
     table.insert @clothes, name
 
@@ -2796,7 +2796,7 @@ print item for item in *a.clothes
 <YueDisplay>
 <pre>
 class Person
-  clothes: {}
+  clothes: []
   give_item: (name)=>
     table.insert @clothes, name
 
@@ -2816,13 +2816,13 @@ The proper way to avoid this problem is to create the mutable state of the objec
 ```moonscript
 class Person
   new: =>
-    @clothes = {}
+    @clothes = []
 ```
 <YueDisplay>
 <pre>
 class Person
   new: =>
-    @clothes = {}
+    @clothes = []
 </pre>
 </YueDisplay>
 
@@ -3278,7 +3278,7 @@ create_person = (name,  relatives)->
     .name = name
     \add_relative relative for relative in *relatives
 
-me = create_person "Leaf", {dad, mother, sister}
+me = create_person "Leaf", [dad, mother, sister]
 ```
 <YueDisplay>
 <pre>
@@ -3287,7 +3287,7 @@ create_person = (name,  relatives)->
     .name = name
     \add_relative relative for relative in *relatives
 
-me = create_person "Leaf", {dad, mother, sister}
+me = create_person "Leaf", [dad, mother, sister]
 </pre>
 </YueDisplay>
 

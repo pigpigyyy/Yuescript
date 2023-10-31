@@ -30,7 +30,7 @@ inventory =
       count: 3
 
 -- 管道操作符
-{1, 2, 3}
+[1, 2, 3]
   |> map (x)-> x * 2
   |> filter (x)-> x > 4
   |> reduce 0, (a, b)-> a + b
@@ -62,7 +62,7 @@ inventory =
       count: 3
 
 -- 管道操作符
-{1, 2, 3}
+[1, 2, 3]
   |> map (x)-> x * 2
   |> filter (x)-> x > 4
   |> reduce 0, (a, b)-> a + b
@@ -336,7 +336,7 @@ import "utils" as {
   $, -- 表示导入所有宏的符号
   $foreach: $each -- 重命名宏 $foreach 为 $each
 }
-{1, 2, 3} |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
+[1, 2, 3] |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
 ```
 <YueDisplay>
 <pre>
@@ -352,7 +352,7 @@ import "utils" as {
   $, -- 表示导入所有宏的符号
   $foreach: $each -- 重命名宏 $foreach 为 $each
 }
-{1, 2, 3} |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
+[1, 2, 3] |> $map(_ * 2) |> $filter(_ > 4) |> $each print _
 ]]
 </pre>
 </YueDisplay>
@@ -465,12 +465,12 @@ print v(1) > v(2) <= v(3)
 **[] =** 操作符用于向Lua表的最后插入值。
 
 ```moonscript
-tab = {}
+tab = []
 tab[] = "Value"
 ```
 <YueDisplay>
 <pre>
-tab = {}
+tab = []
 tab[] = "Value"
 </pre>
 </YueDisplay>
@@ -1104,27 +1104,27 @@ print hello, the_day
 
 ```moonscript
 obj2 = {
-  numbers: {1,2,3,4}
+  numbers: [1,2,3,4]
   properties: {
     color: "green"
     height: 13.5
   }
 }
 
-{numbers: {first, second}} = obj2
+{numbers: [first, second]} = obj2
 print first, second, color
 ```
 <YueDisplay>
 <pre>
 obj2 = {
-  numbers: {1,2,3,4}
+  numbers: [1,2,3,4]
   properties: {
     color: "green"
     height: 13.5
   }
 }
 
-{numbers: {first, second}} = obj2
+{numbers: [first, second]} = obj2
 print first, second, color
 </pre>
 </YueDisplay>
@@ -1133,7 +1133,7 @@ print first, second, color
 
 ```moonscript
 {
-  numbers: {first, second}
+  numbers: [first, second]
   properties: {
     color: color
   }
@@ -1142,7 +1142,7 @@ print first, second, color
 <YueDisplay>
 <pre>
 {
-  numbers: {first, second}
+  numbers: [first, second]
   properties: {
     color: color
   }
@@ -1186,7 +1186,7 @@ print first, second, color
 在进行列表解构时，您可以使用`_`作为占位符：
 
 ```moonscript
-{_, two, _, four} = items
+[_, two, _, four] = items
 ```
 <YueDisplay>
 <pre>
@@ -1199,22 +1199,22 @@ print first, second, color
 解构也可以出现在其它隐式进行赋值的地方。一个例子是用在for循环：
 
 ```moonscript
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
+tuples = [
+  ["hello", "world"]
+  ["egg", "head"]
+]
 
-for {left, right} in *tuples
+for [left, right] in *tuples
   print left, right
 ```
 <YueDisplay>
 <pre>
-tuples = {
-  {"hello", "world"}
-  {"egg", "head"}
-}
+tuples = [
+  ["hello", "world"]
+  ["egg", "head"]
+]
 
-for {left, right} in *tuples
+for [left, right] in *tuples
   print left, right
 </pre>
 </YueDisplay>
@@ -1273,7 +1273,7 @@ print "好的"
 
 您可以将函数返回的结果赋值给一个可变参数符号 `...`。然后使用Lua的方式访问其内容。
 ```moonscript
-list = {1, 2, 3, 4, 5}
+list = [1, 2, 3, 4, 5]
 fn = (ok) -> ok, table.unpack list
 ok, ... = fn true
 count = select '#', ...
@@ -1282,7 +1282,7 @@ print ok, count, first
 ```
 <YueDisplay>
 <pre>
-list = {1, 2, 3, 4, 5}
+list = [1, 2, 3, 4, 5]
 fn = (ok) -> ok, table.unpack list
 ok, ... = fn true
 count = select '#', ...
@@ -1691,36 +1691,36 @@ my_func 5, 6, 7,
 因为Lua表也使用逗号作为分隔符，这种缩进语法有助于让值成为参数列表的一部分，而不是Lua表的一部分。
 
 ```moonscript
-x = {
+x = [
   1, 2, 3, 4, a_func 4, 5,
     5, 6,
   8, 9, 10
-}
+]
 ```
 <YueDisplay>
 <pre>
-x = {
+x = [
   1, 2, 3, 4, a_func 4, 5,
     5, 6,
   8, 9, 10
-}
+]
 </pre>
 </YueDisplay>
 
 有个不常见的写法可以注意一下，如果我们将在后面使用较低的缩进，我们可以为函数参数提供更深的缩进来区分列表的归属。
 
 ```moonscript
-y = { my_func 1, 2, 3,
+y = [ my_func 1, 2, 3,
    4, 5,
   5, 6, 7
-}
+]
 ```
 <YueDisplay>
 <pre>
-y = { my_func 1, 2, 3,
+y = [ my_func 1, 2, 3,
    4, 5,
   5, 6, 7
-}
+]
 </pre>
 </YueDisplay>
 
@@ -1786,12 +1786,12 @@ print @value
 您可以通过一个占位符指定回调函数的传参位置。
 
 ```moonscript
-(x) <- map _, {1, 2, 3}
+(x) <- map _, [1, 2, 3]
 x * 2
 ```
 <YueDisplay>
 <pre>
-(x) <- map _, {1, 2, 3}
+(x) <- map _, [1, 2, 3]
 x * 2
 </pre>
 </YueDisplay>
@@ -1822,11 +1822,11 @@ print result, msg
 和Lua一样，表格可以通过花括号进行定义。
 
 ```moonscript
-some_values = { 1, 2, 3, 4 }
+some_values = [1, 2, 3, 4]
 ```
 <YueDisplay>
 <pre>
-some_values = { 1, 2, 3, 4 }
+some_values = [1, 2, 3, 4]
 </pre>
 </YueDisplay>
 
@@ -1855,14 +1855,14 @@ some_values = {
 profile =
   height: "4英尺",
   shoe_size: 13,
-  favorite_foods: {"冰淇淋", "甜甜圈"}
+  favorite_foods: ["冰淇淋", "甜甜圈"]
 ```
 <YueDisplay>
 <pre>
 profile =
   height: "4英尺",
   shoe_size: 13,
-  favorite_foods: {"冰淇淋", "甜甜圈"}
+  favorite_foods: ["冰淇淋", "甜甜圈"]
 </pre>
 </YueDisplay>
 
@@ -1977,12 +1977,12 @@ list_with_one_element = [ 1, ]
 以下操作创建了一个items表的副本，但所有包含的值都翻倍了。
 
 ```moonscript
-items = [ 1, 2, 3, 4 ]
+items = [1, 2, 3, 4]
 doubled = [item * 2 for i, item in ipairs items]
 ```
 <YueDisplay>
 <pre>
-items = [ 1, 2, 3, 4 ]
+items = [1, 2, 3, 4]
 doubled = [item * 2 for i, item in ipairs items]
 </pre>
 </YueDisplay>
@@ -2097,12 +2097,12 @@ sqrts = {i, math.sqrt i for i in *numbers}
 在下面的示例中，我们将一些数组转换为一个表，其中每个数组里的第一项是键，第二项是值。
 
 ```moonscript
-tuples = {{"hello", "world"}, {"foo", "bar"}}
+tuples = [ ["hello", "world"], ["foo", "bar"]]
 tbl = {unpack tuple for tuple in *tuples}
 ```
 <YueDisplay>
 <pre>
-tuples = { {"hello", "world"}, {"foo", "bar"} }
+tuples = [ ["hello", "world"], ["foo", "bar"]]
 tbl = {unpack tuple for tuple in *tuples}
 </pre>
 </YueDisplay>
@@ -2332,14 +2332,14 @@ while i < 10
 继续语句也可以与各种循环表达式一起使用，以防止当前的循环迭代结果累积到结果列表中。以下示例将数组表过滤为仅包含偶数的数组：
 
 ```moonscript
-my_numbers = {1, 2, 3, 4, 5, 6}
+my_numbers = [1, 2, 3, 4, 5, 6]
 odds = for x in *my_numbers
   continue if x % 2 == 1
   x
 ```
 <YueDisplay>
 <pre>
-my_numbers = {1, 2, 3, 4, 5, 6}
+my_numbers = [1, 2, 3, 4, 5, 6]
 odds = for x in *my_numbers
   continue if x % 2 == 1
   x
@@ -2453,7 +2453,7 @@ print "你真幸运！" unless math.random! > 0.1
 ```moonscript
 a = 5
 
-if a in {1, 3, 5, 7}
+if a in [1, 3, 5, 7]
   print "检查离散值的相等性"
 
 if a in list
@@ -2463,7 +2463,7 @@ if a in list
 <pre>
 a = 5
 
-if a in {1, 3, 5, 7}
+if a in [1, 3, 5, 7]
   print "检查离散值的相等性"
 
 if a in list
@@ -2741,7 +2741,7 @@ inv\add_item "pants"
 
 ```moonscript
 class Person
-  clothes: {}
+  clothes: []
   give_item: (name)=>
     table.insert @clothes, name
 
@@ -2757,7 +2757,7 @@ print item for item in *a.clothes
 <YueDisplay>
 <pre>
 class Person
-  clothes: {}
+  clothes: []
   give_item: (name)=>
     table.insert @clothes, name
 
@@ -2777,13 +2777,13 @@ print item for item in *a.clothes
 ```moonscript
 class Person
   new: =>
-    @clothes = {}
+    @clothes = []
 ```
 <YueDisplay>
 <pre>
 class Person
   new: =>
-    @clothes = {}
+    @clothes = []
 </pre>
 </YueDisplay>
 
@@ -3239,7 +3239,7 @@ create_person = (name,  relatives)->
     .name = name
     \add_relative relative for relative in *relatives
 
-me = create_person "Leaf", {dad, mother, sister}
+me = create_person "Leaf", [dad, mother, sister]
 ```
 <YueDisplay>
 <pre>
@@ -3248,7 +3248,7 @@ create_person = (name,  relatives)->
     .name = name
     \add_relative relative for relative in *relatives
 
-me = create_person "Leaf", {dad, mother, sister}
+me = create_person "Leaf", [dad, mother, sister]
 </pre>
 </YueDisplay>
 

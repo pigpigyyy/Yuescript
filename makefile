@@ -293,6 +293,7 @@ test: debug
 	@$(END_TIME)
 	@./$(BIN_NAME) -e "$$(printf "r = io.popen('git diff --no-index $(TEST_OUTPUT) $(GEN_OUTPUT) | head -5')\\\\read '*a'\nif r ~= ''\n print r\n os.exit 1")"
 	@$(RM) -r $(TEST_OUTPUT)
+	@busted
 	@echo "Done!"
 
 # Test Yuescript compiler

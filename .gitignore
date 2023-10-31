@@ -11,3 +11,4 @@ bin
 tup/*.lua
 tup/t/*.lua
 Yuescript.vcxproj.user
+spec/generated
