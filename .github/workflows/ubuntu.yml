@@ -12,10 +12,14 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip CI]')"
     steps:
       - uses: actions/checkout@v2
       - name: build-test
-        run: make test
+        run: ｜
+          sudo apt install -y lua5.4 liblua5.4-dev luarocks
+          sudo luarocks --lua-version 5.4 install busted
+          make test
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
         run: |
