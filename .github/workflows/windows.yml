@@ -33,7 +33,7 @@ jobs:
           bin\windows\x64\Debug\yue.exe spec\inputs\try_catch.yue -o spec\generated\5.1\try_catch.lua --target=5.1
           bin\windows\x64\Debug\yue.exe spec\inputs\attrib.yue -o spec\generated\5.1\attrib.lua --target=5.1
           bin\windows\x64\Debug\yue.exe spec\inputs\test\loops_spec.yue -o spec\generated\5.1\test\loops_spec.lua --target=5.1
-          bin\windows\x64\Debug\yue.exe -e "io.popen('git diff --no-index spec\\outputs spec\\generated')\read('*a') |> ((r)-> r ~= '' and print(r) and os.exit 1)"
+          bin\windows\x64\Debug\yue.exe -e "io.popen('git diff --no-index spec\\outputs spec\\generated')\read('*a') |> ((r)-> r ~= '' and (print(r) or os.exit 1))"
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
         run: |
