@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: build-test
-        run: ｜
+        run: |
           sudo apt install -y lua5.4 liblua5.4-dev luarocks
           sudo luarocks --lua-version 5.4 install busted
           make test
