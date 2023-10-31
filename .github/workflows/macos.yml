@@ -12,10 +12,14 @@ jobs:
   build:
     name: Build & Test
     runs-on: macos-latest
+    if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip CI]')"
     steps:
       - uses: actions/checkout@v2
       - name: build-test
-        run: make test
+        run: |
+          brew install luarocks
+          luarocks install busted
+          make test
       - name: build for luajit
         if: startsWith(github.ref, 'refs/tags/')
         run: |
