@@ -47,3 +47,7 @@ jobs:
             ./yue-macos-universal-luajit-so.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: luarocks upload
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          ./yue -e spec/inputs/luarocks_upload.yue ${{ secrets.LUAROCKS_KEY }}
