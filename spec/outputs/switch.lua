@@ -398,4 +398,39 @@ do
 		end
 	end
 end
+do
+	do
+		local _exp_0 = tb
+		local _type_0 = type(_exp_0)
+		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+		local _match_0 = false
+		if _tab_0 then
+			local item
+			do
+				local _obj_0 = _exp_0[1]
+				local _type_1 = type(_obj_0)
+				if "table" == _type_1 or "userdata" == _type_1 then
+					item = _obj_0[1]
+				end
+			end
+			if item ~= nil then
+				_match_0 = true
+				print(item)
+			end
+		end
+		if not _match_0 then
+			if _tab_0 then
+				local a = _exp_0[1]
+				local b = _exp_0[2]
+				if a == nil then
+					a = 1
+				end
+				if b == nil then
+					b = "abc"
+				end
+				print(a, b)
+			end
+		end
+	end
+end
 return nil

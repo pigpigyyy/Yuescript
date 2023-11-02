@@ -159,5 +159,11 @@ do
 		when {x: <>: mt}
 			print mt
 
+do
+	switch tb
+		when [ [item,],]
+			print item
+		when [a = 1, b = "abc"]
+			print a, b
 nil
 

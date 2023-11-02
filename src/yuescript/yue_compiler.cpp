@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.3"sv;
+const std::string_view version = "0.20.4"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -9155,8 +9155,15 @@ private:
 		for (auto branch_ : branches) {
 			auto branch = static_cast<SwitchCase_t*>(branch_);
 			auto valueList = static_cast<SwitchList_t*>(branch->condition.get());
-			if (auto value = singleValueFrom(valueList);
-				value && (value->item.is<SimpleTable_t>() || value->get_by_path<SimpleValue_t, TableLit_t>())) {
+			bool tableMatching = false;
+			if (auto value = singleValueFrom(valueList)) {
+				if (value->item.is<SimpleTable_t>()) {
+					tableMatching = true;
+				} else if (auto sVal = value->item.as<SimpleValue_t>()){
+					tableMatching = ast_is<TableLit_t, Comprehension_t>(sVal->value);
+				}
+			}
+			if (tableMatching) {
 				if (!firstBranch) {
 					temp.push_back(indent() + "else"s + nll(branch));
 					pushScope();
