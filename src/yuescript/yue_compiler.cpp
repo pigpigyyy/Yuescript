@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.4"sv;
+const std::string_view version = "0.20.5"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1042,7 +1042,7 @@ private:
 		for (auto it = uname->m_begin.m_it; it != uname->m_end.m_it; ++it) {
 			auto ch = *it;
 			if (ch > 255) {
-				buf << "_u"sv << std::hex << ch;
+				buf << "_u"sv << std::hex << static_cast<int>(ch);
 			} else {
 				buf << static_cast<char>(ch);
 			}
@@ -3438,25 +3438,10 @@ private:
 								ifCond->condition.set(condExp);
 								ifNode->nodes.push_back(ifCond);
 								ifNode->nodes.push_back(toAst<Statement_t>("false"sv, exp));
+								YueFormat format{};
+								auto code = ifNode->to_string(&format);
 								if (newCondExp) {
-									if (nodes) {
-										auto block = exp->new_ptr<Block_t>();
-										auto stmt = exp->new_ptr<Statement_t>();
-										stmt->content.set(preDefine);
-										preDefine.set(nullptr);
-										block->statements.push_back(stmt);
-										auto simpleValue = exp->new_ptr<SimpleValue_t>();
-										simpleValue->value.set(ifNode);
-										auto explist = exp->new_ptr<ExpList_t>();
-										explist->exprs.push_back(newExp(simpleValue, exp));
-										auto expListAssign = exp->new_ptr<ExpListAssign_t>();
-										expListAssign->expList.set(explist);
-										stmt = exp->new_ptr<Statement_t>();
-										stmt->content.set(expListAssign);
-										block->statements.push_back(stmt);
-										nodes->push_back(block);
-										nodes = &ifNode->nodes;
-									} else {
+									if (!nodes) {
 										auto ifNodePrev = exp->new_ptr<If_t>();
 										ifNodePrev->type.set(toAst<IfType_t>("unless"sv, exp));
 										auto ifCondPrev = exp->new_ptr<IfCond_t>();
@@ -3468,6 +3453,22 @@ private:
 										newCondExp.set(newExp(simpleValue, exp));
 										nodes = &ifNodePrev->nodes;
 									}
+									auto block = exp->new_ptr<Block_t>();
+									auto stmt = exp->new_ptr<Statement_t>();
+									stmt->content.set(preDefine);
+									preDefine.set(nullptr);
+									block->statements.push_back(stmt);
+									auto simpleValue = exp->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(ifNode);
+									auto explist = exp->new_ptr<ExpList_t>();
+									explist->exprs.push_back(newExp(simpleValue, exp));
+									auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+									expListAssign->expList.set(explist);
+									stmt = exp->new_ptr<Statement_t>();
+									stmt->content.set(expListAssign);
+									block->statements.push_back(stmt);
+									nodes->push_back(block);
+									nodes = &ifNode->nodes;
 								} else {
 									auto block = exp->new_ptr<Block_t>();
 									auto stmt = exp->new_ptr<Statement_t>();
@@ -9175,17 +9176,17 @@ private:
 						pushScope();
 						extraScope = true;
 					}
-					auto typeVar = getUnusedName("_type_");
+					auto typeVar = getUnusedName("_type_"sv);
 					forceAddToScope(typeVar);
-					tabCheckVar = getUnusedName("_tab_");
+					tabCheckVar = getUnusedName("_tab_"sv);
 					forceAddToScope(tabCheckVar);
-					temp.push_back(indent() + "local "s + typeVar + " = "s + globalVar("type", branch) + '(' + objVar + ')' + nll(branch));
+					temp.push_back(indent() + "local "s + typeVar + " = "s + globalVar("type"sv, branch) + '(' + objVar + ')' + nll(branch));
 					temp.push_back(indent() + "local "s + tabCheckVar + " = \"table\" == "s + typeVar + " or \"userdata\" == "s + typeVar + nll(branch));
 				}
 				std::string matchVar;
 				bool lastBranch = branches.back() == branch_ && !switchNode->lastBranch;
 				if (!lastBranch) {
-					matchVar = getUnusedName("_match_");
+					matchVar = getUnusedName("_match_"sv);
 					forceAddToScope(matchVar);
 					temp.push_back(indent() + "local "s + matchVar + " = false"s + nll(branch));
 				}

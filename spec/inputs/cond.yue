@@ -247,6 +247,7 @@ do
 	a = x and y or v(1) < v(2) < v(3) and b < v(4) < v(5) < v(6)
 	a = v(1) < v(2) < v(3) and b < v(4) < v(5) < v(6) or x and y
 	a = x and y or v(1) < v(2) < v(3) and b < v(4) < v(5) < v(6) or w and z
+	a = 1 < 2 == v1 > 3
 
 	local v1, v2, v3, v4, v5, v6
 	a = v1 < v2 < v3 < v4
@@ -258,6 +259,7 @@ do
 	a = x and y or v1 < v2 < v3 and b < v4 < v5 < v6
 	a = v1 < v2 < v3 and b < v4 < v5 < v6 or x and y
 	a = x and y or v1 < v2 < v3 and b < v4 < v5 < v6 or w and z
+	a = 1 < 2 == v1 > 3
 
 nil
 

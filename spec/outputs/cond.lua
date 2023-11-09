@@ -503,6 +503,16 @@ do
 			end
 		end
 	end)() or w and z
+	if not (1 < 2) then
+		a = false
+	else
+		local _cond_0 = v1
+		if not (2 == _cond_0) then
+			a = false
+		else
+			a = _cond_0 > 3
+		end
+	end
 	local v1, v2, v3, v4, v5, v6
 	a = v1 < v2 and v2 < v3 and v3 < v4
 	a = x and y or v1 < v2 and v2 < v3 and v3 < v4
@@ -512,5 +522,6 @@ do
 	a = x and y or v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6
 	a = v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6 or x and y
 	a = x and y or v1 < v2 and v2 < v3 and b < v4 and v4 < v5 and v5 < v6 or w and z
+	a = 1 < 2 and 2 == v1 and v1 > 3
 end
 return nil
