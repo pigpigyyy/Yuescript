@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.5"sv;
+const std::string_view version = "0.20.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -950,6 +950,9 @@ private:
 	template <class T>
 	ast_ptr<false, T> toAst(std::string_view codes, ast_node* parent) {
 		auto res = _parser.parse<T>(std::string(codes));
+		if (res.error) {
+			throw CompileError(res.error.value().msg, parent);
+		}
 		res.node->traverse([&](ast_node* node) {
 			node->m_begin.m_line = parent->m_begin.m_line;
 			node->m_begin.m_col = parent->m_begin.m_col;
@@ -8808,18 +8811,22 @@ private:
 		return name;
 	}
 
-	void transformImportAs(ImportAs_t* import, str_list& out) {
-		ast_node* x = import;
-		if (!import->target) {
-			auto name = moduleNameFrom(import->literal);
-			import->target.set(toAst<Variable_t>(name, x));
+	void transformImportAs(ImportAs_t* importNode, str_list& out) {
+		ast_node* x = importNode;
+		if (!importNode->target) {
+			auto name = moduleNameFrom(importNode->literal);
+			if (_parser.match<Variable_t>(name)) {
+				importNode->target.set(toAst<Variable_t>(name, x));
+			} else {
+				throw CompileError("import module name can not be used as a variable name, try renaming it with \"as newName\" clause"sv, importNode->literal);
+			}
 		}
-		if (ast_is<ImportAllMacro_t, ImportTabLit_t>(import->target)) {
-			x = import->target.get();
-			bool importAllMacro = import->target.is<ImportAllMacro_t>();
+		if (ast_is<ImportAllMacro_t, ImportTabLit_t>(importNode->target)) {
+			x = importNode->target.get();
+			bool importAllMacro = importNode->target.is<ImportAllMacro_t>();
 			std::list<std::pair<std::string, std::string>> macroPairs;
 			auto newTab = x->new_ptr<ImportTabLit_t>();
-			if (auto tabLit = import->target.as<ImportTabLit_t>()) {
+			if (auto tabLit = importNode->target.as<ImportTabLit_t>()) {
 				for (auto item : tabLit->items.objects()) {
 					switch (item->get_id()) {
 #ifdef YUE_NO_MACRO
@@ -8859,7 +8866,7 @@ private:
 			}
 #ifndef YUE_NO_MACRO
 			if (importAllMacro || !macroPairs.empty()) {
-				auto moduleName = _parser.toString(import->literal);
+				auto moduleName = _parser.toString(importNode->literal);
 				Utils::replace(moduleName, "'"sv, ""sv);
 				Utils::replace(moduleName, "\""sv, ""sv);
 				Utils::trim(moduleName);
@@ -8935,10 +8942,10 @@ private:
 				out.push_back(Empty);
 				return;
 			} else {
-				import->target.set(newTab);
+				importNode->target.set(newTab);
 			}
 		}
-		auto target = import->target.get();
+		auto target = importNode->target.get();
 		x = target;
 		auto value = x->new_ptr<Value_t>();
 		if (auto var = ast_cast<Variable_t>(target)) {
@@ -8994,7 +9001,7 @@ private:
 		auto assignList = x->new_ptr<ExpList_t>();
 		assignList->exprs.push_back(exp);
 		auto assign = x->new_ptr<Assign_t>();
-		assign->values.push_back(toAst<Exp_t>("require "s + _parser.toString(import->literal), x));
+		assign->values.push_back(toAst<Exp_t>("require "s + _parser.toString(importNode->literal), x));
 		auto assignment = x->new_ptr<ExpListAssign_t>();
 		assignment->expList.set(assignList);
 		assignment->action.set(assign);
