@@ -617,11 +617,21 @@ YueParser::YueParser() {
 
 	Parens = '(' >> *space_break >> space >> Exp >> *space_break >> space >> ')';
 	Callable = Variable | SelfItem | MacroName | Parens;
-	fn_args_exp_list = space >> Exp >> space >> *((line_break | ',') >> white >> Exp);
+
+	fn_args_value_list = Exp >> *(space >> ',' >> space >> Exp);
+
+	fn_args_lit_line = (
+		push_indent_match >> (space >> fn_args_value_list >> pop_indent | pop_indent)
+	) | (
+		space
+	);
+
+	fn_args_lit_lines = space_break >> fn_args_lit_line >> *(-(space >> ',') >> space_break >> fn_args_lit_line) >> -(space >> ',');
 
 	fn_args =
-		'(' >> *space_break >> -fn_args_exp_list >> *space_break >> space >> ')' |
-		space >> '!' >> not_('=');
+		'(' >> -(space >> fn_args_value_list >> -(space >> ',')) >>
+		-fn_args_lit_lines >>
+		white >> ')' | space >> '!' >> not_('=');
 
 	meta_index = Name | index | String;
 	Metatable = '<' >> space >> '>';
@@ -701,7 +711,7 @@ YueParser::YueParser() {
 	table_lit_lines = space_break >> table_lit_line >> *(-(space >> ',') >> space_break >> table_lit_line) >> -(space >> ',');
 
 	TableLit =
-		space >> '{' >> Seperator >>
+		'{' >> Seperator >>
 		-(space >> table_value_list >> -(space >> ',')) >>
 		-table_lit_lines >>
 		white >> '}';

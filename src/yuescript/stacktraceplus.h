@@ -345,7 +345,7 @@ local function getYueLineNumber(fname, line)
 	if source then
 		local current, target = 1, tonumber(line)
 		local findLine = line
-		for lineCode in source:gmatch("[^\n\r]*") do
+		for lineCode in source:gmatch("([^\r\n]*)\r?\n?") do
 			local num = lineCode:match("--%s*(%d+)%s*$")
 			if num then
 				findLine = num

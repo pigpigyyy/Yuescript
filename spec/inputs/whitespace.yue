@@ -97,6 +97,29 @@ b(
 c(one, two,
 	three, four)
 
+d(
+	one -- one
+	two -- two
+	three -- three
+	four -- four
+)
+
+e(
+	->
+	->
+	->
+)
+e{
+	->
+	->
+	->
+}
+e[
+	->
+	->
+	->
+]
+
 --
 
 v = ->

@@ -217,7 +217,9 @@ private:
 	NONE_AST_RULE(double_string_plain);
 	NONE_AST_RULE(lua_string_open);
 	NONE_AST_RULE(lua_string_close);
-	NONE_AST_RULE(fn_args_exp_list);
+	NONE_AST_RULE(fn_args_value_list);
+	NONE_AST_RULE(fn_args_lit_line);
+	NONE_AST_RULE(fn_args_lit_lines);
 	NONE_AST_RULE(fn_args);
 	NONE_AST_RULE(destruct_def);
 	NONE_AST_RULE(macro_args_def);

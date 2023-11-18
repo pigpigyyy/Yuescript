@@ -77,6 +77,18 @@ end
 a(one, two, three)
 b(one, two, three)
 c(one, two, three, four)
+d(one, two, three, four)
+e(function() end, function() end, function() end)
+e({
+	function() end,
+	function() end,
+	function() end
+})
+e({
+	function() end,
+	function() end,
+	function() end
+})
 local v
 v = function()
 	return a, b, c
