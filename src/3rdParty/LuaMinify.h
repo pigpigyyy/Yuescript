@@ -45,7 +45,7 @@ local function PrintTable(tb, atIndent)
 			out = out..(useNewlines and baseIndent or '')
 			if type(k) == 'number' then
 				--nothing to do
-			elseif type(k) == 'string' and k:match("^[A-Za-z_][A-Za-z0-9_]*$") then 
+			elseif type(k) == 'string' and k:match("^[A-Za-z_][A-Za-z0-9_]*$") then
 				out = out..k.." = "
 			elseif type(k) == 'string' then
 				out = out.."[\""..k.."\"] = "
@@ -547,7 +547,7 @@ local function LexLua(src)
 			--get the initial char
 			local thisLine = line
 			local thisChar = char
-			--local errorAt = ":"..line..":"..char..":> "
+			-- local errorAt = ":"..line..":"..char..":> "
 			local c = peek()
 
 			--symbol to emit
@@ -1316,6 +1316,9 @@ R"lua_codes(
 				if not tok:ConsumeKeyword('then', tokenList) then
 					return false, GenerateError("`then` expected.")
 				end
+				if tok:IsSymbol(';') then
+					tok:Get()
+				end
 				local st, nodeBody = ParseStatementList(scope)
 				if not st then return false, nodeBody end
 				nodeIfStat.Clauses[#nodeIfStat.Clauses+1] = {
@@ -1779,7 +1782,7 @@ local function Format_Mini(ast)
 				--don't want to accidentally call last statement, can't join directly
 				return a..sep..b
 			else
-			--print("asdf", '"'..a..'"', '"'..b..'"')
+				--print("asdf", '"'..a..'"', '"'..b..'"')
 				return a..b
 			end
 		end
@@ -2470,7 +2473,7 @@ local function GetYueLineMap(luaCodes)
 	local current = 1
 	local lastLine = 1
 	local lineMap = { }
-	for lineCode in luaCodes:gmatch("[^\n\r]*") do
+	for lineCode in luaCodes:gmatch("([^\r\n]*)\r?\n?") do
 		local num = lineCode:match("--%s*(%d+)%s*$")
 		if num then
 			local line = tonumber(num)
