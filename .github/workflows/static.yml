@@ -32,6 +32,8 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Prepare Site
         run: |
+          brew update
+          brew upgrade
           brew install emscripten
           make wasm
           cd doc
