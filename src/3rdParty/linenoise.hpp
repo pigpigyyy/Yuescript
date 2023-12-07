@@ -1578,6 +1578,17 @@ inline void SetMultiLine(bool ml) {
     mlmode = ml;
 }
 
+inline int Strcasecmp(const char *a, const char *b) {
+    int ca, cb;
+    do {
+        ca = (unsigned char) *a; a++;
+        cb = (unsigned char) *b; b++;
+        ca = tolower(toupper(ca));
+        cb = tolower(toupper(cb));
+    } while (ca == cb && ca != '\0');
+    return ca - cb;
+}
+
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
 inline bool isUnsupportedTerm(void) {
@@ -1587,7 +1598,7 @@ inline bool isUnsupportedTerm(void) {
 
     if (term == NULL) return false;
     for (j = 0; unsupported_term[j]; j++)
-        if (!strcasecmp(term,unsupported_term[j])) return true;
+        if (!Strcasecmp(term,unsupported_term[j])) return true;
 #endif
     return false;
 }

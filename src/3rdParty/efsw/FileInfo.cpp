@@ -35,6 +35,10 @@
 #endif
 #endif
 
+#if EFSW_PLATFORM != EFSW_PLATFORM_WIN32
+#include <filesystem>
+#endif
+
 namespace efsw {
 
 bool FileInfo::exists( const std::string& filePath ) {
@@ -182,14 +186,12 @@ bool FileInfo::isLink() const {
 std::string FileInfo::linksTo() {
 #if EFSW_PLATFORM != EFSW_PLATFORM_WIN32
 	if ( isLink() ) {
-		char* ch = realpath( Filepath.c_str(), NULL );
+		std::error_code ec;
+		auto ch = std::filesystem::canonical( Filepath, ec );
 
-		if ( NULL != ch ) {
-			std::string tstr( ch );
+		if ( !ec ) {
 
-			free( ch );
-
-			return tstr;
+			return ch.string();
 		}
 	}
 #endif
