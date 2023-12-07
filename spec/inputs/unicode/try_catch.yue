@@ -39,14 +39,14 @@ catch 错误
 	打印 "好的"
 
 do
-	if 成功, 结果 = try 函数 "abc", 123
+	if 成功, 结果 := try 函数 "abc", 123
 		打印 结果
 
 	成功, 结果 = try 函数 "abc", 123
 	catch 错误
 		打印 错误
 
-	打印 结果 if 成功, 结果 = try 函数 "abc", 123
+	打印 结果 if 成功, 结果 := try 函数 "abc", 123
 	catch 错误
 		打印 错误
 

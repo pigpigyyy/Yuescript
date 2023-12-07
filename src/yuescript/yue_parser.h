@@ -141,6 +141,7 @@ private:
 	NONE_AST_RULE(invalid_interpolation_error);
 	NONE_AST_RULE(confusing_unary_not_error);
 	NONE_AST_RULE(table_key_pair_error);
+	NONE_AST_RULE(if_assignment_syntax_error);
 
 	NONE_AST_RULE(inc_exp_level);
 	NONE_AST_RULE(dec_exp_level);

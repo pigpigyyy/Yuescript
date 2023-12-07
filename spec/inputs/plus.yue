@@ -8,13 +8,13 @@ c.repeat.if\then("xyz")\else res
 
 print @for,@@function 123
 
-if fcolor = message\match "<%w*>" then message = message\gsub "<%->", fcolor
+if fcolor := message\match "<%w*>" then message = message\gsub "<%->", fcolor
 
-message = message\gsub "<%->", fcolor if fcolor = message\match "<%w*>"
+message = message\gsub "<%->", fcolor if fcolor := message\match "<%w*>"
 
-valA = func! if func = getfunc!
+valA = func! if func := getfunc!
 
-local valA = func! if func = getfunc!
+local valA = func! if func := getfunc!
 
 valB = do
 	func = getfunc!

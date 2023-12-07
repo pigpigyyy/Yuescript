@@ -52,18 +52,18 @@ elseif "只有我们"
 
 --
 
-if 某东西 = 10
+if 某东西 := 10
 	打印 某东西
 else
 	打印 "其它"
 
-你好 = if 某东西 = 10
+你好 = if 某东西 := 10
 	打印 某东西
 else
 	打印 "其它"
 
 
-你好 = 5 + if 某东西 = 10
+你好 = 5 + if 某东西 := 10
 	打印 某东西
 
 ---
@@ -72,9 +72,9 @@ z变量 = false
 
 _无效变量 = if false
 	一
-elseif 条件x = true
+elseif 条件x := true
 	二
-elseif 条件z = true
+elseif 条件z := true
 	三
 else
 	四
@@ -82,17 +82,17 @@ else
 
 输出 = if false
 	一
-elseif 条件x = true
+elseif 条件x := true
 	二
-elseif 条件z = true
+elseif 条件z := true
 	三
 else
 	四
 
 变量 = ->
-	if 某东西 = true
+	if 某东西 := true
 		1
-	elseif 另一个 = false
+	elseif 另一个 := false
 		2
 
 ---
@@ -152,7 +152,7 @@ else
 
 do
 	j变量 = 100
-	unless j变量 = 嗨!
+	unless j变量 := 嗨!
 		错误 "不是 j变量!"
 
 ----------------
@@ -200,22 +200,22 @@ do
 	elseif 条件c
 		字段d: 变量e = 变量tb
 
-if :派 = 数学库
+if :派 := 数学库
 	打印 派
 
 do
 	local 数学库
-	if :派 = 数学库
+	if :派 := 数学库
 		打印 派
 
 do
-	if _模块 = {}
+	if _模块 := {}
 		:东西 = _模块
 		:a功能, :b功能 = _模块
 
 do
 	global _模块
-	if _模块 = {}
+	if _模块 := {}
 		:东西 = _模块
 		:a功能, :b功能 = _模块
 

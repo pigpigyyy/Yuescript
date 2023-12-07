@@ -114,6 +114,11 @@ YueParser::YueParser() {
 		return false;
 	});
 
+	if_assignment_syntax_error = pl::user(true_(), [](const item_t& item) {
+		throw ParserError("use := for if-assignment expression"sv, item.begin);
+		return false;
+	});
+
 	#define ensure(patt, finally) ((patt) >> (finally) | (finally) >> cut)
 
 	#define key(str) (expr(str) >> not_alpha_num)
@@ -369,8 +374,8 @@ YueParser::YueParser() {
 			+space_break >> advance_match >> space >> SwitchCase >> switch_block >> pop_indent
 		) >> switch_block;
 
-	Assignment = ExpList >> space >> Assign;
-	IfCond = disable_chain_rule(disable_arg_table_block_rule(Assignment | Exp));
+	Assignment = -(',' >> space >> ExpList >> space) >> (':' >> Assign | and_('=') >> if_assignment_syntax_error);
+	IfCond = disable_chain_rule(disable_arg_table_block_rule(Exp >> -(space >> Assignment)));
 	if_else_if = -(line_break >> *space_break >> check_indent_match) >> space >> key("elseif") >> space >> IfCond >> space >> body_with("then");
 	if_else = -(line_break >> *space_break >> check_indent_match) >> space >> key("else") >> space >> body;
 	IfType = (expr("if") | "unless") >> not_alpha_num;

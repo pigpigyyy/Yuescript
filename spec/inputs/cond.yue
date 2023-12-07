@@ -52,18 +52,18 @@ elseif "just us"
 
 --
 
-if something = 10
+if something := 10
 	print something
 else
 	print "else"
 
-hello = if something = 10
+hello = if something := 10
 	print something
 else
 	print "else"
 
 
-hello = 5 + if something = 10
+hello = 5 + if something := 10
 	print something
 
 ---
@@ -72,9 +72,9 @@ z = false
 
 _ = if false
 	one
-elseif x = true
+elseif x := true
 	two
-elseif z = true
+elseif z := true
 	three
 else
 	four
@@ -82,17 +82,17 @@ else
 
 out = if false
 	one
-elseif x = true
+elseif x := true
 	two
-elseif z = true
+elseif z := true
 	three
 else
 	four
 
 kzy = ->
-	if something = true
+	if something := true
 		1
-	elseif another = false
+	elseif another := false
 		2
 
 ---
@@ -152,7 +152,7 @@ dddd = {1,2,3} unless value
 
 do
 	j = 100
-	unless j = hi!
+	unless j := hi!
 		error "not j!"
 
 ----------------
@@ -200,22 +200,22 @@ do
 	elseif c
 		d: e = tb
 
-if :pi = math
+if :pi := math
 	print pi
 
 do
 	local math
-	if :pi = math
+	if :pi := math
 		print pi
 
 do
-	if _M = {}
+	if _M := {}
 		:Thing = _M
 		:a, :b = _M
 
 do
 	global _M
-	if _M = {}
+	if _M := {}
 		:Thing = _M
 		:a, :b = _M
 

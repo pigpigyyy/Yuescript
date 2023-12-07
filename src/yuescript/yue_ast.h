@@ -302,14 +302,15 @@ AST_NODE(Switch)
 AST_END(Switch, "switch"sv)
 
 AST_NODE(Assignment)
-	ast_ptr<true, ExpList_t> expList;
+	ast_ptr<false, ExpList_t> expList;
 	ast_ptr<true, Assign_t> assign;
 	AST_MEMBER(Assignment, &expList, &assign)
 AST_END(Assignment, "assignment"sv)
 
 AST_NODE(IfCond)
-	ast_sel<true, Exp_t, Assignment_t> condition;
-	AST_MEMBER(IfCond, &condition)
+	ast_ptr<true, Exp_t> condition;
+	ast_ptr<false, Assignment_t> assignment;
+	AST_MEMBER(IfCond, &condition, &assignment)
 AST_END(IfCond, "if_cond"sv)
 
 AST_LEAF(IfType)

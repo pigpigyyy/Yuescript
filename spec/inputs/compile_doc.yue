@@ -8,13 +8,13 @@ for [compiledFile, docFile] in *[
 		text = \read "*a"
 		codes = []
 		for code in text\gmatch "```moonscript(.-)```"
-			if result, err = to_lua code, implicit_return_root: false, reserve_line_number: false
+			if result, err := to_lua code, implicit_return_root: false, reserve_line_number: false
 				codes[] = result
 			elseif not err\match "macro exporting module only accepts macro definition"
 				print err
 				os.exit 1
 		for code in text\gmatch "<pre>(.-)</pre>"
-			if result, err = to_lua code\gsub("&lt;", "<")\gsub("&gt;", ">"), implicit_return_root: false, reserve_line_number: false
+			if result, err := to_lua code\gsub("&lt;", "<")\gsub("&gt;", ">"), implicit_return_root: false, reserve_line_number: false
 				codes[] = result
 			else
 				print err

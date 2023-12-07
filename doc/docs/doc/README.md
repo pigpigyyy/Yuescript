@@ -1225,32 +1225,32 @@ We know each element in the array table is a two item tuple, so we can unpack it
 
 ## If Assignment
 
-if and elseif blocks can take an assignment in place of a conditional expression. Upon evaluating the conditional, the assignment will take place and the value that was assigned to will be used as the conditional expression. The assigned variable is only in scope for the body of the conditional, meaning it is never available if the value is not truthy.
+`if` and `elseif` blocks can take an assignment in place of a conditional expression. Upon evaluating the conditional, the assignment will take place and the value that was assigned to will be used as the conditional expression. The assigned variable is only in scope for the body of the conditional, meaning it is never available if the value is not truthy. And you have to use "the walrus operator" `:=` instead of `=` to do assignment.
 
 ```moonscript
-if user = database.find_user "moon"
+if user := database.find_user "moon"
   print user.name
 ```
 <YueDisplay>
 <pre>
-if user = database.find_user "moon"
+if user := database.find_user "moon"
   print user.name
 </pre>
 </YueDisplay>
 
 ```moonscript
-if hello = os.getenv "hello"
+if hello := os.getenv "hello"
   print "You have hello", hello
-elseif world = os.getenv "world"
+elseif world := os.getenv "world"
   print "you have world", world
 else
   print "nothing :("
 ```
 <YueDisplay>
 <pre>
-if hello = os.getenv "hello"
+if hello := os.getenv "hello"
   print "You have hello", hello
-elseif world = os.getenv "world"
+elseif world := os.getenv "world"
   print "you have world", world
 else
   print "nothing :("
@@ -1259,13 +1259,13 @@ else
 
 If assignment with multiple return values. Only the first value is getting checked, other values are scoped.
 ```moonscript
-if success, result = pcall -> "get result without problems"
+if success, result := pcall -> "get result without problems"
   print result -- variable result is scoped
 print "OK"
 ```
 <YueDisplay>
 <pre>
-if success, result = pcall -> "get result without problems"
+if success, result := pcall -> "get result without problems"
   print result -- variable result is scoped
 print "OK"
 </pre>
@@ -1374,7 +1374,7 @@ try
   func 1, 2, 3
 
 -- working with if assignment pattern
-if success, result = try func 1, 2, 3
+if success, result := try func 1, 2, 3
 catch err
     print yue.traceback err
   print result
@@ -1402,7 +1402,7 @@ try
   func 1, 2, 3
 
 -- working with if assignment pattern
-if success, result = try func 1, 2, 3
+if success, result := try func 1, 2, 3
 catch err
     print yue.traceback err
   print result

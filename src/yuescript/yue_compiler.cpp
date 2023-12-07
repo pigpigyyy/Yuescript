@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.20.7"sv;
+const std::string_view version = "0.21.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -3088,7 +3088,7 @@ private:
 		for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
 			ns.push_back(*it);
 			if (auto cond = ast_cast<IfCond_t>(*it)) {
-				if (*it != nodes.front() && cond->condition.is<Assignment_t>()) {
+				if (*it != nodes.front() && cond->assignment) {
 					auto x = *it;
 					auto newIf = x->new_ptr<If_t>();
 					newIf->type.set(toAst<IfType_t>("if"sv, x));
@@ -3142,11 +3142,12 @@ private:
 				default: YUEE("AST node mismatch", node); break;
 			}
 		}
-		auto asmt = ifCondPairs.front().first->condition.as<Assignment_t>();
+		auto firstIfCond = ifCondPairs.front().first;
+		auto asmt = firstIfCond->assignment.get();
 		bool storingValue = false;
 		ast_ptr<false, ExpListAssign_t> extraAssignment;
 		if (asmt) {
-			ast_ptr<false, ast_node> exp = asmt->expList->exprs.front();
+			auto exp = firstIfCond->condition.get();
 			auto x = exp;
 			auto var = singleVariableFrom(exp, false);
 			if (var.empty() || isGlobal(var)) {
@@ -3164,11 +3165,12 @@ private:
 						temp.push_back(indent() + "do"s + nll(asmt));
 						pushScope();
 					}
-					asmt->expList->exprs.pop_front();
 					auto expList = toAst<ExpList_t>(desVar, x);
 					auto assignment = x->new_ptr<ExpListAssign_t>();
-					for (auto expr : asmt->expList->exprs.objects()) {
-						expList->exprs.push_back(expr);
+					if (asmt->expList) {
+						for (auto expr : asmt->expList->exprs.objects()) {
+							expList->exprs.push_back(expr);
+						}
 					}
 					assignment->expList.set(expList);
 					assignment->action.set(asmt->assign);
@@ -3196,9 +3198,10 @@ private:
 				}
 				auto expList = x->new_ptr<ExpList_t>();
 				expList->exprs.push_back(exp);
-				asmt->expList->exprs.pop_front();
-				for (auto expr : asmt->expList->exprs.objects()) {
-					expList->exprs.push_back(expr);
+				if (asmt->expList) {
+					for (auto expr : asmt->expList->exprs.objects()) {
+						expList->exprs.push_back(expr);
+					}
 				}
 				auto assignment = x->new_ptr<ExpListAssign_t>();
 				assignment->expList.set(expList);

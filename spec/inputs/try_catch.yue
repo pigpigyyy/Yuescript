@@ -39,14 +39,14 @@ catch err
 	print "OK"
 
 do
-	if success, result = try func "abc", 123
+	if success, result := try func "abc", 123
 		print result
 
 	success, result = try func "abc", 123
 	catch err
 		print err
 
-	print result if success, result = try func "abc", 123
+	print result if success, result := try func "abc", 123
 	catch err
 		print err
 

@@ -30,7 +30,7 @@ c, d = 1, 2 if true
 
 x = (do
 	f!
-	123) if f = getHandler!
+	123) if f := getHandler!
 
 (using nil) <- _
 
