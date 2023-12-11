@@ -412,4 +412,20 @@ do
 	f(a, b)
 	f()
 end
+do
+	if cond then
+	else
+	end
+	do
+		local _exp_0 = cond
+		if 1 == _exp_0 then
+		elseif 2 == _exp_0 then
+		else
+		end
+	end
+	local f1
+	f1 = function() end
+	local f2
+	f2 = function() end
+end
 return nil

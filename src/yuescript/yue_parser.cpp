@@ -958,7 +958,7 @@ YueParser::YueParser() {
 		check_indent >> (multi_line_comment >> space | comment) |
 		advance >> ensure(multi_line_comment >> space | comment, pop_indent) |
 		plain_space
-	) >> and_(line_break);
+	) >> and_(stop);
 
 	indentation_error = pl::user(not_(pipe_operator | eof()), [](const item_t& item) {
 		throw ParserError("unexpected indent"sv, item.begin);

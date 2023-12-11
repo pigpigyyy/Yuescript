@@ -460,5 +460,23 @@ do
 	)
 	f !
 
+do
+	if cond
+		--
+	else
+		--
+
+	switch cond
+		when 1
+			--
+		when 2
+			--
+		else
+			--
+
+	f1 = -> --
+	f2 = ->
+		--
+
 nil
 
