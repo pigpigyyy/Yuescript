@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt install -y lua5.4 liblua5.4-dev luarocks
           sudo luarocks --lua-version 5.4 install busted
-          sudo luarocks make
+          sudo luarocks --lua-version 5.4 make
           make test
       - name: pack
         if: startsWith(github.ref, 'refs/tags/')
