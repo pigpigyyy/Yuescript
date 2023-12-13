@@ -138,7 +138,7 @@ std::string exec(const std::string& codes) {
 	};
 
 	execStr(R"yuescript(
-_G.__output = {}
+_G.__output = []
 _G.print = (...)->
 	_G.__output[] = table.concat [tostring select i, ... for i = 1, select "#", ...], " "
 	_G.__output[] = "\n"

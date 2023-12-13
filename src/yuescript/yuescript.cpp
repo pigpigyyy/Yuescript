@@ -172,6 +172,39 @@ static int yuetolua(lua_State* L) {
 	return 3;
 }
 
+static int yueformat(lua_State* L) {
+	size_t len = 0;
+	auto input = luaL_checklstring(L, 1, &len);
+	int tabSize = 0;
+	if (!lua_isnoneornil(L, 2)) {
+		tabSize = static_cast<int>(luaL_checkinteger(L, 2));
+	}
+	std::string_view codes(input, len);
+	auto info = yue::YueParser{}.parse<yue::File_t>(codes);
+	if (info.error) {
+		const auto& error = info.error.value();
+		if (!info.codes) {
+			lua_pushnil(L);
+			lua_pushlstring(L, error.msg.c_str(), error.msg.size());
+			return 2;
+		}
+		auto displayMessage = info.errorMessage(error.msg, error.line, error.col, 0);
+		lua_pushnil(L);
+		lua_pushlstring(L, displayMessage.c_str(), displayMessage.size());
+		return 2;
+	}
+	yue::YueFormat formatter{};
+	if (tabSize > 0) {
+		formatter.spaceOverTab = true;
+		formatter.tabSpaces = tabSize;
+	} else {
+		formatter.spaceOverTab = false;
+	}
+	auto result = formatter.toString(info.node.get());
+	lua_pushlstring(L, result.c_str(), result.size());
+	return 1;
+}
+
 static int yuecheck(lua_State* L) {
 	size_t len = 0;
 	auto input = luaL_checklstring(L, 1, &len);
@@ -268,6 +301,7 @@ static int yuetoast(lua_State* L) {
 			stack.pop();
 		};
 		do_call(info.node);
+		yue::YueFormat formatter{};
 		while (!stack.empty()) {
 			auto& current = stack.top();
 			int continuation = current.continuation;
@@ -319,7 +353,8 @@ static int yuetoast(lua_State* L) {
 							lua_rawseti(L, -2, 2);
 							lua_pushinteger(L, node->m_begin.m_col);
 							lua_rawseti(L, -2, 3);
-							auto str = parser.toString(node);
+							formatter.indent = 0;
+							auto str = node->to_string(&formatter);
 							yue::Utils::trim(str);
 							lua_pushlstring(L, str.c_str(), str.length());
 							lua_rawseti(L, -2, 4);
@@ -371,8 +406,9 @@ static int yuetoast(lua_State* L) {
 		return 1;
 	} else {
 		lua_pushnil(L);
-		const auto& msg = info.error.value().msg;
-		lua_pushlstring(L, msg.c_str(), msg.length());
+		const auto& err = info.error.value();
+		auto displayMessage = info.errorMessage(err.msg, err.line, err.col);
+		lua_pushlstring(L, displayMessage.c_str(), displayMessage.length());
 		return 2;
 	}
 }
@@ -381,6 +417,7 @@ static const luaL_Reg yuelib[] = {
 	{"to_lua", yuetolua},
 	{"to_ast", yuetoast},
 	{"check", yuecheck},
+	{"format", yueformat},
 	{"version", nullptr},
 	{"options", nullptr},
 	{"load_stacktraceplus", nullptr},

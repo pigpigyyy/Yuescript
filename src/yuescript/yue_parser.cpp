@@ -477,7 +477,7 @@ YueParser::YueParser() {
 		space
 	);
 
-	list_lit_lines = space_break >> list_lit_line >> *(-(space >> ',') >> space_break >> list_lit_line) >> -(space >> ',');
+	list_lit_lines = +space_break >> list_lit_line >> *(-(space >> ',') >> space_break >> list_lit_line) >> -(space >> ',');
 
 	Comprehension = '[' >> not_('[') >>
 		Seperator >> space >> (
@@ -489,7 +489,6 @@ YueParser::YueParser() {
 			white >> ']' >> not_(space >> '=')
 		);
 
-	(space >> disable_for_rule(Exp) >> space >> CompInner >> space >> ']');
 	CompValue = ',' >> space >> Exp;
 	TblComprehension = and_('{') >> ('{' >> space >> disable_for_rule(Exp >> space >> -(CompValue >> space)) >> CompInner >> space >> '}' | braces_expression_error);
 
@@ -829,17 +828,26 @@ YueParser::YueParser() {
 		'*' >> space >> (SpreadExp | Exp | TableBlock)
 	);
 
+	fn_arg_def_list = FnArgDef >> *(space >> ',' >> space >> FnArgDef);
+
+	fn_arg_def_lit_line = (
+		push_indent_match >> (space >> fn_arg_def_list >> pop_indent | pop_indent)
+	) | (
+		space
+	);
+
+	fn_arg_def_lit_lines = fn_arg_def_lit_line >> *(-(space >> ',') >> space_break >> fn_arg_def_lit_line);
+
 	FnArgDef = (Variable | SelfItem >> -ExistentialOp) >> -(space >> '=' >> space >> Exp);
 
-	FnArgDefList = Seperator >> ((
-			FnArgDef >>
-			*(space >> (',' | line_break) >> white >> FnArgDef) >>
-			-(space >> (',' | line_break) >> white >> VarArg)
-		) | VarArg);
+	FnArgDefList = Seperator >> (
+		fn_arg_def_lit_lines >> -(-(space >> ',') >> white >> VarArg) |
+		white >> VarArg
+	);
 
 	OuterVarShadow = key("using") >> space >> (NameList | key("nil"));
 
-	FnArgsDef = '(' >> white >> -FnArgDefList >> -(space >> OuterVarShadow) >> white >> ')';
+	FnArgsDef = '(' >> *space_break >> -FnArgDefList >> -(white >> OuterVarShadow) >> white >> ')';
 	FnArrow = expr("->") | "=>";
 	FunLit = -FnArgsDef >> space >> FnArrow >> -(space >> Body);
 
@@ -873,8 +881,8 @@ YueParser::YueParser() {
 
 	invoke_args_with_table =
 		',' >> (
-			TableBlock |
-			space_break >> advance_match >> arg_block >> -arg_table_block
+			arg_table_block |
+			space_break >> advance_match >> arg_block >> -(-(space >> ',') >> arg_table_block)
 		) | arg_table_block;
 
 	leading_spaces_error = pl::user(+space_one >> '(' >> space >> Exp >> +(space >> ',' >> space >> Exp) >> space >> ')', [](const item_t& item) {
@@ -954,11 +962,10 @@ YueParser::YueParser() {
 
 	Body = in_block | Statement;
 
-	empty_line_break = (
-		check_indent >> (multi_line_comment >> space | comment) |
-		advance >> ensure(multi_line_comment >> space | comment, pop_indent) |
-		plain_space
-	) >> and_(stop);
+	empty_line_break =
+		check_indent >> (multi_line_comment >> space | comment) >> and_(stop) |
+		advance >> ensure(multi_line_comment >> space | comment, pop_indent) >> and_(stop) |
+		plain_space >> and_(line_break);
 
 	indentation_error = pl::user(not_(pipe_operator | eof()), [](const item_t& item) {
 		throw ParserError("unexpected indent"sv, item.begin);
@@ -1084,6 +1091,11 @@ void trim(std::string& str) {
 } // namespace Utils
 
 std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCol, int lineOffset) const {
+	if (!codes) {
+		std::ostringstream buf;
+		buf << errLine + lineOffset << ": "sv << msg;
+		return buf.str();
+	}
 	const int ASCII = 255;
 	int length = errLine;
 	auto begin = codes->begin();

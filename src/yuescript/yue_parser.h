@@ -222,6 +222,9 @@ private:
 	NONE_AST_RULE(fn_args_lit_line);
 	NONE_AST_RULE(fn_args_lit_lines);
 	NONE_AST_RULE(fn_args);
+	NONE_AST_RULE(fn_arg_def_list);
+	NONE_AST_RULE(fn_arg_def_lit_line);
+	NONE_AST_RULE(fn_arg_def_lit_lines);
 	NONE_AST_RULE(destruct_def);
 	NONE_AST_RULE(macro_args_def);
 	NONE_AST_RULE(chain_call);

@@ -230,7 +230,7 @@ std::string LocalValues_t::to_string(void* ud) const {
 	temp.emplace_back(nameList->to_string(ud));
 	if (valueList) {
 		if (valueList.is<TableBlock_t>()) {
-			temp.emplace_back("="s + valueList->to_string(ud));
+			temp.emplace_back("=\n"s + valueList->to_string(ud));
 		} else {
 			temp.emplace_back("="s);
 			temp.emplace_back(valueList->to_string(ud));
@@ -312,7 +312,10 @@ std::string ShortTabAppending_t::to_string(void* ud) const {
 std::string Backcall_t::to_string(void* ud) const {
 	str_list temp;
 	if (argsDef) {
-		temp.emplace_back(argsDef->to_string(ud));
+		auto def = argsDef->to_string(ud);
+		if (!def.empty()) {
+			temp.emplace_back(def);
+		}
 	}
 	temp.emplace_back(arrow->to_string(ud));
 	temp.emplace_back(value->to_string(ud));
@@ -343,7 +346,7 @@ std::string ExpList_t::to_string(void* ud) const {
 std::string Return_t::to_string(void* ud) const {
 	str_list temp{"return"s};
 	if (valueList) {
-		temp.emplace_back(valueList.is<TableBlock_t>() ? ""s : " "s);
+		temp.emplace_back(valueList.is<TableBlock_t>() ? "\n"s : " "s);
 		temp.emplace_back(valueList->to_string(ud));
 	}
 	return join(temp);
@@ -365,6 +368,9 @@ std::string With_t::to_string(void* ud) const {
 		}
 		info->pushScope();
 		auto code = body->to_string(ud);
+		if (code.empty()) {
+			code = info->ind() + "--"s;
+		}
 		info->popScope();
 		return line + '\n' + code;
 	}
@@ -383,6 +389,9 @@ std::string SwitchCase_t::to_string(void* ud) const {
 	} else {
 		info->pushScope();
 		auto block = body->to_string(ud);
+		if (block.empty()) {
+			block = info->ind() + "--"s;
+		}
 		info->popScope();
 		auto line = "when "s + condition->to_string(ud);
 		if (line.find('\n') != std::string::npos) {
@@ -405,6 +414,9 @@ std::string Switch_t::to_string(void* ud) const {
 			temp.emplace_back(info->ind() + "else"s);
 			info->pushScope();
 			temp.emplace_back(lastBranch->to_string(ud));
+			if (temp.back().empty()) {
+				temp.back() = info->ind() + "--"s;
+			}
 			info->popScope();
 		}
 	}
@@ -412,10 +424,18 @@ std::string Switch_t::to_string(void* ud) const {
 	return join(temp, "\n"sv);
 }
 std::string Assignment_t::to_string(void* ud) const {
-	return expList->to_string(ud) + ' ' + assign->to_string(ud);
+	if (expList) {
+		return ", "s + expList->to_string(ud) + " :"s + assign->to_string(ud);
+	} else {
+		return " :"s + assign->to_string(ud);
+	}
 }
 std::string IfCond_t::to_string(void* ud) const {
-	return condition->to_string(ud);
+	if (assignment) {
+		return condition->to_string(ud) + assignment->to_string(ud);
+	} else {
+		return condition->to_string(ud);
+	}
 }
 std::string If_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -447,11 +467,17 @@ std::string If_t::to_string(void* ud) const {
 				if (condition) {
 					info->pushScope();
 					temp.emplace_back(node->to_string(ud));
+					if (temp.back().empty()) {
+						temp.back() = info->ind() + "--"s;
+					}
 					info->popScope();
 				} else {
 					temp.emplace_back(info->ind() + "else"s);
 					info->pushScope();
 					temp.emplace_back(node->to_string(ud));
+					if (temp.back().empty()) {
+						temp.back() = info->ind() + "--"s;
+					}
 					info->popScope();
 				}
 				condition = false;
@@ -473,6 +499,9 @@ std::string While_t::to_string(void* ud) const {
 		}
 		info->pushScope();
 		temp.emplace_back(body->to_string(ud));
+		if (temp.back().empty()) {
+			temp.back() = info->ind() + "--"s;
+		}
 		info->popScope();
 	}
 	return join(temp, "\n"sv);
@@ -486,6 +515,9 @@ std::string Repeat_t::to_string(void* ud) const {
 		temp.emplace_back("repeat"s);
 		info->pushScope();
 		temp.emplace_back(body->to_string(ud));
+		if (temp.back().empty()) {
+			temp.back() = info->ind() + "--"s;
+		}
 		info->popScope();
 	}
 	temp.emplace_back(info->ind() + "until "s + condition->to_string(ud));
@@ -508,6 +540,9 @@ std::string For_t::to_string(void* ud) const {
 		}
 		info->pushScope();
 		auto block = body->to_string(ud);
+		if (block.empty()) {
+			block = info->ind() + "--"s;
+		}
 		info->popScope();
 		return line + '\n' + block;
 	}
@@ -523,6 +558,9 @@ std::string ForEach_t::to_string(void* ud) const {
 		}
 		info->pushScope();
 		auto block = body->to_string(ud);
+		if (block.empty()) {
+			block = info->ind() + "--"s;
+		}
 		info->popScope();
 		return line + '\n' + block;
 	}
@@ -534,6 +572,9 @@ std::string Do_t::to_string(void* ud) const {
 	} else {
 		info->pushScope();
 		auto block = body->to_string(ud);
+		if (block.empty()) {
+			block = info->ind() + "--"s;
+		}
 		info->popScope();
 		return "do\n"s + block;
 	}
@@ -543,6 +584,9 @@ std::string CatchBlock_t::to_string(void* ud) const {
 	auto line = "catch "s + err->to_string(ud);
 	info->pushScope();
 	auto block = body->to_string(ud);
+	if (block.empty()) {
+		block = info->ind() + "--"s;
+	}
 	info->popScope();
 	return line + '\n' + block;
 }
@@ -555,6 +599,9 @@ std::string Try_t::to_string(void* ud) const {
 		temp.emplace_back("try"s);
 		info->pushScope();
 		temp.emplace_back(func->to_string(ud));
+		if (temp.back().empty()) {
+			temp.back() = info->ind() + "--"s;
+		}
 		info->popScope();
 	}
 	if (catchBlock) {
@@ -571,7 +618,11 @@ std::string Comprehension_t::to_string(void* ud) const {
 		temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
 	}
 	if (items.size() != 2 || !ast_is<CompInner_t>(items.back())) {
-		return '[' + join(temp, ", "sv) + ']';
+		if (items.size() == 1) {
+			return '[' + join(temp, ", "sv) + ",]"s;
+		} else {
+			return '[' + join(temp, ", "sv) + ']';
+		}
 	} else {
 		return '[' + join(temp, " "sv) + ']';
 	}
@@ -613,7 +664,7 @@ std::string CompInner_t::to_string(void* ud) const {
 std::string Assign_t::to_string(void* ud) const {
 	str_list temp;
 	if (values.size() == 1 && ast_is<TableBlock_t>(values.front())) {
-		return '=' + values.front()->to_string(ud);
+		return "=\n"s + values.front()->to_string(ud);
 	}
 	for (auto value : values.objects()) {
 		temp.emplace_back(value->to_string(ud));
@@ -790,7 +841,13 @@ static bool isInBlockExp(ast_node* node) {
 					TblComprehension_t, Comprehension_t>(simpleValue->value)) {
 				return true;
 			}
+		} else if (auto chainValue = value->item.as<ChainValue_t>()) {
+			if (ast_is<InvokeArgs_t>(chainValue->items.back())) {
+				return true;
+			}
 		}
+	} else if (ast_is<TableBlock_t>(node)) {
+		return true;
 	}
 	return false;
 }
@@ -863,7 +920,7 @@ std::string TableBlock_t::to_string(void* ud) const {
 				temp.emplace_back(info->ind() + "* "s + value->to_string(ud));
 				break;
 			case id<TableBlock_t>():
-				temp.emplace_back(info->ind() + "*"s + value->to_string(ud));
+				temp.emplace_back(info->ind() + "*\n"s + value->to_string(ud));
 				break;
 			default:
 				temp.emplace_back(info->ind() + value->to_string(ud));
@@ -871,21 +928,25 @@ std::string TableBlock_t::to_string(void* ud) const {
 		}
 	}
 	info->popScope();
-	return '\n' + join(temp, "\n"sv);
+	return join(temp, "\n"sv);
 }
 std::string TableBlockIndent_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	str_list temp;
 	info->pushScope();
 	for (auto value : values.objects()) {
-		if (value == values.front()) {
-			temp.emplace_back("* "s + value->to_string(ud));
+		if (ast_is<TableBlockIndent_t>(value)) {
+			temp.emplace_back("\n"s + value->to_string(ud));
 		} else {
-			temp.emplace_back(info->ind() + value->to_string(ud));
+			if (value == values.front()) {
+				temp.emplace_back(" "s + value->to_string(ud));
+			} else {
+				temp.emplace_back(info->ind() + value->to_string(ud));
+			}
 		}
 	}
 	info->popScope();
-	return join(temp, "\n"sv);
+	return "*"s + join(temp, "\n"sv);
 }
 std::string ClassMemberList_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -893,7 +954,7 @@ std::string ClassMemberList_t::to_string(void* ud) const {
 	for (auto value : values.objects()) {
 		temp.emplace_back(info->ind() + value->to_string(ud));
 	}
-	return join(temp, "\n"sv);
+	return join(temp, ", "sv);
 }
 std::string ClassBlock_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -929,7 +990,7 @@ std::string GlobalValues_t::to_string(void* ud) const {
 	auto line = nameList->to_string(ud);
 	if (valueList) {
 		if (valueList.is<TableBlock_t>()) {
-			line += " ="s + valueList->to_string(ud);
+			line += " =\n"s + valueList->to_string(ud);
 		} else {
 			line += " = "s + valueList->to_string(ud);
 		}
@@ -949,8 +1010,12 @@ std::string Export_t::to_string(void* ud) const {
 			line += target->to_string(ud);
 			break;
 		case id<Exp_t>(): {
-			auto valueStr = target->to_string(ud);
-			line += '[' + (valueStr[0] == '[' ? " "s : ""s) + valueStr + ']';
+			if (def) {
+				line += target->to_string(ud);
+			} else {
+				auto valueStr = target->to_string(ud);
+				line += '[' + (valueStr[0] == '[' ? " "s : ""s) + valueStr + ']';
+			}
 			break;
 		}
 		default:
@@ -973,7 +1038,7 @@ std::string NormalPair_t::to_string(void* ud) const {
 	} else {
 		line = key->to_string(ud) + ":"s;
 	}
-	line += (value.is<TableBlock_t>() ? ""s : " "s) + value->to_string(ud);
+	line += (value.is<TableBlock_t>() ? "\n"s : " "s) + value->to_string(ud);
 	return line;
 }
 std::string MetaVariablePair_t::to_string(void* ud) const {
@@ -989,7 +1054,7 @@ std::string MetaNormalPair_t::to_string(void* ud) const {
 	} else {
 		line = '<' + key->to_string(ud) + ">:"s;
 	}
-	line += (value.is<TableBlock_t>() ? ""s : " "s) + value->to_string(ud);
+	line += (value.is<TableBlock_t>() ? "\n"s : " "s) + value->to_string(ud);
 	return line;
 }
 std::string VariablePairDef_t::to_string(void* ud) const {
@@ -1033,23 +1098,38 @@ std::string FnArgDef_t::to_string(void* ud) const {
 		line += op->to_string(ud);
 	}
 	if (defaultValue) {
-		if (isInBlockExp(defaultValue)) {
-			line += " = ("s + defaultValue->to_string(ud) + ')';
-		} else {
-			line += " = "s + defaultValue->to_string(ud);
-		}
+		line += " = "s + defaultValue->to_string(ud);
 	}
 	return line;
 }
 std::string FnArgDefList_t::to_string(void* ud) const {
+	auto info = reinterpret_cast<YueFormat*>(ud);
 	str_list temp;
+	bool hasInBlockExp = false;
 	for (auto def : definitions.objects()) {
-		temp.emplace_back(def->to_string(ud));
+		auto argDef = static_cast<FnArgDef_t*>(def);
+		if (argDef->defaultValue && isInBlockExp(argDef->defaultValue)) {
+			hasInBlockExp = true;
+			break;
+		}
 	}
-	if (varArg) {
-		temp.emplace_back(varArg->to_string(ud));
+	if (hasInBlockExp) {
+		for (auto def : definitions.objects()) {
+			temp.emplace_back(info->ind() + def->to_string(ud));
+		}
+		if (varArg) {
+			temp.emplace_back(info->ind() + varArg->to_string(ud));
+		}
+		return join(temp, "\n"sv);
+	} else {
+		for (auto def : definitions.objects()) {
+			temp.emplace_back(def->to_string(ud));
+		}
+		if (varArg) {
+			temp.emplace_back(varArg->to_string(ud));
+		}
+		return join(temp, ", "sv);
 	}
-	return join(temp, ", "sv);
 }
 std::string OuterVarShadow_t::to_string(void* ud) const {
 	if (varList) {
@@ -1059,14 +1139,38 @@ std::string OuterVarShadow_t::to_string(void* ud) const {
 	}
 }
 std::string FnArgsDef_t::to_string(void* ud) const {
-	std::string line;
+	auto info = reinterpret_cast<YueFormat*>(ud);
+	bool hasInBlockExp = false;
 	if (defList) {
-		line += defList->to_string(ud);
+		for (auto def : defList->definitions.objects()) {
+			auto argDef = static_cast<FnArgDef_t*>(def);
+			if (argDef->defaultValue && isInBlockExp(argDef->defaultValue)) {
+				hasInBlockExp = true;
+				break;
+			}
+		}
 	}
-	if (shadowOption) {
-		line += (line.empty() ? ""s : " "s) + shadowOption->to_string(ud);
+	if (hasInBlockExp) {
+		str_list temp;
+		info->pushScope();
+		if (defList) {
+			temp.push_back(defList->to_string(ud));
+		}
+		if (shadowOption) {
+			temp.push_back(info->ind() + shadowOption->to_string(ud));
+		}
+		info->popScope();
+		return "(\n" + join(temp, "\n"sv) + '\n' + info->ind() + ')';
+	} else {
+		std::string line;
+		if (defList) {
+			line += defList->to_string(ud);
+		}
+		if (shadowOption) {
+			line += (line.empty() ? ""s : " "s) + shadowOption->to_string(ud);
+		}
+		return line.empty() ? (defList ? "()"s : ""s) : '(' + line + ')';
 	}
-	return line.empty() ? ""s : '(' + line + ')';
 }
 std::string FunLit_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -1080,7 +1184,11 @@ std::string FunLit_t::to_string(void* ud) const {
 			line += ' ' + body->to_string(ud);
 		} else {
 			info->pushScope();
-			line += '\n' + body->to_string(ud);
+			auto bodyStr = body->to_string(ud);
+			if (bodyStr.empty()) {
+				bodyStr = info->ind() + "--"s;
+			}
+			line += '\n' + bodyStr;
 			info->popScope();
 		}
 	}
@@ -1096,14 +1204,16 @@ std::string MacroLit_t::to_string(void* ud) const {
 		line = '(' + argsDef->to_string(ud) + ')';
 	}
 	line += "->"s;
-	if (body) {
-		if (body->content.is<Statement_t>()) {
-			line += ' ' + body->to_string(ud);
-		} else {
-			info->pushScope();
-			line += '\n' + body->to_string(ud);
-			info->popScope();
+	if (body->content.is<Statement_t>()) {
+		line += ' ' + body->to_string(ud);
+	} else {
+		info->pushScope();
+		auto bodyStr = body->to_string(ud);
+		if (bodyStr.empty()) {
+			bodyStr = info->ind() + "--"s;
 		}
+		line += '\n' + bodyStr;
+		info->popScope();
 	}
 	return line;
 }
@@ -1113,14 +1223,16 @@ std::string Macro_t::to_string(void* ud) const {
 std::string MacroInPlace_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	auto line = "$->"s;
-	if (body) {
-		if (body->content.is<Statement_t>()) {
-			line += ' ' + body->to_string(ud);
-		} else {
-			info->pushScope();
-			line += '\n' + body->to_string(ud);
-			info->popScope();
+	if (body->content.is<Statement_t>()) {
+		line += ' ' + body->to_string(ud);
+	} else {
+		info->pushScope();
+		auto bodyStr = body->to_string(ud);
+		if (bodyStr.empty()) {
+			bodyStr = info->ind() + "--"s;
 		}
+		line += '\n' + bodyStr;
+		info->popScope();
 	}
 	return line;
 }
@@ -1135,15 +1247,32 @@ std::string AssignableNameList_t::to_string(void* ud) const {
 	return join(temp, ", "sv);
 }
 std::string InvokeArgs_t::to_string(void* ud) const {
-	if (!args.empty() && ast_is<TableBlock_t>(args.back())) {
+	auto info = reinterpret_cast<YueFormat*>(ud);
+	bool hasInBlockExp = false;
+	for (auto arg : args.objects()) {
+		if (isInBlockExp(arg)) {
+			hasInBlockExp = true;
+			break;
+		}
+	}
+	if (hasInBlockExp) {
 		str_list temp;
+		bool newLine = false;
 		for (auto arg : args.objects()) {
-			if (arg != args.back()) {
-				temp.emplace_back(arg->to_string(ud));
+			if (arg == args.front()) {
+				if (ast_is<TableBlock_t>(arg)) {
+					newLine = true;
+				}
+				temp.push_back(arg->to_string(ud));
+				info->pushScope();
+			} else if (ast_is<TableBlock_t>(arg)) {
+				temp.push_back(arg->to_string(ud));
+			} else {
+				temp.push_back(info->ind() + arg->to_string(ud));
 			}
 		}
-		auto list = join(temp, ", "sv);
-		return ' ' + list + (list.empty() ? ""s : ","s) + args.back()->to_string(ud);
+		info->popScope();
+		return (newLine ? '\n' : ' ') + join(temp, ",\n"sv);
 	} else {
 		str_list temp;
 		for (auto arg : args.objects()) {
@@ -1203,10 +1332,29 @@ std::string StatementAppendix_t::to_string(void* ud) const {
 }
 std::string Statement_t::to_string(void* ud) const {
 	std::string line;
-	if (appendix) {
-		return content->to_string(ud) + ' ' + appendix->to_string(ud);
+	if (!comments.empty()) {
+		auto info = reinterpret_cast<YueFormat*>(ud);
+		str_list temp;
+		for (ast_node* comment : comments.objects()) {
+			if (comment == comments.front()) {
+				temp.push_back(comment->to_string(ud));
+			} else {
+				temp.push_back(info->ind() + comment->to_string(ud));
+			}
+		}
+		if (appendix) {
+			temp.push_back(info->ind() + content->to_string(ud) + ' ' + appendix->to_string(ud));
+			return join(temp, "\n"sv);
+		} else {
+			temp.push_back(info->ind() + content->to_string(ud));
+			return join(temp, "\n"sv);
+		}
 	} else {
-		return content->to_string(ud);
+		if (appendix) {
+			return content->to_string(ud) + ' ' + appendix->to_string(ud);
+		} else {
+			return content->to_string(ud);
+		}
 	}
 }
 std::string StatementSep_t::to_string(void*) const {
