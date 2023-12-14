@@ -521,7 +521,7 @@ YueParser::YueParser() {
 	NotIn = true_();
 	InDiscrete =
 		'[' >> Seperator >> space >> exp_not_tab >> (+(space >> ',' >> space >> exp_not_tab) | space >> ',') >> space >> ']' |
-		'{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab) >> space >> '}';
+		'{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab | space >> ',') >> space >> '}';
 	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InDiscrete | and_(key("not")) >> confusing_unary_not_error | Exp);
 
 	UnaryOperator =

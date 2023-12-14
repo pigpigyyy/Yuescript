@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.2"sv;
+const std::string_view version = "0.21.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -7713,8 +7713,9 @@ private:
 						clsDecl = value->get_by_path<SimpleValue_t, ClassDecl_t>();
 						BLOCK_END
 					} else if (auto expList = expListFrom(statement)) {
-						auto value = singleValueFrom(expList);
-						clsDecl = value->get_by_path<SimpleValue_t, ClassDecl_t>();
+						if (auto value = singleValueFrom(expList)) {
+							clsDecl = value->get_by_path<SimpleValue_t, ClassDecl_t>();
+						}
 					}
 					if (clsDecl) {
 						std::string clsName;

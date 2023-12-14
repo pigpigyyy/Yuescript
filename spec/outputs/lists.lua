@@ -313,20 +313,7 @@ do
 	end
 	c = (1 == a)
 	c = (1 == a)
-	do
-		local _check_0 = {
-			1
-		}
-		local _find_0 = false
-		for _index_0 = 1, #_check_0 do
-			local _item_0 = _check_0[_index_0]
-			if _item_0 == a then
-				_find_0 = true
-				break
-			end
-		end
-		c = _find_0
-	end
+	c = (1 == a)
 end
 do
 	a, b = hello[1], hello[2]
