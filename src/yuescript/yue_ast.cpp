@@ -844,9 +844,21 @@ static bool isInBlockExp(ast_node* node, bool last = false) {
 		}
 		auto value = static_cast<Value_t*>(unaryExp->expos.back());
 		if (auto simpleValue = value->item.as<SimpleValue_t>()) {
-			if (!ast_is<TableLit_t, ConstValue_t, Num_t, VarArg_t,
-					TblComprehension_t, Comprehension_t>(simpleValue->value)) {
-				return true;
+			switch (simpleValue->value->get_id()) {
+				case id<TableLit_t>():
+				case id<ConstValue_t>():
+				case id<Num_t>():
+				case id<VarArg_t>():
+				case id<TblComprehension_t>():
+				case id<Comprehension_t>():
+					return false;
+				case id<FunLit_t>():
+					if (!last) {
+						return true;
+					}
+					return false;
+				default:
+					return true;
 			}
 		} else if (auto chainValue = value->item.as<ChainValue_t>()) {
 			if (ast_is<InvokeArgs_t>(chainValue->items.back())) {

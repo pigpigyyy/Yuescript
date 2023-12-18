@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(yue CXX)
 
 set(LUA_LIBDIR ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib)
