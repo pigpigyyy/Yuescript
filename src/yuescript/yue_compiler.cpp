@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.4"sv;
+const std::string_view version = "0.21.5"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -3959,6 +3959,7 @@ private:
 					   expListAssign && expListAssign->action && expListAssign->action.is<Assign_t>()) {
 				BLOCK_START
 				auto unary = singleUnaryExpFrom(expListAssign->expList->exprs.back());
+				BREAK_IF(!unary);
 				BREAK_IF(!unary->ops.empty());
 				auto value = static_cast<Value_t*>(unary->expos.front());
 				auto simpleValue = value->item.as<SimpleValue_t>();
