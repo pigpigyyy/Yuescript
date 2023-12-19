@@ -14,6 +14,9 @@ do
 	const a, {b, c}, {d} = f!
 
 do
+	const [a, b] = [2, 3]
+
+do
 	close v = if flag
 		func!
 	else

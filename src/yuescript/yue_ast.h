@@ -80,6 +80,7 @@ class Macro_t;
 class In_t;
 class NormalDef_t;
 class SpreadListExp_t;
+class Comprehension_t;
 } // namespace yue
 
 AST_LEAF(Num)
@@ -171,7 +172,7 @@ AST_END(CloseAttrib, "close"sv)
 AST_NODE(LocalAttrib)
 	ast_sel<true, ConstAttrib_t, CloseAttrib_t> attrib;
 	ast_ptr<true, Seperator_t> sep;
-	ast_sel_list<true, Variable_t, SimpleTable_t, TableLit_t> leftList;
+	ast_sel_list<true, Variable_t, SimpleTable_t, TableLit_t, Comprehension_t> leftList;
 	ast_ptr<true, Assign_t> assign;
 	AST_MEMBER(LocalAttrib, &attrib, &sep, &leftList, &assign)
 AST_END(LocalAttrib, "local_attrib"sv)

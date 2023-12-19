@@ -286,7 +286,7 @@ YueParser::YueParser() {
 
 	ConstAttrib = key("const");
 	CloseAttrib = key("close");
-	local_const_item = Variable | SimpleTable | TableLit;
+	local_const_item = Variable | SimpleTable | TableLit | Comprehension;
 	LocalAttrib = (
 		ConstAttrib >> Seperator >> space >> local_const_item >> *(space >> ',' >> space >> local_const_item) |
 		CloseAttrib >> Seperator >> space >> Variable >> *(space >> ',' >> space >> Variable)

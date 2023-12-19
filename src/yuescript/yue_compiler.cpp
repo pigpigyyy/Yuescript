@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.5"sv;
+const std::string_view version = "0.21.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -9376,7 +9376,8 @@ private:
 					case id<SimpleTable_t>():
 						value->item.set(item);
 						break;
-					case id<TableLit_t>(): {
+					case id<TableLit_t>():
+					case id<Comprehension_t>(): {
 						auto simpleValue = item->new_ptr<SimpleValue_t>();
 						simpleValue->value.set(item);
 						value->item.set(simpleValue);
