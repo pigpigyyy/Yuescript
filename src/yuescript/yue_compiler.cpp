@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.7"sv;
+const std::string_view version = "0.21.8"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -6162,10 +6162,14 @@ private:
 				if (unary_exp->inExp->not_) {
 					_buf << "not ("sv;
 				}
-				for (const auto& exp : tmp) {
-					_buf << exp << " == "sv << newVar;
-					if (exp != tmp.back()) {
-						_buf << " or "sv;
+				if (tmp.empty()) {
+					_buf << "false"sv;
+				} else {
+					for (const auto& exp : tmp) {
+						_buf << exp << " == "sv << newVar;
+						if (exp != tmp.back()) {
+							_buf << " or "sv;
+						}
 					}
 				}
 				if (unary_exp->inExp->not_) {
@@ -6203,10 +6207,14 @@ private:
 					_buf << "not "sv;
 				}
 				_buf << '(';
-				for (const auto& exp : tmp) {
-					_buf << exp << " == "sv << varName;
-					if (exp != tmp.back()) {
-						_buf << " or "sv;
+				if (tmp.empty()) {
+					_buf << "false"sv;
+				} else {
+					for (const auto& exp : tmp) {
+						_buf << exp << " == "sv << varName;
+						if (exp != tmp.back()) {
+							_buf << " or "sv;
+						}
 					}
 				}
 				_buf << ')';

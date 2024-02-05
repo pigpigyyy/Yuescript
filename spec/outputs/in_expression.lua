@@ -206,5 +206,11 @@ do
 			b = not _find_0
 		end
 	end
+	print((function()
+		local _val_0 = a
+		return false
+	end)())
+	local a = 1
+	print((false))
 end
 return nil

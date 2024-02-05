@@ -72,6 +72,8 @@ do
 			2
 			x: 3
 		}
-
+	print a in []
+	a = 1
+	print a in {}
 nil
 
