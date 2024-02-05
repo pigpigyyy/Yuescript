@@ -1405,15 +1405,8 @@ std::string UnaryExp_t::to_string(void* ud) const {
 	}
 	return line;
 }
-std::string InDiscrete_t::to_string(void* ud) const {
-	str_list temp;
-	for (auto value : values.objects()) {
-		temp.emplace_back(value->to_string(ud));
-	}
-	return '[' + join(temp, ", "sv) + (temp.size() == 1 ? ",]"s :  "]"s);
-}
 std::string In_t::to_string(void* ud) const {
-	return (not_ ? "not "s : ""s) + "in "s + item->to_string(ud);
+	return (not_ ? "not "s : ""s) + "in "s + value->to_string(ud);
 }
 std::string ExpListAssign_t::to_string(void* ud) const {
 	if (action) {

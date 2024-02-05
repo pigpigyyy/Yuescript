@@ -402,7 +402,6 @@ private:
 	AST_RULE(UnaryValue);
 	AST_RULE(UnaryExp);
 	AST_RULE(NotIn);
-	AST_RULE(InDiscrete);
 	AST_RULE(In);
 	AST_RULE(ExpListAssign);
 	AST_RULE(IfLine);

@@ -81,6 +81,7 @@ class In_t;
 class NormalDef_t;
 class SpreadListExp_t;
 class Comprehension_t;
+class Value_t;
 } // namespace yue
 
 AST_LEAF(Num)
@@ -445,16 +446,10 @@ AST_END(UnaryOperator, "unary_op"sv)
 AST_LEAF(NotIn)
 AST_END(NotIn, "not_in"sv)
 
-AST_NODE(InDiscrete)
-	ast_ptr<true, Seperator_t> sep;
-	ast_list<true, Exp_t> values;
-	AST_MEMBER(InDiscrete, &sep, &values)
-AST_END(InDiscrete, "in_discrete"sv)
-
 AST_NODE(In)
 	ast_ptr<false, NotIn_t> not_;
-	ast_sel<true, InDiscrete_t, Exp_t> item;
-	AST_MEMBER(In, &not_, &item)
+	ast_ptr<true, Value_t> value;
+	AST_MEMBER(In, &not_, &value)
 AST_END(In, "in"sv)
 
 AST_NODE(Assignable)

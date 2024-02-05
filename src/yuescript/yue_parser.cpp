@@ -519,10 +519,7 @@ YueParser::YueParser() {
 	expo_exp = Value >> *(space >> expo_value);
 
 	NotIn = true_();
-	InDiscrete =
-		'[' >> Seperator >> space >> exp_not_tab >> (+(space >> ',' >> space >> exp_not_tab) | space >> ',') >> space >> ']' |
-		'{' >> Seperator >> space >> exp_not_tab >> *(space >> ',' >> space >> exp_not_tab | space >> ',') >> space >> '}';
-	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (InDiscrete | and_(key("not")) >> confusing_unary_not_error | Exp);
+	In = -(key("not") >> NotIn >> space) >> key("in") >> space >> (and_(key("not")) >> confusing_unary_not_error | Value);
 
 	UnaryOperator =
 		'-' >> not_(set(">=") | space_one) |

@@ -2,10 +2,6 @@ f((function()
 	local _val_0 = -a ^ 2
 	return 1 == _val_0 or 2 == _val_0 or 3 == _val_0
 end)())
-f((function()
-	local _val_0 = -a ^ 2
-	return 1 == _val_0 or 2 == _val_0 or 3 == _val_0
-end)())
 local has
 do
 	local _val_0 = "foo"

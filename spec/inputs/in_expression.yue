@@ -1,5 +1,4 @@
 -a^2 in {1, 2, 3} |> f
--a^2 in [1, 2, 3] |> f
 
 has = "foo" in { "bar", "foo" }
 

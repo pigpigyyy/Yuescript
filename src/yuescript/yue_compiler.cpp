@@ -1231,7 +1231,7 @@ private:
 		auto unary = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
 		BREAK_IF(unary->expos.size() != 1);
 		BREAK_IF(!unary->inExp);
-		if (unary->inExp->item.is<Exp_t>()) {
+		if (unary->inExp) {
 			return unary;
 		}
 		auto value = static_cast<Value_t*>(unary->expos.back());
@@ -5946,62 +5946,146 @@ private:
 					varName.clear();
 				}
 			}
-			ast_ptr<false, InDiscrete_t> discrete;
-			if (auto inExp = unary_exp->inExp->item.as<Exp_t>()) {
-				BLOCK_START
-				auto value = singleValueFrom(inExp);
-				BREAK_IF(!value);
-				auto sval = value->item.as<SimpleValue_t>();
-				BREAK_IF(!sval);
-				if (auto table = sval->value.as<TableLit_t>()) {
-					discrete = inExp->new_ptr<InDiscrete_t>();
-					for (ast_node* val : table->values.objects()) {
+			ast_ptr<false, ExpList_t> discrete;
+			auto inExp = unary_exp->inExp->value.get();
+			BLOCK_START
+			auto sval = inExp->item.as<SimpleValue_t>();
+			BREAK_IF(!sval);
+			if (auto table = sval->value.as<TableLit_t>()) {
+				discrete = inExp->new_ptr<ExpList_t>();
+				for (ast_node* val : table->values.objects()) {
+					if (auto def = ast_cast<NormalDef_t>(val)) {
+						if (def->defVal) {
+							discrete = nullptr;
+							break;
+						} else {
+							discrete->exprs.push_back(def->item);
+						}
+					} else if (ast_is<Exp_t>(val)) {
+						discrete->exprs.push_back(val);
+					} else {
+						discrete = nullptr;
+						break;
+					}
+				}
+			} else if (auto comp = sval->value.as<Comprehension_t>()) {
+				if (comp->items.size() != 2 || !ast_is<CompInner_t>(comp->items.back())) {
+					discrete = inExp->new_ptr<ExpList_t>();
+					for (ast_node* val : comp->items.objects()) {
 						if (auto def = ast_cast<NormalDef_t>(val)) {
 							if (def->defVal) {
 								discrete = nullptr;
 								break;
 							} else {
-								discrete->values.push_back(def->item);
+								discrete->exprs.push_back(def->item);
 							}
-						} else if (ast_is<Exp_t>(val)) {
-							discrete->values.push_back(val);
 						} else {
 							discrete = nullptr;
 							break;
 						}
 					}
-				} else if (auto comp = sval->value.as<Comprehension_t>()) {
-					if (comp->items.size() != 2 || !ast_is<CompInner_t>(comp->items.back())) {
-						discrete = inExp->new_ptr<InDiscrete_t>();
-						for (ast_node* val : comp->items.objects()) {
-							if (auto def = ast_cast<NormalDef_t>(val)) {
-								if (def->defVal) {
-									discrete = nullptr;
-									break;
-								} else {
-									discrete->values.push_back(def->item);
-								}
-							} else {
-								discrete = nullptr;
-								break;
-							}
-						}
-					}
 				}
-				BLOCK_END
-
-				BLOCK_START
-				BREAK_IF(discrete);
-				str_list temp;
-				auto checkVar = singleVariableFrom(inExp, false);
-				if (usage == ExpUsage::Assignment) {
-					auto block = x->new_ptr<Block_t>();
+			}
+			BLOCK_END
+			BLOCK_START
+			BREAK_IF(discrete);
+			str_list temp;
+			auto checkVar = singleVariableFrom(inExp, false);
+			if (usage == ExpUsage::Assignment) {
+				auto block = x->new_ptr<Block_t>();
+				if (checkVar.empty() || !isLocal(checkVar)) {
+					checkVar = getUnusedName("_check_"sv);
+					auto assignment = assignmentFrom(toAst<Exp_t>(checkVar, inExp), newExp(inExp, inExp), inExp);
+					auto stmt = x->new_ptr<Statement_t>();
+					stmt->content.set(assignment);
+					block->statements.push_back(stmt);
+				}
+				if (varName.empty()) {
+					auto newUnaryExp = x->new_ptr<UnaryExp_t>();
+					newUnaryExp->ops.dup(unary_exp->ops);
+					newUnaryExp->expos.dup(unary_exp->expos);
+					auto exp = newExp(newUnaryExp, x);
+					varName = getUnusedName("_val_"sv);
+					auto assignExp = toAst<Exp_t>(varName, x);
+					auto assignment = assignmentFrom(assignExp, exp, x);
+					auto stmt = x->new_ptr<Statement_t>();
+					stmt->content.set(assignment);
+					block->statements.push_back(stmt);
+				}
+				auto findVar = getUnusedName("_find_");
+				auto itemVar = getUnusedName("_item_");
+				_buf << findVar << "=false\n"sv;
+				_buf << "for "sv << itemVar << " in *"sv << checkVar << '\n';
+				_buf << "\tif "sv << itemVar << "=="sv << varName << '\n';
+				_buf << "\t\t"sv << findVar << "=true\n"sv;
+				_buf << "\t\tbreak\n"sv;
+				if (unary_exp->inExp->not_) {
+					_buf << "not "sv << findVar;
+				} else {
+					_buf << findVar;
+				}
+				auto blockStr = clearBuf();
+				auto checkBlock = toAst<Block_t>(blockStr, inExp);
+				block->statements.dup(checkBlock->statements);
+				auto body = x->new_ptr<Body_t>();
+				body->content.set(block);
+				auto doNode = x->new_ptr<Do_t>();
+				doNode->body.set(body);
+				auto assign = x->new_ptr<Assign_t>();
+				auto simpleValue = x->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(doNode);
+				auto value = x->new_ptr<Value_t>();
+				value->item.set(simpleValue);
+				assign->values.push_back(newExp(value, x));
+				auto assignment = x->new_ptr<ExpListAssign_t>();
+				assignment->action.set(assign);
+				assignment->expList.set(assignList);
+				transformAssignment(assignment, temp);
+				out.push_back(join(temp));
+				return;
+			} else {
+				auto arrayCheck = [&](bool exist) {
+					auto indexVar = getUnusedName("_index_");
+					_buf << indent() << "for "sv << indexVar << " = 1, #"sv << checkVar << " do"sv << nll(x);
+					incIndentOffset();
+					_buf << indent() << "if "sv << checkVar << '[' << indexVar << "] == "sv << varName << " then"sv << nll(x);
+					incIndentOffset();
+					_buf << indent() << "return "sv << (exist ? "true"sv : "false"sv) << nll(x);
+					decIndentOffset();
+					_buf << indent() << "end"sv << nll(x);
+					decIndentOffset();
+					_buf << indent() << "end"sv << nll(x);
+					_buf << indent() << "return "sv << (exist ? "false"sv : "true"sv) << nll(x);
+					temp.push_back(clearBuf());
+				};
+				bool useShortCheck = (usage == ExpUsage::Closure) && !varName.empty() && !checkVar.empty() && isLocal(checkVar);
+				if (useShortCheck) {
+					if (usage == ExpUsage::Return) {
+						arrayCheck(!unary_exp->inExp->not_);
+					} else {
+						pushFunctionScope();
+						pushAnonVarArg();
+						pushScope();
+						arrayCheck(true);
+						temp.push_front("(#"s + checkVar + " > 0 and "s + anonFuncStart() + nll(x));
+						popScope();
+						temp.push_back(indent() + anonFuncEnd() + ')');
+						if (unary_exp->inExp->not_) {
+							temp.front().insert(0, "not "s);
+						}
+						popAnonVarArg();
+						popFunctionScope();
+					}
+				} else {
+					if (usage == ExpUsage::Closure) {
+						pushFunctionScope();
+						pushAnonVarArg();
+						pushScope();
+					}
 					if (checkVar.empty() || !isLocal(checkVar)) {
 						checkVar = getUnusedName("_check_"sv);
-						auto assignment = assignmentFrom(toAst<Exp_t>(checkVar, inExp), inExp, inExp);
-						auto stmt = x->new_ptr<Statement_t>();
-						stmt->content.set(assignment);
-						block->statements.push_back(stmt);
+						auto assignment = assignmentFrom(toAst<Exp_t>(checkVar, inExp), newExp(inExp, inExp), inExp);
+						transformAssignment(assignment, temp);
 					}
 					if (varName.empty()) {
 						auto newUnaryExp = x->new_ptr<UnaryExp_t>();
@@ -6011,117 +6095,26 @@ private:
 						varName = getUnusedName("_val_"sv);
 						auto assignExp = toAst<Exp_t>(varName, x);
 						auto assignment = assignmentFrom(assignExp, exp, x);
-						auto stmt = x->new_ptr<Statement_t>();
-						stmt->content.set(assignment);
-						block->statements.push_back(stmt);
+						transformAssignment(assignment, temp);
 					}
-					auto findVar = getUnusedName("_find_");
-					auto itemVar = getUnusedName("_item_");
-					_buf << findVar << "=false\n"sv;
-					_buf << "for "sv << itemVar << " in *"sv << checkVar << '\n';
-					_buf << "\tif "sv << itemVar << "=="sv << varName << '\n';
-					_buf << "\t\t"sv << findVar << "=true\n"sv;
-					_buf << "\t\tbreak\n"sv;
-					if (unary_exp->inExp->not_) {
-						_buf << "not "sv << findVar;
+					if (usage == ExpUsage::Return) {
+						arrayCheck(!unary_exp->inExp->not_);
 					} else {
-						_buf << findVar;
+						arrayCheck(!unary_exp->inExp->not_);
+						temp.push_front(anonFuncStart() + nll(x));
+						popScope();
+						temp.push_back(indent() + anonFuncEnd());
+						popAnonVarArg();
+						popFunctionScope();
 					}
-					auto blockStr = clearBuf();
-					auto checkBlock = toAst<Block_t>(blockStr, inExp);
-					block->statements.dup(checkBlock->statements);
-					auto body = x->new_ptr<Body_t>();
-					body->content.set(block);
-					auto doNode = x->new_ptr<Do_t>();
-					doNode->body.set(body);
-					auto assign = x->new_ptr<Assign_t>();
-					auto simpleValue = x->new_ptr<SimpleValue_t>();
-					simpleValue->value.set(doNode);
-					auto value = x->new_ptr<Value_t>();
-					value->item.set(simpleValue);
-					assign->values.push_back(newExp(value, x));
-					auto assignment = x->new_ptr<ExpListAssign_t>();
-					assignment->action.set(assign);
-					assignment->expList.set(assignList);
-					transformAssignment(assignment, temp);
-					out.push_back(join(temp));
-					return;
-				} else {
-					auto arrayCheck = [&](bool exist) {
-						auto indexVar = getUnusedName("_index_");
-						_buf << indent() << "for "sv << indexVar << " = 1, #"sv << checkVar << " do"sv << nll(x);
-						incIndentOffset();
-						_buf << indent() << "if "sv << checkVar << '[' << indexVar << "] == "sv << varName << " then"sv << nll(x);
-						incIndentOffset();
-						_buf << indent() << "return "sv << (exist ? "true"sv : "false"sv) << nll(x);
-						decIndentOffset();
-						_buf << indent() << "end"sv << nll(x);
-						decIndentOffset();
-						_buf << indent() << "end"sv << nll(x);
-						_buf << indent() << "return "sv << (exist ? "false"sv : "true"sv) << nll(x);
-						temp.push_back(clearBuf());
-					};
-					bool useShortCheck = (usage == ExpUsage::Closure) && !varName.empty() && !checkVar.empty() && isLocal(checkVar);
-					if (useShortCheck) {
-						if (usage == ExpUsage::Return) {
-							arrayCheck(!unary_exp->inExp->not_);
-						} else {
-							pushFunctionScope();
-							pushAnonVarArg();
-							pushScope();
-							arrayCheck(true);
-							temp.push_front("(#"s + checkVar + " > 0 and "s + anonFuncStart() + nll(x));
-							popScope();
-							temp.push_back(indent() + anonFuncEnd() + ')');
-							if (unary_exp->inExp->not_) {
-								temp.front().insert(0, "not "s);
-							}
-							popAnonVarArg();
-							popFunctionScope();
-						}
-					} else {
-						if (usage == ExpUsage::Closure) {
-							pushFunctionScope();
-							pushAnonVarArg();
-							pushScope();
-						}
-						if (checkVar.empty() || !isLocal(checkVar)) {
-							checkVar = getUnusedName("_check_"sv);
-							auto assignment = assignmentFrom(toAst<Exp_t>(checkVar, inExp), inExp, inExp);
-							transformAssignment(assignment, temp);
-						}
-						if (varName.empty()) {
-							auto newUnaryExp = x->new_ptr<UnaryExp_t>();
-							newUnaryExp->ops.dup(unary_exp->ops);
-							newUnaryExp->expos.dup(unary_exp->expos);
-							auto exp = newExp(newUnaryExp, x);
-							varName = getUnusedName("_val_"sv);
-							auto assignExp = toAst<Exp_t>(varName, x);
-							auto assignment = assignmentFrom(assignExp, exp, x);
-							transformAssignment(assignment, temp);
-						}
-						if (usage == ExpUsage::Return) {
-							arrayCheck(!unary_exp->inExp->not_);
-						} else {
-							arrayCheck(!unary_exp->inExp->not_);
-							temp.push_front(anonFuncStart() + nll(x));
-							popScope();
-							temp.push_back(indent() + anonFuncEnd());
-							popAnonVarArg();
-							popFunctionScope();
-						}
-					}
-					out.push_back(join(temp));
-					return;
 				}
-				BLOCK_END
+				out.push_back(join(temp));
+				return;
 			}
-			if (!discrete) {
-				discrete = unary_exp->inExp->item.to<InDiscrete_t>();
-			}
-			if (usage == ExpUsage::Closure && discrete->values.size() == 1) {
+			BLOCK_END
+			if (usage == ExpUsage::Closure && discrete->exprs.size() == 1) {
 				str_list tmp;
-				transformExp(static_cast<Exp_t*>(discrete->values.front()), tmp, ExpUsage::Closure);
+				transformExp(static_cast<Exp_t*>(discrete->exprs.front()), tmp, ExpUsage::Closure);
 				tmp.push_back(" == "s);
 				auto newUnaryExp = x->new_ptr<UnaryExp_t>();
 				newUnaryExp->ops.dup(unary_exp->ops);
@@ -6156,7 +6149,7 @@ private:
 				transformAssignment(assignment, temp);
 
 				str_list tmp;
-				for (auto exp : discrete->values.objects()) {
+				for (auto exp : discrete->exprs.objects()) {
 					transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
 				}
 				if (usage == ExpUsage::Assignment) {
@@ -6196,7 +6189,7 @@ private:
 				}
 			} else {
 				str_list tmp;
-				for (auto exp : discrete->values.objects()) {
+				for (auto exp : discrete->exprs.objects()) {
 					transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
 				}
 				if (usage == ExpUsage::Assignment) {
