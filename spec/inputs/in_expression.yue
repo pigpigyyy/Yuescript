@@ -35,5 +35,44 @@ do
 	check -> return x in tb
 	check -> x not in tb
 
+do
+	f1 = ->
+		a = 2
+		a in [
+			1
+			2
+			3
+			4
+		]
+	f2 = ->
+		a not in [
+			1
+			2
+			3
+			4
+		]
+	f3 = ->
+		a = 2
+		a in { b, c, d
+			e, f
+			g
+		}
+	f4 = ->
+		a = 2
+		b = a in [ 1, 2
+			3, 4
+		]
+	f5 = ->
+		a = 2
+		return a in [ 1, 2
+			3, 4
+		]
+	f6 = ->
+		b = a not in {
+			1
+			2
+			x: 3
+		}
+
 nil
 

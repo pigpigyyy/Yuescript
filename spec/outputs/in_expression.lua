@@ -162,4 +162,53 @@ do
 		return true
 	end)
 end
+do
+	local f1
+	f1 = function()
+		local a = 2
+		return (1 == a or 2 == a or 3 == a or 4 == a)
+	end
+	local f2
+	f2 = function()
+		local _val_0 = a
+		return not (1 == _val_0 or 2 == _val_0 or 3 == _val_0 or 4 == _val_0)
+	end
+	local f3
+	f3 = function()
+		local a = 2
+		return (b == a or c == a or d == a or e == a or f == a or g == a)
+	end
+	local f4
+	f4 = function()
+		local a = 2
+		local b
+		b = (1 == a or 2 == a or 3 == a or 4 == a)
+	end
+	local f5
+	f5 = function()
+		local a = 2
+		return (1 == a or 2 == a or 3 == a or 4 == a)
+	end
+	local f6
+	f6 = function()
+		local b
+		do
+			local _check_0 = {
+				1,
+				2,
+				x = 3
+			}
+			local _val_0 = a
+			local _find_0 = false
+			for _index_0 = 1, #_check_0 do
+				local _item_0 = _check_0[_index_0]
+				if _item_0 == _val_0 then
+					_find_0 = true
+					break
+				end
+			end
+			b = not _find_0
+		end
+	end
+end
 return nil

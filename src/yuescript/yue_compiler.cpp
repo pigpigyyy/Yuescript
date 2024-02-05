@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.6"sv;
+const std::string_view version = "0.21.7"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -5946,7 +5946,52 @@ private:
 					varName.clear();
 				}
 			}
+			ast_ptr<false, InDiscrete_t> discrete;
 			if (auto inExp = unary_exp->inExp->item.as<Exp_t>()) {
+				BLOCK_START
+				auto value = singleValueFrom(inExp);
+				BREAK_IF(!value);
+				auto sval = value->item.as<SimpleValue_t>();
+				BREAK_IF(!sval);
+				if (auto table = sval->value.as<TableLit_t>()) {
+					discrete = inExp->new_ptr<InDiscrete_t>();
+					for (ast_node* val : table->values.objects()) {
+						if (auto def = ast_cast<NormalDef_t>(val)) {
+							if (def->defVal) {
+								discrete = nullptr;
+								break;
+							} else {
+								discrete->values.push_back(def->item);
+							}
+						} else if (ast_is<Exp_t>(val)) {
+							discrete->values.push_back(val);
+						} else {
+							discrete = nullptr;
+							break;
+						}
+					}
+				} else if (auto comp = sval->value.as<Comprehension_t>()) {
+					if (comp->items.size() != 2 || !ast_is<CompInner_t>(comp->items.back())) {
+						discrete = inExp->new_ptr<InDiscrete_t>();
+						for (ast_node* val : comp->items.objects()) {
+							if (auto def = ast_cast<NormalDef_t>(val)) {
+								if (def->defVal) {
+									discrete = nullptr;
+									break;
+								} else {
+									discrete->values.push_back(def->item);
+								}
+							} else {
+								discrete = nullptr;
+								break;
+							}
+						}
+					}
+				}
+				BLOCK_END
+
+				BLOCK_START
+				BREAK_IF(discrete);
 				str_list temp;
 				auto checkVar = singleVariableFrom(inExp, false);
 				if (usage == ExpUsage::Assignment) {
@@ -6069,8 +6114,11 @@ private:
 					out.push_back(join(temp));
 					return;
 				}
+				BLOCK_END
 			}
-			auto discrete = unary_exp->inExp->item.to<InDiscrete_t>();
+			if (!discrete) {
+				discrete = unary_exp->inExp->item.to<InDiscrete_t>();
+			}
 			if (usage == ExpUsage::Closure && discrete->values.size() == 1) {
 				str_list tmp;
 				transformExp(static_cast<Exp_t*>(discrete->values.front()), tmp, ExpUsage::Closure);
@@ -6151,6 +6199,13 @@ private:
 				for (auto exp : discrete->values.objects()) {
 					transformExp(static_cast<Exp_t*>(exp), tmp, ExpUsage::Closure);
 				}
+				if (usage == ExpUsage::Assignment) {
+					str_list tmpList;
+					transformExp(static_cast<Exp_t*>(assignList->exprs.front()), tmpList, ExpUsage::Closure);
+					_buf << indent() << tmpList.back() << " = "sv;
+				} else if (usage == ExpUsage::Return) {
+					_buf << indent() << "return "sv;
+				}
 				if (unary_exp->inExp->not_) {
 					_buf << "not "sv;
 				}
@@ -6162,6 +6217,9 @@ private:
 					}
 				}
 				_buf << ')';
+				if (usage == ExpUsage::Assignment || usage == ExpUsage::Return) {
+					_buf << nll(discrete);
+				}
 				out.push_back(clearBuf());
 			}
 			return;
