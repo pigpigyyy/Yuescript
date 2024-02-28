@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.21.8"sv;
+const std::string_view version = "0.22.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -6892,7 +6892,7 @@ private:
 		auto x = nameList;
 		str_list temp;
 		str_list vars;
-		str_list varBefore, varAfter;
+		str_list varBefore, varConstAfter, varAfter;
 		bool extraScope = false;
 		std::list<std::pair<ast_node*, ast_ptr<false, ast_node>>> destructPairs;
 		for (auto _item : nameList->items.objects()) {
@@ -6901,6 +6901,7 @@ private:
 				case id<Variable_t>():
 					transformVariable(static_cast<Variable_t*>(item), vars);
 					varAfter.push_back(vars.back());
+					varConstAfter.push_back(vars.back());
 					break;
 				case id<TableLit_t>(): {
 					auto desVar = getUnusedName("_des_"sv);
@@ -7034,6 +7035,7 @@ private:
 		pushScope();
 		for (const auto& var : vars) forceAddToScope(var);
 		for (const auto& var : varAfter) addToScope(var);
+		for (const auto& var : varConstAfter) markVarConst(var);
 		if (!destructPairs.empty()) {
 			temp.clear();
 			for (auto& pair : destructPairs) {
@@ -7048,6 +7050,7 @@ private:
 				assignment->expList.set(expList);
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
+				markDestructureConst(assignment);
 			}
 			out.back().append(join(temp));
 		}
@@ -7118,6 +7121,7 @@ private:
 		_buf << indent() << "for "sv << varName << " = "sv << start << ", "sv << stop << (step.empty() ? Empty : ", "s + step) << " do"sv << nll(var);
 		pushScope();
 		forceAddToScope(varName);
+		markVarConst(varName);
 		out.push_back(clearBuf());
 	}
 
