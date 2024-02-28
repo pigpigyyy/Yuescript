@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.22.0"sv;
+const std::string_view version = "0.22.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -6892,7 +6892,8 @@ private:
 		auto x = nameList;
 		str_list temp;
 		str_list vars;
-		str_list varBefore, varConstAfter, varAfter;
+		str_list varBefore, varAfter;
+		std::string varConstAfter;
 		bool extraScope = false;
 		std::list<std::pair<ast_node*, ast_ptr<false, ast_node>>> destructPairs;
 		for (auto _item : nameList->items.objects()) {
@@ -6901,7 +6902,9 @@ private:
 				case id<Variable_t>():
 					transformVariable(static_cast<Variable_t*>(item), vars);
 					varAfter.push_back(vars.back());
-					varConstAfter.push_back(vars.back());
+					if (_item == nameList->items.objects().front()) {
+						varConstAfter = vars.back();
+					}
 					break;
 				case id<TableLit_t>(): {
 					auto desVar = getUnusedName("_des_"sv);
@@ -7035,7 +7038,7 @@ private:
 		pushScope();
 		for (const auto& var : vars) forceAddToScope(var);
 		for (const auto& var : varAfter) addToScope(var);
-		for (const auto& var : varConstAfter) markVarConst(var);
+		if (!varConstAfter.empty()) markVarConst(varConstAfter);
 		if (!destructPairs.empty()) {
 			temp.clear();
 			for (auto& pair : destructPairs) {
