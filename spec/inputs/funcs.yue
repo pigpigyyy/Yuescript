@@ -158,4 +158,39 @@ args = (f,g,m
 	return 1 if n == 0
 	n * @(n-1)
 
+do
+	items.every (item) ->
+		if item.field
+			value = item.field.get "abc"
+			if value
+				switch value\get!
+					when 123
+						return false
+					when 456
+						handle item
+		true
+
+	items.every (item): true ->
+		if item.field
+			value = item.field.get "abc"
+			if value
+				switch value\get!
+					when 123
+						return false
+					when 456
+						-- prevent implicit return for next line
+						handle item
+
+	HttpServer\post "/login", (req): success: false ->
+		switch req when {:name, :pwd}
+			if name ~= ""
+				if user := DB\queryUser name, pwd
+					if user.status == "available"
+						return success: true
+
+	check = (num) -> return num
+	-- func without implicit return
+	func = (): -> check 123
+	print func! -- get nil
+
 nil

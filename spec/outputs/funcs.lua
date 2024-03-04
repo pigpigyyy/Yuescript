@@ -219,4 +219,74 @@ self = function(n)
 	end
 	return n * self(n - 1)
 end
+do
+	items.every(function(item)
+		if item.field then
+			local value = item.field.get("abc")
+			if value then
+				do
+					local _exp_0 = value:get()
+					if 123 == _exp_0 then
+						return false
+					elseif 456 == _exp_0 then
+						handle(item)
+					end
+				end
+			end
+		end
+		return true
+	end)
+	items.every(function(item)
+		if item.field then
+			local value = item.field.get("abc")
+			if value then
+				do
+					local _exp_0 = value:get()
+					if 123 == _exp_0 then
+						return false
+					elseif 456 == _exp_0 then
+						handle(item)
+					end
+				end
+			end
+		end
+		return true
+	end)
+	HttpServer:post("/login", function(req)
+		do
+			local _type_0 = type(req)
+			local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+			if _tab_0 then
+				local name = req.name
+				local pwd = req.pwd
+				if name ~= nil and pwd ~= nil then
+					if name ~= "" then
+						do
+							local user = DB:queryUser(name, pwd)
+							if user then
+								if user.status == "available" then
+									return {
+										success = true
+									}
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		return {
+			success = false
+		}
+	end)
+	local check
+	check = function(num)
+		return num
+	end
+	local func
+	func = function()
+		check(123)
+	end
+	print(func())
+end
 return nil

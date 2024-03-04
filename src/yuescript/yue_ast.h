@@ -756,9 +756,10 @@ AST_END(FnArrow, "fn_arrow"sv)
 
 AST_NODE(FunLit)
 	ast_ptr<false, FnArgsDef_t> argsDef;
+	ast_sel<false, ExpListLow_t, DefaultValue_t> defaultReturn;
 	ast_ptr<true, FnArrow_t> arrow;
 	ast_ptr<false, Body_t> body;
-	AST_MEMBER(FunLit, &argsDef, &arrow, &body)
+	AST_MEMBER(FunLit, &argsDef, &defaultReturn, &arrow, &body)
 AST_END(FunLit, "fun_lit"sv)
 
 AST_NODE(MacroName)

@@ -416,6 +416,18 @@ YueParser::YueParser() {
 		return true;
 	});
 
+	disable_fun_lit = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->fnArrowAvailable = false;
+		return true;
+	});
+
+	enable_fun_lit = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		st->fnArrowAvailable = true;
+		return true;
+	});
+
 	disable_do_chain_arg_table_block = pl::user(true_(), [](const item_t& item) {
 		State* st = reinterpret_cast<State*>(item.user_data);
 		st->noDoStack.push(true);
@@ -846,7 +858,14 @@ YueParser::YueParser() {
 
 	FnArgsDef = '(' >> *space_break >> -FnArgDefList >> -(white >> OuterVarShadow) >> white >> ')';
 	FnArrow = expr("->") | "=>";
-	FunLit = -FnArgsDef >> space >> FnArrow >> -(space >> Body);
+	FunLit = pl::user(true_(), [](const item_t& item) {
+		State* st = reinterpret_cast<State*>(item.user_data);
+		return st->fnArrowAvailable;
+	}) >> -(FnArgsDef >>
+		-(':' >> space >>
+			disable_fun_lit >> ensure(ExpListLow | DefaultValue, enable_fun_lit)
+		)
+	) >> space >> FnArrow >> -(space >> Body);
 
 	MacroName = '$' >> UnicodeName;
 	macro_args_def = '(' >> white >> -FnArgDefList >> white >> ')';

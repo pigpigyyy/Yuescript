@@ -105,6 +105,7 @@ protected:
 		bool exportMacro = false;
 		bool exportMetatable = false;
 		bool exportMetamethod = false;
+		bool fnArrowAvailable = true;
 		int exportCount = 0;
 		int expLevel = 0;
 		size_t stringOpen = 0;
@@ -198,6 +199,8 @@ private:
 	NONE_AST_RULE(enable_arg_table_block);
 	NONE_AST_RULE(disable_for);
 	NONE_AST_RULE(enable_for);
+	NONE_AST_RULE(enable_fun_lit);
+	NONE_AST_RULE(disable_fun_lit);
 	NONE_AST_RULE(switch_else);
 	NONE_AST_RULE(switch_block);
 	NONE_AST_RULE(if_else_if);

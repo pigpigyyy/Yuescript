@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.22.1"sv;
+const std::string_view version = "0.22.2"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -3787,11 +3787,44 @@ private:
 		str_list temp;
 		if (auto argsDef = funLit->argsDef.get()) {
 			transformFnArgsDef(argsDef, temp);
+		}
+		if (funLit->defaultReturn) {
+			auto newBlock = funLit->new_ptr<Block_t>();
+			if (funLit->body) {
+				auto last = lastStatementFrom(funLit->body);
+				if (!last->appendix && last->content.is<Return_t>() && !funLit->defaultReturn.is<DefaultValue_t>()) {
+					throw CompileError("duplicated return statement", last->content);
+				}
+				auto content = funLit->body->content.get();
+				switch (content->get_id()) {
+					case id<Block_t>(): {
+						auto block = static_cast<Block_t*>(content);
+						newBlock->statements.dup(block->statements);
+						break;
+					}
+					case id<Statement_t>(): {
+						newBlock->statements.push_back(content);
+						break;
+					}
+					default: YUEE("AST node mismatch", content); break;
+				}
+			}
+			if (funLit->defaultReturn.is<ExpListLow_t>()) {
+				auto returnNode = newBlock->new_ptr<Return_t>();
+				returnNode->valueList.set(funLit->defaultReturn);
+				auto stmt = newBlock->new_ptr<Statement_t>();
+				stmt->content.set(returnNode);
+				newBlock->statements.push_back(stmt);
+			}
+			transformBlock(newBlock, temp, ExpUsage::Common);
+		} else {
 			if (funLit->body) {
 				transformBody(funLit->body, temp, ExpUsage::Return);
 			} else {
 				temp.push_back(Empty);
 			}
+		}
+		if (auto argsDef = funLit->argsDef.get()) {
 			auto it = temp.begin();
 			auto& args = *it;
 			auto& initArgs = *(++it);
@@ -3811,11 +3844,6 @@ private:
 				_buf << " end"sv;
 			}
 		} else {
-			if (funLit->body) {
-				transformBody(funLit->body, temp, ExpUsage::Return);
-			} else {
-				temp.push_back(Empty);
-			}
 			auto& bodyCodes = temp.back();
 			_buf << "function("sv << (isFatArrow ? "self"s : Empty) << ')';
 			if (!bodyCodes.empty()) {
