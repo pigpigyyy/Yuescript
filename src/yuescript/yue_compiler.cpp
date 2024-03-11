@@ -9033,7 +9033,7 @@ private:
 			}
 #else // YUE_NO_MACRO
 			if (importAllMacro) {
-				throw CompileError("macro feature not supported"sv, import->target);
+				throw CompileError("macro feature not supported"sv, importNode->target);
 			}
 #endif // YUE_NO_MACRO
 			if (newTab->items.empty()) {
