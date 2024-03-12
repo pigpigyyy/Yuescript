@@ -31,7 +31,9 @@ using namespace std::chrono_literals;
 #include "linenoise.hpp"
 
 #if not(defined YUE_NO_MACRO && defined YUE_COMPILER_ONLY)
-#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { code; })
+#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { \
+	code; \
+})
 #define DEFER(code) _DEFER(code, __LINE__)
 extern "C" {
 #include "lauxlib.h"
@@ -292,6 +294,7 @@ int main(int narg, const char** args) {
 		"   -b       Dump compile time (doesn't write output)\n"
 		"   -g       Dump global variables used in NAME LINE COLUMN\n"
 		"   -l       Write line numbers from source codes\n"
+		"   -j       Disable implicit return at end of file\n"
 		"   -c       Reserve comments before statement from source codes\n"
 #ifndef YUE_NO_WATCHER
 		"   -w path  Watch changes and compile every file under directory\n"
@@ -597,6 +600,8 @@ int main(int narg, const char** args) {
 			config.reserveLineNumber = true;
 		} else if (arg == "-c"sv) {
 			config.reserveComment = true;
+		} else if (arg == "-j"sv) {
+			config.implicitReturnRoot = false;
 		} else if (arg == "-p"sv) {
 			writeToFile = false;
 		} else if (arg == "-g"sv) {
@@ -632,7 +637,7 @@ int main(int narg, const char** args) {
 #else
 			std::cout << "Error: -w is not supported\n"sv;
 			return 1;
-#endif // YUE_NO_WATCHER 
+#endif // YUE_NO_WATCHER
 		} else if (arg.size() > 2 && arg.substr(0, 2) == "--"sv && arg.substr(2, 1) != "-"sv) {
 			auto argStr = arg.substr(2);
 			yue::Utils::trim(argStr);
@@ -698,7 +703,7 @@ int main(int narg, const char** args) {
 #ifndef YUE_COMPILER_ONLY
 				return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath, minify, rewrite);
 #else
-				return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath);
+					return compileFile(fs::absolute(file.first), config, fullWorkPath, fullTargetPath);
 #endif // YUE_COMPILER_ONLY
 			});
 			results.push_back(std::move(task));
