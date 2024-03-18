@@ -18,7 +18,7 @@ Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 -- import syntax
 import "yue" as :p, :to_lua
 
--- implicit objects
+-- object literals
 inventory =
   equipment:
     * "sword"
@@ -50,7 +50,7 @@ export 🌛 = "月之脚本"
 -- import syntax
 import "yue" as :p, :to_lua
 
--- implicit objects
+-- object literals
 inventory =
   equipment:
     * "sword"
