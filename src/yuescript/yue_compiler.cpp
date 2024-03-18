@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.22.3"sv;
+const std::string_view version = "0.23.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -95,13 +95,15 @@ CompileInfo::CompileInfo(
 	std::unique_ptr<GlobalVars>&& globals,
 	std::unique_ptr<Options>&& options,
 	double parseTime,
-	double compileTime)
+	double compileTime,
+	bool usedVar)
 	: codes(std::move(codes))
 	, error(std::move(error))
 	, globals(std::move(globals))
 	, options(std::move(options))
 	, parseTime(parseTime)
-	, compileTime(compileTime) { }
+	, compileTime(compileTime)
+	, usedVar(usedVar) { }
 
 CompileInfo::CompileInfo(CompileInfo&& other)
 	: codes(std::move(other.codes))
@@ -214,7 +216,8 @@ public:
 				}
 				str_list out;
 				pushScope();
-				_enableReturn.push(_info.moduleName.empty());
+				_funcStates.push({false, _info.moduleName.empty()});
+				_funcLevel = 1;
 				_gotoScopes.push(0);
 				_gotoScope = 1;
 				_varArgs.push({true, false});
@@ -252,9 +255,8 @@ public:
 				if (config.lintGlobalVariable) {
 					globals = std::make_unique<GlobalVars>();
 					for (const auto& var : _globals) {
-						int line, col;
-						std::tie(line, col) = var.second;
-						globals->push_back({var.first, line + _config.lineOffset, col});
+						auto [name, line, col, accessType] = var.second;
+						globals->push_back({name, line + _config.lineOffset, col, accessType});
 					}
 					std::sort(globals->begin(), globals->end(), [](const GlobalVar& varA, const GlobalVar& varB) {
 						if (varA.line < varB.line) {
@@ -286,7 +288,8 @@ public:
 					}
 				}
 #endif // YUE_NO_MACRO
-				return {std::move(out.back()), std::nullopt, std::move(globals), std::move(options), parseTime, compileTime};
+				bool usedVar = _varArgs.top().usedVar;
+				return {std::move(out.back()), std::nullopt, std::move(globals), std::move(options), parseTime, compileTime, usedVar};
 			} catch (const CompileError& error) {
 				auto displayMessage = _info.errorMessage(error.what(), error.line, error.col, _config.lineOffset);
 				return {
@@ -298,7 +301,7 @@ public:
 						displayMessage},
 					std::move(globals),
 					std::move(options),
-					parseTime, compileTime};
+					parseTime, compileTime, false};
 			}
 		} else {
 			const auto& error = _info.error.value();
@@ -312,7 +315,7 @@ public:
 						""},
 					std::move(globals),
 					std::move(options),
-					parseTime, compileTime};
+					parseTime, compileTime, false};
 			}
 			auto displayMessage = _info.errorMessage(error.msg, error.line, error.col, _config.lineOffset);
 			return {
@@ -324,7 +327,7 @@ public:
 					displayMessage},
 				std::move(globals),
 				std::move(options),
-				parseTime, compileTime};
+				parseTime, compileTime, false};
 		}
 	}
 
@@ -341,7 +344,7 @@ public:
 		_varArgs = {};
 		_withVars = {};
 		_continueVars = {};
-		_enableReturn = {};
+		_funcStates = {};
 #ifndef YUE_NO_MACRO
 		if (_useModule) {
 			_useModule = false;
@@ -375,16 +378,22 @@ private:
 		bool usedVar;
 	};
 	std::stack<VarArgState> _varArgs;
-	std::stack<bool> _enableReturn;
+	struct FuncState {
+		bool isAnon;
+		bool enableReturn;
+	};
+	int _funcLevel = 0;
+	std::stack<FuncState> _funcStates;
 	std::stack<bool> _enableBreakLoop;
 	std::stack<std::string> _withVars;
+	str_list _rootDefs;
 	struct ContinueVar {
 		std::string var;
 		ast_ptr<false, ExpListAssign_t> condAssign;
 	};
 	std::stack<ContinueVar> _continueVars;
 	std::list<std::unique_ptr<input>> _codeCache;
-	std::unordered_map<std::string, std::pair<int, int>> _globals;
+	std::unordered_map<std::string, std::tuple<std::string, int, int, AccessType>> _globals;
 	std::ostringstream _buf;
 	std::ostringstream _joinBuf;
 	const std::string _newLine = "\n";
@@ -526,7 +535,7 @@ private:
 		return local;
 	}
 
-	bool isGlobal(const std::string& name) const {
+	bool isDeclaredAsGlobal(const std::string& name) const {
 		bool global = false;
 		for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
 			auto vars = it->vars.get();
@@ -1020,7 +1029,7 @@ private:
 		return type;
 	}
 
-	std::string singleVariableFrom(ChainValue_t* chainValue) {
+	std::string singleVariableFrom(ChainValue_t* chainValue, AccessType accessType) {
 		BLOCK_START
 		BREAK_IF(!chainValue);
 		BREAK_IF(chainValue->items.size() != 1);
@@ -1034,7 +1043,7 @@ private:
 		}
 		BREAK_IF(!var);
 		str_list tmp;
-		transformCallable(callable, tmp);
+		transformCallable(callable, tmp, accessType);
 		return tmp.back();
 		BLOCK_END
 		return Empty;
@@ -1064,7 +1073,7 @@ private:
 		}
 	}
 
-	std::string singleVariableFrom(ast_node* expList, bool accessing) {
+	std::string singleVariableFrom(ast_node* expList, AccessType accessType) {
 		if (!ast_is<Exp_t, ExpList_t, Value_t>(expList)) return Empty;
 		BLOCK_START
 		auto value = ast_cast<Value_t>(expList);
@@ -1078,14 +1087,7 @@ private:
 		auto callable = ast_cast<Callable_t>(chainValue->items.front());
 		BREAK_IF(!callable || !(callable->item.is<Variable_t>() || callable->get_by_path<SelfItem_t, Self_t>()));
 		str_list tmp;
-		if (accessing) {
-			transformCallable(callable, tmp);
-		} else {
-			bool lintGlobal = _config.lintGlobalVariable;
-			_config.lintGlobalVariable = false;
-			transformCallable(callable, tmp);
-			_config.lintGlobalVariable = lintGlobal;
-		}
+		transformCallable(callable, tmp, accessType);
 		return tmp.back();
 		BLOCK_END
 		return Empty;
@@ -1235,7 +1237,7 @@ private:
 			return unary;
 		}
 		auto value = static_cast<Value_t*>(unary->expos.back());
-		auto varName = singleVariableFrom(value, false);
+		auto varName = singleVariableFrom(value, AccessType::None);
 		if (varName.empty() || !isLocal(varName)) {
 			return unary;
 		}
@@ -1243,15 +1245,26 @@ private:
 		return nullptr;
 	}
 
-	void pushFunctionScope() {
-		_enableReturn.push(true);
+	void pushFunctionScope(bool anonFunc) {
+		_funcLevel += anonFunc ? 0 : 1;
+		_funcStates.push({anonFunc, true});
 		_enableBreakLoop.push(false);
 		_gotoScopes.push(_gotoScope);
 		_gotoScope++;
 	}
 
+
+	void pushUserFunctionScope() {
+		pushFunctionScope(false);
+	}
+
+	void pushAnonFunctionScope() {
+		pushFunctionScope(true);
+	}
+
 	void popFunctionScope() {
-		_enableReturn.pop();
+		_funcLevel -= _funcStates.top().isAnon ? 0 : 1;
+		_funcStates.pop();
 		_enableBreakLoop.pop();
 		_gotoScopes.pop();
 	}
@@ -1276,12 +1289,16 @@ private:
 		return !_varArgs.empty() && _varArgs.top().usedVar ? "end)(...)"s : "end)()"s;
 	}
 
-	std::string globalVar(std::string_view var, ast_node* x) {
+	std::string globalVar(std::string_view var, ast_node* x, AccessType accessType) {
 		std::string str(var);
 		if (_config.lintGlobalVariable) {
-			if (!isDefined(str)) {
-				if (_globals.find(str) == _globals.end()) {
-					_globals[str] = {x->m_begin.m_line, x->m_begin.m_col};
+			if (!isLocal(str)) {
+				auto key = str + ':' + std::to_string(x->m_begin.m_line) + ':' + std::to_string(x->m_begin.m_col);
+				if (_globals.find(key) == _globals.end()) {
+					if (accessType == AccessType::Read && _funcLevel > 1) {
+						accessType = AccessType::Capture;
+					}
+					_globals[key] = {str, x->m_begin.m_line, x->m_begin.m_col, accessType};
 				}
 			}
 		}
@@ -1532,7 +1549,15 @@ private:
 								case id<While_t>(): transformWhile(static_cast<While_t*>(value), out); break;
 								case id<Do_t>(): transformDo(static_cast<Do_t*>(value), out, ExpUsage::Common); break;
 								case id<Try_t>(): transformTry(static_cast<Try_t*>(value), out, ExpUsage::Common); break;
-								case id<Comprehension_t>(): transformCompCommon(static_cast<Comprehension_t*>(value), out); break;
+								case id<Comprehension_t>(): {
+									auto comp = static_cast<Comprehension_t*>(value);
+									if (comp->items.size() == 2 && ast_is<CompInner_t>(comp->items.back())) {
+										transformCompCommon(comp, out);
+									} else {
+										specialSingleValue = false;
+									}
+									break;
+								}
 								default: specialSingleValue = false; break;
 							}
 							if (specialSingleValue) {
@@ -1567,7 +1592,7 @@ private:
 		_config.lintGlobalVariable = false;
 		if (!assignment->action.is<Assign_t>()) return vars;
 		for (auto exp : assignment->expList->exprs.objects()) {
-			auto var = singleVariableFrom(exp, true);
+			auto var = singleVariableFrom(exp, AccessType::Write);
 			vars.push_back(var.empty() ? Empty : var);
 		}
 		_config.lintGlobalVariable = lintGlobal;
@@ -1579,7 +1604,7 @@ private:
 		bool lintGlobal = _config.lintGlobalVariable;
 		_config.lintGlobalVariable = false;
 		for (auto exp : with->valueList->exprs.objects()) {
-			auto var = singleVariableFrom(exp, true);
+			auto var = singleVariableFrom(exp, AccessType::Write);
 			vars.push_back(var.empty() ? Empty : var);
 		}
 		_config.lintGlobalVariable = lintGlobal;
@@ -1867,7 +1892,7 @@ private:
 						throw CompileError("right value missing"sv, values.front());
 					}
 					transformAssignItem(*vit, args);
-					_buf << indent() << globalVar("setmetatable"sv, x) << '(' << join(args, ", "sv) << ')' << nll(x);
+					_buf << indent() << globalVar("setmetatable"sv, x, AccessType::Read) << '(' << join(args, ", "sv) << ')' << nll(x);
 					temp.push_back(clearBuf());
 				} else if (ast_is<TableAppendingOp_t>(chainValue->items.back())) {
 					auto tmpChain = chainValue->new_ptr<ChainValue_t>();
@@ -1880,7 +1905,7 @@ private:
 							tmpChain->items.push_back(toAst<Callable_t>(_withVars.top(), chainValue));
 						}
 					}
-					auto varName = singleVariableFrom(tmpChain);
+					auto varName = singleVariableFrom(tmpChain, AccessType::Write);
 					bool isScoped = false;
 					if (varName.empty() || !isLocal(varName)) {
 						isScoped = true;
@@ -2433,7 +2458,7 @@ private:
 						}
 					} else {
 						auto exp = static_cast<Exp_t*>(pair);
-						auto varName = singleVariableFrom(exp, false);
+						auto varName = singleVariableFrom(exp, AccessType::None);
 						if (varName == "_"sv) break;
 						auto chain = exp->new_ptr<ChainValue_t>();
 						auto indexItem = toAst<Exp_t>(std::to_string(index), exp);
@@ -2514,7 +2539,7 @@ private:
 						} else {
 							auto chain = exp->new_ptr<ChainValue_t>();
 							if (keyIndex) chain->items.push_back(keyIndex);
-							auto varName = singleVariableFrom(exp, false);
+							auto varName = singleVariableFrom(exp, AccessType::None);
 							pairs.push_back({exp,
 								varName,
 								chain,
@@ -2801,7 +2826,7 @@ private:
 				}
 				valueItems.push_back(*j);
 				if (!varDefOnly && !subDestruct->values.empty() && !subMetaDestruct->values.empty()) {
-					auto var = singleVariableFrom(*j, false);
+					auto var = singleVariableFrom(*j, AccessType::None);
 					if (var.empty() || !isLocal(var)) {
 						auto objVar = getUnusedName("_obj_"sv);
 						addToScope(objVar);
@@ -2818,7 +2843,7 @@ private:
 						auto& destruct = destructs.emplace_back();
 						if (!varDefOnly) {
 							destruct.value = valueItems.back();
-							destruct.valueVar = singleVariableFrom(destruct.value, false);
+							destruct.valueVar = singleVariableFrom(destruct.value, AccessType::None);
 						}
 						auto simpleValue = tab->new_ptr<SimpleValue_t>();
 						simpleValue->value.set(tab);
@@ -2893,7 +2918,7 @@ private:
 								}
 							}
 							if (auto value = singleValueFrom(exp); !value || !value->item.is<String_t>()) {
-								auto var = singleVariableFrom(exp, false);
+								auto var = singleVariableFrom(exp, AccessType::None);
 								if (var.empty()) {
 									if (!des.inlineAssignment) {
 										des.inlineAssignment = x->new_ptr<ExpListAssign_t>();
@@ -2986,7 +3011,7 @@ private:
 					BLOCK_START
 					auto exp = ast_cast<Exp_t>(item);
 					BREAK_IF(!exp);
-					auto var = singleVariableFrom(exp, true);
+					auto var = singleVariableFrom(exp, AccessType::Write);
 					BREAK_IF(!var.empty());
 					auto upVar = getUnusedName("_update_"sv);
 					auto newAssignment = x->new_ptr<ExpListAssign_t>();
@@ -3038,23 +3063,40 @@ private:
 				auto assign = static_cast<Assign_t*>(action);
 				auto defs = transformAssignDefs(expList, DefOp::Check);
 				bool oneLined = defs.size() == expList->exprs.objects().size();
+				bool nonRecursionFunLit = false;
 				for (auto val : assign->values.objects()) {
 					if (auto value = singleValueFrom(val)) {
 						if (auto spValue = value->item.as<SimpleValue_t>()) {
-							if (spValue->value.is<FunLit_t>()) {
-								oneLined = false;
+							if (auto funLit = spValue->value.as<FunLit_t>()) {
+								if (funLit->noRecursion) {
+									nonRecursionFunLit = true;
+								} else {
+									oneLined = false;
+								}
 								break;
 							}
 						}
 					}
 				}
 				if (oneLined) {
-					for (auto value : assign->values.objects()) {
-						transformAssignItem(value, temp);
-					}
 					std::string preDefine = toLocalDecl(defs);
-					for (const auto& def : defs) {
-						addToScope(def.first);
+					if (nonRecursionFunLit) {
+						for (const auto& def : defs) {
+							addToScope(def.first);
+						}
+						for (auto value : assign->values.objects()) {
+							transformAssignItem(value, temp);
+						}
+					} else {
+						for (auto value : assign->values.objects()) {
+							transformAssignItem(value, temp);
+						}
+						for (const auto& def : defs) {
+							addToScope(def.first);
+						}
+					}
+					for (ast_node* exp : expList->exprs.objects()) {
+						singleVariableFrom(exp, AccessType::Write);
 					}
 					if (preDefine.empty()) {
 						transformExpList(expList, temp);
@@ -3068,6 +3110,9 @@ private:
 					std::string preDefine = toLocalDecl(defs);
 					for (const auto& def : defs) {
 						addToScope(def.first);
+					}
+					for (ast_node* exp : expList->exprs.objects()) {
+						singleVariableFrom(exp, AccessType::Write);
 					}
 					transformExpList(expList, temp);
 					std::string left = std::move(temp.back());
@@ -3122,7 +3167,18 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			pushFunctionScope();
+			auto x = nodes.front();
+			auto newIf = x->new_ptr<If_t>();
+			newIf->type.set(toAst<IfType_t>(unless ? "unless"sv : "if"sv, x));
+			for (ast_node* node : nodes) {
+				newIf->nodes.push_back(node);
+			}
+			auto simpleValue = x->new_ptr<SimpleValue_t>();
+			simpleValue->value.set(newIf);
+			if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+				return;
+			}
+			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
@@ -3149,12 +3205,12 @@ private:
 		if (asmt) {
 			auto exp = firstIfCond->condition.get();
 			auto x = exp;
-			auto var = singleVariableFrom(exp, false);
-			if (var.empty() || isGlobal(var)) {
+			auto var = singleVariableFrom(exp, AccessType::None);
+			if (var.empty() || isDeclaredAsGlobal(var)) {
 				storingValue = true;
 				auto desVar = getUnusedName("_des_"sv);
 				if (asmt->assign->values.objects().size() == 1) {
-					auto var = singleVariableFrom(asmt->assign->values.objects().front(), true);
+					auto var = singleVariableFrom(asmt->assign->values.objects().front(), AccessType::Read);
 					if (!var.empty() && isLocal(var)) {
 						desVar = var;
 						storingValue = false;
@@ -3300,7 +3356,7 @@ private:
 						}
 						bool findPlaceHolder = false;
 						for (auto a : args->objects()) {
-							auto name = singleVariableFrom(a, false);
+							auto name = singleVariableFrom(a, AccessType::None);
 							if (name == "_"sv) {
 								if (!findPlaceHolder) {
 									args->swap(a, arg);
@@ -3396,7 +3452,7 @@ private:
 						if (item.second->size() == 1) {
 							if (auto unary = singleUnaryExpFrom(node)) {
 								if (auto value = singleValueFrom(unary)) {
-									varName = singleVariableFrom(value, true);
+									varName = singleVariableFrom(value, AccessType::Read);
 								}
 								if (varName.empty()) {
 									if (auto sval = static_cast<Value_t*>(unary->expos.front())->item.as<SimpleValue_t>()) {
@@ -3597,7 +3653,137 @@ private:
 		}
 	}
 
+	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgList = nullptr) {
+		if (_funcLevel <= 1) return std::nullopt;
+		auto result = exp->traverse([&](ast_node* node) {
+			switch (node->get_id()) {
+				case id<MacroName_t>():
+					return traversal::Stop;
+			}
+			return traversal::Continue;
+		});
+		if (result != traversal::Stop) {
+			str_list args;
+			bool upVarsAssignedOrCaptured = false;
+			bool usedVar = false;
+			ast_ptr<false, Statement_t> stmt;
+			{
+				str_list globals;
+				for (const auto& scope : _scopes) {
+					if (scope.vars) {
+						for (const auto& var : *scope.vars) {
+							globals.push_back(var.first);
+						}
+					}
+				}
+				auto returnNode = exp->new_ptr<Return_t>();
+				auto returnList = exp->new_ptr<ExpListLow_t>();
+				returnList->exprs.push_back(exp);
+				returnNode->valueList.set(returnList);
+				std::string codes;
+				if (_withVars.empty()) {
+					codes = YueFormat{}.toString(returnNode);
+					stmt = exp->new_ptr<Statement_t>();
+					stmt->content.set(returnNode);
+				} else {
+					auto withNode = exp->new_ptr<With_t>();
+					withNode->valueList.set(toAst<ExpList_t>(_withVars.top(), exp));
+					auto returnStmt = exp->new_ptr<Statement_t>();
+					returnStmt->content.set(returnNode);
+					withNode->body.set(returnStmt);
+					codes = YueFormat{}.toString(withNode);
+					stmt = exp->new_ptr<Statement_t>();
+					auto simpleValue = exp->new_ptr<SimpleValue_t>();
+					simpleValue->value.set(withNode);
+					auto newExpr = newExp(simpleValue, exp);
+					auto explist = exp->new_ptr<ExpList_t>();
+					explist->exprs.push_back(newExpr);
+					auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+					expListAssign->expList.set(explist);
+					stmt->content.set(expListAssign);
+				}
+				if (!globals.empty()) {
+					codes.insert(0, "global "s + join(globals, ","sv) + '\n');
+				}
+				YueConfig config;
+				config.lintGlobalVariable = true;
+				auto result = YueCompiler{L, _luaOpen, true}.compile(codes, config);
+				if (result.error) {
+					YUEE("failed to compile dues to Yue formatter", exp);
+				}
+				usedVar = result.usedVar;
+				if (result.globals) {
+					for (const auto& global : *result.globals) {
+						if (global.accessType != AccessType::Read) {
+							upVarsAssignedOrCaptured = true;
+							break;
+						} else if (std::find(args.begin(), args.end(), global.name) == args.end()) {
+							args.push_back(global.name);
+						}
+					}
+				}
+			}
+			if (!upVarsAssignedOrCaptured) {
+				auto x = exp;
+				if (usedVar) {
+					args.push_back("..."s);
+				}
+				if (ensureArgList) {
+					std::unordered_set<std::string> vars;
+					for (const auto& arg : args) {
+						vars.insert(arg);
+					}
+					for (const auto& arg : *ensureArgList) {
+						vars.erase(arg);
+					}
+					str_list finalArgs;
+					for (const auto& arg : vars) {
+						finalArgs.push_back(arg);
+					}
+					for (const auto& arg : *ensureArgList) {
+						finalArgs.push_back(arg);
+					}
+					args = std::move(finalArgs);
+				}
+				auto funLit = toAst<FunLit_t>("("s + join(args, ","sv) + ")-> nil"s, x);
+				funLit->body->content.set(stmt.get());
+				funLit->noRecursion = true;
+				auto simpleValue = x->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(funLit);
+				auto funcName = getUnusedName("_anon_func_"sv);
+				auto assignment = assignmentFrom(toAst<Exp_t>(funcName, x), newExp(simpleValue, x), x);
+				auto scopes = std::move(_scopes);
+				_scopes.push_back(std::move(scopes.front()));
+				scopes.pop_front();
+				int offset = _indentOffset;
+				_indentOffset = 0;
+				transformAssignment(assignment, _rootDefs);
+				scopes.push_front(std::move(_scopes.front()));
+				_scopes = std::move(scopes);
+				_indentOffset = offset;
+				return std::make_pair(funcName, args);
+			}
+		}
+		return std::nullopt;
+	}
+
+	bool transformAsUpValueFunc(Exp_t* exp, str_list& out) {
+		auto result = upValueFuncFrom(exp);
+		if (result) {
+			auto [funcName, args] = std::move(*result);
+			auto newChainValue = toAst<ChainValue_t>(funcName + '(' + join(args, ","sv) + ')', exp);
+			transformChainValue(newChainValue, out, ExpUsage::Closure);
+			return true;
+		}
+		return false;
+	}
+
 	void transformNilCoalesedExp(Exp_t* exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool nilBranchOnly = false) {
+		if (usage == ExpUsage::Closure) {
+			if (transformAsUpValueFunc(exp, out)) {
+				return;
+			}
+		}
 		auto x = exp;
 		str_list temp;
 		auto left = exp->new_ptr<Exp_t>();
@@ -3620,12 +3806,12 @@ private:
 		}
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			pushFunctionScope();
+			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
 		}
-		auto objVar = singleVariableFrom(left, true);
+		auto objVar = singleVariableFrom(left, AccessType::Read);
 		auto prepareValue = [&](bool forAssignment = false) {
 			if (objVar.empty() || !isLocal(objVar)) {
 				if (forAssignment) {
@@ -3724,21 +3910,25 @@ private:
 		}
 	}
 
-	void transformCallable(Callable_t* callable, str_list& out, const ast_sel<false, Invoke_t, InvokeArgs_t>& invoke = {}) {
+	void transformCallable(Callable_t* callable, str_list& out, AccessType accessType, const ast_sel<false, Invoke_t, InvokeArgs_t>& invoke = {}) {
 		auto item = callable->item.get();
 		switch (item->get_id()) {
 			case id<Variable_t>(): {
 				transformVariable(static_cast<Variable_t*>(item), out);
-				if (_config.lintGlobalVariable && !isLocal(out.back())) {
-					if (_globals.find(out.back()) == _globals.end()) {
-						_globals[out.back()] = {item->m_begin.m_line, item->m_begin.m_col};
+				if (_config.lintGlobalVariable && accessType != AccessType::None && !isLocal(out.back())) {
+					auto key = out.back() + ':' + std::to_string(item->m_begin.m_line) + ':' + std::to_string(item->m_begin.m_col);
+					if (_globals.find(key) == _globals.end()) {
+						if (accessType == AccessType::Read && _funcLevel > 1) {
+							accessType = AccessType::Capture;
+						}
+						_globals[key] = {out.back(), item->m_begin.m_line, item->m_begin.m_col, accessType};
 					}
 				}
 				break;
 			}
 			case id<SelfItem_t>(): {
 				transformSelfName(static_cast<SelfItem_t*>(item), out, invoke);
-				globalVar("self"sv, item);
+				globalVar("self"sv, item, accessType);
 				break;
 			}
 			case id<Parens_t>(): transformParens(static_cast<Parens_t*>(item), out); break;
@@ -3777,7 +3967,7 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
-		pushFunctionScope();
+		pushUserFunctionScope();
 		_varArgs.push({false, false});
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -3951,7 +4141,7 @@ private:
 					}
 					bool findPlaceHolder = false;
 					for (auto a : args->objects()) {
-						auto name = singleVariableFrom(a, false);
+						auto name = singleVariableFrom(a, AccessType::None);
 						if (name == "_"sv) {
 							if (!findPlaceHolder) {
 								args->swap(a, arg);
@@ -4078,6 +4268,26 @@ private:
 				argNames.push_back("..."s);
 				auto newBody = x->new_ptr<Body_t>();
 				newBody->content.set(followingBlock);
+				{
+					auto doNode = x->new_ptr<Do_t>();
+					doNode->body.set(newBody);
+					auto simpleValue = x->new_ptr<SimpleValue_t>();
+					simpleValue->value.set(doNode);
+					if (auto result = upValueFuncFrom(newExp(simpleValue, x), &argNames)) {
+						auto [funcName, args] = std::move(*result);
+						str_list finalArgs;
+						for (const auto& arg : args) {
+							if (std::find(argNames.begin(), argNames.end(), arg) == argNames.end()) {
+								finalArgs.push_back(arg);
+							}
+						}
+						newBlock->statements.push_back(toAst<Statement_t>(funcName + ' ' + join(finalArgs, ","sv), x));
+						auto sVal = singleValueFrom(static_cast<Statement_t*>(newBlock->statements.back())->content.to<ExpListAssign_t>()->expList);
+						ast_to<InvokeArgs_t>(sVal->item.to<ChainValue_t>()->items.back())->args.dup(newInvoke->args);
+						transformBlock(newBlock, out, usage, assignList, isRoot);
+						return;
+					}
+				}
 				auto funLit = toAst<FunLit_t>('(' + join(argNames, ","sv) + ")->"s, x);
 				funLit->body.set(newBody);
 				auto newSimpleValue = x->new_ptr<SimpleValue_t>();
@@ -4323,6 +4533,13 @@ private:
 			str_list temp;
 			for (auto node : nodes) {
 				transformStatement(static_cast<Statement_t*>(node), temp);
+				if (isRoot && !_rootDefs.empty()) {
+					auto last = std::move(temp.back());
+					temp.pop_back();
+					temp.insert(temp.end(), _rootDefs.begin(), _rootDefs.end());
+					_rootDefs.clear();
+					temp.push_back(std::move(last));
+				}
 				if (!temp.empty() && _parser.startWith<StatementSep_t>(temp.back())) {
 					auto rit = ++temp.rbegin();
 					if (rit != temp.rend() && !rit->empty()) {
@@ -4590,7 +4807,7 @@ private:
 #endif // YUE_NO_MACRO
 
 	void transformReturn(Return_t* returnNode, str_list& out) {
-		if (!_enableReturn.top()) {
+		if (!_funcStates.top().enableReturn) {
 			ast_node* target = returnNode->valueList.get();
 			if (!target) target = returnNode;
 			throw CompileError("can not mix use of return and export statements in module scope"sv, target);
@@ -4909,7 +5126,14 @@ private:
 			str_list temp;
 			std::string* funcStart = nullptr;
 			if (usage == ExpUsage::Closure) {
-				pushFunctionScope();
+				auto chainValue = x->new_ptr<ChainValue_t>();
+				for (ast_node* node : chainList) {
+					chainValue->items.push_back(node);
+				}
+				if (transformAsUpValueFunc(newExp(chainValue, x), out)) {
+					return true;
+				}
+				pushAnonFunctionScope();
 				pushAnonVarArg();
 				funcStart = &temp.emplace_back();
 				pushScope();
@@ -4940,7 +5164,7 @@ private:
 				break;
 			}
 			BLOCK_END
-			auto objVar = singleVariableFrom(partOne);
+			auto objVar = singleVariableFrom(partOne, AccessType::Read);
 			bool isScoped = false;
 			if (objVar.empty() || !isLocal(objVar)) {
 				switch (usage) {
@@ -4965,7 +5189,7 @@ private:
 						}
 						chainValue->items.push_back(toAst<Callable_t>(_withVars.top(), x));
 					}
-					auto newObj = singleVariableFrom(chainValue);
+					auto newObj = singleVariableFrom(chainValue, AccessType::Read);
 					if (!newObj.empty()) {
 						objVar = newObj;
 					} else {
@@ -5085,7 +5309,7 @@ private:
 					pushScope();
 					break;
 				case ExpUsage::Closure:
-					pushFunctionScope();
+					pushAnonFunctionScope();
 					pushAnonVarArg();
 					funcStart = &temp.emplace_back();
 					pushScope();
@@ -5222,7 +5446,14 @@ private:
 						str_list temp;
 						std::string* funcStart = nullptr;
 						if (usage == ExpUsage::Closure) {
-							pushFunctionScope();
+							auto chainValue = x->new_ptr<ChainValue_t>();
+							for (ast_node* node : chainList) {
+								chainValue->items.push_back(node);
+							}
+							if (transformAsUpValueFunc(newExp(chainValue, x), out)) {
+								return true;
+							}
+							pushAnonFunctionScope();
 							pushAnonVarArg();
 							funcStart = &temp.emplace_back();
 							pushScope();
@@ -5349,12 +5580,6 @@ private:
 		for (auto it = chainList.begin(); it != chainList.end(); ++it) {
 			auto item = *it;
 			switch (item->get_id()) {
-				case id<Invoke_t>():
-					transformInvoke(static_cast<Invoke_t*>(item), temp);
-					break;
-				case id<DotChainItem_t>():
-					transformDotChainItem(static_cast<DotChainItem_t*>(item), temp);
-					break;
 				case id<ColonChainItem_t>(): {
 					auto colonItem = static_cast<ColonChainItem_t*>(item);
 					auto current = it;
@@ -5390,7 +5615,7 @@ private:
 								chainValue->items.push_back(*i);
 							}
 							auto exp = newExp(chainValue, x);
-							callVar = singleVariableFrom(exp, true);
+							callVar = singleVariableFrom(exp, AccessType::Read);
 							if (callVar.empty() || !isLocal(callVar)) {
 								callVar = getUnusedName("_call_"s);
 								auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -5413,10 +5638,27 @@ private:
 							}
 							chainValue->items.push_back(toAst<Exp_t>('\"' + name + '\"', x));
 							if (auto invoke = ast_cast<Invoke_t>(followItem)) {
-								invoke->args.push_front(toAst<Exp_t>(callVar, x));
+								auto newInvoke = x->new_ptr<Invoke_t>();
+								newInvoke->args.push_back(toAst<Exp_t>(callVar, x));
+								newInvoke->args.dup(invoke->args);
+								chainValue->items.push_back(newInvoke);
+								++next;
 							} else {
 								auto invokeArgs = static_cast<InvokeArgs_t*>(followItem);
-								invokeArgs->args.push_front(toAst<Exp_t>(callVar, x));
+								auto newInvokeArgs = x->new_ptr<InvokeArgs_t>();
+								newInvokeArgs->args.push_back(toAst<Exp_t>(callVar, x));
+								newInvokeArgs->args.dup(invokeArgs->args);
+								chainValue->items.push_back(newInvokeArgs);
+								++next;
+								if (next != chainList.end()) {
+									auto paren = x->new_ptr<Parens_t>();
+									paren->expr.set(newExp(chainValue, x));
+									auto ncallable = x->new_ptr<Callable_t>();
+									ncallable->item.set(paren);
+									auto nchainValue = x->new_ptr<ChainValue_t>();
+									nchainValue->items.push_back(ncallable);
+									chainValue.set(nchainValue);
+								}
 							}
 							for (auto i = next; i != chainList.end(); ++i) {
 								chainValue->items.push_back(*i);
@@ -5447,6 +5689,15 @@ private:
 						} else {
 							auto body = x->new_ptr<Body_t>();
 							body->content.set(block);
+							{
+								auto doNode = x->new_ptr<Do_t>();
+								doNode->body.set(body);
+								auto simpleValue = x->new_ptr<SimpleValue_t>();
+								simpleValue->value.set(doNode);
+								if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+									return;
+								}
+							}
 							auto funLit = toAst<FunLit_t>("->"sv, x);
 							funLit->body.set(body);
 							auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -5464,9 +5715,21 @@ private:
 						}
 						return;
 					}
-					transformColonChainItem(colonItem, temp);
-					break;
 				}
+			}
+		}
+		for (auto it = chainList.begin(); it != chainList.end(); ++it) {
+			auto item = *it;
+			switch (item->get_id()) {
+				case id<Invoke_t>():
+					transformInvoke(static_cast<Invoke_t*>(item), temp);
+					break;
+				case id<DotChainItem_t>():
+					transformDotChainItem(static_cast<DotChainItem_t*>(item), temp);
+					break;
+				case id<ColonChainItem_t>():
+					transformColonChainItem(static_cast<ColonChainItem_t*>(item), temp);
+					break;
 				case id<Slice_t>():
 					transformSlice(static_cast<Slice_t*>(item), temp);
 					break;
@@ -5478,7 +5741,7 @@ private:
 					if (ast_is<Invoke_t, InvokeArgs_t>(followItem)) {
 						invoke.set(followItem);
 					}
-					transformCallable(static_cast<Callable_t*>(item), temp, invoke);
+					transformCallable(static_cast<Callable_t*>(item), temp, AccessType::Read, invoke);
 					break;
 				}
 				case id<String_t>():
@@ -5969,7 +6232,7 @@ private:
 			std::string varName;
 			if (unary_exp->ops.empty() && unary_exp->expos.size() == 1) {
 				auto value = static_cast<Value_t*>(unary_exp->expos.back());
-				varName = singleVariableFrom(value, false);
+				varName = singleVariableFrom(value, AccessType::None);
 				if (!isLocal(varName)) {
 					varName.clear();
 				}
@@ -6018,7 +6281,7 @@ private:
 			BLOCK_START
 			BREAK_IF(discrete);
 			str_list temp;
-			auto checkVar = singleVariableFrom(inExp, false);
+			auto checkVar = singleVariableFrom(inExp, AccessType::None);
 			if (usage == ExpUsage::Assignment) {
 				auto block = x->new_ptr<Block_t>();
 				if (checkVar.empty() || !isLocal(checkVar)) {
@@ -6091,7 +6354,11 @@ private:
 					if (usage == ExpUsage::Return) {
 						arrayCheck(!unary_exp->inExp->not_);
 					} else {
-						pushFunctionScope();
+						if (transformAsUpValueFunc(newExp(unary_exp, unary_exp), out)) {
+							out.back() = "(#"s + checkVar + " > 0 and "s + out.back() + ')';
+							return;
+						}
+						pushAnonFunctionScope();
 						pushAnonVarArg();
 						pushScope();
 						arrayCheck(true);
@@ -6106,7 +6373,10 @@ private:
 					}
 				} else {
 					if (usage == ExpUsage::Closure) {
-						pushFunctionScope();
+						if (transformAsUpValueFunc(newExp(unary_exp, unary_exp), out)) {
+							return;
+						}
+						pushAnonFunctionScope();
 						pushAnonVarArg();
 						pushScope();
 					}
@@ -6160,7 +6430,10 @@ private:
 			if (varName.empty()) {
 				str_list temp;
 				if (usage == ExpUsage::Closure) {
-					pushFunctionScope();
+					if (transformAsUpValueFunc(newExp(unary_exp, unary_exp), out)) {
+						return;
+					}
+					pushAnonFunctionScope();
 					pushAnonVarArg();
 					pushScope();
 				} else if (usage == ExpUsage::Assignment) {
@@ -6302,11 +6575,21 @@ private:
 	void transformSpreadTable(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = values.front();
 		switch (usage) {
-			case ExpUsage::Closure:
-				pushFunctionScope();
+			case ExpUsage::Closure: {
+				auto tableLit = x->new_ptr<TableLit_t>();
+				for (ast_node* value : values) {
+					tableLit->values.push_back(value);
+				}
+				auto simpleValue = x->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(tableLit);
+				if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+					return;
+				}
+				pushAnonFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
+			}
 			case ExpUsage::Assignment:
 				pushScope();
 				break;
@@ -6336,7 +6619,7 @@ private:
 					std::string indexVar = getUnusedName("_idx_"sv);
 					std::string keyVar = getUnusedName("_key_"sv);
 					std::string valueVar = getUnusedName("_value_"sv);
-					auto objVar = singleVariableFrom(spread->exp, true);
+					auto objVar = singleVariableFrom(spread->exp, AccessType::Read);
 					if (objVar.empty()) {
 						objVar = getUnusedName("_obj_");
 						auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, item);
@@ -6360,7 +6643,7 @@ private:
 					auto spread = static_cast<SpreadListExp_t*>(item);
 					std::string indexVar = getUnusedName("_idx_"sv);
 					std::string valueVar = getUnusedName("_value_"sv);
-					auto objVar = singleVariableFrom(spread->exp, true);
+					auto objVar = singleVariableFrom(spread->exp, AccessType::Read);
 					if (objVar.empty()) {
 						objVar = getUnusedName("_obj_");
 						auto assignment = toAst<ExpListAssign_t>(objVar + "=nil"s, item);
@@ -6704,7 +6987,7 @@ private:
 			decIndentOffset();
 			out.back() += (indent() + '}');
 		} else {
-			auto tabStr = globalVar("setmetatable"sv, x);
+			auto tabStr = globalVar("setmetatable"sv, x, AccessType::Read);
 			tabStr += '(';
 			if (temp.empty()) {
 				decIndentOffset();
@@ -6825,20 +7108,26 @@ private:
 		if (!def || def->defVal) {
 			throw CompileError("invalid comprehension expression", comp->items.front());
 		}
-		auto value = def->item.get();
-		auto compInner = static_cast<CompInner_t*>(comp->items.back());
 		switch (usage) {
-			case ExpUsage::Closure:
-				pushFunctionScope();
+			case ExpUsage::Closure: {
+				auto simpleValue = x->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(comp);
+				if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+					return;
+				}
+				pushAnonFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
+			}
 			case ExpUsage::Assignment:
 				pushScope();
 				break;
 			default:
 				break;
 		}
+		auto value = def->item.get();
+		auto compInner = static_cast<CompInner_t*>(comp->items.back());
 		str_list temp;
 		std::string accumVar = getUnusedName("_accum_"sv);
 		std::string lenVar = getUnusedName("_len_"sv);
@@ -6954,7 +7243,7 @@ private:
 		switch (loopTarget->get_id()) {
 			case id<StarExp_t>(): {
 				auto star_exp = static_cast<StarExp_t*>(loopTarget);
-				auto listVar = singleVariableFrom(star_exp->value, true);
+				auto listVar = singleVariableFrom(star_exp->value, AccessType::Read);
 				if (!isLocal(listVar)) listVar.clear();
 				auto indexVar = getUnusedName("_index_"sv);
 				varAfter.push_back(indexVar);
@@ -7430,8 +7719,13 @@ private:
 	}
 
 	void transformForClosure(For_t* forNode, str_list& out) {
+		auto simpleValue = forNode->new_ptr<SimpleValue_t>();
+		simpleValue->value.set(forNode);
+		if (transformAsUpValueFunc(newExp(simpleValue, forNode), out)) {
+			return;
+		}
 		str_list temp;
-		pushFunctionScope();
+		pushAnonFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -7519,8 +7813,13 @@ private:
 	}
 
 	void transformForEachClosure(ForEach_t* forEach, str_list& out) {
+		auto simpleValue = forEach->new_ptr<SimpleValue_t>();
+		simpleValue->value.set(forEach);
+		if (transformAsUpValueFunc(newExp(simpleValue, forEach), out)) {
+			return;
+		}
 		str_list temp;
-		pushFunctionScope();
+		pushAnonFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -7569,8 +7868,9 @@ private:
 			out.push_back(name + " = "s + name);
 		}
 		if (_config.lintGlobalVariable && !isLocal(name)) {
-			if (_globals.find(name) == _globals.end()) {
-				_globals[name] = {pair->name->m_begin.m_line, pair->name->m_begin.m_col};
+			auto key = name + ':' + std::to_string(pair->name->m_begin.m_line) + ':' + std::to_string(pair->name->m_begin.m_col);
+			if (_globals.find(key) != _globals.end()) {
+				_globals[key] = {name, pair->name->m_begin.m_line, pair->name->m_begin.m_col, _funcLevel > 1 ? AccessType::Capture : AccessType::Read};
 			}
 		}
 	}
@@ -7675,7 +7975,7 @@ private:
 				}
 				case id<Exp_t>(): {
 					transformExp(static_cast<Exp_t*>(content), temp, ExpUsage::Closure);
-					temp.back() = globalVar("tostring"sv, content) + '(' + temp.back() + ')';
+					temp.back() = globalVar("tostring"sv, content, AccessType::Read) + '(' + temp.back() + ')';
 					break;
 				}
 				default: YUEE("AST node mismatch", content); break;
@@ -7708,8 +8008,13 @@ private:
 	}
 
 	void transformClassDeclClosure(ClassDecl_t* classDecl, str_list& out) {
+		auto simpleValue = classDecl->new_ptr<SimpleValue_t>();
+		simpleValue->value.set(classDecl);
+		if (transformAsUpValueFunc(newExp(simpleValue, classDecl), out)) {
+			return;
+		}
 		str_list temp;
-		pushFunctionScope();
+		pushAnonFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -7918,7 +8223,7 @@ private:
 		if (extend) {
 			_buf << indent() << "setmetatable("sv << baseVar << ", "sv << parentVar << ".__base)"sv << nll(classDecl);
 		}
-		_buf << indent() << classVar << " = "sv << globalVar("setmetatable"sv, classDecl) << "({"sv << nll(classDecl);
+		_buf << indent() << classVar << " = "sv << globalVar("setmetatable"sv, classDecl, AccessType::Read) << "({"sv << nll(classDecl);
 		if (!builtins.empty()) {
 			_buf << join(builtins) << ',' << nll(classDecl);
 		} else {
@@ -8142,8 +8447,13 @@ private:
 	}
 
 	void transformWithClosure(With_t* with, str_list& out) {
+		auto simpleValue = with->new_ptr<SimpleValue_t>();
+		simpleValue->value.set(with);
+		if (transformAsUpValueFunc(newExp(simpleValue, with), out)) {
+			return;
+		}
 		str_list temp;
-		pushFunctionScope();
+		pushAnonFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -8163,9 +8473,9 @@ private:
 		bool scoped = false;
 		if (with->assigns) {
 			auto vars = getAssignVars(with);
-			if (vars.front().empty() || isGlobal(vars.front())) {
+			if (vars.front().empty() || isDeclaredAsGlobal(vars.front())) {
 				if (with->assigns->values.objects().size() == 1) {
-					auto var = singleVariableFrom(with->assigns->values.objects().front(), true);
+					auto var = singleVariableFrom(with->assigns->values.objects().front(), AccessType::Read);
 					if (!var.empty() && isLocal(var)) {
 						withVar = var;
 					}
@@ -8211,7 +8521,7 @@ private:
 				transformAssignment(assignment, temp);
 			}
 		} else {
-			withVar = singleVariableFrom(with->valueList, true);
+			withVar = singleVariableFrom(with->valueList, AccessType::Read);
 			if (withVar.empty() || !isLocal(withVar)) {
 				withVar = getUnusedName("_with_"sv);
 				auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -8555,11 +8865,17 @@ private:
 
 	void transformTblComprehension(TblComprehension_t* comp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		switch (usage) {
-			case ExpUsage::Closure:
-				pushFunctionScope();
+			case ExpUsage::Closure: {
+				auto simpleValue = comp->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(comp);
+				if (transformAsUpValueFunc(newExp(simpleValue, comp), out)) {
+					return;
+				}
+				pushAnonFunctionScope();
 				pushAnonVarArg();
 				pushScope();
 				break;
+			}
 			case ExpUsage::Assignment:
 				pushScope();
 				break;
@@ -8663,7 +8979,12 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			pushFunctionScope();
+			auto simpleValue = doNode->new_ptr<SimpleValue_t>();
+			simpleValue->value.set(doNode);
+			if (transformAsUpValueFunc(newExp(simpleValue, doNode), out)) {
+				return;
+			}
+			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 		} else {
@@ -8691,7 +9012,7 @@ private:
 			errHandler.set(toAst<Exp_t>(errHandleStr, x->func));
 			auto funLit = simpleSingleValueFrom(errHandler)->value.to<FunLit_t>();
 			auto body = x->new_ptr<Body_t>();
-			body->content.set(tryNode->catchBlock->body);
+			body->content.set(tryNode->catchBlock->block);
 			funLit->body.set(body);
 		}
 		if (auto tryBlock = tryNode->func.as<Block_t>()) {
@@ -8709,6 +9030,35 @@ private:
 			BLOCK_END
 		}
 		if (auto tryBlock = tryNode->func.as<Block_t>()) {
+			{
+				auto body = tryBlock->new_ptr<Body_t>();
+				body->content.set(tryBlock);
+				auto doNode = tryBlock->new_ptr<Do_t>();
+				doNode->body.set(body);
+				auto simpleValue = tryBlock->new_ptr<SimpleValue_t>();
+				simpleValue->value.set(doNode);
+				if (auto result = upValueFuncFrom(newExp(simpleValue, tryBlock))) {
+					auto [funcName, args] = std::move(*result);
+					if (errHandler) {
+						auto xpcall = toAst<ChainValue_t>("xpcall()", x);
+						auto invoke = ast_to<Invoke_t>(xpcall->items.back());
+						invoke->args.push_back(toAst<Exp_t>(funcName, x));
+						invoke->args.push_back(errHandler);
+						invoke->args.dup(toAst<ExpList_t>(join(args, ","sv), x)->exprs);
+						transformChainValue(xpcall, out, ExpUsage::Closure);
+					} else {
+						auto pcall = toAst<ChainValue_t>("pcall()", x);
+						auto invoke = ast_to<Invoke_t>(pcall->items.back());
+						invoke->args.push_back(toAst<Exp_t>(funcName, x));
+						invoke->args.dup(toAst<ExpList_t>(join(args, ","sv), x)->exprs);
+						transformChainValue(pcall, out, ExpUsage::Closure);
+					}
+					if (usage == ExpUsage::Common) {
+						out.back().append(nlr(x));
+					}
+					return;
+				}
+			}
 			auto tryExp = toAst<Exp_t>("->"sv, x);
 			auto funLit = simpleSingleValueFrom(tryExp)->value.to<FunLit_t>();
 			auto body = x->new_ptr<Body_t>();
@@ -8806,7 +9156,7 @@ private:
 	void transformImportFrom(ImportFrom_t* importNode, str_list& out) {
 		str_list temp;
 		auto x = importNode;
-		auto objVar = singleVariableFrom(importNode->item, true);
+		auto objVar = singleVariableFrom(importNode->item, AccessType::Read);
 		ast_ptr<false, ExpListAssign_t> objAssign;
 		if (objVar.empty()) {
 			objVar = getUnusedName("_obj_"sv);
@@ -9169,8 +9519,13 @@ private:
 
 	void transformWhileClosure(While_t* whileNode, str_list& out) {
 		auto x = whileNode;
+		auto simpleValue = x->new_ptr<SimpleValue_t>();
+		simpleValue->value.set(whileNode);
+		if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+			return;
+		}
 		str_list temp;
-		pushFunctionScope();
+		pushAnonFunctionScope();
 		pushAnonVarArg();
 		std::string& funcStart = temp.emplace_back();
 		pushScope();
@@ -9232,13 +9587,18 @@ private:
 		str_list temp;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
-			pushFunctionScope();
+			auto simpleValue = x->new_ptr<SimpleValue_t>();
+			simpleValue->value.set(switchNode);
+			if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
+				return;
+			}
+			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
 			pushScope();
 		}
 		bool extraScope = false;
-		auto objVar = singleVariableFrom(switchNode->target, true);
+		auto objVar = singleVariableFrom(switchNode->target, AccessType::Read);
 		if (objVar.empty() || !isLocal(objVar)) {
 			if (usage == ExpUsage::Common || usage == ExpUsage::Assignment) {
 				extraScope = true;
@@ -9285,7 +9645,7 @@ private:
 					forceAddToScope(typeVar);
 					tabCheckVar = getUnusedName("_tab_"sv);
 					forceAddToScope(tabCheckVar);
-					temp.push_back(indent() + "local "s + typeVar + " = "s + globalVar("type"sv, branch) + '(' + objVar + ')' + nll(branch));
+					temp.push_back(indent() + "local "s + typeVar + " = "s + globalVar("type"sv, branch, AccessType::Read) + '(' + objVar + ')' + nll(branch));
 					temp.push_back(indent() + "local "s + tabCheckVar + " = \"table\" == "s + typeVar + " or \"userdata\" == "s + typeVar + nll(branch));
 				}
 				std::string matchVar;
@@ -9730,12 +10090,12 @@ private:
 			constVal = ast_is<ConstValue_t, Num_t>(simpleVal->value);
 		}
 		bool localVal = false;
-		if (auto var = singleVariableFrom(value, false); isLocal(var)) {
+		if (auto var = singleVariableFrom(value, AccessType::None); isLocal(var)) {
 			localVal = true;
 		}
 		if (!constVal && !localVal) {
 			for (auto exp : chainAssign->exprs.objects()) {
-				std::string var = singleVariableFrom(exp, false);
+				std::string var = singleVariableFrom(exp, AccessType::None);
 				if (!var.empty()) {
 					str_list temp;
 					transformAssignment(assignmentFrom(static_cast<Exp_t*>(exp), value, exp), temp);

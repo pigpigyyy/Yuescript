@@ -24,7 +24,11 @@ end)(), {
 local _u8868bb = {
 	["键1"] = (function()
 		local _call_1 = _u53d8_u91cfa
-		return _call_1["变量b"](_call_1, 123)["变量c"]()
+		return (_call_1["变量b"](_call_1, 123, {
+			["字段A"] = _u5b57_u6bb5A
+		}))["变量c"](1, 2, 3, {
+			["字段B"] = _u5b57_u6bb5B
+		})
 	end)(),
 	["键2"] = {
 		["键w1"] = (function()
@@ -54,37 +58,40 @@ _u51fd_u6570 = function()
 	end
 	return _accum_0
 end
+local _anon_func_0 = function(_u53d8_u91cfa)
+	do
+		local _call_1 = _u53d8_u91cfa
+		return (_call_1["变量b"](_call_1, 123))["变量c"]("abc")
+	end
+end
 local _u51fd_u65701
 _u51fd_u65701 = function()
-	return _u53d8_u91cfx, (function()
-		local _call_1 = _u53d8_u91cfa
-		return _call_1["变量b"](_call_1, 123)["变量c"]("abc")
-	end)()
+	return _u53d8_u91cfx, _anon_func_0(_u53d8_u91cfa)
 end
 local _call_1 = _u539f_u59cb["转换"].root.gameObject
 local _call_2 = _call_1["父节点"](_call_1)
 local _call_3 = _call_2["后代节点"](_call_2)
 local _call_4 = _call_3["选择启用"](_call_3)
 local _call_5 = _call_4["选择可见"](_call_4)
-local _call_6 = _call_5["标签相等"](_call_5, "fx")
-local _call_7 = _call_6["筛选"](_call_6, function(_u5143_u7d20)
-	if _u5143_u7d20["是否目标"](_u5143_u7d20, _u5143_u7d20) then
+local _call_6 = (_call_5["标签相等"](_call_5, "fx"))
+local _call_7 = (_call_6["筛选"](_call_6, function(_u5143_u7d20)
+	if _u5143_u7d20["是否目标"](_u5143_u7d20) then
 		return false
 	end
 	local _call_7 = _u5143_u7d20["名称"]
-	return _call_7["结束于"](_call_7, _call_7, "(Clone)")
-end)
+	return _call_7["结束于"](_call_7, "(Clone)")
+end))
 local _u7ed3_u679c = _call_7["销毁"](_call_7)
 local _call_8 = _u539f_u70b9["变换"]["根节点"]["游戏对象"]
 local _call_9 = _call_8["父节点"](_call_8)
 local _call_10 = _call_9["后代节点"](_call_9)
 local _call_11 = _call_10["选择启用"](_call_10)
 local _call_12 = _call_11["选择可见"](_call_11)
-local _call_13 = _call_12["标签相等"](_call_12, "fx")
-local _call_14 = _call_13["筛选"](_call_13, function(_u5143_u7d20)
+local _call_13 = (_call_12["标签相等"](_call_12, "fx"))
+local _call_14 = (_call_13["筛选"](_call_13, function(_u5143_u7d20)
 	local _call_14 = _u5143_u7d20["名称"]
-	return _call_14["结束于"](_call_14, _call_14, "(Clone)")
-end)
+	return _call_14["结束于"](_call_14, "(Clone)")
+end))
 _call_14["销毁"](_call_14)
 do
 	local _with_0 = _u9879_u76ee

@@ -42,11 +42,14 @@ do
 		end
 	end
 end
-return __u65e0_u6548_u53d8_u91cf(function()
-	setmetatable(a_u53d8_u91cf, (function()
+local _anon_func_0 = function(_u6253_u5370)
+	do
 		_u6253_u5370(123)
 		return { }
-	end)())
+	end
+end
+return __u65e0_u6548_u53d8_u91cf(function()
+	setmetatable(a_u53d8_u91cf, _anon_func_0(_u6253_u5370))
 	do
 		local _u5143_u7d20a, _u5143_u7d20b
 		do

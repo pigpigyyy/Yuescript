@@ -50,6 +50,22 @@ do
 		a, b = _obj_0[1], _obj_0[2]
 	end
 end
+local _anon_func_0 = function(f, error, _close_1, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_1(f)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
+end
+local _anon_func_1 = function(io)
+	local _with_0 = io.open("file.txt")
+	_with_0:write("Hello")
+	return _with_0
+end
 do
 	local v = (function()
 		if flag then
@@ -70,22 +86,42 @@ do
 			return error(...)
 		end
 	end)(pcall(function(...)
-		local f = (function()
-			local _with_0 = io.open("file.txt")
-			_with_0:write("Hello")
-			return _with_0
-		end)()
+		local f = _anon_func_1(io)
 		local _close_1 = assert(getmetatable(f).__close)
-		return (function(_arg_0, ...)
-			local _ok_0 = _arg_0
-			_close_1(f)
-			if _ok_0 then
-				return ...
-			else
-				return error(...)
-			end
-		end)(pcall(function(...) end, ...))
+		return _anon_func_0(f, error, _close_1, pcall(function(...) end, ...))
 	end, ...))
+end
+local _anon_func_2 = function(d, error, _close_1, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_1(d)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
+end
+local _anon_func_3 = function(x)
+	if true then
+		if "abc" == x then
+			return 998
+		end
+	end
+end
+local _anon_func_5 = function(a, b)
+	if a ~= nil then
+		return a
+	else
+		return b
+	end
+end
+local _anon_func_4 = function(a, b)
+	if _anon_func_5(a, b) then
+		return {
+			value = value
+		}
+	end
 end
 do
 	local a = (function()
@@ -110,38 +146,33 @@ do
 			return error(...)
 		end
 	end)(pcall(function(...)
-		local c = (function()
-			if true then
-				local _exp_0 = x
-				if "abc" == _exp_0 then
-					return 998
-				end
-			end
-		end)()
-		local d = (function()
-			if (function()
-				if a ~= nil then
-					return a
-				else
-					return b
-				end
-			end)() then
-				return {
-					value = value
-				}
-			end
-		end)()
+		local c = _anon_func_3(x)
+		local d = _anon_func_4(a, b)
 		local _close_1 = assert(getmetatable(d).__close)
-		return (function(_arg_0, ...)
-			local _ok_0 = _arg_0
-			_close_1(d)
-			if _ok_0 then
-				return ...
-			else
-				return error(...)
-			end
-		end)(pcall(function(...) end, ...))
+		return _anon_func_2(d, error, _close_1, pcall(function(...) end, ...))
 	end, ...))
+end
+local _anon_func_6 = function(_, error, _close_1, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_1(_)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
+end
+local _anon_func_7 = function(_, _close_2, error, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_2(_)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
 end
 do
 	local _ = (function()
@@ -165,30 +196,16 @@ do
 			end
 		})
 		local _close_1 = assert(getmetatable(_).__close)
-		return (function(_arg_0, ...)
-			local _ok_0 = _arg_0
-			_close_1(_)
-			if _ok_0 then
-				return ...
-			else
-				return error(...)
-			end
-		end)(pcall(function(...)
+		return _anon_func_6(_, error, _close_1, pcall(function(...)
 			local _ = setmetatable({ }, {
 				__close = function()
 					return print("first")
 				end
 			})
 			local _close_2 = assert(getmetatable(_).__close)
-			return (function(_arg_0, ...)
-				local _ok_0 = _arg_0
-				_close_2(_)
-				if _ok_0 then
-					return ...
-				else
-					return error(...)
-				end
-			end)(pcall(function(...) end, ...))
+			return _anon_func_7(_, _close_2, error, pcall(function(...)
+				return print("third")
+			end, ...))
 		end, ...))
 	end, ...))
 end
@@ -202,6 +219,28 @@ local def
 def = function(item)
 	_defers[#_defers + 1] = item
 	return _defers
+end
+local _anon_func_8 = function(_, error, _close_1, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_1(_)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
+end
+local _anon_func_9 = function(_, _close_2, error, _arg_0, ...)
+	do
+		local _ok_0 = _arg_0
+		_close_2(_)
+		if _ok_0 then
+			return ...
+		else
+			return error(...)
+		end
+	end
 end
 do
 	local _ = def(function()
@@ -221,28 +260,12 @@ do
 			return print(2)
 		end)
 		local _close_1 = assert(getmetatable(_).__close)
-		return (function(_arg_0, ...)
-			local _ok_0 = _arg_0
-			_close_1(_)
-			if _ok_0 then
-				return ...
-			else
-				return error(...)
-			end
-		end)(pcall(function(...)
+		return _anon_func_8(_, error, _close_1, pcall(function(...)
 			local _ = def(function()
 				return print(1)
 			end)
 			local _close_2 = assert(getmetatable(_).__close)
-			return (function(_arg_0, ...)
-				local _ok_0 = _arg_0
-				_close_2(_)
-				if _ok_0 then
-					return ...
-				else
-					return error(...)
-				end
-			end)(pcall(function(...) end, ...))
+			return _anon_func_9(_, _close_2, error, pcall(function(...) end, ...))
 		end, ...))
 	end, ...))
 end

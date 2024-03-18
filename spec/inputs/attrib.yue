@@ -41,6 +41,8 @@ do
 
 	close _ = <close>: -> print "first"
 
+	print "third"
+
 _defers = setmetatable {}, __close: =>
 	@[#@]!
 	@[#@] = nil

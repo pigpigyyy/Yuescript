@@ -211,11 +211,11 @@ local _call_1 = (_({
 	-2,
 	3
 }))
-_call_1 = _call_1["链"](_call_1, _call_1, _call_1, _call_1, _call_1, _call_1, _call_1, _call_1)
-_call_1 = _call_1["映射"](_call_1, _call_1, _call_1, _call_1, function(self)
+_call_1 = _call_1["链"](_call_1)
+_call_1 = _call_1["映射"](_call_1, function(self)
 	return self * 2
 end)
-_call_1 = _call_1["过滤"](_call_1, _call_1, function(self)
+_call_1 = _call_1["过滤"](_call_1, function(self)
 	return self > 3
 end)
 local _u7ed3_u679ca = _call_1["取值"](_call_1)
@@ -227,25 +227,25 @@ local _call_2 = (_({
 	-2,
 	3
 }))
-_call_2 = _call_2["链"](_call_2, _call_2, _call_2, _call_2, _call_2, _call_2, _call_2, _call_2)
-_call_2 = _call_2["映射"](_call_2, _call_2, _call_2, _call_2, function(self)
+_call_2 = _call_2["链"](_call_2)
+_call_2 = _call_2["映射"](_call_2, function(self)
 	return self * 2
 end)
-_call_2 = _call_2["过滤"](_call_2, _call_2, function(self)
+_call_2 = _call_2["过滤"](_call_2, function(self)
 	return self > 3
 end)
 _call_2["每一个"](_call_2, function(self)
 	return _u6253_u5370(self)
 end)
 local _call_3 = _u539f_u70b9["变换"]["根节点"]["游戏对象"]
-_call_3 = _call_3["父节点"](_call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3)
-_call_3 = _call_3["后代"](_call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3)
-_call_3 = _call_3["选择启用"](_call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3)
-_call_3 = _call_3["选择可见"](_call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3, _call_3)
-_call_3 = _call_3["标签等于"](_call_3, _call_3, _call_3, _call_3, "fx")
-_call_3 = _call_3["其中"](_call_3, _call_3, function(x)
+_call_3 = _call_3["父节点"](_call_3)
+_call_3 = _call_3["后代"](_call_3)
+_call_3 = _call_3["选择启用"](_call_3)
+_call_3 = _call_3["选择可见"](_call_3)
+_call_3 = _call_3["标签等于"](_call_3, "fx")
+_call_3 = _call_3["其中"](_call_3, function(x)
 	local _call_4 = x["名称"]
-	return _call_4["结尾为"](_call_4, _call_4, "(克隆)")
+	return _call_4["结尾为"](_call_4, "(克隆)")
 end)
 _u7ed3_u679c = _call_3["摧毁"](_call_3)
 do

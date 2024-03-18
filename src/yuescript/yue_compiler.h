@@ -39,10 +39,18 @@ struct YueConfig {
 	Options options;
 };
 
+enum class AccessType {
+	None,
+	Read,
+	Capture,
+	Write
+};
+
 struct GlobalVar {
 	std::string name;
 	int line;
 	int col;
+	AccessType accessType;
 };
 
 using GlobalVars = std::vector<GlobalVar>;
@@ -60,6 +68,7 @@ struct CompileInfo {
 	std::unique_ptr<Options> options;
 	double parseTime;
 	double compileTime;
+	bool usedVar;
 
 	CompileInfo() { }
 	CompileInfo(
@@ -68,7 +77,8 @@ struct CompileInfo {
 		std::unique_ptr<GlobalVars>&& globals,
 		std::unique_ptr<Options>&& options,
 		double parseTime,
-		double compileTime);
+		double compileTime,
+		bool usedVar);
 	CompileInfo(CompileInfo&& other);
 	void operator=(CompileInfo&& other);
 };

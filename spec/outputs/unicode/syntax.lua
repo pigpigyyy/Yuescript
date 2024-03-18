@@ -282,13 +282,16 @@ _ = 5 + _u4ec0_u4e48(_u65e0_u804a)
 _u4ec0_u4e48(_u65e0_u804a + 5)
 _ = 5 - _u4ec0_u4e48(_u65e0_u804a)
 _u4ec0_u4e48(_u65e0_u804a - 5)
-_u53d8_u91cfx = _u4f60_u597d - _u4e16_u754c - _u67d0_u7269;
+_u53d8_u91cfx = _u4f60_u597d - _u4e16_u754c - _u67d0_u7269
+local _anon_func_0 = function(_u4ec0_u4e48)
+	do
+		local _call_8 = _u4ec0_u4e48
+		return _call_8["酷"](_call_8, 100)
+	end
+end
 (function(_u67d0_u7269)
 	if _u67d0_u7269 == nil then
-		_u67d0_u7269 = _u4e0e((function()
-			local _call_8 = _u4ec0_u4e48
-			return _call_8["酷"](_call_8, 100)
-		end)())
+		_u67d0_u7269 = _u4e0e(_anon_func_0(_u4ec0_u4e48))
 	end
 	return _u6253_u5370(_u67d0_u7269)
 end)()

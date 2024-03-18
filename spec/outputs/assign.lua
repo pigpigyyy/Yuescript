@@ -42,11 +42,14 @@ do
 		end
 	end
 end
-return _(function()
-	setmetatable(a, (function()
+local _anon_func_0 = function(print)
+	do
 		print(123)
 		return { }
-	end)())
+	end
+end
+return _(function()
+	setmetatable(a, _anon_func_0(print))
 	do
 		local a, b
 		if "a" == c then

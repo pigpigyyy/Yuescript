@@ -195,7 +195,7 @@ std::string YueLineComment_t::to_string(void* ud) const {
 }
 std::string MultilineCommentInner_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
-	return "--[["s + info->convert(this) + "]]"s;
+	return info->convert(this);
 }
 std::string Variable_t::to_string(void* ud) const {
 	return name->to_string(ud);
@@ -583,12 +583,12 @@ std::string CatchBlock_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	auto line = "catch "s + err->to_string(ud);
 	info->pushScope();
-	auto block = body->to_string(ud);
-	if (block.empty()) {
-		block = info->ind() + "--"s;
+	auto blockStr = block->to_string(ud);
+	if (blockStr.empty()) {
+		blockStr = info->ind() + "--"s;
 	}
 	info->popScope();
-	return line + '\n' + block;
+	return line + '\n' + blockStr;
 }
 std::string Try_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
@@ -609,21 +609,158 @@ std::string Try_t::to_string(void* ud) const {
 	}
 	return join(temp, "\n"sv);
 }
+static bool isInBlockExp(ast_node* node, bool last = false) {
+	if (auto exp = ast_cast<Exp_t>(node)) {
+		UnaryExp_t* unaryExp = nullptr;
+		if (exp->opValues.empty()) {
+			unaryExp = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
+		} else {
+			unaryExp = static_cast<UnaryExp_t*>(static_cast<ExpOpValue_t*>(exp->opValues.back())->pipeExprs.back());
+		}
+		auto value = static_cast<Value_t*>(unaryExp->expos.back());
+		if (auto simpleValue = value->item.as<SimpleValue_t>()) {
+			switch (simpleValue->value->get_id()) {
+				case id<TableLit_t>():
+				case id<ConstValue_t>():
+				case id<Num_t>():
+				case id<VarArg_t>():
+				case id<TblComprehension_t>():
+				case id<Comprehension_t>():
+					return false;
+				case id<FunLit_t>():
+					if (!last) {
+						return true;
+					}
+					return false;
+				default:
+					return true;
+			}
+		} else if (auto chainValue = value->item.as<ChainValue_t>()) {
+			if (ast_is<InvokeArgs_t>(chainValue->items.back())) {
+				return true;
+			}
+		} else if (!last && value->item.is<SimpleTable_t>()) {
+			return true;
+		}
+	} else if (ast_is<TableBlock_t>(node)) {
+		return true;
+	} else {
+		switch (node->get_id()) {
+			case id<VariablePairDef_t>(): {
+				auto pair = static_cast<VariablePairDef_t*>(node);
+				if (pair->defVal) {
+					return true;
+				}
+				return false;
+			}
+			case id<NormalPairDef_t>(): {
+				auto pair = static_cast<NormalPairDef_t*>(node);
+				if (pair->defVal) {
+					return true;
+				}
+				return isInBlockExp(pair->pair->value);
+			}
+			case id<SpreadExp_t>(): {
+				auto pair = static_cast<SpreadExp_t*>(node);
+				return isInBlockExp(pair->exp);
+			}
+			case id<NormalDef_t>(): {
+				auto pair = static_cast<NormalDef_t*>(node);
+				if (pair->defVal) {
+					return true;
+				}
+				return isInBlockExp(pair->item);
+			}
+			case id<MetaVariablePairDef_t>(): {
+				auto pair = static_cast<MetaVariablePairDef_t*>(node);
+				if (pair->defVal) {
+					return true;
+				}
+				return false;
+			}
+			case id<MetaNormalPairDef_t>(): {
+				auto pair = static_cast<MetaNormalPairDef_t*>(node);
+				if (pair->defVal) {
+					return true;
+				}
+				return isInBlockExp(pair->pair->value);
+			}
+			case id<VariablePair_t>(): {
+				return false;
+			}
+			case id<NormalPair_t>(): {
+				auto pair = static_cast<NormalPair_t*>(node);
+				return isInBlockExp(pair->value);
+			}
+			case id<MetaVariablePair_t>(): {
+				return false;
+			}
+			case id<MetaNormalPair_t>(): {
+				auto pair = static_cast<MetaNormalPair_t*>(node);
+				return isInBlockExp(pair->value);
+			}
+			case id<TableBlockIndent_t>(): {
+				return true;
+			}
+			case id<SpreadListExp_t>(): {
+				auto pair = static_cast<SpreadListExp_t*>(node);
+				return isInBlockExp(pair->exp);
+			}
+			default:
+				return false;
+		}
+	}
+	return false;
+}
 std::string Comprehension_t::to_string(void* ud) const {
-	str_list temp;
-	for (const auto& item : items.objects()) {
-		temp.push_back(item->to_string(ud));
-	}
-	if (temp.size() > 0) {
-		temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
-	}
 	if (items.size() != 2 || !ast_is<CompInner_t>(items.back())) {
 		if (items.size() == 1) {
+			str_list temp;
+			for (const auto& item : items.objects()) {
+				temp.push_back(item->to_string(ud));
+			}
+			if (temp.size() > 0) {
+				temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
+			}
 			return '[' + join(temp, ", "sv) + ",]"s;
 		} else {
-			return '[' + join(temp, ", "sv) + ']';
+			bool hasInBlockExp = false;
+			for (auto value : items.objects()) {
+				if (isInBlockExp(value, value == items.back())) {
+					hasInBlockExp = true;
+					break;
+				}
+			}
+			if (hasInBlockExp) {
+				auto info = reinterpret_cast<YueFormat*>(ud);
+				str_list temp;
+				temp.emplace_back("["s);
+				info->pushScope();
+				for (auto value : items.objects()) {
+					temp.emplace_back(info->ind() + value->to_string(ud));
+				}
+				info->popScope();
+				temp.emplace_back(info->ind() + ']');
+				return join(temp, "\n"sv);
+			} else {
+				str_list temp;
+				for (const auto& item : items.objects()) {
+					temp.push_back(item->to_string(ud));
+				}
+				if (temp.size() > 0) {
+					temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
+				}
+				return '[' + join(temp, ", "sv) + ']';
+			}
 		}
 	} else {
+		str_list temp;
+		for (const auto& item : items.objects()) {
+			temp.push_back(item->to_string(ud));
+		}
+		if (temp.size() > 0) {
+			temp.front().insert(0, temp.front()[0] == '[' ? " "s : ""s);
+		}
 		return '[' + join(temp, " "sv) + ']';
 	}
 }
@@ -833,109 +970,6 @@ std::string Slice_t::to_string(void* ud) const {
 	}
 	auto valueStr = join(temp);
 	return '[' + (valueStr[0] == '[' ? " "s : ""s) + valueStr + ']';
-}
-static bool isInBlockExp(ast_node* node, bool last = false) {
-	if (auto exp = ast_cast<Exp_t>(node)) {
-		UnaryExp_t* unaryExp = nullptr;
-		if (exp->opValues.empty()) {
-			unaryExp = static_cast<UnaryExp_t*>(exp->pipeExprs.back());
-		} else {
-			unaryExp = static_cast<UnaryExp_t*>(static_cast<ExpOpValue_t*>(exp->opValues.back())->pipeExprs.back());
-		}
-		auto value = static_cast<Value_t*>(unaryExp->expos.back());
-		if (auto simpleValue = value->item.as<SimpleValue_t>()) {
-			switch (simpleValue->value->get_id()) {
-				case id<TableLit_t>():
-				case id<ConstValue_t>():
-				case id<Num_t>():
-				case id<VarArg_t>():
-				case id<TblComprehension_t>():
-				case id<Comprehension_t>():
-					return false;
-				case id<FunLit_t>():
-					if (!last) {
-						return true;
-					}
-					return false;
-				default:
-					return true;
-			}
-		} else if (auto chainValue = value->item.as<ChainValue_t>()) {
-			if (ast_is<InvokeArgs_t>(chainValue->items.back())) {
-				return true;
-			}
-		} else if (!last && value->item.is<SimpleTable_t>()) {
-			return true;
-		}
-	} else if (ast_is<TableBlock_t>(node)) {
-		return true;
-	} else {
-		switch (node->get_id()) {
-			case id<VariablePairDef_t>(): {
-				auto pair = static_cast<VariablePairDef_t*>(node);
-				if (pair->defVal) {
-					return true;
-				}
-				return false;
-			}
-			case id<NormalPairDef_t>(): {
-				auto pair = static_cast<NormalPairDef_t*>(node);
-				if (pair->defVal) {
-					return true;
-				}
-				return isInBlockExp(pair->pair->value);
-			}
-			case id<SpreadExp_t>(): {
-				auto pair = static_cast<SpreadExp_t*>(node);
-				return isInBlockExp(pair->exp);
-			}
-			case id<NormalDef_t>(): {
-				auto pair = static_cast<NormalDef_t*>(node);
-				if (pair->defVal) {
-					return true;
-				}
-				return isInBlockExp(pair->item);
-			}
-			case id<MetaVariablePairDef_t>(): {
-				auto pair = static_cast<MetaVariablePairDef_t*>(node);
-				if (pair->defVal) {
-					return true;
-				}
-				return false;
-			}
-			case id<MetaNormalPairDef_t>(): {
-				auto pair = static_cast<MetaNormalPairDef_t*>(node);
-				if (pair->defVal) {
-					return true;
-				}
-				return isInBlockExp(pair->pair->value);
-			}
-			case id<VariablePair_t>(): {
-				return false;
-			}
-			case id<NormalPair_t>(): {
-				auto pair = static_cast<NormalPair_t*>(node);
-				return isInBlockExp(pair->value);
-			}
-			case id<MetaVariablePair_t>(): {
-				return false;
-			}
-			case id<MetaNormalPair_t>(): {
-				auto pair = static_cast<MetaNormalPair_t*>(node);
-				return isInBlockExp(pair->value);
-			}
-			case id<TableBlockIndent_t>(): {
-				return true;
-			}
-			case id<SpreadListExp_t>(): {
-				auto pair = static_cast<SpreadListExp_t*>(node);
-				return isInBlockExp(pair->exp);
-			}
-			default:
-				return false;
-		}
-	}
-	return false;
 }
 std::string Invoke_t::to_string(void* ud) const {
 	if (args.empty()) {

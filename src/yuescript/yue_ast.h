@@ -368,8 +368,8 @@ AST_END(Do, "do"sv)
 
 AST_NODE(CatchBlock)
 	ast_ptr<true, Variable_t> err;
-	ast_ptr<true, Block_t> body;
-	AST_MEMBER(CatchBlock, &err, &body)
+	ast_ptr<true, Block_t> block;
+	AST_MEMBER(CatchBlock, &err, &block)
 AST_END(CatchBlock, "catch_block"sv)
 
 AST_NODE(Try)
@@ -759,6 +759,7 @@ AST_NODE(FunLit)
 	ast_sel<false, ExpListLow_t, DefaultValue_t> defaultReturn;
 	ast_ptr<true, FnArrow_t> arrow;
 	ast_ptr<false, Body_t> body;
+	bool noRecursion = false;
 	AST_MEMBER(FunLit, &argsDef, &defaultReturn, &arrow, &body)
 AST_END(FunLit, "fun_lit"sv)
 

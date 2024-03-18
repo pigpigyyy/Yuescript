@@ -106,6 +106,7 @@ do
 			return print("first")
 		end
 	})
+	print("third")
 end
 local _defers = setmetatable({ }, {
 	__close = function(self)
