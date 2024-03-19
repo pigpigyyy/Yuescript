@@ -486,7 +486,7 @@ GameEngine:schedule(function(deltaTime)
 	local value = 123
 	return func(_anon_func_27(UpdateScoreText, tostring, value))
 end)
-return GameEngine:schedule(function(deltaTime)
+GameEngine:schedule(function(deltaTime)
 	local value = 123
 	return func((function()
 		if value > 200 then
@@ -500,3 +500,44 @@ return GameEngine:schedule(function(deltaTime)
 		end
 	end)())
 end)
+local _anon_func_28 = function(char)
+	local _obj_0 = char.stats.strength
+	if _obj_0 ~= nil then
+		return _obj_0:ref()
+	end
+	return nil
+end
+local _anon_func_29 = function(os, _arg_0, ...)
+	do
+		local ok = _arg_0
+		if ok then
+			return ...
+		else
+			return os.exit(1)
+		end
+	end
+end
+local _anon_func_30 = function(debug_env_after, debug_env_before, env, func)
+	do
+		debug_env_before(env)
+		func(env)
+		return debug_env_after(env)
+	end
+end
+do
+	local buff_strength
+	buff_strength = function(char, item)
+		local _obj_0 = item.buffer.strength
+		if _obj_0 ~= nil then
+			return _obj_0(_anon_func_28(char))
+		end
+		return nil
+	end
+	local exe_func
+	exe_func = function(func, env)
+		return _anon_func_29(os, xpcall(_anon_func_30, function(ex)
+			error(ex)
+			return ex
+		end, debug_env_after, debug_env_before, env, func))
+	end
+end

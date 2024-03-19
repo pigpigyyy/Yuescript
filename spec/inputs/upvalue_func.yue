@@ -205,3 +205,21 @@ GameEngine\schedule (deltaTime) -> -- closure 1
 			UpdateScoreText "Score: #{value}" -- value is captured by closure 2
 		"continue"
 
+-- test cases from issue
+do
+	buff_strength = (char, item) ->
+		item.buffer.strength? char.stats.strength?::ref()
+
+	exe_func = (func, env) ->
+		ok, ... = try
+			debug_env_before(env)
+			func(env)
+			debug_env_after(env)
+		catch ex
+			-- accessing ex and error
+			error ex
+			return ex
+		if ok
+			return ...
+		else
+			os.exit(1)

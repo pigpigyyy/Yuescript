@@ -50,6 +50,7 @@ local files = {
 	"spec/inputs/test/table_spreading_spec.yue",
 	"spec/inputs/test/loops_spec.yue",
 	"spec/inputs/test/format_spec.yue",
+	"spec/inputs/upvalue_func.yue",
 	"spec/inputs/unicode/macro_export.yue",
 	"spec/inputs/unicode/attrib.yue",
 	"spec/inputs/unicode/macro.yue",
