@@ -1,0 +1,207 @@
+-- In module root scope the anonymous functions won't be moved to up-values because they just run once.
+
+-- 1. if expr
+func if cond
+	998
+else
+	"abc"
+
+-- 2. nil coalesed expr
+func valueA + valueB ?? 123
+
+-- 3. vararg passing
+do
+	ok, ... = func 1, 2, 3
+	print select 3, ...
+
+-- 4. chain with existential operator
+if tb?.abc?\call? 123
+	print "OK"
+
+-- 5. colon chain with metamethod accessing with string or expr
+func(
+	tb\<"fn"> 123
+	tb\<[1 + 1]> "abc"
+)
+
+-- 6. colon chain with Lua keyword or unicode name
+func tb\end()\🤣 123
+
+-- 7. in expr with short check
+itemA = 1
+listA = []
+if itemA in listA
+	print "itemA in listA"
+
+-- 8. in expr without short check
+if itemB? and itemB in listB
+	print "itemB in listB"
+
+-- 9. spread table
+func [...listA, ...listB]
+
+-- 10. comprehension
+func [i for i = 1, 10], [k for k in pairs tb]
+
+-- 11. for expr
+func for i = 1, 10
+	i + 1
+
+-- 12. for each expr
+func for k, v in pairs tb
+	[k, v]
+
+-- 13. class declaration expr
+func class
+	new: => @value = 1
+
+-- 14. with expr
+func with tb
+	.field = 1
+	\func "a"
+
+-- 15. table comprehension expr
+func {"#{k}-post-fix", v * 2 for k, v in pairs tb}
+
+-- 16. do expr
+func do
+	print 123
+	"abc"
+
+-- 17. try expr with block codes
+do
+	success, ... = try
+		a = 1
+		print a + nil
+		1, 2, 3
+	print select '#', ... if success
+
+-- 18. while expr
+i = 1
+func while cond
+	i += 1
+	i
+
+-- 19. switch expr
+func switch value
+	when 1
+		'a'
+	when 2
+		'b'
+
+GameEngine\onUpdate (deltaTime) ->
+	-- 1. if expr
+	func if cond
+		998
+	else
+		"abc"
+	
+	-- 2. nil coalesed expr
+	func valueA + valueB ?? 123
+	
+	-- 3. vararg passing
+	do
+		ok, ... = func 1, 2, 3
+		print select 3, ...
+	
+	-- 4. chain with existential operator
+	if tb?.abc?\call? 123
+		print "OK"
+	
+	-- 5. colon chain with metamethod accessing with string or expr
+	func(
+		tb\<"fn"> 123
+		tb\<[1 + 1]> "abc"
+	)
+	
+	-- 6. colon chain with Lua keyword or unicode name
+	func tb\end()\🤣 123
+	
+	-- 7. in expr with short check
+	itemA = 1
+	listA = []
+	if itemA in listA
+		print "item in list"
+	
+	-- 8. in expr without short check
+	if itemB? and itemB in listB
+		print "item in list"
+	
+	-- 9. spread table
+	func [...listA, ...listB]
+	
+	-- 10. comprehension
+	func [i for i = 1, 10], [k for k in pairs tb]
+	
+	-- 11. for expr
+	func for i = 1, 10
+		i + 1
+	
+	-- 12. for each expr
+	func for k, v in pairs tb
+		[k, v]
+	
+	-- 13. class declaration expr
+	func class
+		new: => @value = 1
+	
+	-- 14. with expr
+	func with tb
+		.field = 1
+		\func "a"
+	
+	-- 15. table comprehension expr
+	func {"#{k}-post-fix", v * 2 for k, v in pairs tb}
+	
+	-- 16. do expr
+	func do
+		print 123
+		"abc"
+	
+	-- 17. try expr with block codes
+	do
+		success, ... = try
+			a = 1
+			print a + nil
+			1, 2, 3
+		print select '#', ... if success
+	
+	-- 18. while expr
+	i = 1
+	func while cond
+		i += 1
+		i
+	
+	-- 19. switch expr
+	func switch value
+		when 1
+			'a'
+		when 2
+			'b'
+
+GameEngine\onEvent "SomeEvent", ->
+	func value + (if cond
+		998
+	else
+		"abc") + (valueB ?? 123) > tb?.abc?\call?(123) + tb\end()\🤣 123 and
+	itemA in listA
+
+GameEngine\schedule (deltaTime) ->
+	value = 123
+	func if value > 200
+		UpdateScoreText "Win: #{value}"
+		"done"
+	else
+		UpdateScoreText "Score: #{value}"
+		"continue"
+
+GameEngine\schedule (deltaTime) -> -- closure 1
+	value = 123
+	func if value > 200
+		UpdateScoreText "Win: #{value}"
+		"done"
+	else
+		GameEngine\schedule (deltaTime) -> -- closure 2
+			UpdateScoreText "Score: #{value}" -- value is captured by closure 2
+		"continue"
+

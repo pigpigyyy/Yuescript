@@ -3787,11 +3787,6 @@ private:
 	}
 
 	void transformNilCoalesedExp(Exp_t* exp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr, bool nilBranchOnly = false) {
-		if (usage == ExpUsage::Closure) {
-			if (transformAsUpValueFunc(exp, out)) {
-				return;
-			}
-		}
 		auto x = exp;
 		str_list temp;
 		auto left = exp->new_ptr<Exp_t>();
@@ -3814,6 +3809,12 @@ private:
 		}
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
+			left->nilCoalesed.set(exp->nilCoalesed);
+			if (transformAsUpValueFunc(left, temp)) {
+				out.push_back(join(temp));
+				return;
+			}
+			left->nilCoalesed.set(nullptr);
 			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
