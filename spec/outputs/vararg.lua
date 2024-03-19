@@ -44,7 +44,7 @@ local _anon_func_5 = function(items, ...)
 	end
 	return _accum_0
 end
-local _anon_func_6 = function(setmetatable, func)
+local _anon_func_6 = function(func, setmetatable)
 	local A
 	do
 		local _class_0
@@ -71,7 +71,7 @@ local _anon_func_6 = function(setmetatable, func)
 		return _class_0
 	end
 end
-local _anon_func_7 = function(setmetatable, func, ...)
+local _anon_func_7 = function(func, setmetatable, ...)
 	local A
 	do
 		local _class_0
@@ -176,12 +176,12 @@ local _anon_func_19 = function(func, ...)
 		return func(...)
 	end
 end
-local _anon_func_20 = function(x, func)
+local _anon_func_20 = function(func, x)
 	if "abc" == x then
 		return func()
 	end
 end
-local _anon_func_21 = function(x, func, ...)
+local _anon_func_21 = function(func, x, ...)
 	if "abc" == x then
 		return func(...)
 	end
@@ -198,7 +198,7 @@ local _anon_func_23 = function(func, ...)
 	end
 	return nil
 end
-local _anon_func_24 = function(select, print, ...)
+local _anon_func_24 = function(print, select, ...)
 	do
 		print(select("#", ...))
 		return print(...)
@@ -209,7 +209,7 @@ local _anon_func_25 = function(print, ...)
 		return print(...)
 	end
 end
-local _anon_func_26 = function(x, tb, tb2)
+local _anon_func_26 = function(tb, tb2, x)
 	if 1 == x then
 		tb.x = 123
 		return tb
@@ -241,8 +241,8 @@ join = function(...)
 	f_listcomp(_anon_func_3(items, ...))
 	f_listcomp(_anon_func_4(items))
 	f_listcomp(_anon_func_5(items, ...))
-	f_class(_anon_func_6(setmetatable, func))
-	f_class(_anon_func_7(setmetatable, func, ...))
+	f_class(_anon_func_6(func, setmetatable))
+	f_class(_anon_func_7(func, setmetatable, ...))
 	f_tblcomp(_anon_func_8(pairs, tb))
 	f_tblcomp(_anon_func_9(pairs, tb, ...))
 	f_tblcomp(_anon_func_10(items))
@@ -255,8 +255,8 @@ join = function(...)
 	f_if(_anon_func_17(func, ...))
 	f_unless(_anon_func_18(func))
 	f_unless(_anon_func_19(func, ...))
-	f_switch(_anon_func_20(x, func))
-	f_switch(_anon_func_21(x, func, ...))
+	f_switch(_anon_func_20(func, x))
+	f_switch(_anon_func_21(func, x, ...))
 	f_eop(_anon_func_22(func))
 	f_eop(_anon_func_23(func, ...))
 	f_colon((function()
@@ -293,11 +293,11 @@ join = function(...)
 			fn_many_args = function()
 				return 10, nil, 20, nil, 30
 			end
-			return _anon_func_24(select, print, fn_many_args())
+			return _anon_func_24(print, select, fn_many_args())
 		end)(fn(true))
 	end
 	do
-		_anon_func_25(print, _anon_func_26(x, tb, tb2))
+		_anon_func_25(print, _anon_func_26(tb, tb2, x))
 	end
 	do
 		_anon_func_27(print, 1, 2, _anon_func_28(cond))

@@ -3653,7 +3653,7 @@ private:
 		}
 	}
 
-	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgList = nullptr) {
+	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgListInTheEnd = nullptr) {
 		if (_funcLevel <= 1) return std::nullopt;
 		auto result = exp->traverse([&](ast_node* node) {
 			switch (node->get_id()) {
@@ -3725,25 +3725,33 @@ private:
 			}
 			if (!upVarsAssignedOrCaptured) {
 				auto x = exp;
-				if (usedVar) {
-					args.push_back("..."s);
-				}
-				if (ensureArgList) {
+				if (ensureArgListInTheEnd) {
 					std::unordered_set<std::string> vars;
 					for (const auto& arg : args) {
 						vars.insert(arg);
 					}
-					for (const auto& arg : *ensureArgList) {
+					for (const auto& arg : *ensureArgListInTheEnd) {
 						vars.erase(arg);
 					}
 					str_list finalArgs;
 					for (const auto& arg : vars) {
 						finalArgs.push_back(arg);
 					}
-					for (const auto& arg : *ensureArgList) {
+					finalArgs.sort();
+					for (const auto& arg : *ensureArgListInTheEnd) {
 						finalArgs.push_back(arg);
 					}
+					if (usedVar) {
+						if (finalArgs.back() != "..."sv) {
+							finalArgs.push_back("..."s);
+						}
+					}
 					args = std::move(finalArgs);
+				} else {
+					args.sort();
+					if (usedVar) {
+						args.push_back("..."s);
+					}
 				}
 				auto funLit = toAst<FunLit_t>("("s + join(args, ","sv) + ")-> nil"s, x);
 				funLit->body->content.set(stmt.get());
@@ -8070,7 +8078,7 @@ private:
 				auto chainValue = static_cast<ChainValue_t*>(value->item.get());
 				if (auto callable = ast_cast<Callable_t>(chainValue->items.front()); callable && chainValue->items.size() == 1) {
 					if (auto self = callable->item.as<SelfItem_t>()) {
-						if (auto selfVar = self->name.as<Self_t>()) {
+						if (self->name.as<Self_t>()) {
 							classTextName = "\"self\"";
 						}
 					} else if (auto var = callable->item.as<Variable_t>()) {
