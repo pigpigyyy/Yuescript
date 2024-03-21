@@ -101,16 +101,14 @@ rewriteLineCol = function(item)
 	item[2] = 0
 	item[3] = 0
 	for i = 4, #item do
-		do
-			local _exp_0 = type(item[i])
-			if "table" == _exp_0 then
-				if item[i][1] == "comment" then
-					table.remove(item, i)
-					rewriteLineCol(item)
-					return
-				end
-				rewriteLineCol(item[i])
+		local _exp_0 = type(item[i])
+		if "table" == _exp_0 then
+			if item[i][1] == "comment" then
+				table.remove(item, i)
+				rewriteLineCol(item)
+				return
 			end
+			rewriteLineCol(item[i])
 		end
 	end
 end

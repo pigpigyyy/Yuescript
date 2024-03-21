@@ -297,17 +297,15 @@ end
 do
 	for _u53d8_u91cfi = 1, 10 do
 		repeat
-			do
-				local _with_0 = _u5bf9_u8c61tb
-				if _with_0 ~= nil then
-					_with_0["字段a"] = 1
-					if _with_0["字段b"] then
-						goto _continue_12
-					end
-					do
-						if _with_0["字段c"] then
-							break
-						end
+			local _with_0 = _u5bf9_u8c61tb
+			if _with_0 ~= nil then
+				_with_0["字段a"] = 1
+				if _with_0["字段b"] then
+					goto _continue_12
+				end
+				do
+					if _with_0["字段c"] then
+						break
 					end
 				end
 			end

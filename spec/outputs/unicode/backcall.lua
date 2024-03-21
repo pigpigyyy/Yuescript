@@ -31,21 +31,19 @@ do
 	end)())
 end
 do
-	do
-		local _obj_0 = _u7f51_u7edc
-		if _obj_0 ~= nil then
-			_obj_0["获取"]("测试地址", function(_u6570_u636e)
-				local _call_0 = _u7f51_u9875_u4f53[".结果"]
-				_call_0["网页"](_call_0, _u6570_u636e)
-				return _u7f51_u7edc["请求"]("测试地址", _u6570_u636e, function(_u662f_u5426_u5904_u7406_u6210_u529f)
-					local _call_1 = _u7f51_u9875_u4f53[".结果"]
-					_call_1["添加"](_call_1, _u662f_u5426_u5904_u7406_u6210_u679c)
-					return _u8bbe_u7f6e_u8d85_u65f6_u56de_u8c03(1000, function()
-						return _u6253_u5370("完成")
-					end)
+	local _obj_0 = _u7f51_u7edc
+	if _obj_0 ~= nil then
+		_obj_0["获取"]("测试地址", function(_u6570_u636e)
+			local _call_0 = _u7f51_u9875_u4f53[".结果"]
+			_call_0["网页"](_call_0, _u6570_u636e)
+			return _u7f51_u7edc["请求"]("测试地址", _u6570_u636e, function(_u662f_u5426_u5904_u7406_u6210_u529f)
+				local _call_1 = _u7f51_u9875_u4f53[".结果"]
+				_call_1["添加"](_call_1, _u662f_u5426_u5904_u7406_u6210_u679c)
+				return _u8bbe_u7f6e_u8d85_u65f6_u56de_u8c03(1000, function()
+					return _u6253_u5370("完成")
 				end)
 			end)
-		end
+		end)
 	end
 end
 do

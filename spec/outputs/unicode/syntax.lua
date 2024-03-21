@@ -235,15 +235,11 @@ else
 end
 do
 	local _with_0 = _u8868
-	do
-		local _obj_2 = _with_0["变量b"]["变量c"]
-		do
-			local _with_1 = _u5411_u91cf
-			_with_1["字段x"] = 1
-			_with_1["字段y"] = 2
-			_obj_2[#_obj_2 + 1] = _with_1
-		end
-	end
+	local _obj_2 = _with_0["变量b"]["变量c"]
+	local _with_1 = _u5411_u91cf
+	_with_1["字段x"] = 1
+	_with_1["字段y"] = 2
+	_obj_2[#_obj_2 + 1] = _with_1
 end
 do
 	local _call_8 = _u5bf9_u8c61a["变量b"]["变量c"]["变量d"]

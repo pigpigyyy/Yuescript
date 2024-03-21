@@ -320,28 +320,26 @@ local _anon_func_13 = function(pairs, tb)
 	return _accum_0
 end
 local _anon_func_14 = function(setmetatable)
-	do
-		local _class_0
-		local _base_0 = { }
-		if _base_0.__index == nil then
-			_base_0.__index = _base_0
-		end
-		_class_0 = setmetatable({
-			__init = function(self)
-				self.value = 1
-			end,
-			__base = _base_0
-		}, {
-			__index = _base_0,
-			__call = function(cls, ...)
-				local _self_0 = setmetatable({ }, _base_0)
-				cls.__init(_self_0, ...)
-				return _self_0
-			end
-		})
-		_base_0.__class = _class_0
-		return _class_0
+	local _class_0
+	local _base_0 = { }
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
 	end
+	_class_0 = setmetatable({
+		__init = function(self)
+			self.value = 1
+		end,
+		__base = _base_0
+	}, {
+		__index = _base_0,
+		__call = function(cls, ...)
+			local _self_0 = setmetatable({ }, _base_0)
+			cls.__init(_self_0, ...)
+			return _self_0
+		end
+	})
+	_base_0.__class = _class_0
+	return _class_0
 end
 local _anon_func_15 = function(tb)
 	tb.field = 1

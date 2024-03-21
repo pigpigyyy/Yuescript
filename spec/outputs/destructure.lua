@@ -131,11 +131,9 @@ do
 	end
 end
 do
-	do
-		local _with_0 = thing
-		local a, b = _with_0[1], _with_0[2]
-		print(a, b)
-	end
+	local _with_0 = thing
+	local a, b = _with_0[1], _with_0[2]
+	print(a, b)
 end
 do
 	local thing = nil
@@ -314,11 +312,9 @@ do
 			_tmp_0 = _obj_0.func
 		end
 		if _tmp_0 == nil then
-			do
-				local _obj_0 = item
-				if _obj_0 ~= nil then
-					_tmp_0 = _obj_0.defVal
-				end
+			local _obj_0 = item
+			if _obj_0 ~= nil then
+				_tmp_0 = _obj_0.defVal
 			end
 		end
 		a.b(function()
@@ -449,11 +445,9 @@ do
 	end
 	local y1, y4
 	local y2, y3
-	do
-		local _obj_0, _obj_1 = f2()
-		y1, y4 = f1(), _obj_1
-		y2, y3 = _obj_0.y2, _obj_0.y3
-	end
+	local _obj_0, _obj_1 = f2()
+	y1, y4 = f1(), _obj_1
+	y2, y3 = _obj_0.y2, _obj_0.y3
 end
 do
 	local v1, v2, v3, v4
@@ -483,11 +477,9 @@ do
 end
 do
 	local value, value_meta
-	do
-		local _obj_0 = tb
-		value = _obj_0[name]
-		value_meta = getmetatable(_obj_0)[name]
-	end
+	local _obj_0 = tb
+	value = _obj_0[name]
+	value_meta = getmetatable(_obj_0)[name]
 end
 do
 	local tostring, add
@@ -500,23 +492,21 @@ do
 			end)
 		end
 	end
-	do
-		local _exp_0 = tb
-		local _type_0 = type(_exp_0)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		if _tab_0 then
-			local name, meta_field
-			do
-				local _obj_0 = getmetatable(_exp_0)
-				name = _obj_0.__name
-				meta_field = _obj_0["123"]
-				if name == nil then
-					name = "item"
-				end
+	local _exp_0 = tb
+	local _type_0 = type(_exp_0)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	if _tab_0 then
+		local name, meta_field
+		do
+			local _obj_0 = getmetatable(_exp_0)
+			name = _obj_0.__name
+			meta_field = _obj_0["123"]
+			if name == nil then
+				name = "item"
 			end
-			if meta_field ~= nil then
-				print(name, meta_field)
-			end
+		end
+		if meta_field ~= nil then
+			print(name, meta_field)
 		end
 	end
 end
@@ -599,52 +589,50 @@ do
 			print(add, field)
 		end
 	end
-	do
-		local _exp_0 = tb
-		local _type_0 = type(_exp_0)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		if _tab_0 then
-			do
-				local _obj_0 = _exp_0.c
-				local _type_1 = type(_obj_0)
-				if "table" == _type_1 or "userdata" == _type_1 then
-					do
-						local _obj_1 = getmetatable(_obj_0)
-						local _type_2 = type(_obj_1)
-						if "table" == _type_2 or "userdata" == _type_2 then
-							meta_field = _obj_1["abc"]
-						end
-					end
-				end
-			end
-			if meta_field == nil then
-				meta_field = "def"
-			end
-			do
-				local _obj_0 = getmetatable(_exp_0)
+	local _exp_0 = tb
+	local _type_0 = type(_exp_0)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	if _tab_0 then
+		do
+			local _obj_0 = _exp_0.c
+			local _type_1 = type(_obj_0)
+			if "table" == _type_1 or "userdata" == _type_1 then
 				do
-					local _obj_1 = _obj_0[ [[any string]]]
-					local _type_1 = type(_obj_1)
-					if "table" == _type_1 or "userdata" == _type_1 then
-						abc = _obj_1.d
+					local _obj_1 = getmetatable(_obj_0)
+					local _type_2 = type(_obj_1)
+					if "table" == _type_2 or "userdata" == _type_2 then
+						meta_field = _obj_1["abc"]
 					end
-				end
-				do
-					local _obj_1 = _obj_0['str']
-					local _type_1 = type(_obj_1)
-					if "table" == _type_1 or "userdata" == _type_1 then
-						def = _obj_1.e
-					end
-				end
-				if abc == nil then
-					abc = 123
-				end
-				if def == nil then
-					def = { }
 				end
 			end
-			print(meta_field, abc, def)
 		end
+		if meta_field == nil then
+			meta_field = "def"
+		end
+		do
+			local _obj_0 = getmetatable(_exp_0)
+			do
+				local _obj_1 = _obj_0[ [[any string]]]
+				local _type_1 = type(_obj_1)
+				if "table" == _type_1 or "userdata" == _type_1 then
+					abc = _obj_1.d
+				end
+			end
+			do
+				local _obj_1 = _obj_0['str']
+				local _type_1 = type(_obj_1)
+				if "table" == _type_1 or "userdata" == _type_1 then
+					def = _obj_1.e
+				end
+			end
+			if abc == nil then
+				abc = 123
+			end
+			if def == nil then
+				def = { }
+			end
+		end
+		print(meta_field, abc, def)
 	end
 end
 return nil

@@ -109,15 +109,13 @@ _ = function(...)
 		a = _accum_0
 	end
 	local b
-	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		for i = 1, 10 do
-			_accum_0[_len_0] = function(...)
-				return print(...)
-			end
-			_len_0 = _len_0 + 1
+	local _accum_0 = { }
+	local _len_0 = 1
+	for i = 1, 10 do
+		_accum_0[_len_0] = function(...)
+			return print(...)
 		end
-		b = _accum_0
+		_len_0 = _len_0 + 1
 	end
+	b = _accum_0
 end

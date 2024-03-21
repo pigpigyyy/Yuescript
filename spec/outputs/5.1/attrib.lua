@@ -25,20 +25,16 @@ end
 do
 	local a = f()
 	local b, c, d
-	do
-		local _obj_0, _obj_1 = f1()
-		b, c = _obj_0[1], _obj_0[2]
-		d = _obj_1[1]
-	end
+	local _obj_0, _obj_1 = f1()
+	b, c = _obj_0[1], _obj_0[2]
+	d = _obj_1[1]
 end
 do
 	local a, b, c, d
-	do
-		local _obj_0, _obj_1, _obj_2 = f()
-		a = _obj_0
-		b, c = _obj_1[1], _obj_1[2]
-		d = _obj_2[1]
-	end
+	local _obj_0, _obj_1, _obj_2 = f()
+	a = _obj_0
+	b, c = _obj_1[1], _obj_1[2]
+	d = _obj_2[1]
 end
 do
 	local a, b

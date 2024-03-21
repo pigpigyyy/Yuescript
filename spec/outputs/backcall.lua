@@ -31,19 +31,17 @@ do
 	end)())
 end
 do
-	do
-		local _obj_0 = http
-		if _obj_0 ~= nil then
-			_obj_0.get("ajaxtest", function(data)
-				body[".result"]:html(data)
-				return http.post("ajaxprocess", data, function(processed)
-					body[".result"]:append(processed)
-					return setTimeout(1000, function()
-						return print("done")
-					end)
+	local _obj_0 = http
+	if _obj_0 ~= nil then
+		_obj_0.get("ajaxtest", function(data)
+			body[".result"]:html(data)
+			return http.post("ajaxprocess", data, function(processed)
+				body[".result"]:append(processed)
+				return setTimeout(1000, function()
+					return print("done")
 				end)
 			end)
-		end
+		end)
 	end
 end
 do

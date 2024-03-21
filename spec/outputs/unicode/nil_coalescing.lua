@@ -1,23 +1,19 @@
 do
 	local _u53d8_u91cfa
-	do
-		local _exp_0 = _u53d8_u91cfb
-		if _exp_0 ~= nil then
-			_u53d8_u91cfa = _exp_0
-		else
-			_u53d8_u91cfa = _u53d8_u91cfc
-		end
+	local _exp_0 = _u53d8_u91cfb
+	if _exp_0 ~= nil then
+		_u53d8_u91cfa = _exp_0
+	else
+		_u53d8_u91cfa = _u53d8_u91cfc
 	end
 end
 do
 	local _u5b57_u6bb5a
-	do
-		local _exp_0 = _u53d8_u91cfb
-		if _exp_0 ~= nil then
-			_u5b57_u6bb5a = _exp_0["字段a"]
-		else
-			_u5b57_u6bb5a = _u53d8_u91cfc["字段a"]
-		end
+	local _exp_0 = _u53d8_u91cfb
+	if _exp_0 ~= nil then
+		_u5b57_u6bb5a = _exp_0["字段a"]
+	else
+		_u5b57_u6bb5a = _u53d8_u91cfc["字段a"]
 	end
 end
 do
@@ -50,23 +46,21 @@ do
 end
 do
 	local _u53d8_u91cfa
-	do
-		local _exp_0 = _u53d8_u91cfb
-		if _exp_0 ~= nil then
-			_u53d8_u91cfa = _exp_0
-		else
-			do
-				local _exp_1 = _u53d8_u91cfc
-				if _exp_1 ~= nil then
-					_u53d8_u91cfa = _exp_1
-				else
-					do
-						local _exp_2 = _u53d8_u91cfd
-						if _exp_2 ~= nil then
-							_u53d8_u91cfa = _exp_2
-						else
-							_u53d8_u91cfa = _u53d8_u91cfe
-						end
+	local _exp_0 = _u53d8_u91cfb
+	if _exp_0 ~= nil then
+		_u53d8_u91cfa = _exp_0
+	else
+		do
+			local _exp_1 = _u53d8_u91cfc
+			if _exp_1 ~= nil then
+				_u53d8_u91cfa = _exp_1
+			else
+				do
+					local _exp_2 = _u53d8_u91cfd
+					if _exp_2 ~= nil then
+						_u53d8_u91cfa = _exp_2
+					else
+						_u53d8_u91cfa = _u53d8_u91cfe
 					end
 				end
 			end
@@ -84,18 +78,14 @@ do
 	end)())
 end
 do
-	do
-		local _with_0
-		do
-			local _exp_0 = _u51fd_u6570A()
-			if _exp_0 ~= nil then
-				_with_0 = _exp_0
-			else
-				_with_0 = _u51fd_u6570B()
-			end
-		end
-		_u6253_u5370(_with_0["字段"])
+	local _with_0
+	local _exp_0 = _u51fd_u6570A()
+	if _exp_0 ~= nil then
+		_with_0 = _exp_0
+	else
+		_with_0 = _u51fd_u6570B()
 	end
+	_u6253_u5370(_with_0["字段"])
 end
 do
 	local _u53d8_u91cfa = 1 + 2 + (function()
@@ -138,18 +128,16 @@ do
 end
 do
 	local _u53d8_u91cfa
-	do
-		local _exp_0 = 1
-		if _exp_0 ~= nil then
-			_u53d8_u91cfa = _exp_0
-		else
-			do
-				local _exp_1 = 2
-				if _exp_1 ~= nil then
-					_u53d8_u91cfa = _exp_1
-				else
-					_u53d8_u91cfa = 3
-				end
+	local _exp_0 = 1
+	if _exp_0 ~= nil then
+		_u53d8_u91cfa = _exp_0
+	else
+		do
+			local _exp_1 = 2
+			if _exp_1 ~= nil then
+				_u53d8_u91cfa = _exp_1
+			else
+				_u53d8_u91cfa = 3
 			end
 		end
 	end

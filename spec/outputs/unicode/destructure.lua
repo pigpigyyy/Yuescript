@@ -127,11 +127,9 @@ do
 	end
 end
 do
-	do
-		local _with_0 = _u4e1c_u897f
-		local _u5143_u7d20a, _u5143_u7d20b = _with_0[1], _with_0[2]
-		_u6253_u5370(_u5143_u7d20a, _u5143_u7d20b)
-	end
+	local _with_0 = _u4e1c_u897f
+	local _u5143_u7d20a, _u5143_u7d20b = _with_0[1], _with_0[2]
+	_u6253_u5370(_u5143_u7d20a, _u5143_u7d20b)
 end
 do
 	local _u4e1c_u897f = nil
@@ -320,11 +318,9 @@ do
 			_tmp_0 = _obj_0["函数"]
 		end
 		if _tmp_0 == nil then
-			do
-				local _obj_0 = _u9879_u76ee
-				if _obj_0 ~= nil then
-					_tmp_0 = _obj_0["默认值"]
-				end
+			local _obj_0 = _u9879_u76ee
+			if _obj_0 ~= nil then
+				_tmp_0 = _obj_0["默认值"]
 			end
 		end
 		a_u5bf9_u8c61["b字段"](function()
@@ -436,11 +432,9 @@ do
 	end
 	local _u53d8_u91cfy1, _u53d8_u91cfy4
 	local _u5b57_u6bb5y2, _u5b57_u6bb5y3
-	do
-		local _obj_0, _obj_1 = _u51fd_u65702()
-		_u53d8_u91cfy1, _u53d8_u91cfy4 = _u51fd_u65701(), _obj_1
-		_u5b57_u6bb5y2, _u5b57_u6bb5y3 = _obj_0["字段y2"], _obj_0["字段y3"]
-	end
+	local _obj_0, _obj_1 = _u51fd_u65702()
+	_u53d8_u91cfy1, _u53d8_u91cfy4 = _u51fd_u65701(), _obj_1
+	_u5b57_u6bb5y2, _u5b57_u6bb5y3 = _obj_0["字段y2"], _obj_0["字段y3"]
 end
 do
 	local _u53d8_u91cfv1, _u53d8_u91cfv2, _u53d8_u91cfv3, _u53d8_u91cfv4
@@ -470,11 +464,9 @@ do
 end
 do
 	local _u503c, _u5143_u503c
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		_u503c = _obj_0[_u540d_u79f0]
-		_u5143_u503c = getmetatable(_obj_0)[_u540d_u79f0]
-	end
+	local _obj_0 = _u5bf9_u8c61tb
+	_u503c = _obj_0[_u540d_u79f0]
+	_u5143_u503c = getmetatable(_obj_0)[_u540d_u79f0]
 end
 do
 	local tostring, add
@@ -487,23 +479,21 @@ do
 			end)
 		end
 	end
-	do
-		local _exp_0 = _u5bf9_u8c61tb
-		local _type_0 = type(_exp_0)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		if _tab_0 then
-			local name, _u5143_u5b57_u6bb5
-			do
-				local _obj_0 = getmetatable(_exp_0)
-				name = _obj_0.__name
-				_u5143_u5b57_u6bb5 = _obj_0["123"]
-				if name == nil then
-					name = "项目"
-				end
+	local _exp_0 = _u5bf9_u8c61tb
+	local _type_0 = type(_exp_0)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	if _tab_0 then
+		local name, _u5143_u5b57_u6bb5
+		do
+			local _obj_0 = getmetatable(_exp_0)
+			name = _obj_0.__name
+			_u5143_u5b57_u6bb5 = _obj_0["123"]
+			if name == nil then
+				name = "项目"
 			end
-			if _u5143_u5b57_u6bb5 ~= nil then
-				_u6253_u5370(name, _u5143_u5b57_u6bb5)
-			end
+		end
+		if _u5143_u5b57_u6bb5 ~= nil then
+			_u6253_u5370(name, _u5143_u5b57_u6bb5)
 		end
 	end
 end
@@ -586,52 +576,50 @@ do
 			_u6253_u5370(add, _u5b57_u6bb5)
 		end
 	end
-	do
-		local _exp_0 = tb
-		local _type_0 = type(_exp_0)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		if _tab_0 then
-			do
-				local _obj_0 = _exp_0["字段c"]
-				local _type_1 = type(_obj_0)
-				if "table" == _type_1 or "userdata" == _type_1 then
-					do
-						local _obj_1 = getmetatable(_obj_0)
-						local _type_2 = type(_obj_1)
-						if "table" == _type_2 or "userdata" == _type_2 then
-							_u5143_u5b57_u6bb5 = _obj_1["字段abc"]
-						end
-					end
-				end
-			end
-			if _u5143_u5b57_u6bb5 == nil then
-				_u5143_u5b57_u6bb5 = "默认值"
-			end
-			do
-				local _obj_0 = getmetatable(_exp_0)
+	local _exp_0 = tb
+	local _type_0 = type(_exp_0)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	if _tab_0 then
+		do
+			local _obj_0 = _exp_0["字段c"]
+			local _type_1 = type(_obj_0)
+			if "table" == _type_1 or "userdata" == _type_1 then
 				do
-					local _obj_1 = _obj_0[ [[any string]]]
-					local _type_1 = type(_obj_1)
-					if "table" == _type_1 or "userdata" == _type_1 then
-						_u53d8_u91cfabc = _obj_1["字段d"]
+					local _obj_1 = getmetatable(_obj_0)
+					local _type_2 = type(_obj_1)
+					if "table" == _type_2 or "userdata" == _type_2 then
+						_u5143_u5b57_u6bb5 = _obj_1["字段abc"]
 					end
-				end
-				do
-					local _obj_1 = _obj_0['字符串']
-					local _type_1 = type(_obj_1)
-					if "table" == _type_1 or "userdata" == _type_1 then
-						_u6709_u9ed8_u8ba4_u503c = _obj_1["字段e"]
-					end
-				end
-				if _u53d8_u91cfabc == nil then
-					_u53d8_u91cfabc = 123
-				end
-				if _u6709_u9ed8_u8ba4_u503c == nil then
-					_u6709_u9ed8_u8ba4_u503c = { }
 				end
 			end
-			_u6253_u5370(_u5143_u5b57_u6bb5, _u53d8_u91cfabc, _u6709_u9ed8_u8ba4_u503c)
 		end
+		if _u5143_u5b57_u6bb5 == nil then
+			_u5143_u5b57_u6bb5 = "默认值"
+		end
+		do
+			local _obj_0 = getmetatable(_exp_0)
+			do
+				local _obj_1 = _obj_0[ [[any string]]]
+				local _type_1 = type(_obj_1)
+				if "table" == _type_1 or "userdata" == _type_1 then
+					_u53d8_u91cfabc = _obj_1["字段d"]
+				end
+			end
+			do
+				local _obj_1 = _obj_0['字符串']
+				local _type_1 = type(_obj_1)
+				if "table" == _type_1 or "userdata" == _type_1 then
+					_u6709_u9ed8_u8ba4_u503c = _obj_1["字段e"]
+				end
+			end
+			if _u53d8_u91cfabc == nil then
+				_u53d8_u91cfabc = 123
+			end
+			if _u6709_u9ed8_u8ba4_u503c == nil then
+				_u6709_u9ed8_u8ba4_u503c = { }
+			end
+		end
+		_u6253_u5370(_u5143_u5b57_u6bb5, _u53d8_u91cfabc, _u6709_u9ed8_u8ba4_u503c)
 	end
 end
 return nil

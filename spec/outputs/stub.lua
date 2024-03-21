@@ -15,12 +15,10 @@ end
 print(fn())
 print(x:val());
 (function(...)
-	do
-		local _base_0 = hello(...)
-		local _fn_0 = _base_0.world
-		x = _fn_0 and function(...)
-			return _fn_0(_base_0, ...)
-		end
+	local _base_0 = hello(...)
+	local _fn_0 = _base_0.world
+	x = _fn_0 and function(...)
+		return _fn_0(_base_0, ...)
 	end
 end)()
 return nil

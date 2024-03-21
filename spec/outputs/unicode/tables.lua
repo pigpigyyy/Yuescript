@@ -392,11 +392,9 @@ do
 	_tab_0[#_tab_0 + 1] = "b"
 	_tab_0[#_tab_0 + 1] = "c"
 	local _obj_1
-	do
-		local _obj_2 = _u51fd_u6570
-		if _obj_2 ~= nil then
-			_obj_1 = _obj_2()
-		end
+	local _obj_2 = _u51fd_u6570
+	if _obj_2 ~= nil then
+		_obj_1 = _obj_2()
 	end
 	local _idx_1 = 1
 	for _key_0, _value_0 in pairs(_obj_1) do

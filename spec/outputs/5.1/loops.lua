@@ -390,19 +390,17 @@ do
 				local _cond_0 = false
 				local _continue_1 = false
 				repeat
-					do
-						local _with_0 = tb
-						if _with_0 ~= nil then
-							_with_0.a = 1
-							if _with_0.b then
-								_cond_0 = true
-								_continue_1 = true
+					local _with_0 = tb
+					if _with_0 ~= nil then
+						_with_0.a = 1
+						if _with_0.b then
+							_cond_0 = true
+							_continue_1 = true
+							break
+						end
+						do
+							if _with_0.c then
 								break
-							end
-							do
-								if _with_0.c then
-									break
-								end
 							end
 						end
 					end

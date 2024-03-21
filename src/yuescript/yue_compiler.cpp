@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.0"sv;
+const std::string_view version = "0.23.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -431,6 +431,7 @@ private:
 	};
 	struct Scope {
 		GlobalMode mode = GlobalMode::None;
+		bool lastStatement = false;
 		std::unique_ptr<std::unordered_map<std::string, VarType>> vars;
 		std::unique_ptr<std::unordered_set<std::string>> allows;
 		std::unique_ptr<std::unordered_set<std::string>> globals;
@@ -1854,12 +1855,17 @@ private:
 			preAssignment->expList.set(preExplist);
 			str_list temp;
 			temp.push_back(getPreDefineLine(assignment));
-			temp.push_back(indent() + "do"s + nll(assignment));
-			pushScope();
+			bool needScope = !currentScope().lastStatement;
+			if (needScope) {
+				temp.push_back(indent() + "do"s + nll(assignment));
+				pushScope();
+			}
 			transformAssignmentCommon(preAssignment, temp);
 			transformAssignment(assignment, temp);
-			popScope();
-			temp.push_back(indent() + "end"s + nll(assignment));
+			if (needScope) {
+				popScope();
+				temp.push_back(indent() + "end"s + nll(assignment));
+			}
 			out.push_back(join(temp));
 			return;
 			BLOCK_END
@@ -1906,11 +1912,14 @@ private:
 						}
 					}
 					auto varName = singleVariableFrom(tmpChain, AccessType::Write);
-					bool isScoped = false;
+					bool needScope = !currentScope().lastStatement;
+					bool extraScoped = false;
 					if (varName.empty() || !isLocal(varName)) {
-						isScoped = true;
-						temp.push_back(indent() + "do"s + nll(x));
-						pushScope();
+						if (needScope) {
+							extraScoped = true;
+							temp.push_back(indent() + "do"s + nll(x));
+							pushScope();
+						}
 						auto objVar = getUnusedName("_obj_"sv);
 						auto newAssignment = x->new_ptr<ExpListAssign_t>();
 						newAssignment->expList.set(toAst<ExpList_t>(objVar, x));
@@ -1929,7 +1938,7 @@ private:
 					assign->values.push_back(*vit);
 					newAssignment->action.set(assign);
 					transformAssignment(newAssignment, temp);
-					if (isScoped) {
+					if (extraScoped) {
 						popScope();
 						temp.push_back(indent() + "end"s + nlr(x));
 					}
@@ -2126,6 +2135,8 @@ private:
 		} else {
 			auto x = assignment;
 			str_list temp;
+			bool needScope = !currentScope().lastStatement;
+			bool extraScope = false;
 			if (info.extraScope) {
 				str_list defs;
 				for (auto& destruct : info.destructures) {
@@ -2144,8 +2155,11 @@ private:
 					}
 					temp.push_back(indent() + "local "s + join(defs, ", "sv) + nll(x));
 				}
-				temp.push_back(indent() + "do"s + nll(x));
-				pushScope();
+				if (needScope) {
+					extraScope = true;
+					temp.push_back(indent() + "do"s + nll(x));
+					pushScope();
+				}
 			}
 			if (info.assignment) {
 				transformAssignmentCommon(info.assignment, temp);
@@ -2355,7 +2369,7 @@ private:
 					temp.push_back(clearBuf());
 				}
 			}
-			if (info.extraScope) {
+			if (extraScope) {
 				popScope();
 				temp.push_back(indent() + "end"s + nlr(x));
 			}
@@ -3202,6 +3216,7 @@ private:
 		auto asmt = firstIfCond->assignment.get();
 		bool storingValue = false;
 		ast_ptr<false, ExpListAssign_t> extraAssignment;
+		bool extraScope = false;
 		if (asmt) {
 			auto exp = firstIfCond->condition.get();
 			auto x = exp;
@@ -3218,8 +3233,11 @@ private:
 				}
 				if (storingValue) {
 					if (usage != ExpUsage::Closure) {
-						temp.push_back(indent() + "do"s + nll(asmt));
-						pushScope();
+						if (!currentScope().lastStatement) {
+							extraScope = true;
+							temp.push_back(indent() + "do"s + nll(asmt));
+							pushScope();
+						}
 					}
 					auto expList = toAst<ExpList_t>(desVar, x);
 					auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -3248,8 +3266,11 @@ private:
 				if (!isDefined(var)) {
 					storingValue = true;
 					if (usage != ExpUsage::Closure) {
-						temp.push_back(indent() + "do"s + nll(asmt));
-						pushScope();
+						if (!currentScope().lastStatement) {
+							extraScope = true;
+							temp.push_back(indent() + "do"s + nll(asmt));
+							pushScope();
+						}
 					}
 				}
 				auto expList = x->new_ptr<ExpList_t>();
@@ -3295,7 +3316,7 @@ private:
 				break;
 			}
 		}
-		if (storingValue && usage != ExpUsage::Closure) {
+		if (extraScope) {
 			popScope();
 			temp.push_back(indent() + "end"s + nlr(nodes.front()));
 		}
@@ -3823,9 +3844,12 @@ private:
 		auto objVar = singleVariableFrom(left, AccessType::Read);
 		auto prepareValue = [&](bool forAssignment = false) {
 			if (objVar.empty() || !isLocal(objVar)) {
+				bool extraScope = !currentScope().lastStatement;
 				if (forAssignment) {
-					temp.push_back(indent() + "do"s + nll(x));
-					pushScope();
+					if (extraScope) {
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+					}
 				}
 				objVar = getUnusedName("_exp_"sv);
 				auto expList = toAst<ExpList_t>(objVar, x);
@@ -3835,7 +3859,7 @@ private:
 				assignment->expList.set(expList);
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
-				return forAssignment;
+				return extraScope;
 			}
 			return false;
 		};
@@ -4531,6 +4555,7 @@ private:
 		if (!nodes.empty()) {
 			str_list temp;
 			for (auto node : nodes) {
+				currentScope().lastStatement = (node == nodes.back()) && currentScope().mode == GlobalMode::None;
 				transformStatement(static_cast<Statement_t*>(node), temp);
 				if (isRoot && !_rootDefs.empty()) {
 					auto last = std::move(temp.back());
@@ -5166,12 +5191,14 @@ private:
 			auto objVar = singleVariableFrom(partOne, AccessType::Read);
 			bool isScoped = false;
 			if (objVar.empty() || !isLocal(objVar)) {
-				switch (usage) {
-					case ExpUsage::Common:
-					case ExpUsage::Assignment:
-						isScoped = true;
-						break;
-					default: break;
+				if (!currentScope().lastStatement) {
+					switch (usage) {
+						case ExpUsage::Common:
+						case ExpUsage::Assignment:
+							isScoped = true;
+							break;
+						default: break;
+					}
 				}
 				if (isScoped) {
 					temp.push_back(indent() + "do"s + nll(x));
@@ -5302,10 +5329,13 @@ private:
 			auto x = chainList.front();
 			str_list temp;
 			std::string* funcStart = nullptr;
+			bool isScoped = !currentScope().lastStatement;
 			switch (usage) {
 				case ExpUsage::Assignment:
-					temp.push_back(indent() + "do"s + nll(x));
-					pushScope();
+					if (isScoped) {
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+					}
 					break;
 				case ExpUsage::Closure:
 					pushAnonFunctionScope();
@@ -5378,8 +5408,10 @@ private:
 			}
 			switch (usage) {
 				case ExpUsage::Assignment:
-					popScope();
-					temp.push_back(indent() + "end"s + nlr(x));
+					if (isScoped) {
+						popScope();
+						temp.push_back(indent() + "end"s + nlr(x));
+					}
 					break;
 				case ExpUsage::Closure:
 					popScope();
@@ -5432,6 +5464,7 @@ private:
 			case id<ColonChainItem_t>(): {
 				auto colon = static_cast<ColonChainItem_t*>(*opIt);
 				auto meta = colon->name.to<Metamethod_t>();
+				bool isScoped = !currentScope().lastStatement;
 				switch (meta->item->get_id()) {
 					case id<Name_t>(): {
 						auto name = _parser.toString(meta->item);
@@ -5457,8 +5490,10 @@ private:
 							funcStart = &temp.emplace_back();
 							pushScope();
 						} else if (usage != ExpUsage::Return) {
-							temp.push_back(indent() + "do"s + nll(x));
-							pushScope();
+							if (isScoped) {
+								temp.push_back(indent() + "do"s + nll(x));
+								pushScope();
+							}
 						}
 						auto var = getUnusedName("_obj_"sv);
 						auto target = toAst<Exp_t>(var, x);
@@ -5513,14 +5548,18 @@ private:
 								assign->values.push_back(newChainExp);
 								assignment->action.set(assign);
 								transformAssignment(assignment, temp);
-								popScope();
-								temp.push_back(indent() + "end"s + nlr(x));
+								if (isScoped) {
+									popScope();
+									temp.push_back(indent() + "end"s + nlr(x));
+								}
 								break;
 							}
 							case ExpUsage::Common:
 								transformExp(newChainExp, temp, usage);
-								popScope();
-								temp.push_back(indent() + "end"s + nlr(x));
+								if (isScoped) {
+									popScope();
+									temp.push_back(indent() + "end"s + nlr(x));
+								}
 								break;
 						}
 						out.push_back(join(temp));
@@ -6060,36 +6099,6 @@ private:
 				if (auto blockEnd = info.node.as<BlockEnd_t>()) {
 					auto block = blockEnd->block.get();
 					info.node.set(block);
-					for (auto stmt_ : block->statements.objects()) {
-						auto stmt = static_cast<Statement_t*>(stmt_);
-						if (auto global = stmt->content.as<Global_t>()) {
-							if (global->item.is<GlobalOp_t>()) {
-								throw CompileError("can not use global statement with wildcard operator in macro"sv, x);
-							}
-						} else if (auto local = stmt->content.as<Local_t>()) {
-							if (local->item.is<LocalFlag_t>()) {
-								throw CompileError("can not use local statement with wildcard operator in macro"sv, x);
-							}
-						} else if (auto localAttrib = stmt->content.as<LocalAttrib_t>()) {
-							if (localAttrib->attrib.is<CloseAttrib_t>()) {
-								throw CompileError("can not use close attribute statement in macro"sv, x);
-							}
-						} else if (stmt->content.as<Backcall_t>()) {
-							throw CompileError("can not use back call statement in macro"sv, x);
-						} else if (auto expListAssign = stmt->content.as<ExpListAssign_t>();
-							expListAssign && expListAssign->action && expListAssign->action.is<Assign_t>()) {
-							BLOCK_START
-							auto unary = singleUnaryExpFrom(expListAssign->expList->exprs.back());
-							BREAK_IF(!unary->ops.empty());
-							auto value = static_cast<Value_t*>(unary->expos.front());
-							auto simpleValue = value->item.as<SimpleValue_t>();
-							BREAK_IF(!simpleValue);
-							auto varArg = simpleValue->value.as<VarArg_t>();
-							BREAK_IF(!varArg);
-							throw CompileError("can not use variadic arguments assignment statement in macro"sv, x);
-							BLOCK_END
-						}
-					}
 				}
 				return {info.node, std::move(info.codes), Empty, std::move(localVars)};
 			} else {
@@ -6118,7 +6127,15 @@ private:
 				return;
 			}
 			if (usage == ExpUsage::Common || (usage == ExpUsage::Return && node.is<Block_t>())) {
-				transformBlock(node.to<Block_t>(), out, usage, assignList);
+				if (node.to<Block_t>()->statements.empty()) {
+					out.push_back(Empty);
+				} else {
+					auto doBody = node->new_ptr<Body_t>();
+					doBody->content.set(node);
+					auto doNode = node->new_ptr<Do_t>();
+					doNode->body.set(doBody);
+					transformDo(doNode, out, usage, assignList);
+				}
 			} else {
 				auto x = chainValue;
 				switch (usage) {
@@ -6428,6 +6445,7 @@ private:
 			}
 			if (varName.empty()) {
 				str_list temp;
+				bool isScoped = !currentScope().lastStatement;
 				if (usage == ExpUsage::Closure) {
 					if (transformAsUpValueFunc(newExp(unary_exp, unary_exp), out)) {
 						return;
@@ -6436,8 +6454,10 @@ private:
 					pushAnonVarArg();
 					pushScope();
 				} else if (usage == ExpUsage::Assignment) {
-					temp.push_back(indent() + "do"s + nll(x));
-					pushScope();
+					if (isScoped) {
+						temp.push_back(indent() + "do"s + nll(x));
+						pushScope();
+					}
 				}
 				auto newUnaryExp = x->new_ptr<UnaryExp_t>();
 				newUnaryExp->ops.dup(unary_exp->ops);
@@ -6485,8 +6505,10 @@ private:
 					popAnonVarArg();
 					popFunctionScope();
 				} else if (usage == ExpUsage::Assignment) {
-					popScope();
-					temp.push_back(indent() + "end"s + nll(x));
+					if (isScoped) {
+						popScope();
+						temp.push_back(indent() + "end"s + nll(x));
+					}
 					out.push_back(join(temp));
 				} else {
 					out.push_back(join(temp));
@@ -6573,6 +6595,7 @@ private:
 
 	void transformSpreadTable(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = values.front();
+		bool extraScope = false;
 		switch (usage) {
 			case ExpUsage::Closure: {
 				auto tableLit = x->new_ptr<TableLit_t>();
@@ -6590,7 +6613,10 @@ private:
 				break;
 			}
 			case ExpUsage::Assignment:
-				pushScope();
+				if (!currentScope().lastStatement) {
+					extraScope = true;
+					pushScope();
+				}
 				break;
 			default:
 				break;
@@ -6850,9 +6876,11 @@ private:
 				assignment->expList.set(assignList);
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
-				popScope();
+				if (extraScope) popScope();
 				out.push_back(join(temp));
-				out.back() = indent() + "do"s + nll(x) + out.back() + indent() + "end"s + nlr(x);
+				if (extraScope) {
+					out.back() = indent() + "do"s + nll(x) + out.back() + indent() + "end"s + nlr(x);
+				}
 				break;
 			}
 			case ExpUsage::Return:
@@ -7107,6 +7135,7 @@ private:
 		if (!def || def->defVal) {
 			throw CompileError("invalid comprehension expression", comp->items.front());
 		}
+		bool extraScope = false;
 		switch (usage) {
 			case ExpUsage::Closure: {
 				auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -7120,7 +7149,10 @@ private:
 				break;
 			}
 			case ExpUsage::Assignment:
-				pushScope();
+				if (!currentScope().lastStatement) {
+					extraScope = true;
+					pushScope();
+				}
 				break;
 			default:
 				break;
@@ -7191,8 +7223,11 @@ private:
 				assignment->expList.set(assignList);
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
-				popScope();
-				out.back() = indent() + "do"s + nll(comp) + out.back() + temp.back() + indent() + "end"s + nlr(comp);
+				out.back().append(temp.back());
+				if (extraScope) {
+					popScope();
+					out.back() = indent() + "do"s + nll(comp) + out.back() + indent() + "end"s + nlr(comp);
+				}
 				break;
 			}
 			case ExpUsage::Return:
@@ -7204,13 +7239,14 @@ private:
 		}
 	}
 
-	bool transformForEachHead(AssignableNameList_t* nameList, ast_node* loopTarget, str_list& out, bool isStatement = false) {
+	bool transformForEachHead(AssignableNameList_t* nameList, ast_node* loopTarget, str_list& out, bool inClosure) {
 		auto x = nameList;
 		str_list temp;
 		str_list vars;
 		str_list varBefore, varAfter;
 		std::string varConstAfter;
 		bool extraScope = false;
+		bool needScope = !currentScope().lastStatement;
 		std::list<std::pair<ast_node*, ast_ptr<false, ast_node>>> destructPairs;
 		for (auto _item : nameList->items.objects()) {
 			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
@@ -7287,7 +7323,7 @@ private:
 				}
 				if (listVar.empty()) {
 					std::string prefix;
-					if (isStatement) {
+					if (!inClosure && needScope) {
 						extraScope = true;
 						prefix = indent() + "do"s + nll(x);
 						pushScope();
@@ -7300,7 +7336,7 @@ private:
 				std::string maxVar;
 				if (!stopValue.empty()) {
 					std::string prefix;
-					if (isStatement && !extraScope) {
+					if (!extraScope && !inClosure && needScope) {
 						extraScope = true;
 						prefix = indent() + "do"s + nll(x);
 						pushScope();
@@ -7376,7 +7412,7 @@ private:
 	}
 
 	void transformCompForEach(CompForEach_t* comp, str_list& out) {
-		transformForEachHead(comp->nameList, comp->loopValue, out);
+		transformForEachHead(comp->nameList, comp->loopValue, out, true);
 	}
 
 	void transformInvokeArgs(InvokeArgs_t* invokeArgs, str_list& out) {
@@ -7741,9 +7777,12 @@ private:
 	void transformForInPlace(For_t* forNode, str_list& out, ExpList_t* assignExpList = nullptr) {
 		auto x = forNode;
 		str_list temp;
+		bool isScoped = !currentScope().lastStatement;
 		if (assignExpList) {
-			_buf << indent() << "do"sv << nll(forNode);
-			pushScope();
+			if (isScoped) {
+				_buf << indent() << "do"sv << nll(forNode);
+				pushScope();
+			}
 			auto accum = transformForInner(forNode, temp);
 			auto assign = x->new_ptr<Assign_t>();
 			assign->values.push_back(toAst<Exp_t>(accum, x));
@@ -7751,8 +7790,10 @@ private:
 			assignment->expList.set(assignExpList);
 			assignment->action.set(assign);
 			transformAssignment(assignment, temp);
-			popScope();
-			temp.push_back(indent() + "end"s + nlr(forNode));
+			if (isScoped) {
+				popScope();
+				temp.push_back(indent() + "end"s + nlr(forNode));
+			}
 		} else {
 			auto accum = transformForInner(forNode, temp);
 			auto returnNode = x->new_ptr<Return_t>();
@@ -7783,11 +7824,11 @@ private:
 
 	void transformForEach(ForEach_t* forEach, str_list& out) {
 		str_list temp;
-		bool extraScope = transformForEachHead(forEach->nameList, forEach->loopValue, temp, true);
+		bool extraScoped = transformForEachHead(forEach->nameList, forEach->loopValue, temp, false);
 		transformLoopBody(forEach->body, temp, Empty, ExpUsage::Common);
 		popScope();
 		out.push_back(temp.front() + temp.back() + indent() + "end"s + nlr(forEach));
-		if (extraScope) {
+		if (extraScoped) {
 			popScope();
 			out.back().append(indent() + "end"s + nlr(forEach));
 		}
@@ -7802,7 +7843,7 @@ private:
 		_buf << indent() << "local "sv << accum << " = { }"sv << nll(forEach);
 		_buf << indent() << "local "sv << len << " = 1"sv << nll(forEach);
 		out.push_back(clearBuf());
-		transformForEachHead(forEach->nameList, forEach->loopValue, out);
+		transformForEachHead(forEach->nameList, forEach->loopValue, out, true);
 		auto expList = toAst<ExpList_t>(accum + '[' + len + ']', x);
 		auto lenLine = len + " = "s + len + " + 1"s + nlr(forEach->body);
 		transformLoopBody(forEach->body, out, lenLine, ExpUsage::Assignment, expList);
@@ -7835,9 +7876,12 @@ private:
 	void transformForEachInPlace(ForEach_t* forEach, str_list& out, ExpList_t* assignExpList = nullptr) {
 		auto x = forEach;
 		str_list temp;
+		bool isScoped = !currentScope().lastStatement;
 		if (assignExpList) {
-			_buf << indent() << "do"sv << nll(forEach);
-			pushScope();
+			if (isScoped) {
+				_buf << indent() << "do"sv << nll(forEach);
+				pushScope();
+			}
 			auto accum = transformForEachInner(forEach, temp);
 			auto assign = x->new_ptr<Assign_t>();
 			assign->values.push_back(toAst<Exp_t>(accum, x));
@@ -7845,8 +7889,10 @@ private:
 			assignment->expList.set(assignExpList);
 			assignment->action.set(assign);
 			transformAssignment(assignment, temp);
-			popScope();
-			temp.push_back(indent() + "end"s + nlr(forEach));
+			if (isScoped) {
+				popScope();
+				temp.push_back(indent() + "end"s + nlr(forEach));
+			}
 		} else {
 			auto accum = transformForEachInner(forEach, temp);
 			auto returnNode = x->new_ptr<Return_t>();
@@ -8035,6 +8081,7 @@ private:
 		std::string className;
 		std::string assignItem;
 		std::string classTextName;
+		bool isScoped = !currentScope().lastStatement;
 		if (assignable) {
 			if (!isAssignable(assignable)) {
 				throw CompileError("left hand expression is not assignable"sv, assignable);
@@ -8078,8 +8125,10 @@ private:
 				}
 			}
 		}
-		temp.push_back(indent() + "do"s + nll(classDecl));
-		pushScope();
+		if (isScoped) {
+			temp.push_back(indent() + "do"s + nll(classDecl));
+			pushScope();
+		}
 		auto classVar = getUnusedName("_class_"sv);
 		addToScope(classVar);
 		temp.push_back(indent() + "local "s + classVar + nll(classDecl));
@@ -8295,8 +8344,10 @@ private:
 			default: break;
 		}
 		temp.push_back(clearBuf());
-		popScope();
-		temp.push_back(indent() + "end"s + nlr(classDecl));
+		if (isScoped) {
+			popScope();
+			temp.push_back(indent() + "end"s + nlr(classDecl));
+		}
 		out.push_back(join(temp));
 	}
 
@@ -8469,7 +8520,8 @@ private:
 		auto x = with;
 		str_list temp;
 		std::string withVar;
-		bool scoped = false;
+		bool needScope = !currentScope().lastStatement && !returnValue;
+		bool extraScope = false;
 		if (with->assigns) {
 			auto vars = getAssignVars(with);
 			if (vars.front().empty() || isDeclaredAsGlobal(vars.front())) {
@@ -8486,8 +8538,8 @@ private:
 					auto assign = x->new_ptr<Assign_t>();
 					assign->values.push_back(with->assigns->values.objects().front());
 					assignment->action.set(assign);
-					if (!returnValue) {
-						scoped = true;
+					if (needScope) {
+						extraScope = true;
 						temp.push_back(indent() + "do"s + nll(with));
 						pushScope();
 					}
@@ -8512,8 +8564,8 @@ private:
 				auto assignment = x->new_ptr<ExpListAssign_t>();
 				assignment->expList.set(with->valueList);
 				assignment->action.set(with->assigns);
-				if (!returnValue) {
-					scoped = true;
+				if (needScope) {
+					extraScope = true;
 					temp.push_back(indent() + "do"s + nll(with));
 					pushScope();
 				}
@@ -8528,17 +8580,17 @@ private:
 				auto assign = x->new_ptr<Assign_t>();
 				assign->values.dup(with->valueList->exprs);
 				assignment->action.set(assign);
-				if (!returnValue) {
-					scoped = true;
+				if (needScope) {
+					extraScope = true;
 					temp.push_back(indent() + "do"s + nll(with));
 					pushScope();
 				}
 				transformAssignment(assignment, temp);
 			}
 		}
-		if (!with->eop && !scoped && !returnValue) {
+		if (needScope && !with->eop && !extraScope) {
 			pushScope();
-			scoped = traversal::Stop == with->body->traverse([&](ast_node* node) {
+			extraScope = traversal::Stop == with->body->traverse([&](ast_node* node) {
 				if (auto statement = ast_cast<Statement_t>(node)) {
 					ClassDecl_t* clsDecl = nullptr;
 					if (auto assignment = assignmentFrom(statement)) {
@@ -8576,7 +8628,7 @@ private:
 				return traversal::Continue;
 			});
 			popScope();
-			if (scoped) {
+			if (extraScope) {
 				temp.push_back(indent() + "do"s + nll(with));
 				pushScope();
 			}
@@ -8606,7 +8658,7 @@ private:
 				temp.push_back(indent() + "return "s + withVar + nll(with));
 			}
 		}
-		if (scoped) {
+		if (extraScope) {
 			popScope();
 			temp.push_back(indent() + "end"s + nll(with));
 		}
@@ -8863,6 +8915,7 @@ private:
 	}
 
 	void transformTblComprehension(TblComprehension_t* comp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+		bool extraScope = false;
 		switch (usage) {
 			case ExpUsage::Closure: {
 				auto simpleValue = comp->new_ptr<SimpleValue_t>();
@@ -8876,7 +8929,10 @@ private:
 				break;
 			}
 			case ExpUsage::Assignment:
-				pushScope();
+				if (!currentScope().lastStatement) {
+					extraScope = true;
+					pushScope();
+				}
 				break;
 			default:
 				break;
@@ -8944,9 +9000,11 @@ private:
 				assignment->action.set(assign);
 				transformAssignment(assignment, temp);
 				out.back().append(temp.back());
-				popScope();
-				out.back().insert(0, indent() + "do"s + nll(comp));
-				out.back().append(indent() + "end"s + nlr(comp));
+				if (extraScope) {
+					popScope();
+					out.back().insert(0, indent() + "do"s + nll(comp));
+					out.back().append(indent() + "end"s + nlr(comp));
+				}
 				break;
 			}
 			case ExpUsage::Return:
@@ -8986,18 +9044,20 @@ private:
 			pushAnonFunctionScope();
 			pushAnonVarArg();
 			funcStart = &temp.emplace_back();
+			pushScope();
 		} else {
 			temp.push_back(indent() + "do"s + nll(doNode));
+			pushScope();
 		}
-		pushScope();
 		transformBody(doNode->body, temp, usage, assignList);
-		popScope();
 		if (usage == ExpUsage::Closure) {
+			popScope();
 			*funcStart = anonFuncStart() + nll(doNode);
 			temp.push_back(indent() + anonFuncEnd());
 			popAnonVarArg();
 			popFunctionScope();
 		} else {
+			popScope();
 			temp.push_back(indent() + "end"s + nlr(doNode));
 		}
 		out.push_back(join(temp));
@@ -9225,13 +9285,17 @@ private:
 				default: YUEE("AST node mismatch", name); break;
 			}
 		}
+		bool extraScope = false;
 		if (objAssign) {
 			auto preDef = toLocalDecl(transformAssignDefs(expList, DefOp::Mark));
 			if (!preDef.empty()) {
 				temp.push_back(preDef + nll(importNode));
 			}
-			temp.push_back(indent() + "do"s + nll(importNode));
-			pushScope();
+			if (!currentScope().lastStatement) {
+				extraScope = true;
+				temp.push_back(indent() + "do"s + nll(importNode));
+				pushScope();
+			}
 			transformAssignment(objAssign, temp);
 		}
 		auto assignment = x->new_ptr<ExpListAssign_t>();
@@ -9239,8 +9303,10 @@ private:
 		assignment->action.set(assign);
 		transformAssignment(assignment, temp);
 		if (objAssign) {
-			popScope();
-			temp.push_back(indent() + "end"s + nlr(importNode));
+			if (extraScope) {
+				popScope();
+				temp.push_back(indent() + "end"s + nlr(importNode));
+			}
 		}
 		out.push_back(join(temp));
 		auto vars = getAssignVars(assignment);
@@ -9485,9 +9551,13 @@ private:
 	void transformWhileInPlace(While_t* whileNode, str_list& out, ExpList_t* expList = nullptr) {
 		auto x = whileNode;
 		str_list temp;
+		bool extraScope = false;
 		if (expList) {
-			temp.push_back(indent() + "do"s + nll(whileNode));
-			pushScope();
+			if (!currentScope().lastStatement) {
+				extraScope = true;
+				temp.push_back(indent() + "do"s + nll(whileNode));
+				pushScope();
+			}
 		}
 		auto accumVar = getUnusedName("_accum_"sv);
 		addToScope(accumVar);
@@ -9511,11 +9581,11 @@ private:
 			assignment->expList.set(expList);
 			assignment->action.set(assign);
 			transformAssignment(assignment, temp);
-			popScope();
+			if (extraScope) popScope();
 		} else {
 			temp.push_back(indent() + "return "s + accumVar + nlr(whileNode));
 		}
-		if (expList) {
+		if (expList && extraScope) {
 			temp.push_back(indent() + "end"s + nlr(whileNode));
 		}
 		out.push_back(join(temp));
@@ -9589,6 +9659,7 @@ private:
 	void transformSwitch(Switch_t* switchNode, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = switchNode;
 		str_list temp;
+		bool needScope = !currentScope().lastStatement;
 		std::string* funcStart = nullptr;
 		if (usage == ExpUsage::Closure) {
 			auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -9605,9 +9676,11 @@ private:
 		auto objVar = singleVariableFrom(switchNode->target, AccessType::Read);
 		if (objVar.empty() || !isLocal(objVar)) {
 			if (usage == ExpUsage::Common || usage == ExpUsage::Assignment) {
-				extraScope = true;
-				temp.push_back(indent() + "do"s + nll(x));
-				pushScope();
+				if (needScope) {
+					extraScope = true;
+					temp.push_back(indent() + "do"s + nll(x));
+					pushScope();
+				}
 			}
 			objVar = getUnusedName("_exp_"sv);
 			auto expList = toAst<ExpList_t>(objVar, x);
@@ -9640,7 +9713,7 @@ private:
 					addScope++;
 				}
 				if (tabCheckVar.empty()) {
-					if (!extraScope) {
+					if (!extraScope && needScope) {
 						temp.push_back(indent() + "do"s + nll(branch));
 						pushScope();
 						extraScope = true;

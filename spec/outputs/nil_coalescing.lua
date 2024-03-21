@@ -1,23 +1,19 @@
 do
 	local a
-	do
-		local _exp_0 = b
-		if _exp_0 ~= nil then
-			a = _exp_0
-		else
-			a = c
-		end
+	local _exp_0 = b
+	if _exp_0 ~= nil then
+		a = _exp_0
+	else
+		a = c
 	end
 end
 do
 	local a
-	do
-		local _exp_0 = b
-		if _exp_0 ~= nil then
-			a = _exp_0.a
-		else
-			a = c.a
-		end
+	local _exp_0 = b
+	if _exp_0 ~= nil then
+		a = _exp_0.a
+	else
+		a = c.a
 	end
 end
 do
@@ -50,23 +46,21 @@ do
 end
 do
 	local a
-	do
-		local _exp_0 = b
-		if _exp_0 ~= nil then
-			a = _exp_0
-		else
-			do
-				local _exp_1 = c
-				if _exp_1 ~= nil then
-					a = _exp_1
-				else
-					do
-						local _exp_2 = d
-						if _exp_2 ~= nil then
-							a = _exp_2
-						else
-							a = e
-						end
+	local _exp_0 = b
+	if _exp_0 ~= nil then
+		a = _exp_0
+	else
+		do
+			local _exp_1 = c
+			if _exp_1 ~= nil then
+				a = _exp_1
+			else
+				do
+					local _exp_2 = d
+					if _exp_2 ~= nil then
+						a = _exp_2
+					else
+						a = e
 					end
 				end
 			end
@@ -84,18 +78,14 @@ do
 	end)())
 end
 do
-	do
-		local _with_0
-		do
-			local _exp_0 = funcA()
-			if _exp_0 ~= nil then
-				_with_0 = _exp_0
-			else
-				_with_0 = funcB()
-			end
-		end
-		print(_with_0.field)
+	local _with_0
+	local _exp_0 = funcA()
+	if _exp_0 ~= nil then
+		_with_0 = _exp_0
+	else
+		_with_0 = funcB()
 	end
+	print(_with_0.field)
 end
 do
 	local a = 1 + 2 + (function()
@@ -137,18 +127,16 @@ do
 end
 do
 	local a
-	do
-		local _exp_0 = 1
-		if _exp_0 ~= nil then
-			a = _exp_0
-		else
-			do
-				local _exp_1 = 2
-				if _exp_1 ~= nil then
-					a = _exp_1
-				else
-					a = 3
-				end
+	local _exp_0 = 1
+	if _exp_0 ~= nil then
+		a = _exp_0
+	else
+		do
+			local _exp_1 = 2
+			if _exp_1 ~= nil then
+				a = _exp_1
+			else
+				a = 3
 			end
 		end
 	end

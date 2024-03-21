@@ -173,10 +173,8 @@ do
 	_u51fd_u65704 = function()
 		local _u53d8_u91cfa = 2
 		local _u53d8_u91cfb
-		do
-			local _val_0 = a
-			_u53d8_u91cfb = 1 == _val_0 or 2 == _val_0 or 3 == _val_0 or 4 == _val_0
-		end
+		local _val_0 = a
+		_u53d8_u91cfb = 1 == _val_0 or 2 == _val_0 or 3 == _val_0 or 4 == _val_0
 	end
 	local _u51fd_u65705
 	_u51fd_u65705 = function()

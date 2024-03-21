@@ -109,15 +109,13 @@ __u65e0_u6548_u53d8_u91cf = function(...)
 		_u6570_u7ec4a = _accum_0
 	end
 	local _u6570_u7ec4b
-	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		for _u8ba1_u6570 = 1, 10 do
-			_accum_0[_len_0] = function(...)
-				return _u6253_u5370(...)
-			end
-			_len_0 = _len_0 + 1
+	local _accum_0 = { }
+	local _len_0 = 1
+	for _u8ba1_u6570 = 1, 10 do
+		_accum_0[_len_0] = function(...)
+			return _u6253_u5370(...)
 		end
-		_u6570_u7ec4b = _accum_0
+		_len_0 = _len_0 + 1
 	end
+	_u6570_u7ec4b = _accum_0
 end

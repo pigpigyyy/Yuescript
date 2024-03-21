@@ -113,19 +113,15 @@ local z_u53d8_u91cf = false
 if false then
 	__u65e0_u6548_u53d8_u91cf = _u4e00
 else
-	do
-		local _u6761_u4ef6x = true
-		if _u6761_u4ef6x then
-			__u65e0_u6548_u53d8_u91cf = _u4e8c
+	local _u6761_u4ef6x = true
+	if _u6761_u4ef6x then
+		__u65e0_u6548_u53d8_u91cf = _u4e8c
+	else
+		local _u6761_u4ef6z = true
+		if _u6761_u4ef6z then
+			__u65e0_u6548_u53d8_u91cf = _u4e09
 		else
-			do
-				local _u6761_u4ef6z = true
-				if _u6761_u4ef6z then
-					__u65e0_u6548_u53d8_u91cf = _u4e09
-				else
-					__u65e0_u6548_u53d8_u91cf = _u56db
-				end
-			end
+			__u65e0_u6548_u53d8_u91cf = _u56db
 		end
 	end
 end
@@ -133,35 +129,27 @@ local _u8f93_u51fa
 if false then
 	_u8f93_u51fa = _u4e00
 else
-	do
-		local _u6761_u4ef6x = true
-		if _u6761_u4ef6x then
-			_u8f93_u51fa = _u4e8c
+	local _u6761_u4ef6x = true
+	if _u6761_u4ef6x then
+		_u8f93_u51fa = _u4e8c
+	else
+		local _u6761_u4ef6z = true
+		if _u6761_u4ef6z then
+			_u8f93_u51fa = _u4e09
 		else
-			do
-				local _u6761_u4ef6z = true
-				if _u6761_u4ef6z then
-					_u8f93_u51fa = _u4e09
-				else
-					_u8f93_u51fa = _u56db
-				end
-			end
+			_u8f93_u51fa = _u56db
 		end
 	end
 end
 local _u53d8_u91cf
 _u53d8_u91cf = function()
-	do
-		local _u67d0_u4e1c_u897f = true
-		if _u67d0_u4e1c_u897f then
-			return 1
-		else
-			do
-				local _u53e6_u4e00_u4e2a = false
-				if _u53e6_u4e00_u4e2a then
-					return 2
-				end
-			end
+	local _u67d0_u4e1c_u897f = true
+	if _u67d0_u4e1c_u897f then
+		return 1
+	else
+		local _u53e6_u4e00_u4e2a = false
+		if _u53e6_u4e00_u4e2a then
+			return 2
 		end
 	end
 end
@@ -319,12 +307,10 @@ do
 	end
 end
 do
-	do
-		local __u6a21_u5757 = { }
-		if __u6a21_u5757 then
-			local _u4e1c_u897f = __u6a21_u5757["东西"]
-			local a_u529f_u80fd, b_u529f_u80fd = __u6a21_u5757["a功能"], __u6a21_u5757["b功能"]
-		end
+	local __u6a21_u5757 = { }
+	if __u6a21_u5757 then
+		local _u4e1c_u897f = __u6a21_u5757["东西"]
+		local a_u529f_u80fd, b_u529f_u80fd = __u6a21_u5757["a功能"], __u6a21_u5757["b功能"]
 	end
 end
 do

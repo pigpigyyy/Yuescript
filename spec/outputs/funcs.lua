@@ -224,13 +224,11 @@ do
 		if item.field then
 			local value = item.field.get("abc")
 			if value then
-				do
-					local _exp_0 = value:get()
-					if 123 == _exp_0 then
-						return false
-					elseif 456 == _exp_0 then
-						handle(item)
-					end
+				local _exp_0 = value:get()
+				if 123 == _exp_0 then
+					return false
+				elseif 456 == _exp_0 then
+					handle(item)
 				end
 			end
 		end
@@ -240,13 +238,11 @@ do
 		if item.field then
 			local value = item.field.get("abc")
 			if value then
-				do
-					local _exp_0 = value:get()
-					if 123 == _exp_0 then
-						return false
-					elseif 456 == _exp_0 then
-						handle(item)
-					end
+				local _exp_0 = value:get()
+				if 123 == _exp_0 then
+					return false
+				elseif 456 == _exp_0 then
+					handle(item)
 				end
 			end
 		end
@@ -261,14 +257,12 @@ do
 				local pwd = req.pwd
 				if name ~= nil and pwd ~= nil then
 					if name ~= "" then
-						do
-							local user = DB:queryUser(name, pwd)
-							if user then
-								if user.status == "available" then
-									return {
-										success = true
-									}
-								end
+						local user = DB:queryUser(name, pwd)
+						if user then
+							if user.status == "available" then
+								return {
+									success = true
+								}
 							end
 						end
 					end

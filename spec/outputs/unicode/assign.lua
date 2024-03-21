@@ -52,18 +52,16 @@ return __u65e0_u6548_u53d8_u91cf(function()
 	setmetatable(a_u53d8_u91cf, _anon_func_0(_u6253_u5370))
 	do
 		local _u5143_u7d20a, _u5143_u7d20b
-		do
-			local _exp_0 = _u5bf9_u8c61c
-			if "a" == _exp_0 then
-				do
-					local _obj_0 = _u5b57_u5178
-					_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
-				end
-			elseif "b" == _exp_0 then
-				do
-					local _obj_0 = _u51fd_u6570()
-					_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
-				end
+		local _exp_0 = _u5bf9_u8c61c
+		if "a" == _exp_0 then
+			do
+				local _obj_0 = _u5b57_u5178
+				_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
+			end
+		elseif "b" == _exp_0 then
+			do
+				local _obj_0 = _u51fd_u6570()
+				_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
 			end
 		end
 	end
@@ -78,15 +76,11 @@ return __u65e0_u6548_u53d8_u91cf(function()
 	do
 		local _u53d8_u91cfa
 		if x_u6761_u4ef6 then
-			do
-				local _exp_0 = _u5bf9_u8c61y
-				if 1 == _exp_0 then
-					do
-						local _obj_0, _obj_1 = _u51fd_u6570()
-						_u53d8_u91cfb[#_u53d8_u91cfb + 1] = _obj_1
-						_u53d8_u91cfa = _obj_0
-					end
-				end
+			local _exp_0 = _u5bf9_u8c61y
+			if 1 == _exp_0 then
+				local _obj_0, _obj_1 = _u51fd_u6570()
+				_u53d8_u91cfb[#_u53d8_u91cfb + 1] = _obj_1
+				_u53d8_u91cfa = _obj_0
 			end
 		end
 	end
@@ -94,11 +88,9 @@ return __u65e0_u6548_u53d8_u91cf(function()
 		local _u53d8_u91cfa
 		local _u5143_u7d20b
 		if x_u6761_u4ef6 then
-			do
-				local _obj_0, _obj_1 = _u51fd_u6570()
-				_u53d8_u91cfa = _obj_0
-				_u5143_u7d20b = _obj_1[1]
-			end
+			local _obj_0, _obj_1 = _u51fd_u6570()
+			_u53d8_u91cfa = _obj_0
+			_u5143_u7d20b = _obj_1[1]
 		else
 			_u53d8_u91cfa = 123
 			_u5143_u7d20b = _u8868[1]
@@ -107,42 +99,28 @@ return __u65e0_u6548_u53d8_u91cf(function()
 	do
 		local _u53d8_u91cfa, _u5bf9_u8c61c
 		if _u6761_u4ef6x then
-			do
-				local _exp_0 = _u5bf9_u8c61y
-				if 1 == _exp_0 then
-					do
-						local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u6570()
-						do
-							local _obj_4 = _u6570_u7ec4b
-							_obj_4[#_obj_4 + 1] = _obj_1
-						end
-						_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
-					end
-				end
+			local _exp_0 = _u5bf9_u8c61y
+			if 1 == _exp_0 then
+				local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u6570()
+				local _obj_4 = _u6570_u7ec4b
+				_obj_4[#_obj_4 + 1] = _obj_1
+				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
 			end
 		elseif _u6761_u4ef6x2 then
 			if _u6761_u4ef6y2 then
-				do
-					local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u65701()
-					do
-						local _obj_4 = _u6570_u7ec4b
-						_obj_4[#_obj_4 + 1] = _obj_1
-					end
-					_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
-				end
+				local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u65701()
+				local _obj_4 = _u6570_u7ec4b
+				_obj_4[#_obj_4 + 1] = _obj_1
+				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
 			end
 		else
 			_u6253_u5370("hello")
 			do
 				_u6253_u5370(123)
-				do
-					local _obj_0, _obj_1, _obj_2 = _u51fd_u65702()
-					do
-						local _obj_3 = _u6570_u7ec4b
-						_obj_3[#_obj_3 + 1] = _obj_0
-					end
-					_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = 1, _obj_1, _obj_2
-				end
+				local _obj_0, _obj_1, _obj_2 = _u51fd_u65702()
+				local _obj_3 = _u6570_u7ec4b
+				_obj_3[#_obj_3 + 1] = _obj_0
+				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = 1, _obj_1, _obj_2
 			end
 		end
 	end

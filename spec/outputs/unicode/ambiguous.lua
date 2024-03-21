@@ -13,11 +13,17 @@ _u53d8_u91cfa, _u53d8_u91cfb = _u53d8_u91cfc, _u53d8_u91cfd;
 (_u53d8_u91cfd(_u53d8_u91cfa))(_u53d8_u91cfc)
 for _u8ba1_u6570 = 1, 10 do
 	_u53d8_u91cfa = function() end
-	(_u6253_u5370)(1)
-	_u53d8_u91cfa = _u53d8_u91cff;
-	(_u6253_u5370)(2)
+	do
+		(_u6253_u5370)(1)
+	end
+	_u53d8_u91cfa = _u53d8_u91cff
+	do
+		(_u6253_u5370)(2)
+	end
 	if _u6761_u4ef6 then
-		(_u6253_u5370)(3)
+		do
+			(_u6253_u5370)(3)
+		end
 	end
 	::_u8df3_u8f6c_u4f4d_u7f6e::;
 	(_u6253_u5370)(4)
@@ -40,7 +46,9 @@ do
 	end)
 end
 do
-	_u6253_u5370(123)
+	do
+		_u6253_u5370(123)
+	end
 end
 do
 	_u51fd_u6570f({
@@ -97,18 +105,16 @@ do
 		_u6570_u5b57_u6570_u7ec4 = _accum_0
 	end
 	local _u5bf9_u8c61_u6570_u7ec4
-	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		local _list_0 = _u7269_u4ef6_u6570_u7ec4
-		for _index_0 = 1, #_list_0 do
-			local _u7269_u4ef6 = _list_0[_index_0]
-			_accum_0[_len_0] = {
-				["名称"] = _u7269_u4ef6
-			}
-			_len_0 = _len_0 + 1
-		end
-		_u5bf9_u8c61_u6570_u7ec4 = _accum_0
+	local _accum_0 = { }
+	local _len_0 = 1
+	local _list_0 = _u7269_u4ef6_u6570_u7ec4
+	for _index_0 = 1, #_list_0 do
+		local _u7269_u4ef6 = _list_0[_index_0]
+		_accum_0[_len_0] = {
+			["名称"] = _u7269_u4ef6
+		}
+		_len_0 = _len_0 + 1
 	end
+	_u5bf9_u8c61_u6570_u7ec4 = _accum_0
 end
 return nil

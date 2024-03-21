@@ -30,16 +30,14 @@ do
 end
 if indent then
 	local okay, well
-	do
-		local _obj_1 = tables[100]
-		okay, well = _obj_1.okay, (function()
-			local _base_0 = _obj_1
-			local _fn_0 = _base_0.well
-			return _fn_0 and function(...)
-				return _fn_0(_base_0, ...)
-			end
-		end)()
-	end
+	local _obj_1 = tables[100]
+	okay, well = _obj_1.okay, (function()
+		local _base_0 = _obj_1
+		local _fn_0 = _base_0.well
+		return _fn_0 and function(...)
+			return _fn_0(_base_0, ...)
+		end
+	end)()
 end
 do
 	local a, b, c = z.a, z.b, z.c
@@ -68,16 +66,14 @@ do
 		item = _obj_1.item
 	end
 	local x1, y1, z1
-	do
-		local _obj_1 = require("mymodule")
-		x1, y1, z1 = _obj_1.x1, _obj_1.y1, (function()
-			local _base_0 = _obj_1
-			local _fn_0 = _base_0.z1
-			return _fn_0 and function(...)
-				return _fn_0(_base_0, ...)
-			end
-		end)()
-	end
+	local _obj_1 = require("mymodule")
+	x1, y1, z1 = _obj_1.x1, _obj_1.y1, (function()
+		local _base_0 = _obj_1
+		local _fn_0 = _base_0.z1
+		return _fn_0 and function(...)
+			return _fn_0(_base_0, ...)
+		end
+	end)()
 end
 do
 	local p
@@ -86,16 +82,14 @@ do
 		p = _obj_1.p
 	end
 	local x1, y1, z1
-	do
-		local _obj_1 = require('mymodule')
-		x1, y1, z1 = _obj_1.x1, _obj_1.y1, (function()
-			local _base_0 = _obj_1
-			local _fn_0 = _base_0.z1
-			return _fn_0 and function(...)
-				return _fn_0(_base_0, ...)
-			end
-		end)()
-	end
+	local _obj_1 = require('mymodule')
+	x1, y1, z1 = _obj_1.x1, _obj_1.y1, (function()
+		local _base_0 = _obj_1
+		local _fn_0 = _base_0.z1
+		return _fn_0 and function(...)
+			return _fn_0(_base_0, ...)
+		end
+	end)()
 end
 do
 	local a, b, c = z.a, z.b, z.c

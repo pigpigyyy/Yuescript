@@ -14,20 +14,16 @@ end
 do
 	local _u5e38_u91cfa <const> = _u51fd_u6570()
 	local _u5143_u7d20b, _u5143_u7d20c, _u5143_u7d20d
-	do
-		local _obj_0, _obj_1 = _u51fd_u65701()
-		_u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2]
-		_u5143_u7d20d = _obj_1[1]
-	end
+	local _obj_0, _obj_1 = _u51fd_u65701()
+	_u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2]
+	_u5143_u7d20d = _obj_1[1]
 end
 do
 	local _u5e38_u91cfa, _u5143_u7d20b, _u5143_u7d20c, _u5143_u7d20d
-	do
-		local _obj_0, _obj_1, _obj_2 = _u51fd_u6570()
-		_u5e38_u91cfa = _obj_0
-		_u5143_u7d20b, _u5143_u7d20c = _obj_1[1], _obj_1[2]
-		_u5143_u7d20d = _obj_2[1]
-	end
+	local _obj_0, _obj_1, _obj_2 = _u51fd_u6570()
+	_u5e38_u91cfa = _obj_0
+	_u5143_u7d20b, _u5143_u7d20c = _obj_1[1], _obj_1[2]
+	_u5143_u7d20d = _obj_2[1]
 end
 do
 	local _u5173_u95ed_u53d8_u91cfv <close> = (function()

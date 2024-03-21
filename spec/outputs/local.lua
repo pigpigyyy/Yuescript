@@ -98,50 +98,46 @@ do
 		Five = 6
 		One = _class_0
 	end
-	do
-		local _class_0
-		local No
-		local _base_0 = { }
-		if _base_0.__index == nil then
-			_base_0.__index = _base_0
-		end
-		_class_0 = setmetatable({
-			__init = function() end,
-			__base = _base_0,
-			__name = "Two"
-		}, {
-			__index = _base_0,
-			__call = function(cls, ...)
-				local _self_0 = setmetatable({ }, _base_0)
-				cls.__init(_self_0, ...)
-				return _self_0
-			end
-		})
-		_base_0.__class = _class_0
-		local self = _class_0;
-		do
-			local _class_1
-			local _base_1 = { }
-			if _base_1.__index == nil then
-				_base_1.__index = _base_1
-			end
-			_class_1 = setmetatable({
-				__init = function() end,
-				__base = _base_1,
-				__name = "No"
-			}, {
-				__index = _base_1,
-				__call = function(cls, ...)
-					local _self_0 = setmetatable({ }, _base_1)
-					cls.__init(_self_0, ...)
-					return _self_0
-				end
-			})
-			_base_1.__class = _class_1
-			No = _class_1
-		end
-		Two = _class_0
+	local _class_0
+	local No
+	local _base_0 = { }
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
 	end
+	_class_0 = setmetatable({
+		__init = function() end,
+		__base = _base_0,
+		__name = "Two"
+	}, {
+		__index = _base_0,
+		__call = function(cls, ...)
+			local _self_0 = setmetatable({ }, _base_0)
+			cls.__init(_self_0, ...)
+			return _self_0
+		end
+	})
+	_base_0.__class = _class_0
+	local self = _class_0;
+	local _class_1
+	local _base_1 = { }
+	if _base_1.__index == nil then
+		_base_1.__index = _base_1
+	end
+	_class_1 = setmetatable({
+		__init = function() end,
+		__base = _base_1,
+		__name = "No"
+	}, {
+		__index = _base_1,
+		__call = function(cls, ...)
+			local _self_0 = setmetatable({ }, _base_1)
+			cls.__init(_self_0, ...)
+			return _self_0
+		end
+	})
+	_base_1.__class = _class_1
+	No = _class_1
+	Two = _class_0
 end
 do
 	local _list_0 = { }

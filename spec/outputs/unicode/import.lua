@@ -30,16 +30,14 @@ do
 end
 if _u7f29_u8fdb then
 	local _u597d_u5427, _u5f88_u597d
-	do
-		local _obj_1 = _u5f88_u591a_u8868[100]
-		_u597d_u5427, _u5f88_u597d = _obj_1["好吧"], (function()
-			local _base_0 = _obj_1
-			local _fn_0 = _base_0["很好"]
-			return _fn_0 and function(...)
-				return _fn_0(_base_0, ...)
-			end
-		end)()
-	end
+	local _obj_1 = _u5f88_u591a_u8868[100]
+	_u597d_u5427, _u5f88_u597d = _obj_1["好吧"], (function()
+		local _base_0 = _obj_1
+		local _fn_0 = _base_0["很好"]
+		return _fn_0 and function(...)
+			return _fn_0(_base_0, ...)
+		end
+	end)()
 end
 do
 	local _u5b57_u6bb5a, _u5b57_u6bb5b, _u5b57_u6bb5c = _u5bf9_u8c61z["字段a"], _u5bf9_u8c61z["字段b"], _u5bf9_u8c61z["字段c"]

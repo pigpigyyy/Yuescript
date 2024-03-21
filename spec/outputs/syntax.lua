@@ -217,15 +217,11 @@ else
 end
 do
 	local _with_0 = tb
-	do
-		local _obj_2 = _with_0.b.c
-		do
-			local _with_1 = vec
-			_with_1.x = 1
-			_with_1.y = 2
-			_obj_2[#_obj_2 + 1] = _with_1
-		end
-	end
+	local _obj_2 = _with_0.b.c
+	local _with_1 = vec
+	_with_1.x = 1
+	_with_1.y = 2
+	_obj_2[#_obj_2 + 1] = _with_1
 end
 do
 	local _obj_2 = a.b.c.d:f().g

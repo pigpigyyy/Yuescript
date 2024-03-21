@@ -127,16 +127,14 @@ do
 		_with_0["项目方法C"](_with_0, _u53d8_u91cfi)
 	end
 	if not _with_0["变量b"] then
-		do
-			local _accum_0 = { }
-			local _len_0 = 1
-			while _with_0["项目字段D"] do
-				local _call_17 = _with_0["下一个项目"](_with_0)
-				_accum_0[_len_0] = _call_17["取得"](_call_17)
-				_len_0 = _len_0 + 1
-			end
-			_with_0["变量c"] = _accum_0
+		local _accum_0 = { }
+		local _len_0 = 1
+		while _with_0["项目字段D"] do
+			local _call_17 = _with_0["下一个项目"](_with_0)
+			_accum_0[_len_0] = _call_17["取得"](_call_17)
+			_len_0 = _len_0 + 1
 		end
+		_with_0["变量c"] = _accum_0
 	end
 end
 return nil

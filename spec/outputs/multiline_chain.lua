@@ -82,15 +82,13 @@ do
 		_with_0:itemMethodC(i)
 	end
 	if not _with_0.b then
-		do
-			local _accum_0 = { }
-			local _len_0 = 1
-			while _with_0.itemFieldD do
-				_accum_0[_len_0] = _with_0:itemNext():get()
-				_len_0 = _len_0 + 1
-			end
-			_with_0.c = _accum_0
+		local _accum_0 = { }
+		local _len_0 = 1
+		while _with_0.itemFieldD do
+			_accum_0[_len_0] = _with_0:itemNext():get()
+			_len_0 = _len_0 + 1
 		end
+		_with_0.c = _accum_0
 	end
 end
 return nil

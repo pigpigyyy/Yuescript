@@ -13,11 +13,17 @@ a, b = c, d;
 (d(a))(c)
 for i = 1, 10 do
 	a = function() end
-	(print)(1)
-	a = f;
-	(print)(2)
+	do
+		(print)(1)
+	end
+	a = f
+	do
+		(print)(2)
+	end
 	if cond then
-		(print)(3)
+		do
+			(print)(3)
+		end
 	end
 	::abc::;
 	(print)(4)
@@ -40,7 +46,9 @@ do
 	end)
 end
 do
-	print(123)
+	do
+		print(123)
+	end
 end
 do
 	f({
@@ -97,18 +105,16 @@ do
 		nums = _accum_0
 	end
 	local objects
-	do
-		local _accum_0 = { }
-		local _len_0 = 1
-		local _list_0 = items
-		for _index_0 = 1, #_list_0 do
-			local item = _list_0[_index_0]
-			_accum_0[_len_0] = {
-				name = item
-			}
-			_len_0 = _len_0 + 1
-		end
-		objects = _accum_0
+	local _accum_0 = { }
+	local _len_0 = 1
+	local _list_0 = items
+	for _index_0 = 1, #_list_0 do
+		local item = _list_0[_index_0]
+		_accum_0[_len_0] = {
+			name = item
+		}
+		_len_0 = _len_0 + 1
 	end
+	objects = _accum_0
 end
 return nil

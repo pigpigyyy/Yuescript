@@ -113,17 +113,15 @@ local z = false
 if false then
 	_ = one
 else
-	do
-		local x = true
-		if x then
-			_ = two
+	local x = true
+	if x then
+		_ = two
+	else
+		z = true
+		if z then
+			_ = three
 		else
-			z = true
-			if z then
-				_ = three
-			else
-				_ = four
-			end
+			_ = four
 		end
 	end
 end
@@ -131,33 +129,27 @@ local out
 if false then
 	out = one
 else
-	do
-		local x = true
-		if x then
-			out = two
+	local x = true
+	if x then
+		out = two
+	else
+		z = true
+		if z then
+			out = three
 		else
-			z = true
-			if z then
-				out = three
-			else
-				out = four
-			end
+			out = four
 		end
 	end
 end
 local kzy
 kzy = function()
-	do
-		local something = true
-		if something then
-			return 1
-		else
-			do
-				local another = false
-				if another then
-					return 2
-				end
-			end
+	local something = true
+	if something then
+		return 1
+	else
+		local another = false
+		if another then
+			return 2
 		end
 	end
 end
@@ -314,12 +306,10 @@ do
 	end
 end
 do
-	do
-		local _M = { }
-		if _M then
-			local Thing = _M.Thing
-			a, b = _M.a, _M.b
-		end
+	local _M = { }
+	if _M then
+		local Thing = _M.Thing
+		a, b = _M.a, _M.b
 	end
 end
 do

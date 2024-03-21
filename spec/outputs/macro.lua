@@ -1,4 +1,6 @@
-assert(item == nil)
+do
+	assert(item == nil)
+end
 local v = (item == nil)
 if f1() then
 	print("OK")
@@ -9,86 +11,86 @@ end
 local item
 do
 	local _src_, _dst_
-	do
-		_dst_ = {
-			pos = { },
-			flags = flags:tonumber()
-		}
-		do
-			_src_ = self
-			_dst_.id = _src_.id
-			_dst_.connections = _src_.connections
-			_dst_.pos.x = _src_.pos.x
-			_dst_.pos.y = _src_.pos.y
-			_dst_.pos.z = _src_.pos.z
-		end
-		item = _dst_
-	end
+	_dst_ = {
+		pos = { },
+		flags = flags:tonumber()
+	}
+	_src_ = self
+	_dst_.id = _src_.id
+	_dst_.connections = _src_.connections
+	_dst_.pos.x = _src_.pos.x
+	_dst_.pos.y = _src_.pos.y
+	_dst_.pos.z = _src_.pos.z
+	item = _dst_
 end
 if (x == "Apple" or x == "Pig" or x == "Dog") then
 	print("exist")
 end
-local _list_0 = (function()
-	local _accum_0 = { }
-	local _len_0 = 1
+do
 	local _list_0 = (function()
-		local _accum_1 = { }
-		local _len_1 = 1
-		local _list_0 = {
-			1,
-			2,
-			3
-		}
+		local _accum_0 = { }
+		local _len_0 = 1
+		local _list_0 = (function()
+			local _accum_1 = { }
+			local _len_1 = 1
+			local _list_0 = {
+				1,
+				2,
+				3
+			}
+			for _index_0 = 1, #_list_0 do
+				local _ = _list_0[_index_0]
+				_accum_1[_len_1] = _ * 2
+				_len_1 = _len_1 + 1
+			end
+			return _accum_1
+		end)()
 		for _index_0 = 1, #_list_0 do
 			local _ = _list_0[_index_0]
-			_accum_1[_len_1] = _ * 2
-			_len_1 = _len_1 + 1
+			if _ > 4 then
+				_accum_0[_len_0] = _
+				_len_0 = _len_0 + 1
+			end
 		end
-		return _accum_1
+		return _accum_0
 	end)()
 	for _index_0 = 1, #_list_0 do
 		local _ = _list_0[_index_0]
-		if _ > 4 then
-			_accum_0[_len_0] = _
-			_len_0 = _len_0 + 1
-		end
+		print(_)
 	end
-	return _accum_0
-end)()
-for _index_0 = 1, #_list_0 do
-	local _ = _list_0[_index_0]
-	print(_)
 end
-local _list_1 = (function()
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_1 = (function()
-		local _accum_1 = { }
-		local _len_1 = 1
-		local _list_1 = {
-			1,
-			2,
-			3
-		}
-		for _index_0 = 1, #_list_1 do
-			local _ = _list_1[_index_0]
-			_accum_1[_len_1] = _ * 2
-			_len_1 = _len_1 + 1
+do
+	local _list_0 = (function()
+		local _accum_0 = { }
+		local _len_0 = 1
+		local _list_0 = (function()
+			local _accum_1 = { }
+			local _len_1 = 1
+			local _list_0 = {
+				1,
+				2,
+				3
+			}
+			for _index_0 = 1, #_list_0 do
+				local _ = _list_0[_index_0]
+				_accum_1[_len_1] = _ * 2
+				_len_1 = _len_1 + 1
+			end
+			return _accum_1
+		end)()
+		for _index_0 = 1, #_list_0 do
+			local _ = _list_0[_index_0]
+			if _ > 4 then
+				_accum_0[_len_0] = _
+				_len_0 = _len_0 + 1
+			end
 		end
-		return _accum_1
+		return _accum_0
 	end)()
-	for _index_0 = 1, #_list_1 do
-		local _ = _list_1[_index_0]
-		if _ > 4 then
-			_accum_0[_len_0] = _
-			_len_0 = _len_0 + 1
-		end
+	for _index_0 = 1, #_list_0 do
+		local _ = _list_0[_index_0]
+		print(_)
 	end
-	return _accum_0
-end)()
-for _index_0 = 1, #_list_1 do
-	local _ = _list_1[_index_0]
-	print(_)
 end
 local val
 do
@@ -96,13 +98,13 @@ do
 	do
 		local _accum_0 = { }
 		local _len_0 = 1
-		local _list_2 = {
+		local _list_0 = {
 			1,
 			2,
 			3
 		}
-		for _index_0 = 1, #_list_2 do
-			local _ = _list_2[_index_0]
+		for _index_0 = 1, #_list_0 do
+			local _ = _list_0[_index_0]
 			_accum_0[_len_0] = _ * 2
 			_len_0 = _len_0 + 1
 		end
@@ -134,7 +136,9 @@ do
 	end
 	val = _4
 end
-(1 + 2):call(123)
+do
+	(1 + 2):call(123)
+end
 local res = (1 + 2)
 local f
 f = function(x)
@@ -210,40 +214,44 @@ local a = ((((_({
 	return self * 2
 end)):filter(function(self)
 	return self > 3
-end)):value();
-((((_({
-	1,
-	2,
-	3,
-	4,
-	-2,
-	3
-})):chain()):map(function(self)
-	return self * 2
-end)):filter(function(self)
-	return self > 3
-end)):each(function(self)
-	return print(self)
-end)
+end)):value()
+do
+	((((_({
+		1,
+		2,
+		3,
+		4,
+		-2,
+		3
+	})):chain()):map(function(self)
+		return self * 2
+	end)):filter(function(self)
+		return self > 3
+	end)):each(function(self)
+		return print(self)
+	end)
+end
 local result = ((((((origin.transform.root.gameObject:Parents()):Descendants()):SelectEnable()):SelectVisible()):TagEqual("fx")):Where(function(x)
 	return x.name:EndsWith("(Clone)")
 end)):Destroy()
 do
-	local _1
-	_1 = origin.transform.root.gameObject:Parents()
-	local _2
-	_2 = _1:Descendants()
-	local _3
-	_3 = _2:SelectEnable()
-	local _4
-	_4 = _3:SelectVisible()
-	local _5
-	_5 = _4:TagEqual("fx")
-	local _6
-	_6 = _5:Where(function(x)
-		return x.name:EndsWith("(Clone)")
-	end)
-	_6:Destroy()
+	do
+		local _1
+		_1 = origin.transform.root.gameObject:Parents()
+		local _2
+		_2 = _1:Descendants()
+		local _3
+		_3 = _2:SelectEnable()
+		local _4
+		_4 = _3:SelectVisible()
+		local _5
+		_5 = _4:TagEqual("fx")
+		local _6
+		_6 = _5:Where(function(x)
+			return x.name:EndsWith("(Clone)")
+		end)
+		_6:Destroy()
+	end
 end
 origin.transform.root.gameObject:Parents():Descendants():SelectEnable():SelectVisible():TagEqual("fx"):Where(function(x)
 	return x.name:EndsWith("(Clone)")
@@ -278,7 +286,9 @@ print((setmetatable({
 	end
 }))
 print("current line: " .. tostring(268))
+do
 -- TODO
+end
 do
 	print(1)
 end
@@ -293,5 +303,7 @@ _1 = function()
 	end
 	return _accum_0
 end
-print('abc')
-return 123
+do
+	print('abc')
+	return 123
+end

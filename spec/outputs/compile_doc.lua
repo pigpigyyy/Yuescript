@@ -19,31 +19,27 @@ for _index_0 = 1, #_list_0 do
 			local text = _with_0:read("*a")
 			local codes = { }
 			for code in text:gmatch("```moonscript(.-)```") do
-				do
-					local result, err = to_lua(code, {
-						implicit_return_root = false,
-						reserve_line_number = false
-					})
-					if result then
-						codes[#codes + 1] = result
-					elseif not err:match("macro exporting module only accepts macro definition") then
-						print(err)
-						os.exit(1)
-					end
+				local result, err = to_lua(code, {
+					implicit_return_root = false,
+					reserve_line_number = false
+				})
+				if result then
+					codes[#codes + 1] = result
+				elseif not err:match("macro exporting module only accepts macro definition") then
+					print(err)
+					os.exit(1)
 				end
 			end
 			for code in text:gmatch("<pre>(.-)</pre>") do
-				do
-					local result, err = to_lua(code:gsub("&lt;", "<"):gsub("&gt;", ">"), {
-						implicit_return_root = false,
-						reserve_line_number = false
-					})
-					if result then
-						codes[#codes + 1] = result
-					else
-						print(err)
-						os.exit(1)
-					end
+				local result, err = to_lua(code:gsub("&lt;", "<"):gsub("&gt;", ">"), {
+					implicit_return_root = false,
+					reserve_line_number = false
+				})
+				if result then
+					codes[#codes + 1] = result
+				else
+					print(err)
+					os.exit(1)
 				end
 			end
 			local output <close> = (function()

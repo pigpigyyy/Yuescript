@@ -297,17 +297,15 @@ end
 do
 	for i = 1, 10 do
 		repeat
-			do
-				local _with_0 = tb
-				if _with_0 ~= nil then
-					_with_0.a = 1
-					if _with_0.b then
-						goto _continue_12
-					end
-					do
-						if _with_0.c then
-							break
-						end
+			local _with_0 = tb
+			if _with_0 ~= nil then
+				_with_0.a = 1
+				if _with_0.b then
+					goto _continue_12
+				end
+				do
+					if _with_0.c then
+						break
 					end
 				end
 			end

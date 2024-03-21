@@ -72,15 +72,11 @@ return _(function()
 	do
 		local a
 		if x then
-			do
-				local _exp_0 = y
-				if 1 == _exp_0 then
-					do
-						local _obj_0, _obj_1 = f()
-						b[#b + 1] = _obj_1
-						a = _obj_0
-					end
-				end
+			local _exp_0 = y
+			if 1 == _exp_0 then
+				local _obj_0, _obj_1 = f()
+				b[#b + 1] = _obj_1
+				a = _obj_0
 			end
 		end
 	end
@@ -88,11 +84,9 @@ return _(function()
 		local a
 		local b
 		if x then
-			do
-				local _obj_0, _obj_1 = f()
-				a = _obj_0
-				b = _obj_1[1]
-			end
+			local _obj_0, _obj_1 = f()
+			a = _obj_0
+			b = _obj_1[1]
 		else
 			a = 123
 			b = tb[1]
@@ -101,33 +95,25 @@ return _(function()
 	do
 		local a, c
 		if x then
-			do
-				local _exp_0 = y
-				if 1 == _exp_0 then
-					do
-						local _obj_0, _obj_1, _obj_2, _obj_3 = f()
-						b[#b + 1] = _obj_1
-						a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
-					end
-				end
+			local _exp_0 = y
+			if 1 == _exp_0 then
+				local _obj_0, _obj_1, _obj_2, _obj_3 = f()
+				b[#b + 1] = _obj_1
+				a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
 			end
 		elseif x2 then
 			if y2 then
-				do
-					local _obj_0, _obj_1, _obj_2, _obj_3 = f1()
-					b[#b + 1] = _obj_1
-					a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
-				end
+				local _obj_0, _obj_1, _obj_2, _obj_3 = f1()
+				b[#b + 1] = _obj_1
+				a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
 			end
 		else
 			print("hello")
 			do
 				print(123)
-				do
-					local _obj_0, _obj_1, _obj_2 = f2()
-					b[#b + 1] = _obj_0
-					a, c, getmetatable(d).__add = 1, _obj_1, _obj_2
-				end
+				local _obj_0, _obj_1, _obj_2 = f2()
+				b[#b + 1] = _obj_0
+				a, c, getmetatable(d).__add = 1, _obj_1, _obj_2
 			end
 		end
 	end

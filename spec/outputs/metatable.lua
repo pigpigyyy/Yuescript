@@ -48,19 +48,17 @@ do
 end
 do
 	local x, new, var, close, closeA, num, add, sub
+	local _obj_0, _obj_1
+	x, _obj_0, _obj_1 = 123, a.b.c, func()
+	new, var = _obj_0.new, _obj_0.var
 	do
-		local _obj_0, _obj_1
-		x, _obj_0, _obj_1 = 123, a.b.c, func()
-		new, var = _obj_0.new, _obj_0.var
-		do
-			local _obj_2 = getmetatable(_obj_0)
-			close, closeA = _obj_2.__close, _obj_2.__close
-		end
-		num = _obj_1.num
-		do
-			local _obj_2 = getmetatable(_obj_1)
-			add, sub = _obj_2.__add, _obj_2.__sub
-		end
+		local _obj_2 = getmetatable(_obj_0)
+		close, closeA = _obj_2.__close, _obj_2.__close
+	end
+	num = _obj_1.num
+	do
+		local _obj_2 = getmetatable(_obj_1)
+		add, sub = _obj_2.__add, _obj_2.__sub
 	end
 end
 setmetatable(a.b, { })

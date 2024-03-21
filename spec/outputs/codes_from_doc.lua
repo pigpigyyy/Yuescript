@@ -46,13 +46,18 @@ _module_0["🌛"] = _ud83c_udf1b
 return _module_0
 local area = 6.2831853071796 * 5
 print('hello world')
-assert(item ~= nil)
+do
+	assert(item ~= nil)
+end
 local value = item
 if (f1() and f2() and f3()) then
 	print("OK")
 end
+do
+	local funcA
+	funcA = function() end
+end
 local funcA
-funcA = function() end
 funcA = function()
 	return "assign the Yue defined variable"
 end
@@ -146,28 +151,26 @@ local b = {
 	y = 1
 }
 local merge
-do
-	local _tab_0 = { }
-	local _idx_0 = 1
-	for _key_0, _value_0 in pairs(a) do
-		if _idx_0 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
-			_idx_0 = _idx_0 + 1
-		else
-			_tab_0[_key_0] = _value_0
-		end
+local _tab_0 = { }
+local _idx_0 = 1
+for _key_0, _value_0 in pairs(a) do
+	if _idx_0 == _key_0 then
+		_tab_0[#_tab_0 + 1] = _value_0
+		_idx_0 = _idx_0 + 1
+	else
+		_tab_0[_key_0] = _value_0
 	end
-	local _idx_1 = 1
-	for _key_0, _value_0 in pairs(b) do
-		if _idx_1 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
-			_idx_1 = _idx_1 + 1
-		else
-			_tab_0[_key_0] = _value_0
-		end
-	end
-	merge = _tab_0
 end
+local _idx_1 = 1
+for _key_0, _value_0 in pairs(b) do
+	if _idx_1 == _key_0 then
+		_tab_0[#_tab_0 + 1] = _value_0
+		_idx_1 = _idx_1 + 1
+	else
+		_tab_0[_key_0] = _value_0
+	end
+end
+merge = _tab_0
 local mt = { }
 local add
 add = function(self, right)
@@ -259,12 +262,10 @@ end
 if print and (x ~= nil) then
 	print(x)
 end
-do
-	local _with_0 = io.open("test.txt", "w")
-	if _with_0 ~= nil then
-		_with_0:write("hello")
-		_with_0:close()
-	end
+local _with_0 = io.open("test.txt", "w")
+if _with_0 ~= nil then
+	_with_0:write("hello")
+	_with_0:close()
 end
 print("hello")
 print(1, 2)
@@ -341,10 +342,8 @@ do
 		x, y, z = _obj_0.x, _obj_0.y, _obj_0.z
 	end
 	local a, b, c
-	do
-		local _obj_0 = require('module')
-		a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
-	end
+	local _obj_0 = require('module')
+	a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
 end
 do
 	local module = require('module')
@@ -383,29 +382,27 @@ y = function()
 end
 _module_0["y"] = y
 local Something
-do
-	local _class_0
-	local _base_0 = {
-		umm = "cool"
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Something"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Something = _class_0
+local _class_0
+local _base_0 = {
+	umm = "cool"
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Something"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Something = _class_0
 _module_0["Something"] = Something
 return _module_0
 local _module_0 = { }
@@ -436,11 +433,9 @@ if this then
 else
 	_module_0[#_module_0 + 1] = 456
 end
-do
-	local _with_0 = tmp
-	local j = 2000
-	_module_0[#_module_0 + 1] = _with_0
-end
+local _with_0 = tmp
+local j = 2000
+_module_0[#_module_0 + 1] = _with_0
 return _module_0
 local _module_0 = nil
 _module_0 = function()
@@ -577,25 +572,19 @@ for _index_0 = 1, #tuples do
 	local left, right = _des_0[1], _des_0[2]
 	print(left, right)
 end
-do
-	local user = database.find_user("moon")
-	if user then
-		print(user.name)
-	end
+local user = database.find_user("moon")
+if user then
+	print(user.name)
 end
-do
-	local hello = os.getenv("hello")
-	if hello then
-		print("You have hello", hello)
+local hello = os.getenv("hello")
+if hello then
+	print("You have hello", hello)
+else
+	local world = os.getenv("world")
+	if world then
+		print("you have world", world)
 	else
-		do
-			local world = os.getenv("world")
-			if world then
-				print("you have world", world)
-			else
-				print("nothing :(")
-			end
-		end
+		print("nothing :(")
 	end
 end
 do
@@ -858,40 +847,34 @@ local items = {
 	4
 }
 local doubled
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i, item in ipairs(items) do
-		_accum_0[_len_0] = item * 2
-		_len_0 = _len_0 + 1
-	end
-	doubled = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+for i, item in ipairs(items) do
+	_accum_0[_len_0] = item * 2
+	_len_0 = _len_0 + 1
 end
+doubled = _accum_0
 local iter = ipairs(items)
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i, item in iter do
-		if i > 1 and i < 3 then
-			_accum_0[_len_0] = item
-			_len_0 = _len_0 + 1
-		end
-	end
-	slice = _accum_0
-end
-local doubled
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 1, #_list_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item * 2
+local _accum_0 = { }
+local _len_0 = 1
+for i, item in iter do
+	if i > 1 and i < 3 then
+		_accum_0[_len_0] = item
 		_len_0 = _len_0 + 1
 	end
-	doubled = _accum_0
 end
+slice = _accum_0
+local doubled
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 1, #_list_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item * 2
+	_len_0 = _len_0 + 1
+end
+doubled = _accum_0
 local x_coords = {
 	4,
 	5,
@@ -904,57 +887,49 @@ local y_coords = {
 	3
 }
 local points
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for _index_0 = 1, #x_coords do
-		local x = x_coords[_index_0]
-		for _index_1 = 1, #y_coords do
-			local y = y_coords[_index_1]
-			_accum_0[_len_0] = {
-				x,
-				y
-			}
-			_len_0 = _len_0 + 1
-		end
+local _accum_0 = { }
+local _len_0 = 1
+for _index_0 = 1, #x_coords do
+	local x = x_coords[_index_0]
+	for _index_1 = 1, #y_coords do
+		local y = y_coords[_index_1]
+		_accum_0[_len_0] = {
+			x,
+			y
+		}
+		_len_0 = _len_0 + 1
 	end
-	points = _accum_0
 end
+points = _accum_0
 local evens
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i = 1, 100 do
-		if i % 2 == 0 then
-			_accum_0[_len_0] = i
-			_len_0 = _len_0 + 1
-		end
+local _accum_0 = { }
+local _len_0 = 1
+for i = 1, 100 do
+	if i % 2 == 0 then
+		_accum_0[_len_0] = i
+		_len_0 = _len_0 + 1
 	end
-	evens = _accum_0
 end
+evens = _accum_0
 local thing = {
 	color = "red",
 	name = "fast",
 	width = 123
 }
 local thing_copy
-do
-	local _tbl_0 = { }
-	for k, v in pairs(thing) do
+local _tbl_0 = { }
+for k, v in pairs(thing) do
+	_tbl_0[k] = v
+end
+thing_copy = _tbl_0
+local no_color
+local _tbl_0 = { }
+for k, v in pairs(thing) do
+	if k ~= "color" then
 		_tbl_0[k] = v
 	end
-	thing_copy = _tbl_0
 end
-local no_color
-do
-	local _tbl_0 = { }
-	for k, v in pairs(thing) do
-		if k ~= "color" then
-			_tbl_0[k] = v
-		end
-	end
-	no_color = _tbl_0
-end
+no_color = _tbl_0
 local numbers = {
 	1,
 	2,
@@ -962,14 +937,12 @@ local numbers = {
 	4
 }
 local sqrts
-do
-	local _tbl_0 = { }
-	for _index_0 = 1, #numbers do
-		local i = numbers[_index_0]
-		_tbl_0[i] = math.sqrt(i)
-	end
-	sqrts = _tbl_0
+local _tbl_0 = { }
+for _index_0 = 1, #numbers do
+	local i = numbers[_index_0]
+	_tbl_0[i] = math.sqrt(i)
 end
+sqrts = _tbl_0
 local tuples = {
 	{
 		"hello",
@@ -981,52 +954,44 @@ local tuples = {
 	}
 }
 local tbl
-do
-	local _tbl_0 = { }
-	for _index_0 = 1, #tuples do
-		local tuple = tuples[_index_0]
-		local _key_0, _val_0 = unpack(tuple)
-		_tbl_0[_key_0] = _val_0
-	end
-	tbl = _tbl_0
+local _tbl_0 = { }
+for _index_0 = 1, #tuples do
+	local tuple = tuples[_index_0]
+	local _key_0, _val_0 = unpack(tuple)
+	_tbl_0[_key_0] = _val_0
 end
+tbl = _tbl_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	local _max_0 = 5
-	for _index_0 = 1, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+local _max_0 = 5
+for _index_0 = 1, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 2, #_list_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 2, #_list_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 1, #_list_0, 2 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 1, #_list_0, 2 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 for i = 10, 20 do
 	print(i)
 end
@@ -1036,13 +1001,11 @@ end
 for key, value in pairs(object) do
 	print(key, value)
 end
-do
-	local _list_0 = items
-	local _max_0 = 4
-	for _index_0 = 2, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
-		local item = _list_0[_index_0]
-		print(item)
-	end
+local _list_0 = items
+local _max_0 = 4
+for _index_0 = 2, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
+	local item = _list_0[_index_0]
+	print(item)
 end
 local _list_0 = items
 for _index_0 = 1, #_list_0 do
@@ -1053,19 +1016,17 @@ for j = 1, 10, 3 do
 	print(j)
 end
 local doubled_evens
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i = 1, 20 do
-		if i % 2 == 0 then
-			_accum_0[_len_0] = i * 2
-		else
-			_accum_0[_len_0] = i
-		end
-		_len_0 = _len_0 + 1
+local _accum_0 = { }
+local _len_0 = 1
+for i = 1, 20 do
+	if i % 2 == 0 then
+		_accum_0[_len_0] = i * 2
+	else
+		_accum_0[_len_0] = i
 	end
-	doubled_evens = _accum_0
+	_len_0 = _len_0 + 1
 end
+doubled_evens = _accum_0
 local func_a
 func_a = function()
 	for i = 1, 10 do
@@ -1123,20 +1084,18 @@ local my_numbers = {
 	6
 }
 local odds
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for _index_0 = 1, #my_numbers do
-		local x = my_numbers[_index_0]
-		if x % 2 == 1 then
-			goto _continue_0
-		end
-		_accum_0[_len_0] = x
-		_len_0 = _len_0 + 1
-		::_continue_0::
+local _accum_0 = { }
+local _len_0 = 1
+for _index_0 = 1, #my_numbers do
+	local x = my_numbers[_index_0]
+	if x % 2 == 1 then
+		goto _continue_0
 	end
-	odds = _accum_0
+	_accum_0[_len_0] = x
+	_len_0 = _len_0 + 1
+	::_continue_0::
 end
+odds = _accum_0
 local have_coins = false
 if have_coins then
 	print("Got coins")
@@ -1228,15 +1187,13 @@ else
 	next_number = error("can't count that high!")
 end
 local msg
-do
-	local _exp_0 = math.random(1, 5)
-	if 1 == _exp_0 then
-		msg = "you are lucky"
-	elseif 2 == _exp_0 then
-		msg = "you are almost lucky"
-	else
-		msg = "not so lucky"
-	end
+local _exp_0 = math.random(1, 5)
+if 1 == _exp_0 then
+	msg = "you are lucky"
+elseif 2 == _exp_0 then
+	msg = "you are almost lucky"
+else
+	msg = "not so lucky"
 end
 do
 	local _exp_0 = math.random(1, 5)
@@ -1246,13 +1203,11 @@ do
 		print("not so lucky")
 	end
 end
-do
-	local _exp_0 = math.random(1, 5)
-	if 1 == _exp_0 then
-		print("you are lucky")
-	else
-		print("not so lucky")
-	end
+local _exp_0 = math.random(1, 5)
+if 1 == _exp_0 then
+	print("you are lucky")
+else
+	print("not so lucky")
 end
 local items = {
 	{
@@ -1266,25 +1221,23 @@ local items = {
 }
 for _index_0 = 1, #items do
 	local item = items[_index_0]
-	do
-		local _type_0 = type(item)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		local _match_0 = false
-		if _tab_0 then
-			local x = item.x
-			local y = item.y
-			if x ~= nil and y ~= nil then
-				_match_0 = true
-				print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
-			end
+	local _type_0 = type(item)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	local _match_0 = false
+	if _tab_0 then
+		local x = item.x
+		local y = item.y
+		if x ~= nil and y ~= nil then
+			_match_0 = true
+			print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 		end
-		if not _match_0 then
-			if _tab_0 then
-				local width = item.width
-				local height = item.height
-				if width ~= nil and height ~= nil then
-					print("size " .. tostring(width) .. ", " .. tostring(height))
-				end
+	end
+	if not _match_0 then
+		if _tab_0 then
+			local width = item.width
+			local height = item.height
+			if width ~= nil and height ~= nil then
+				print("size " .. tostring(width) .. ", " .. tostring(height))
 			end
 		end
 	end
@@ -1297,66 +1250,62 @@ end
 if y == nil then
 	y = 200
 end
-do
-	local _type_0 = type(item)
-	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-	if _tab_0 then
-		do
-			local _obj_0 = item.pos
-			local _type_1 = type(_obj_0)
-			if "table" == _type_1 or "userdata" == _type_1 then
-				x = _obj_0.x
-			end
+local _type_0 = type(item)
+local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+if _tab_0 then
+	do
+		local _obj_0 = item.pos
+		local _type_1 = type(_obj_0)
+		if "table" == _type_1 or "userdata" == _type_1 then
+			x = _obj_0.x
 		end
-		do
-			local _obj_0 = item.pos
-			local _type_1 = type(_obj_0)
-			if "table" == _type_1 or "userdata" == _type_1 then
-				y = _obj_0.y
-			end
-		end
-		if x == nil then
-			x = 50
-		end
-		if y == nil then
-			y = 200
-		end
-		print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 	end
+	do
+		local _obj_0 = item.pos
+		local _type_1 = type(_obj_0)
+		if "table" == _type_1 or "userdata" == _type_1 then
+			y = _obj_0.y
+		end
+	end
+	if x == nil then
+		x = 50
+	end
+	if y == nil then
+		y = 200
+	end
+	print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 end
 local Inventory
-do
-	local _class_0
-	local _base_0 = {
-		add_item = function(self, name)
-			if self.items[name] then
-				local _obj_0 = self.items
-				_obj_0[name] = _obj_0[name] + 1
-			else
-				self.items[name] = 1
-			end
+local _class_0
+local _base_0 = {
+	add_item = function(self, name)
+		if self.items[name] then
+			local _obj_0 = self.items
+			_obj_0[name] = _obj_0[name] + 1
+		else
+			self.items[name] = 1
 		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
 	end
-	_class_0 = setmetatable({
-		__init = function(self)
-			self.items = { }
-		end,
-		__base = _base_0,
-		__name = "Inventory"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Inventory = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self)
+		self.items = { }
+	end,
+	__base = _base_0,
+	__name = "Inventory"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Inventory = _class_0
 local inv = Inventory()
 inv:add_item("t-shirt")
 inv:add_item("pants")
@@ -1397,82 +1346,78 @@ for _index_0 = 1, #_list_0 do
 	print(item)
 end
 local Person
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function(self)
-			self.clothes = { }
-		end,
-		__base = _base_0,
-		__name = "Person"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Person = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self)
+		self.clothes = { }
+	end,
+	__base = _base_0,
+	__name = "Person"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Person = _class_0
 local BackPack
-do
-	local _class_0
-	local _parent_0 = Inventory
-	local _base_0 = {
-		size = 10,
-		add_item = function(self, name)
-			if #self.items > size then
-				error("backpack is full")
-			end
-			return _class_0.__parent.__base.add_item(self, name)
+local _class_0
+local _parent_0 = Inventory
+local _base_0 = {
+	size = 10,
+	add_item = function(self, name)
+		if #self.items > size then
+			error("backpack is full")
 		end
-	}
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+		return _class_0.__parent.__base.add_item(self, name)
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+}
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "BackPack",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	BackPack = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "BackPack",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+BackPack = _class_0
 local Shelf
 do
 	local _class_0
@@ -1500,102 +1445,98 @@ do
 	Shelf = _class_0
 end
 local Cupboard
-do
-	local _class_0
-	local _parent_0 = Shelf
-	local _base_0 = { }
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+local _class_0
+local _parent_0 = Shelf
+local _base_0 = { }
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "Cupboard",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	Cupboard = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "Cupboard",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+Cupboard = _class_0
 local MyClass
-do
-	local _class_0
-	local _parent_0 = ParentClass
-	local _base_0 = {
-		a_method = function(self)
-			_class_0.__parent.__base.a_method(self, "hello", "world")
-			_class_0.__parent.a_method(self, "hello", "world")
-			_class_0.__parent.a_method(self, "hello", "world")
-			return assert(_class_0.__parent == ParentClass)
-		end
-	}
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+local _class_0
+local _parent_0 = ParentClass
+local _base_0 = {
+	a_method = function(self)
+		_class_0.__parent.__base.a_method(self, "hello", "world")
+		_class_0.__parent.a_method(self, "hello", "world")
+		_class_0.__parent.a_method(self, "hello", "world")
+		return assert(_class_0.__parent == ParentClass)
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+}
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "MyClass",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	MyClass = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "MyClass",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+MyClass = _class_0
 local b = BackPack()
 assert(b.__class == BackPack)
 print(BackPack.size)
@@ -1659,61 +1600,57 @@ Counter()
 print(Counter.count)
 self.__class:hello(1, 2, 3, 4)
 local Things
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Things"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	local self = _class_0;
-	self.class_var = "hello world"
-	Things = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Things"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+local self = _class_0;
+self.class_var = "hello world"
+Things = _class_0
 local MoreThings
-do
-	local _class_0
-	local secret, log
-	local _base_0 = {
-		some_method = function(self)
-			return log("hello world: " .. secret)
-		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+local _class_0
+local secret, log
+local _base_0 = {
+	some_method = function(self)
+		return log("hello world: " .. secret)
 	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "MoreThings"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	local self = _class_0;
-	secret = 123
-	log = function(msg)
-		return print("LOG:", msg)
-	end
-	MoreThings = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "MoreThings"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+local self = _class_0;
+secret = 123
+log = function(msg)
+	return print("LOG:", msg)
+end
+MoreThings = _class_0
 assert(self == self)
 assert(self.__class == self.__class)
 local some_instance_method
@@ -1747,32 +1684,30 @@ do
 	_base_0.__class = _class_0
 	Something = _class_0
 end
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function(self, foo, bar, biz, baz)
-			self.foo = foo
-			self.bar = bar
-			self.__class.biz = biz
-			self.__class.baz = baz
-		end,
-		__base = _base_0,
-		__name = "Something"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Something = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self, foo, bar, biz, baz)
+		self.foo = foo
+		self.bar = bar
+		self.__class.biz = biz
+		self.__class.baz = baz
+	end,
+	__base = _base_0,
+	__name = "Something"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Something = _class_0
 local new
 new = function(self, fieldA, fieldB)
 	self.fieldA = fieldA
@@ -1783,33 +1718,31 @@ local obj = new({ }, 123, "abc")
 print(obj)
 local x
 local Bucket
-do
-	local _class_0
-	local _base_0 = {
-		drops = 0,
-		add_drop = function(self)
-			self.drops = self.drops + 1
-		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+local _class_0
+local _base_0 = {
+	drops = 0,
+	add_drop = function(self)
+		self.drops = self.drops + 1
 	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Bucket"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Bucket = _class_0
-	x = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Bucket"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Bucket = _class_0
+x = _class_0
 local BigBucket
 do
 	local _class_0
@@ -1861,27 +1794,25 @@ do
 end
 assert(Bucket.__name == "BigBucket")
 local x
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "x"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	x = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "x"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+x = _class_0
 local MyIndex = {
 	__index = {
 		var = 1
@@ -1964,19 +1895,15 @@ end
 local y = Y()
 y:func()
 assert(y.__class.__parent ~= X)
-do
-	local _with_0 = Person()
-	_with_0.name = "Oswald"
-	_with_0:add_relative(my_dad)
-	_with_0:save()
-	print(_with_0.name)
-end
+local _with_0 = Person()
+_with_0.name = "Oswald"
+_with_0:add_relative(my_dad)
+_with_0:save()
+print(_with_0.name)
 local file
-do
-	local _with_0 = File("favorite_foods.txt")
-	_with_0:set_encoding("utf8")
-	file = _with_0
-end
+local _with_0 = File("favorite_foods.txt")
+_with_0:set_encoding("utf8")
+file = _with_0
 local create_person
 create_person = function(name, relatives)
 	local _with_0 = Person()
@@ -1992,22 +1919,18 @@ local me = create_person("Leaf", {
 	mother,
 	sister
 })
+local str = "Hello"
+print("original:", str)
+print("upper:", str:upper())
+local _with_0 = tb
+_with_0[1] = 1
+print(_with_0[2])
 do
-	local str = "Hello"
-	print("original:", str)
-	print("upper:", str:upper())
+	local _with_1 = _with_0[abc]
+	_with_1[3] = _with_1[2]:func()
+	_with_1["key-name"] = value
 end
-do
-	local _with_0 = tb
-	_with_0[1] = 1
-	print(_with_0[2])
-	do
-		local _with_1 = _with_0[abc]
-		_with_1[3] = _with_1[2]:func()
-		_with_1["key-name"] = value
-	end
-	_with_0[#_with_0 + 1] = "abc"
-end
+_with_0[#_with_0 + 1] = "abc"
 do
 	local var = "hello"
 	print(var)
@@ -2124,13 +2047,18 @@ _module_0["🌛"] = _ud83c_udf1b
 return _module_0
 local area = 6.2831853071796 * 5
 print('hello world')
-assert(item ~= nil)
+do
+	assert(item ~= nil)
+end
 local value = item
 if (f1() and f2() and f3()) then
 	print("OK")
 end
+do
+	local funcA
+	funcA = function() end
+end
 local funcA
-funcA = function() end
 funcA = function()
 	return "assign the Yue defined variable"
 end
@@ -2224,28 +2152,26 @@ local b = {
 	y = 1
 }
 local merge
-do
-	local _tab_0 = { }
-	local _idx_0 = 1
-	for _key_0, _value_0 in pairs(a) do
-		if _idx_0 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
-			_idx_0 = _idx_0 + 1
-		else
-			_tab_0[_key_0] = _value_0
-		end
+local _tab_0 = { }
+local _idx_0 = 1
+for _key_0, _value_0 in pairs(a) do
+	if _idx_0 == _key_0 then
+		_tab_0[#_tab_0 + 1] = _value_0
+		_idx_0 = _idx_0 + 1
+	else
+		_tab_0[_key_0] = _value_0
 	end
-	local _idx_1 = 1
-	for _key_0, _value_0 in pairs(b) do
-		if _idx_1 == _key_0 then
-			_tab_0[#_tab_0 + 1] = _value_0
-			_idx_1 = _idx_1 + 1
-		else
-			_tab_0[_key_0] = _value_0
-		end
-	end
-	merge = _tab_0
 end
+local _idx_1 = 1
+for _key_0, _value_0 in pairs(b) do
+	if _idx_1 == _key_0 then
+		_tab_0[#_tab_0 + 1] = _value_0
+		_idx_1 = _idx_1 + 1
+	else
+		_tab_0[_key_0] = _value_0
+	end
+end
+merge = _tab_0
 local mt = { }
 local add
 add = function(self, right)
@@ -2337,12 +2263,10 @@ end
 if print and (x ~= nil) then
 	print(x)
 end
-do
-	local _with_0 = io.open("test.txt", "w")
-	if _with_0 ~= nil then
-		_with_0:write("hello")
-		_with_0:close()
-	end
+local _with_0 = io.open("test.txt", "w")
+if _with_0 ~= nil then
+	_with_0:write("hello")
+	_with_0:close()
 end
 print("hello")
 print(1, 2)
@@ -2419,10 +2343,8 @@ do
 		x, y, z = _obj_0.x, _obj_0.y, _obj_0.z
 	end
 	local a, b, c
-	do
-		local _obj_0 = require('module')
-		a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
-	end
+	local _obj_0 = require('module')
+	a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
 end
 do
 	local module = require('module')
@@ -2461,29 +2383,27 @@ y = function()
 end
 _module_0["y"] = y
 local Something
-do
-	local _class_0
-	local _base_0 = {
-		umm = "cool"
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Something"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Something = _class_0
+local _class_0
+local _base_0 = {
+	umm = "cool"
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Something"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Something = _class_0
 _module_0["Something"] = Something
 return _module_0
 local _module_0 = { }
@@ -2514,11 +2434,9 @@ if this then
 else
 	_module_0[#_module_0 + 1] = 456
 end
-do
-	local _with_0 = tmp
-	local j = 2000
-	_module_0[#_module_0 + 1] = _with_0
-end
+local _with_0 = tmp
+local j = 2000
+_module_0[#_module_0 + 1] = _with_0
 return _module_0
 local _module_0 = nil
 _module_0 = function()
@@ -2655,25 +2573,19 @@ for _index_0 = 1, #tuples do
 	local left, right = _des_0[1], _des_0[2]
 	print(left, right)
 end
-do
-	local user = database.find_user("moon")
-	if user then
-		print(user.name)
-	end
+local user = database.find_user("moon")
+if user then
+	print(user.name)
 end
-do
-	local hello = os.getenv("hello")
-	if hello then
-		print("You have hello", hello)
+local hello = os.getenv("hello")
+if hello then
+	print("You have hello", hello)
+else
+	local world = os.getenv("world")
+	if world then
+		print("you have world", world)
 	else
-		do
-			local world = os.getenv("world")
-			if world then
-				print("you have world", world)
-			else
-				print("nothing :(")
-			end
-		end
+		print("nothing :(")
 	end
 end
 do
@@ -2936,40 +2848,34 @@ local items = {
 	4
 }
 local doubled
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i, item in ipairs(items) do
-		_accum_0[_len_0] = item * 2
-		_len_0 = _len_0 + 1
-	end
-	doubled = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+for i, item in ipairs(items) do
+	_accum_0[_len_0] = item * 2
+	_len_0 = _len_0 + 1
 end
+doubled = _accum_0
 local iter = ipairs(items)
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i, item in iter do
-		if i > 1 and i < 3 then
-			_accum_0[_len_0] = item
-			_len_0 = _len_0 + 1
-		end
-	end
-	slice = _accum_0
-end
-local doubled
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 1, #_list_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item * 2
+local _accum_0 = { }
+local _len_0 = 1
+for i, item in iter do
+	if i > 1 and i < 3 then
+		_accum_0[_len_0] = item
 		_len_0 = _len_0 + 1
 	end
-	doubled = _accum_0
 end
+slice = _accum_0
+local doubled
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 1, #_list_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item * 2
+	_len_0 = _len_0 + 1
+end
+doubled = _accum_0
 local x_coords = {
 	4,
 	5,
@@ -2982,57 +2888,49 @@ local y_coords = {
 	3
 }
 local points
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for _index_0 = 1, #x_coords do
-		local x = x_coords[_index_0]
-		for _index_1 = 1, #y_coords do
-			local y = y_coords[_index_1]
-			_accum_0[_len_0] = {
-				x,
-				y
-			}
-			_len_0 = _len_0 + 1
-		end
+local _accum_0 = { }
+local _len_0 = 1
+for _index_0 = 1, #x_coords do
+	local x = x_coords[_index_0]
+	for _index_1 = 1, #y_coords do
+		local y = y_coords[_index_1]
+		_accum_0[_len_0] = {
+			x,
+			y
+		}
+		_len_0 = _len_0 + 1
 	end
-	points = _accum_0
 end
+points = _accum_0
 local evens
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i = 1, 100 do
-		if i % 2 == 0 then
-			_accum_0[_len_0] = i
-			_len_0 = _len_0 + 1
-		end
+local _accum_0 = { }
+local _len_0 = 1
+for i = 1, 100 do
+	if i % 2 == 0 then
+		_accum_0[_len_0] = i
+		_len_0 = _len_0 + 1
 	end
-	evens = _accum_0
 end
+evens = _accum_0
 local thing = {
 	color = "red",
 	name = "fast",
 	width = 123
 }
 local thing_copy
-do
-	local _tbl_0 = { }
-	for k, v in pairs(thing) do
+local _tbl_0 = { }
+for k, v in pairs(thing) do
+	_tbl_0[k] = v
+end
+thing_copy = _tbl_0
+local no_color
+local _tbl_0 = { }
+for k, v in pairs(thing) do
+	if k ~= "color" then
 		_tbl_0[k] = v
 	end
-	thing_copy = _tbl_0
 end
-local no_color
-do
-	local _tbl_0 = { }
-	for k, v in pairs(thing) do
-		if k ~= "color" then
-			_tbl_0[k] = v
-		end
-	end
-	no_color = _tbl_0
-end
+no_color = _tbl_0
 local numbers = {
 	1,
 	2,
@@ -3040,14 +2938,12 @@ local numbers = {
 	4
 }
 local sqrts
-do
-	local _tbl_0 = { }
-	for _index_0 = 1, #numbers do
-		local i = numbers[_index_0]
-		_tbl_0[i] = math.sqrt(i)
-	end
-	sqrts = _tbl_0
+local _tbl_0 = { }
+for _index_0 = 1, #numbers do
+	local i = numbers[_index_0]
+	_tbl_0[i] = math.sqrt(i)
 end
+sqrts = _tbl_0
 local tuples = {
 	{
 		"hello",
@@ -3059,52 +2955,44 @@ local tuples = {
 	}
 }
 local tbl
-do
-	local _tbl_0 = { }
-	for _index_0 = 1, #tuples do
-		local tuple = tuples[_index_0]
-		local _key_0, _val_0 = unpack(tuple)
-		_tbl_0[_key_0] = _val_0
-	end
-	tbl = _tbl_0
+local _tbl_0 = { }
+for _index_0 = 1, #tuples do
+	local tuple = tuples[_index_0]
+	local _key_0, _val_0 = unpack(tuple)
+	_tbl_0[_key_0] = _val_0
 end
+tbl = _tbl_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	local _max_0 = 5
-	for _index_0 = 1, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+local _max_0 = 5
+for _index_0 = 1, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 2, #_list_0 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 2, #_list_0 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 local slice
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	local _list_0 = items
-	for _index_0 = 1, #_list_0, 2 do
-		local item = _list_0[_index_0]
-		_accum_0[_len_0] = item
-		_len_0 = _len_0 + 1
-	end
-	slice = _accum_0
+local _accum_0 = { }
+local _len_0 = 1
+local _list_0 = items
+for _index_0 = 1, #_list_0, 2 do
+	local item = _list_0[_index_0]
+	_accum_0[_len_0] = item
+	_len_0 = _len_0 + 1
 end
+slice = _accum_0
 for i = 10, 20 do
 	print(i)
 end
@@ -3114,13 +3002,11 @@ end
 for key, value in pairs(object) do
 	print(key, value)
 end
-do
-	local _list_0 = items
-	local _max_0 = 4
-	for _index_0 = 2, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
-		local item = _list_0[_index_0]
-		print(item)
-	end
+local _list_0 = items
+local _max_0 = 4
+for _index_0 = 2, _max_0 < 0 and #_list_0 + _max_0 or _max_0 do
+	local item = _list_0[_index_0]
+	print(item)
 end
 local _list_0 = items
 for _index_0 = 1, #_list_0 do
@@ -3131,19 +3017,17 @@ for j = 1, 10, 3 do
 	print(j)
 end
 local doubled_evens
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for i = 1, 20 do
-		if i % 2 == 0 then
-			_accum_0[_len_0] = i * 2
-		else
-			_accum_0[_len_0] = i
-		end
-		_len_0 = _len_0 + 1
+local _accum_0 = { }
+local _len_0 = 1
+for i = 1, 20 do
+	if i % 2 == 0 then
+		_accum_0[_len_0] = i * 2
+	else
+		_accum_0[_len_0] = i
 	end
-	doubled_evens = _accum_0
+	_len_0 = _len_0 + 1
 end
+doubled_evens = _accum_0
 local func_a
 func_a = function()
 	for i = 1, 10 do
@@ -3201,20 +3085,18 @@ local my_numbers = {
 	6
 }
 local odds
-do
-	local _accum_0 = { }
-	local _len_0 = 1
-	for _index_0 = 1, #my_numbers do
-		local x = my_numbers[_index_0]
-		if x % 2 == 1 then
-			goto _continue_0
-		end
-		_accum_0[_len_0] = x
-		_len_0 = _len_0 + 1
-		::_continue_0::
+local _accum_0 = { }
+local _len_0 = 1
+for _index_0 = 1, #my_numbers do
+	local x = my_numbers[_index_0]
+	if x % 2 == 1 then
+		goto _continue_0
 	end
-	odds = _accum_0
+	_accum_0[_len_0] = x
+	_len_0 = _len_0 + 1
+	::_continue_0::
 end
+odds = _accum_0
 local have_coins = false
 if have_coins then
 	print("Got coins")
@@ -3306,15 +3188,13 @@ else
 	next_number = error("can't count that high!")
 end
 local msg
-do
-	local _exp_0 = math.random(1, 5)
-	if 1 == _exp_0 then
-		msg = "you are lucky"
-	elseif 2 == _exp_0 then
-		msg = "you are almost lucky"
-	else
-		msg = "not so lucky"
-	end
+local _exp_0 = math.random(1, 5)
+if 1 == _exp_0 then
+	msg = "you are lucky"
+elseif 2 == _exp_0 then
+	msg = "you are almost lucky"
+else
+	msg = "not so lucky"
 end
 do
 	local _exp_0 = math.random(1, 5)
@@ -3324,13 +3204,11 @@ do
 		print("not so lucky")
 	end
 end
-do
-	local _exp_0 = math.random(1, 5)
-	if 1 == _exp_0 then
-		print("you are lucky")
-	else
-		print("not so lucky")
-	end
+local _exp_0 = math.random(1, 5)
+if 1 == _exp_0 then
+	print("you are lucky")
+else
+	print("not so lucky")
 end
 local items = {
 	{
@@ -3344,25 +3222,23 @@ local items = {
 }
 for _index_0 = 1, #items do
 	local item = items[_index_0]
-	do
-		local _type_0 = type(item)
-		local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-		local _match_0 = false
-		if _tab_0 then
-			local x = item.x
-			local y = item.y
-			if x ~= nil and y ~= nil then
-				_match_0 = true
-				print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
-			end
+	local _type_0 = type(item)
+	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+	local _match_0 = false
+	if _tab_0 then
+		local x = item.x
+		local y = item.y
+		if x ~= nil and y ~= nil then
+			_match_0 = true
+			print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 		end
-		if not _match_0 then
-			if _tab_0 then
-				local width = item.width
-				local height = item.height
-				if width ~= nil and height ~= nil then
-					print("size " .. tostring(width) .. ", " .. tostring(height))
-				end
+	end
+	if not _match_0 then
+		if _tab_0 then
+			local width = item.width
+			local height = item.height
+			if width ~= nil and height ~= nil then
+				print("size " .. tostring(width) .. ", " .. tostring(height))
 			end
 		end
 	end
@@ -3375,66 +3251,62 @@ end
 if y == nil then
 	y = 200
 end
-do
-	local _type_0 = type(item)
-	local _tab_0 = "table" == _type_0 or "userdata" == _type_0
-	if _tab_0 then
-		do
-			local _obj_0 = item.pos
-			local _type_1 = type(_obj_0)
-			if "table" == _type_1 or "userdata" == _type_1 then
-				x = _obj_0.x
-			end
+local _type_0 = type(item)
+local _tab_0 = "table" == _type_0 or "userdata" == _type_0
+if _tab_0 then
+	do
+		local _obj_0 = item.pos
+		local _type_1 = type(_obj_0)
+		if "table" == _type_1 or "userdata" == _type_1 then
+			x = _obj_0.x
 		end
-		do
-			local _obj_0 = item.pos
-			local _type_1 = type(_obj_0)
-			if "table" == _type_1 or "userdata" == _type_1 then
-				y = _obj_0.y
-			end
-		end
-		if x == nil then
-			x = 50
-		end
-		if y == nil then
-			y = 200
-		end
-		print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 	end
+	do
+		local _obj_0 = item.pos
+		local _type_1 = type(_obj_0)
+		if "table" == _type_1 or "userdata" == _type_1 then
+			y = _obj_0.y
+		end
+	end
+	if x == nil then
+		x = 50
+	end
+	if y == nil then
+		y = 200
+	end
+	print("Vec2 " .. tostring(x) .. ", " .. tostring(y))
 end
 local Inventory
-do
-	local _class_0
-	local _base_0 = {
-		add_item = function(self, name)
-			if self.items[name] then
-				local _obj_0 = self.items
-				_obj_0[name] = _obj_0[name] + 1
-			else
-				self.items[name] = 1
-			end
+local _class_0
+local _base_0 = {
+	add_item = function(self, name)
+		if self.items[name] then
+			local _obj_0 = self.items
+			_obj_0[name] = _obj_0[name] + 1
+		else
+			self.items[name] = 1
 		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
 	end
-	_class_0 = setmetatable({
-		__init = function(self)
-			self.items = { }
-		end,
-		__base = _base_0,
-		__name = "Inventory"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Inventory = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self)
+		self.items = { }
+	end,
+	__base = _base_0,
+	__name = "Inventory"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Inventory = _class_0
 local inv = Inventory()
 inv:add_item("t-shirt")
 inv:add_item("pants")
@@ -3475,82 +3347,78 @@ for _index_0 = 1, #_list_0 do
 	print(item)
 end
 local Person
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function(self)
-			self.clothes = { }
-		end,
-		__base = _base_0,
-		__name = "Person"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Person = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self)
+		self.clothes = { }
+	end,
+	__base = _base_0,
+	__name = "Person"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Person = _class_0
 local BackPack
-do
-	local _class_0
-	local _parent_0 = Inventory
-	local _base_0 = {
-		size = 10,
-		add_item = function(self, name)
-			if #self.items > size then
-				error("backpack is full")
-			end
-			return _class_0.__parent.__base.add_item(self, name)
+local _class_0
+local _parent_0 = Inventory
+local _base_0 = {
+	size = 10,
+	add_item = function(self, name)
+		if #self.items > size then
+			error("backpack is full")
 		end
-	}
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+		return _class_0.__parent.__base.add_item(self, name)
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+}
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "BackPack",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	BackPack = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "BackPack",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+BackPack = _class_0
 local Shelf
 do
 	local _class_0
@@ -3578,102 +3446,98 @@ do
 	Shelf = _class_0
 end
 local Cupboard
-do
-	local _class_0
-	local _parent_0 = Shelf
-	local _base_0 = { }
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+local _class_0
+local _parent_0 = Shelf
+local _base_0 = { }
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "Cupboard",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	Cupboard = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "Cupboard",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+Cupboard = _class_0
 local MyClass
-do
-	local _class_0
-	local _parent_0 = ParentClass
-	local _base_0 = {
-		a_method = function(self)
-			_class_0.__parent.__base.a_method(self, "hello", "world")
-			_class_0.__parent.a_method(self, "hello", "world")
-			_class_0.__parent.a_method(self, "hello", "world")
-			return assert(_class_0.__parent == ParentClass)
-		end
-	}
-	for _key_0, _val_0 in pairs(_parent_0.__base) do
-		if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
-			_base_0[_key_0] = _val_0
-		end
+local _class_0
+local _parent_0 = ParentClass
+local _base_0 = {
+	a_method = function(self)
+		_class_0.__parent.__base.a_method(self, "hello", "world")
+		_class_0.__parent.a_method(self, "hello", "world")
+		_class_0.__parent.a_method(self, "hello", "world")
+		return assert(_class_0.__parent == ParentClass)
 	end
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+}
+for _key_0, _val_0 in pairs(_parent_0.__base) do
+	if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then
+		_base_0[_key_0] = _val_0
 	end
-	setmetatable(_base_0, _parent_0.__base)
-	_class_0 = setmetatable({
-		__init = function(self, ...)
-			return _class_0.__parent.__init(self, ...)
-		end,
-		__base = _base_0,
-		__name = "MyClass",
-		__parent = _parent_0
-	}, {
-		__index = function(cls, name)
-			local val = rawget(_base_0, name)
-			if val == nil then
-				local parent = rawget(cls, "__parent")
-				if parent then
-					return parent[name]
-				end
-			else
-				return val
-			end
-		end,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	if _parent_0.__inherited then
-		_parent_0.__inherited(_parent_0, _class_0)
-	end
-	MyClass = _class_0
 end
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
+end
+setmetatable(_base_0, _parent_0.__base)
+_class_0 = setmetatable({
+	__init = function(self, ...)
+		return _class_0.__parent.__init(self, ...)
+	end,
+	__base = _base_0,
+	__name = "MyClass",
+	__parent = _parent_0
+}, {
+	__index = function(cls, name)
+		local val = rawget(_base_0, name)
+		if val == nil then
+			local parent = rawget(cls, "__parent")
+			if parent then
+				return parent[name]
+			end
+		else
+			return val
+		end
+	end,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+if _parent_0.__inherited then
+	_parent_0.__inherited(_parent_0, _class_0)
+end
+MyClass = _class_0
 local b = BackPack()
 assert(b.__class == BackPack)
 print(BackPack.size)
@@ -3737,61 +3601,57 @@ Counter()
 print(Counter.count)
 self.__class:hello(1, 2, 3, 4)
 local Things
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Things"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	local self = _class_0;
-	self.class_var = "hello world"
-	Things = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Things"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+local self = _class_0;
+self.class_var = "hello world"
+Things = _class_0
 local MoreThings
-do
-	local _class_0
-	local secret, log
-	local _base_0 = {
-		some_method = function(self)
-			return log("hello world: " .. secret)
-		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+local _class_0
+local secret, log
+local _base_0 = {
+	some_method = function(self)
+		return log("hello world: " .. secret)
 	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "MoreThings"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	local self = _class_0;
-	secret = 123
-	log = function(msg)
-		return print("LOG:", msg)
-	end
-	MoreThings = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "MoreThings"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+local self = _class_0;
+secret = 123
+log = function(msg)
+	return print("LOG:", msg)
+end
+MoreThings = _class_0
 assert(self == self)
 assert(self.__class == self.__class)
 local some_instance_method
@@ -3825,32 +3685,30 @@ do
 	_base_0.__class = _class_0
 	Something = _class_0
 end
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function(self, foo, bar, biz, baz)
-			self.foo = foo
-			self.bar = bar
-			self.__class.biz = biz
-			self.__class.baz = baz
-		end,
-		__base = _base_0,
-		__name = "Something"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Something = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function(self, foo, bar, biz, baz)
+		self.foo = foo
+		self.bar = bar
+		self.__class.biz = biz
+		self.__class.baz = baz
+	end,
+	__base = _base_0,
+	__name = "Something"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Something = _class_0
 local new
 new = function(self, fieldA, fieldB)
 	self.fieldA = fieldA
@@ -3861,33 +3719,31 @@ local obj = new({ }, 123, "abc")
 print(obj)
 local x
 local Bucket
-do
-	local _class_0
-	local _base_0 = {
-		drops = 0,
-		add_drop = function(self)
-			self.drops = self.drops + 1
-		end
-	}
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
+local _class_0
+local _base_0 = {
+	drops = 0,
+	add_drop = function(self)
+		self.drops = self.drops + 1
 	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "Bucket"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	Bucket = _class_0
-	x = _class_0
+}
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "Bucket"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+Bucket = _class_0
+x = _class_0
 local BigBucket
 do
 	local _class_0
@@ -3939,27 +3795,25 @@ do
 end
 assert(Bucket.__name == "BigBucket")
 local x
-do
-	local _class_0
-	local _base_0 = { }
-	if _base_0.__index == nil then
-		_base_0.__index = _base_0
-	end
-	_class_0 = setmetatable({
-		__init = function() end,
-		__base = _base_0,
-		__name = "x"
-	}, {
-		__index = _base_0,
-		__call = function(cls, ...)
-			local _self_0 = setmetatable({ }, _base_0)
-			cls.__init(_self_0, ...)
-			return _self_0
-		end
-	})
-	_base_0.__class = _class_0
-	x = _class_0
+local _class_0
+local _base_0 = { }
+if _base_0.__index == nil then
+	_base_0.__index = _base_0
 end
+_class_0 = setmetatable({
+	__init = function() end,
+	__base = _base_0,
+	__name = "x"
+}, {
+	__index = _base_0,
+	__call = function(cls, ...)
+		local _self_0 = setmetatable({ }, _base_0)
+		cls.__init(_self_0, ...)
+		return _self_0
+	end
+})
+_base_0.__class = _class_0
+x = _class_0
 local MyIndex = {
 	__index = {
 		var = 1
@@ -4042,19 +3896,15 @@ end
 local y = Y()
 y:func()
 assert(y.__class.__parent ~= X)
-do
-	local _with_0 = Person()
-	_with_0.name = "Oswald"
-	_with_0:add_relative(my_dad)
-	_with_0:save()
-	print(_with_0.name)
-end
+local _with_0 = Person()
+_with_0.name = "Oswald"
+_with_0:add_relative(my_dad)
+_with_0:save()
+print(_with_0.name)
 local file
-do
-	local _with_0 = File("favorite_foods.txt")
-	_with_0:set_encoding("utf8")
-	file = _with_0
-end
+local _with_0 = File("favorite_foods.txt")
+_with_0:set_encoding("utf8")
+file = _with_0
 local create_person
 create_person = function(name, relatives)
 	local _with_0 = Person()
@@ -4070,22 +3920,18 @@ local me = create_person("Leaf", {
 	mother,
 	sister
 })
+local str = "Hello"
+print("original:", str)
+print("upper:", str:upper())
+local _with_0 = tb
+_with_0[1] = 1
+print(_with_0[2])
 do
-	local str = "Hello"
-	print("original:", str)
-	print("upper:", str:upper())
+	local _with_1 = _with_0[abc]
+	_with_1[3] = _with_1[2]:func()
+	_with_1["key-name"] = value
 end
-do
-	local _with_0 = tb
-	_with_0[1] = 1
-	print(_with_0[2])
-	do
-		local _with_1 = _with_0[abc]
-		_with_1[3] = _with_1[2]:func()
-		_with_1["key-name"] = value
-	end
-	_with_0[#_with_0 + 1] = "abc"
-end
+_with_0[#_with_0 + 1] = "abc"
 do
 	local var = "hello"
 	print(var)

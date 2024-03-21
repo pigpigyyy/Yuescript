@@ -497,30 +497,28 @@ _u6253_u5370("你好")
 local _u53d8_u91cfyyy
 _u53d8_u91cfyyy = function()
 	local _u9177
-	do
-		local _class_0
-		local _base_0 = { }
-		if _base_0.__index == nil then
-			_base_0.__index = _base_0
-		end
-		_class_0 = setmetatable({
-			__init = function() end,
-			__base = _base_0,
-			__name = "酷"
-		}, {
-			__index = _base_0,
-			__call = function(cls, ...)
-				local _self_0 = setmetatable({ }, _base_0)
-				cls.__init(_self_0, ...)
-				return _self_0
-			end
-		})
-		_base_0.__class = _class_0
-		local self = _class_0;
-		_ = nil
-		_u9177 = _class_0
-		return _class_0
+	local _class_0
+	local _base_0 = { }
+	if _base_0.__index == nil then
+		_base_0.__index = _base_0
 	end
+	_class_0 = setmetatable({
+		__init = function() end,
+		__base = _base_0,
+		__name = "酷"
+	}, {
+		__index = _base_0,
+		__call = function(cls, ...)
+			local _self_0 = setmetatable({ }, _base_0)
+			cls.__init(_self_0, ...)
+			return _self_0
+		end
+	})
+	_base_0.__class = _class_0
+	local self = _class_0;
+	_ = nil
+	_u9177 = _class_0
+	return _class_0
 end
 do
 	local _class_0
