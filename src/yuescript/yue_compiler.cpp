@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.1"sv;
+const std::string_view version = "0.23.2"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -3674,9 +3674,20 @@ private:
 		}
 	}
 
-	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgListInTheEnd = nullptr) {
+	bool checkUpValueFuncAvailable(ast_node* node) {
+		if (_funcLevel <= 1) return false;
+		return node->traverse([&](ast_node* n) {
+			switch (n->get_id()) {
+				case id<MacroName_t>():
+					return traversal::Stop;
+			}
+			return traversal::Continue;
+		}) != traversal::Stop;
+	}
+
+	std::optional<std::pair<std::string, str_list>> getUpValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd) {
 		if (_funcLevel <= 1) return std::nullopt;
-		auto result = exp->traverse([&](ast_node* node) {
+		auto result = block->traverse([&](ast_node* node) {
 			switch (node->get_id()) {
 				case id<MacroName_t>():
 					return traversal::Stop;
@@ -3687,7 +3698,8 @@ private:
 			str_list args;
 			bool upVarsAssignedOrCaptured = false;
 			bool usedVar = false;
-			ast_ptr<false, Statement_t> stmt;
+			auto x = block;
+			ast_ptr<false, Block_t> newBlock(block);
 			{
 				str_list globals;
 				for (const auto& scope : _scopes) {
@@ -3697,31 +3709,26 @@ private:
 						}
 					}
 				}
-				auto returnNode = exp->new_ptr<Return_t>();
-				auto returnList = exp->new_ptr<ExpListLow_t>();
-				returnList->exprs.push_back(exp);
-				returnNode->valueList.set(returnList);
 				std::string codes;
 				if (_withVars.empty()) {
-					codes = YueFormat{}.toString(returnNode);
-					stmt = exp->new_ptr<Statement_t>();
-					stmt->content.set(returnNode);
+					codes = YueFormat{}.toString(block);
 				} else {
-					auto withNode = exp->new_ptr<With_t>();
-					withNode->valueList.set(toAst<ExpList_t>(_withVars.top(), exp));
-					auto returnStmt = exp->new_ptr<Statement_t>();
-					returnStmt->content.set(returnNode);
-					withNode->body.set(returnStmt);
+					auto withNode = block->new_ptr<With_t>();
+					withNode->valueList.set(toAst<ExpList_t>(_withVars.top(), x));
+					withNode->body.set(block);
 					codes = YueFormat{}.toString(withNode);
-					stmt = exp->new_ptr<Statement_t>();
-					auto simpleValue = exp->new_ptr<SimpleValue_t>();
+					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(withNode);
-					auto newExpr = newExp(simpleValue, exp);
-					auto explist = exp->new_ptr<ExpList_t>();
+					auto newExpr = newExp(simpleValue, x);
+					auto explist = x->new_ptr<ExpList_t>();
 					explist->exprs.push_back(newExpr);
-					auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+					auto expListAssign = x->new_ptr<ExpListAssign_t>();
 					expListAssign->expList.set(explist);
+					auto stmt = x->new_ptr<Statement_t>();
 					stmt->content.set(expListAssign);
+					auto blk = x->new_ptr<Block_t>();
+					blk->statements.push_back(stmt);
+					newBlock.set(blk);
 				}
 				if (!globals.empty()) {
 					codes.insert(0, "global "s + join(globals, ","sv) + '\n');
@@ -3730,7 +3737,7 @@ private:
 				config.lintGlobalVariable = true;
 				auto result = YueCompiler{L, _luaOpen, true}.compile(codes, config);
 				if (result.error) {
-					YUEE("failed to compile dues to Yue formatter", exp);
+					YUEE("failed to compile dues to Yue formatter", x);
 				}
 				usedVar = result.usedVar;
 				if (result.globals) {
@@ -3745,7 +3752,6 @@ private:
 				}
 			}
 			if (!upVarsAssignedOrCaptured) {
-				auto x = exp;
 				if (ensureArgListInTheEnd) {
 					std::unordered_set<std::string> vars;
 					for (const auto& arg : args) {
@@ -3775,7 +3781,7 @@ private:
 					}
 				}
 				auto funLit = toAst<FunLit_t>("("s + join(args, ","sv) + ")-> nil"s, x);
-				funLit->body->content.set(stmt.get());
+				funLit->body->content.set(newBlock);
 				funLit->noRecursion = true;
 				auto simpleValue = x->new_ptr<SimpleValue_t>();
 				simpleValue->value.set(funLit);
@@ -3792,6 +3798,29 @@ private:
 				_indentOffset = offset;
 				return std::make_pair(funcName, args);
 			}
+		}
+		return std::nullopt;
+	}
+
+
+	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Block_t* block, str_list* ensureArgListInTheEnd = nullptr) {
+		if (checkUpValueFuncAvailable(block)) {
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd);
+		}
+		return std::nullopt;
+	}
+
+	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgListInTheEnd = nullptr) {
+		if (checkUpValueFuncAvailable(exp)) {
+			auto returnNode = exp->new_ptr<Return_t>();
+			auto returnList = exp->new_ptr<ExpListLow_t>();
+			returnList->exprs.push_back(exp);
+			returnNode->valueList.set(returnList);
+			auto block = exp->new_ptr<Block_t>();
+			auto stmt = exp->new_ptr<Statement_t>();
+			stmt->content.set(returnNode);
+			block->statements.push_back(stmt);
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd);
 		}
 		return std::nullopt;
 	}
@@ -9091,13 +9120,7 @@ private:
 		}
 		if (auto tryBlock = tryNode->func.as<Block_t>()) {
 			{
-				auto body = tryBlock->new_ptr<Body_t>();
-				body->content.set(tryBlock);
-				auto doNode = tryBlock->new_ptr<Do_t>();
-				doNode->body.set(body);
-				auto simpleValue = tryBlock->new_ptr<SimpleValue_t>();
-				simpleValue->value.set(doNode);
-				if (auto result = upValueFuncFrom(newExp(simpleValue, tryBlock))) {
+				if (auto result = upValueFuncFrom(tryBlock)) {
 					auto [funcName, args] = std::move(*result);
 					if (errHandler) {
 						auto xpcall = toAst<ChainValue_t>("xpcall()", x);

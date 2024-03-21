@@ -368,11 +368,9 @@ local _anon_func_18 = function(print, select, _arg_0, ...)
 	end
 end
 local _anon_func_19 = function(print)
-	do
-		local a = 1
-		print(a + nil)
-		return 1, 2, 3
-	end
+	local a = 1
+	print(a + nil)
+	return 1, 2, 3
 end
 local _anon_func_20 = function(cond, i)
 	local _accum_0 = { }
@@ -516,11 +514,9 @@ local _anon_func_29 = function(os, _arg_0, ...)
 	end
 end
 local _anon_func_30 = function(debug_env_after, debug_env_before, env, func)
-	do
-		debug_env_before(env)
-		func(env)
-		return debug_env_after(env)
-	end
+	debug_env_before(env)
+	func(env)
+	return debug_env_after(env)
 end
 do
 	local buff_strength

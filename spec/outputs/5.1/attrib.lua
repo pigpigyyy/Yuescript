@@ -62,10 +62,7 @@ local _anon_func_1 = function(io)
 	_with_0:write("Hello")
 	return _with_0
 end
-local _anon_func_2 = function()
-	do
-	end
-end
+local _anon_func_2 = function() end
 do
 	local v = (function()
 		if flag then
@@ -123,10 +120,7 @@ local _anon_func_5 = function(a, b)
 		}
 	end
 end
-local _anon_func_7 = function()
-	do
-	end
-end
+local _anon_func_7 = function() end
 do
 	local a = (function()
 		if true then
@@ -244,10 +238,7 @@ local _anon_func_11 = function(_, _close_2, error, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_12 = function()
-	do
-	end
-end
+local _anon_func_12 = function() end
 do
 	local _ = def(function()
 		return print(3)
