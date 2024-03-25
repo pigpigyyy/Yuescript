@@ -55,10 +55,8 @@ do
 		_u53d8_u91cfk = 10
 	end
 	_u53d8_u91cfx = 100
-	do
-		local _obj_0 = _u53d8_u91cfy
-		_u53d8_u91cfa, _u53d8_u91cfb, _u53d8_u91cfc = _obj_0[1], _obj_0[2], _obj_0[3]
-	end
+	local _obj_0 = _u53d8_u91cfy
+	_u53d8_u91cfa, _u53d8_u91cfb, _u53d8_u91cfc = _obj_0[1], _obj_0[2], _obj_0[3]
 end
 do
 	local _u53d8_u91cfa, _u53d8_u91cfb, _u53d8_u91cfc, _u53d8_u91cfd

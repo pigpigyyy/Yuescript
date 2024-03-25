@@ -320,10 +320,8 @@ do
 			__u6a21_u5757 = _des_0
 			local _u4e1c_u897f = __u6a21_u5757["东西"]
 			local a_u529f_u80fd, b_u529f_u80fd
-			do
-				local _obj_0 = __u6a21_u5757
-				a_u529f_u80fd, b_u529f_u80fd = _obj_0["a功能"], _obj_0["b功能"]
-			end
+			local _obj_0 = __u6a21_u5757
+			a_u529f_u80fd, b_u529f_u80fd = _obj_0["a功能"], _obj_0["b功能"]
 		end
 	end
 end

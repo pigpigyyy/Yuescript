@@ -53,15 +53,11 @@ return _(function()
 	do
 		local a, b
 		if "a" == c then
-			do
-				local _obj_0 = tb
-				a, b = _obj_0[1], _obj_0[2]
-			end
+			local _obj_0 = tb
+			a, b = _obj_0[1], _obj_0[2]
 		elseif "b" == c then
-			do
-				local _obj_0 = f()
-				a, b = _obj_0[1], _obj_0[2]
-			end
+			local _obj_0 = f()
+			a, b = _obj_0[1], _obj_0[2]
 		end
 	end
 	if x then

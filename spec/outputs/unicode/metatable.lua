@@ -51,15 +51,11 @@ do
 	local _obj_0, _obj_1
 	_u53d8_u91cfx, _obj_0, _obj_1 = 123, _u53d8_u91cfa["变量b"]["变量c"], _u51fd_u6570()
 	_u65b0, _u53d8_u91cf = _obj_0["新"], _obj_0["变量"]
-	do
-		local _obj_2 = getmetatable(_obj_0)
-		close, _u5173_u95edA = _obj_2.__close, _obj_2.__close
-	end
+	local _obj_2 = getmetatable(_obj_0)
+	close, _u5173_u95edA = _obj_2.__close, _obj_2.__close
 	num = _obj_1.num
-	do
-		local _obj_2 = getmetatable(_obj_1)
-		add, sub = _obj_2.__add, _obj_2.__sub
-	end
+	local _obj_3 = getmetatable(_obj_1)
+	add, sub = _obj_3.__add, _obj_3.__sub
 end
 setmetatable(_u53d8_u91cfa["变量b"], { })
 _u53d8_u91cfx.abc = 123
@@ -108,17 +104,13 @@ local _u7d22_u5f15 = getmetatable(_u53d8_u91cfa).__index
 index = getmetatable(_u53d8_u91cfa).__index
 do
 	local _u6784_u9020, _u66f4_u65b0
-	do
-		local _obj_0 = getmetatable(_u53d8_u91cfa)
-		_u6784_u9020, _u66f4_u65b0 = _obj_0["新"], _obj_0["更新"]
-	end
+	local _obj_0 = getmetatable(_u53d8_u91cfa)
+	_u6784_u9020, _u66f4_u65b0 = _obj_0["新"], _obj_0["更新"]
 end
 do
 	local _u6784_u9020, _u66f4_u65b0
-	do
-		local _obj_0 = getmetatable(_u53d8_u91cfa)
-		_u6784_u9020, _u66f4_u65b0 = _obj_0["新"], _obj_0["更新"]
-	end
+	local _obj_0 = getmetatable(_u53d8_u91cfa)
+	_u6784_u9020, _u66f4_u65b0 = _obj_0["新"], _obj_0["更新"]
 end
 local _u8868 = { }
 do

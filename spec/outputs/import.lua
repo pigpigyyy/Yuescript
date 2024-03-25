@@ -149,10 +149,8 @@ do
 end
 do
 	local func, ifVar
-	do
-		local _obj_1 = require("org.package.module")
-		func, ifVar = _obj_1["function"], _obj_1["if"]
-	end
+	local _obj_1 = require("org.package.module")
+	func, ifVar = _obj_1["function"], _obj_1["if"]
 end
 do
 	local b = getmetatable(require("m")).__gc
@@ -165,8 +163,6 @@ do
 	end
 	local d = require("m").c
 	local g, i
-	do
-		local _obj_1 = require("m")
-		g, i = _obj_1[1], getmetatable(_obj_1[2]).__close
-	end
+	local _obj_1 = require("m")
+	g, i = _obj_1[1], getmetatable(_obj_1[2]).__close
 end

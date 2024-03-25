@@ -318,15 +318,13 @@ end
 do
 	a, b = hello[1], hello[2]
 	local name, job
-	do
-		local _obj_0 = person
-		name, job = _obj_0[1], _obj_0[2]
-		if name == nil then
-			name = "nameless"
-		end
-		if job == nil then
-			job = "jobless"
-		end
+	local _obj_0 = person
+	name, job = _obj_0[1], _obj_0[2]
+	if name == nil then
+		name = "nameless"
+	end
+	if job == nil then
+		job = "jobless"
 	end
 end
 return nil

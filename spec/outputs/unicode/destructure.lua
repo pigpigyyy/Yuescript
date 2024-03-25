@@ -10,10 +10,8 @@ do
 		_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0[1][1], _obj_0[2], _obj_0[3][1]
 	end
 	local _u4f60_u597d, _u4e16_u754c
-	do
-		local _obj_0 = _u503c
-		_u4f60_u597d, _u4e16_u754c = _obj_0["你好"], _obj_0["世界"]
-	end
+	local _obj_0 = _u503c
+	_u4f60_u597d, _u4e16_u754c = _obj_0["你好"], _obj_0["世界"]
 end
 do
 	local _u5426, _u4e1c_u897f
@@ -50,17 +48,13 @@ do
 	end
 	do
 		_u53d8_u91cfc = nil
-		do
-			local _obj_0 = _u8868
-			_u5b57_u6bb5a, _u5b57_u6bb5b = _obj_0["字段a"], _obj_0["字段b"]
-		end
+		local _obj_0 = _u8868
+		_u5b57_u6bb5a, _u5b57_u6bb5b = _obj_0["字段a"], _obj_0["字段b"]
 	end
 	do
 		local _u53d8_u91cfa = _u8868
-		do
-			local _obj_0 = __u65e0_u6548_u53d8_u91cf
-			_u5b57_u6bb5b, _u5b57_u6bb5c = _obj_0["字段b"], _obj_0["字段c"]
-		end
+		local _obj_0 = __u65e0_u6548_u53d8_u91cf
+		_u5b57_u6bb5b, _u5b57_u6bb5c = _obj_0["字段b"], _obj_0["字段c"]
 	end
 	do
 		_u53d8_u91cfb = __u65e0_u6548_u53d8_u91cf
@@ -89,17 +83,13 @@ do
 end
 do
 	local _u53d8_u91cfc, _u53d8_u91cfe
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		_u53d8_u91cfc, _u53d8_u91cfe = _obj_0["字段a"]["字段b"], _obj_0["字段a"]["字段d"]
-	end
+	local _obj_0 = _u5bf9_u8c61tb
+	_u53d8_u91cfc, _u53d8_u91cfe = _obj_0["字段a"]["字段b"], _obj_0["字段a"]["字段d"]
 end
 do
 	local _u53d8_u91cfc, _u53d8_u91cfe, _u5143_u7d20f
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		_u53d8_u91cfc, _u53d8_u91cfe, _u5143_u7d20f = _obj_0["字段a"][1]["字段b"], _obj_0["字段a"][2]["字段d"], _obj_0["字段a"][3]
-	end
+	local _obj_0 = _u5bf9_u8c61tb
+	_u53d8_u91cfc, _u53d8_u91cfe, _u5143_u7d20f = _obj_0["字段a"][1]["字段b"], _obj_0["字段a"][2]["字段d"], _obj_0["字段a"][3]
 end
 do
 	self["世界"] = _u53d8_u91cfx[1]
@@ -165,10 +155,8 @@ do
 end
 do
 	local _u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c
-	do
-		local _obj_0 = _u53d8_u91cfz
-		_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2], _obj_0[3]
-	end
+	local _obj_0 = _u53d8_u91cfz
+	_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2], _obj_0[3]
 end
 local _
 _ = function(_u53c2_u6570z)
@@ -178,10 +166,8 @@ do
 	local _u53d8_u91cfz = "〇〇"
 	_ = function(_u53c2_u6570k)
 		local _u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c
-		do
-			local _obj_0 = _u53c2_u6570z
-			_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2], _obj_0[3]
-		end
+		local _obj_0 = _u53c2_u6570z
+		_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0[1], _obj_0[2], _obj_0[3]
 	end
 end
 do
@@ -189,21 +175,17 @@ do
 end
 do
 	local _u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c
-	do
-		local _obj_0 = _u4e1c_u897f
-		_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0["如果"][1], _obj_0["如果"][2], _obj_0["如果"][3]
-	end
+	local _obj_0 = _u4e1c_u897f
+	_u5143_u7d20a, _u5143_u7d20b, _u5143_u7d20c = _obj_0["如果"][1], _obj_0["如果"][2], _obj_0["如果"][3]
 end
 do
 	local _u5b57_u6bb5a, _u5b57_u6bb5b
 	if true then
-		do
-			local _obj_0 = {
-				["字段a"] = "你好",
-				["字段b"] = "世界"
-			}
-			_u5b57_u6bb5a, _u5b57_u6bb5b = _obj_0["字段a"], _obj_0["字段b"]
-		end
+		local _obj_0 = {
+			["字段a"] = "你好",
+			["字段b"] = "世界"
+		}
+		_u5b57_u6bb5a, _u5b57_u6bb5b = _obj_0["字段a"], _obj_0["字段b"]
 	end
 	local _u5929, _u5c0f_u65f6, _u5206_u949f, _u79d2
 	do
@@ -311,41 +293,33 @@ do
 			end
 		end
 	end
-	do
-		local _tmp_0
-		do
-			local _obj_0 = getmetatable(_u5bf9_u8c61tb)
-			_tmp_0 = _obj_0["函数"]
+	local _tmp_0
+	local _obj_0 = getmetatable(_u5bf9_u8c61tb)
+	_tmp_0 = _obj_0["函数"]
+	if _tmp_0 == nil then
+		local _obj_1 = _u9879_u76ee
+		if _obj_1 ~= nil then
+			_tmp_0 = _obj_1["默认值"]
 		end
-		if _tmp_0 == nil then
-			local _obj_0 = _u9879_u76ee
-			if _obj_0 ~= nil then
-				_tmp_0 = _obj_0["默认值"]
-			end
-		end
-		a_u5bf9_u8c61["b字段"](function()
-			return 123
-		end)["字段c"] = _tmp_0
+	end
+	a_u5bf9_u8c61["b字段"](function()
+		return 123
+	end)["字段c"] = _tmp_0
+end
+do
+	local _u5143_u8868, _u51cf_u51fd_u6570
+	local _obj_0 = getmetatable(_u5bf9_u8c61tb["字段x"])
+	_u5143_u8868, _u51cf_u51fd_u6570 = _obj_0, _obj_0.__sub
+	if _u5143_u8868 == nil then
+		_u5143_u8868 = { }
 	end
 end
 do
 	local _u5143_u8868, _u51cf_u51fd_u6570
-	do
-		local _obj_0 = getmetatable(_u5bf9_u8c61tb["字段x"])
-		_u5143_u8868, _u51cf_u51fd_u6570 = _obj_0, _obj_0.__sub
-		if _u5143_u8868 == nil then
-			_u5143_u8868 = { }
-		end
-	end
-end
-do
-	local _u5143_u8868, _u51cf_u51fd_u6570
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		_u5143_u8868, _u51cf_u51fd_u6570 = getmetatable(_obj_0["x字段"]), getmetatable(_obj_0["x字段"]).__sub
-		if _u5143_u8868 == nil then
-			_u5143_u8868 = { }
-		end
+	local _obj_0 = _u5bf9_u8c61tb
+	_u5143_u8868, _u51cf_u51fd_u6570 = getmetatable(_obj_0["x字段"]), getmetatable(_obj_0["x字段"]).__sub
+	if _u5143_u8868 == nil then
+		_u5143_u8868 = { }
 	end
 end
 do
@@ -380,24 +354,20 @@ do
 end
 do
 	local a_u5143_u7d20, b_u5143_u7d20
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		a_u5143_u7d20, b_u5143_u7d20 = _obj_0[2], _obj_0[4]
-	end
+	local _obj_0 = _u5bf9_u8c61tb
+	a_u5143_u7d20, b_u5143_u7d20 = _obj_0[2], _obj_0[4]
 end
 do
-	do
-		local _obj_0 = _u5bf9_u8c61x["字段x"]["字段x"]
-		local _tmp_0, _tmp_1 = _obj_0["字段x"], _obj_0["y字段"]
-		if _tmp_0 == nil then
-			_tmp_0 = 1
-		end
-		if _tmp_1 == nil then
-			_tmp_1 = 2
-		end
-		_u5bf9_u8c61a["字段b"] = _tmp_0
-		a_u5bf9_u8c61["c字段"] = _tmp_1
+	local _obj_0 = _u5bf9_u8c61x["字段x"]["字段x"]
+	local _tmp_0, _tmp_1 = _obj_0["字段x"], _obj_0["y字段"]
+	if _tmp_0 == nil then
+		_tmp_0 = 1
 	end
+	if _tmp_1 == nil then
+		_tmp_1 = 2
+	end
+	_u5bf9_u8c61a["字段b"] = _tmp_0
+	a_u5bf9_u8c61["c字段"] = _tmp_1
 end
 do
 	local _u5bbd, _u9ad8
@@ -406,15 +376,13 @@ do
 		_u5bbd, _u9ad8 = _obj_0["宽"], _obj_0["高"]
 	end
 	local x_u5750_u6807, y_u5750_u6807
-	do
-		local _obj_0 = _u70b9
-		x_u5750_u6807, y_u5750_u6807 = _obj_0["x坐标"], _obj_0["y坐标"]
-		if x_u5750_u6807 == nil then
-			x_u5750_u6807 = 0.0
-		end
-		if y_u5750_u6807 == nil then
-			y_u5750_u6807 = 0.0
-		end
+	local _obj_0 = _u70b9
+	x_u5750_u6807, y_u5750_u6807 = _obj_0["x坐标"], _obj_0["y坐标"]
+	if x_u5750_u6807 == nil then
+		x_u5750_u6807 = 0.0
+	end
+	if y_u5750_u6807 == nil then
+		y_u5750_u6807 = 0.0
 	end
 end
 do
@@ -438,29 +406,25 @@ do
 end
 do
 	local _u53d8_u91cfv1, _u53d8_u91cfv2, _u53d8_u91cfv3, _u53d8_u91cfv4
-	do
-		local _obj_0 = _u5bf9_u8c61tb
-		local _tmp_0, _tmp_1 = 1 + 1, self.x
-		_u53d8_u91cfv1, _u53d8_u91cfv2, _u53d8_u91cfv3, _u53d8_u91cfv4 = _obj_0[ [["abc"]]], _obj_0[_tmp_0][1], _obj_0[_tmp_0][2], _obj_0[_tmp_1]
-		if _u53d8_u91cfv1 == nil then
-			_u53d8_u91cfv1 = 111
-		end
-		if _u53d8_u91cfv2 == nil then
-			_u53d8_u91cfv2 = 222
-		end
-		if _u53d8_u91cfv3 == nil then
-			_u53d8_u91cfv3 = 333
-		end
-		if _u53d8_u91cfv4 == nil then
-			_u53d8_u91cfv4 = 444
-		end
+	local _obj_0 = _u5bf9_u8c61tb
+	local _tmp_0, _tmp_1 = 1 + 1, self.x
+	_u53d8_u91cfv1, _u53d8_u91cfv2, _u53d8_u91cfv3, _u53d8_u91cfv4 = _obj_0[ [["abc"]]], _obj_0[_tmp_0][1], _obj_0[_tmp_0][2], _obj_0[_tmp_1]
+	if _u53d8_u91cfv1 == nil then
+		_u53d8_u91cfv1 = 111
+	end
+	if _u53d8_u91cfv2 == nil then
+		_u53d8_u91cfv2 = 222
+	end
+	if _u53d8_u91cfv3 == nil then
+		_u53d8_u91cfv3 = 333
+	end
+	if _u53d8_u91cfv4 == nil then
+		_u53d8_u91cfv4 = 444
 	end
 	local _u53d8_u91cfv5, _u53d8_u91cfv6, _u53d8_u91cfv7
-	do
-		local _obj_0 = _u5bf9_u8c61tb2
-		local _tmp_2, _tmp_3 = _u51fd_u6570(), _u51fd_u65702()
-		_u53d8_u91cfv5, _u53d8_u91cfv6, _u53d8_u91cfv7 = _obj_0['x-y-z'], _obj_0[_tmp_2][_tmp_3], _obj_0[_tmp_2][1]
-	end
+	local _obj_1 = _u5bf9_u8c61tb2
+	local _tmp_2, _tmp_3 = _u51fd_u6570(), _u51fd_u65702()
+	_u53d8_u91cfv5, _u53d8_u91cfv6, _u53d8_u91cfv7 = _obj_1['x-y-z'], _obj_1[_tmp_2][_tmp_3], _obj_1[_tmp_2][1]
 end
 do
 	local _u503c, _u5143_u503c
@@ -499,16 +463,12 @@ do
 end
 do
 	local _u5bf9_u8c61tb = { }
-	do
-		local _tmp_0 = _u51fd_u6570c()
-		local _u53d8_u91cfv2 = _u5bf9_u8c61tb[_tmp_0]
-	end
+	local _tmp_0 = _u51fd_u6570c()
+	local _u53d8_u91cfv2 = _u5bf9_u8c61tb[_tmp_0]
 	local _u53d8_u91cfv1
-	do
-		local _obj_0 = getmetatable(_u5bf9_u8c61tb)
-		local _tmp_1 = _u53d8_u91cfa + _u53d8_u91cfb
-		_u53d8_u91cfv1 = _obj_0[_tmp_1]
-	end
+	local _obj_0 = getmetatable(_u5bf9_u8c61tb)
+	local _tmp_1 = _u53d8_u91cfa + _u53d8_u91cfb
+	_u53d8_u91cfv1 = _obj_0[_tmp_1]
 end
 do
 	local add, _u5b57_u6bb5

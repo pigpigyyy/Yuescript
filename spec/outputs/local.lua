@@ -55,10 +55,8 @@ do
 		k = 10
 	end
 	x = 100
-	do
-		local _obj_0 = y
-		a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
-	end
+	local _obj_0 = y
+	a, b, c = _obj_0.a, _obj_0.b, _obj_0.c
 end
 do
 	local a, b, c, d

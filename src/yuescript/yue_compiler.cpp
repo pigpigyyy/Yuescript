@@ -2170,7 +2170,7 @@ private:
 				if (!destruct.inlineAssignment && destruct.items.size() == 1) {
 					auto& pair = destruct.items.front();
 					if (pair.targetVar.empty() && pair.defVal) {
-						extraScope = true;
+						if (needScope) extraScope = true;
 						auto objVar = getUnusedName("_tmp_"sv);
 						auto objExp = toAst<Exp_t>(objVar, pair.target);
 						leftPairs.push_back({pair.target, objExp.get()});
@@ -2221,8 +2221,10 @@ private:
 					if (isLocalValue) {
 						objVar = destruct.valueVar;
 					} else {
-						temp.push_back(indent() + "do"s + nll(x));
-						pushScope();
+						if (needScope) {
+							temp.push_back(indent() + "do"s + nll(x));
+							pushScope();
+						}
 						objVar = getUnusedName("_obj_"sv);
 						auto newAssignment = assignmentFrom(toAst<Exp_t>(objVar, x), destruct.value, x);
 						transformAssignment(newAssignment, temp);
@@ -2234,9 +2236,11 @@ private:
 					auto newAssignment = assignmentFrom(pair.target, valueExp, x);
 					transformAssignment(newAssignment, temp, optionalDestruct);
 					if (!isLocalValue) {
-						popScope();
-						_buf << indent() << "end"sv << nlr(x);
-						temp.push_back(clearBuf());
+						if (needScope) {
+							popScope();
+							_buf << indent() << "end"sv << nlr(x);
+							temp.push_back(clearBuf());
+						}
 					}
 				} else {
 					str_list defs;
@@ -2249,7 +2253,7 @@ private:
 								defs.push_back(item.targetVar);
 							}
 						} else if (item.defVal) {
-							extraScope = true;
+							if (needScope) extraScope = true;
 							auto objVar = getUnusedName("_tmp_"sv);
 							addToScope(objVar);
 							auto objExp = toAst<Exp_t>(objVar, item.target);
@@ -2285,9 +2289,11 @@ private:
 							}
 							temp.push_back(indent() + "local "s + join(defs, ", "sv) + nll(x));
 						}
-						extraScope = true;
-						temp.push_back(indent() + "do"s + nll(x));
-						pushScope();
+						if (needScope) {
+							extraScope = true;
+							temp.push_back(indent() + "do"s + nll(x));
+							pushScope();
+						}
 						auto valVar = getUnusedName("_obj_"sv);
 						auto targetVar = toAst<Exp_t>(valVar, destruct.value);
 						auto newAssignment = assignmentFrom(targetVar, destruct.value, destruct.value);
@@ -2298,7 +2304,7 @@ private:
 						}
 					}
 					if (destruct.inlineAssignment) {
-						if (!extraScope) {
+						if (needScope && !extraScope) {
 							extraScope = true;
 							temp.push_back(indent() + "do"s + nll(x));
 							pushScope();

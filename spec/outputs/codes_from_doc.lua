@@ -359,10 +359,8 @@ do
 		C, Ct, Cmt = _obj_0.C, _obj_0.Ct, _obj_0.Cmt
 	end
 	local one, two, ch
-	do
-		local _obj_0 = require("export")
-		one, two, ch = _obj_0[1], _obj_0[2], _obj_0.Something.umm[1]
-	end
+	local _obj_0 = require("export")
+	one, two, ch = _obj_0[1], _obj_0[2], _obj_0.Something.umm[1]
 end
 local _module_0 = { }
 local a, b, c = 1, 2, 3
@@ -527,36 +525,26 @@ local obj2 = {
 local first, second = obj2.numbers[1], obj2.numbers[2]
 print(first, second, color)
 local first, second, color
-do
-	local _obj_0 = obj2
-	first, second, color = _obj_0.numbers[1], _obj_0.numbers[2], _obj_0.properties.color
-end
+local _obj_0 = obj2
+first, second, color = _obj_0.numbers[1], _obj_0.numbers[2], _obj_0.properties.color
 local concat, insert
-do
-	local _obj_0 = table
-	concat, insert = _obj_0.concat, _obj_0.insert
-end
+local _obj_0 = table
+concat, insert = _obj_0.concat, _obj_0.insert
 local mix, max, rand
-do
-	local _obj_0 = math
-	mix, max, rand = _obj_0.mix, _obj_0.max, _obj_0.random
-end
+local _obj_0 = math
+mix, max, rand = _obj_0.mix, _obj_0.max, _obj_0.random
 local name, job
-do
-	local _obj_0 = person
-	name, job = _obj_0.name, _obj_0.job
-	if name == nil then
-		name = "nameless"
-	end
-	if job == nil then
-		job = "jobless"
-	end
+local _obj_0 = person
+name, job = _obj_0.name, _obj_0.job
+if name == nil then
+	name = "nameless"
+end
+if job == nil then
+	job = "jobless"
 end
 local two, four
-do
-	local _obj_0 = items
-	two, four = _obj_0[2], _obj_0[4]
-end
+local _obj_0 = items
+two, four = _obj_0[2], _obj_0[4]
 local tuples = {
 	{
 		"hello",
@@ -647,10 +635,8 @@ local _ <close> = setmetatable({ }, {
 	end
 })
 local a, b, c, d
-do
-	local _obj_0 = tb
-	a, b, c, d = _obj_0.a, _obj_0.b, _obj_0[1], _obj_0[2]
-end
+local _obj_0 = tb
+a, b, c, d = _obj_0.a, _obj_0.b, _obj_0[1], _obj_0[2]
 local some_string = "Here is a string\n  that has a line break in it."
 print("I am " .. tostring(math.random() * 100) .. "% sure.")
 local integer = 1000000
@@ -2360,10 +2346,8 @@ do
 		C, Ct, Cmt = _obj_0.C, _obj_0.Ct, _obj_0.Cmt
 	end
 	local one, two, ch
-	do
-		local _obj_0 = require("export")
-		one, two, ch = _obj_0[1], _obj_0[2], _obj_0.Something.umm[1]
-	end
+	local _obj_0 = require("export")
+	one, two, ch = _obj_0[1], _obj_0[2], _obj_0.Something.umm[1]
 end
 local _module_0 = { }
 local a, b, c = 1, 2, 3
@@ -2528,36 +2512,26 @@ local obj2 = {
 local first, second = obj2.numbers[1], obj2.numbers[2]
 print(first, second, color)
 local first, second, color
-do
-	local _obj_0 = obj2
-	first, second, color = _obj_0.numbers[1], _obj_0.numbers[2], _obj_0.properties.color
-end
+local _obj_0 = obj2
+first, second, color = _obj_0.numbers[1], _obj_0.numbers[2], _obj_0.properties.color
 local concat, insert
-do
-	local _obj_0 = table
-	concat, insert = _obj_0.concat, _obj_0.insert
-end
+local _obj_0 = table
+concat, insert = _obj_0.concat, _obj_0.insert
 local mix, max, rand
-do
-	local _obj_0 = math
-	mix, max, rand = _obj_0.mix, _obj_0.max, _obj_0.random
-end
+local _obj_0 = math
+mix, max, rand = _obj_0.mix, _obj_0.max, _obj_0.random
 local name, job
-do
-	local _obj_0 = person
-	name, job = _obj_0.name, _obj_0.job
-	if name == nil then
-		name = "nameless"
-	end
-	if job == nil then
-		job = "jobless"
-	end
+local _obj_0 = person
+name, job = _obj_0.name, _obj_0.job
+if name == nil then
+	name = "nameless"
+end
+if job == nil then
+	job = "jobless"
 end
 local two, four
-do
-	local _obj_0 = items
-	two, four = _obj_0[2], _obj_0[4]
-end
+local _obj_0 = items
+two, four = _obj_0[2], _obj_0[4]
 local tuples = {
 	{
 		"hello",
@@ -2648,10 +2622,8 @@ local _ <close> = setmetatable({ }, {
 	end
 })
 local a, b, c, d
-do
-	local _obj_0 = tb
-	a, b, c, d = _obj_0.a, _obj_0.b, _obj_0[1], _obj_0[2]
-end
+local _obj_0 = tb
+a, b, c, d = _obj_0.a, _obj_0.b, _obj_0[1], _obj_0[2]
 local some_string = "Here is a string\n  that has a line break in it."
 print("I am " .. tostring(math.random() * 100) .. "% sure.")
 local integer = 1000000

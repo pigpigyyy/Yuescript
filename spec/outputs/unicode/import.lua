@@ -87,10 +87,8 @@ do
 end
 do
 	local _u51fd_u6570, _u5982_u679c_u53d8_u91cf
-	do
-		local _obj_1 = require("组织.包.模块")
-		_u51fd_u6570, _u5982_u679c_u53d8_u91cf = _obj_1["函数体"], _obj_1["如果"]
-	end
+	local _obj_1 = require("组织.包.模块")
+	_u51fd_u6570, _u5982_u679c_u53d8_u91cf = _obj_1["函数体"], _obj_1["如果"]
 end
 do
 	local _u53d8_u91cfb = getmetatable(require("块")).__gc
@@ -103,8 +101,6 @@ do
 	end
 	local _u53d8_u91cfd = require("块")["字段c"]
 	local _u5143_u7d20g, _u53d8_u91cfi
-	do
-		local _obj_1 = require("块")
-		_u5143_u7d20g, _u53d8_u91cfi = _obj_1[1], getmetatable(_obj_1[2]).__close
-	end
+	local _obj_1 = require("块")
+	_u5143_u7d20g, _u53d8_u91cfi = _obj_1[1], getmetatable(_obj_1[2]).__close
 end

@@ -80,15 +80,13 @@ end
 do
 	local result, msg
 	do
-		do
-			local _obj_0 = receiveAsync("filename.txt", function(data)
-				print(data)
-				return processAsync(data, function(info)
-					return check(info)
-				end)
+		local _obj_0 = receiveAsync("filename.txt", function(data)
+			print(data)
+			return processAsync(data, function(info)
+				return check(info)
 			end)
-			result, msg = _obj_0.result, _obj_0.msg
-		end
+		end)
+		result, msg = _obj_0.result, _obj_0.msg
 	end
 	print(result, msg)
 	local totalSize = reduce(((function()

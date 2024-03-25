@@ -82,15 +82,13 @@ end
 do
 	local _u7ed3_u679c, _u6d88_u606f
 	do
-		do
-			local _obj_0 = _u5f02_u6b65_u63a5_u6536("文件名.txt", function(_u6570_u636e)
-				_u6253_u5370(_u6570_u636e)
-				return _u5f02_u6b65_u5904_u7406(_u6570_u636e, function(_u4fe1_u606f)
-					return _u68c0_u67e5(_u4fe1_u606f)
-				end)
+		local _obj_0 = _u5f02_u6b65_u63a5_u6536("文件名.txt", function(_u6570_u636e)
+			_u6253_u5370(_u6570_u636e)
+			return _u5f02_u6b65_u5904_u7406(_u6570_u636e, function(_u4fe1_u606f)
+				return _u68c0_u67e5(_u4fe1_u606f)
 			end)
-			_u7ed3_u679c, _u6d88_u606f = _obj_0["结果"], _obj_0["消息"]
-		end
+		end)
+		_u7ed3_u679c, _u6d88_u606f = _obj_0["结果"], _obj_0["消息"]
 	end
 	_u6253_u5370(_u7ed3_u679c, _u6d88_u606f)
 	local _u603b_u5927_u5c0f = _u5408_u5e76(((function()

@@ -54,15 +54,11 @@ return __u65e0_u6548_u53d8_u91cf(function()
 		local _u5143_u7d20a, _u5143_u7d20b
 		local _exp_0 = _u5bf9_u8c61c
 		if "a" == _exp_0 then
-			do
-				local _obj_0 = _u5b57_u5178
-				_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
-			end
+			local _obj_0 = _u5b57_u5178
+			_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
 		elseif "b" == _exp_0 then
-			do
-				local _obj_0 = _u51fd_u6570()
-				_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
-			end
+			local _obj_0 = _u51fd_u6570()
+			_u5143_u7d20a, _u5143_u7d20b = _obj_0[1], _obj_0[2]
 		end
 	end
 	do

@@ -10,10 +10,8 @@ do
 		a, b, c = _obj_0[1][1], _obj_0[2], _obj_0[3][1]
 	end
 	local hello, world
-	do
-		local _obj_0 = value
-		hello, world = _obj_0.hello, _obj_0.world
-	end
+	local _obj_0 = value
+	hello, world = _obj_0.hello, _obj_0.world
 end
 do
 	local no, thing
@@ -49,17 +47,13 @@ do
 	end
 	do
 		c = nil
-		do
-			local _obj_0 = tbl
-			a, b = _obj_0.a, _obj_0.b
-		end
+		local _obj_0 = tbl
+		a, b = _obj_0.a, _obj_0.b
 	end
 	do
 		a = tbl
-		do
-			local _obj_0 = _
-			b, c = _obj_0.b, _obj_0.c
-		end
+		local _obj_0 = _
+		b, c = _obj_0.b, _obj_0.c
 	end
 	do
 		b = _
@@ -88,17 +82,13 @@ do
 end
 do
 	local c, e
-	do
-		local _obj_0 = tb
-		c, e = _obj_0.a.b, _obj_0.a.d
-	end
+	local _obj_0 = tb
+	c, e = _obj_0.a.b, _obj_0.a.d
 end
 do
 	local c, e, f
-	do
-		local _obj_0 = tb
-		c, e, f = _obj_0.a[1].b, _obj_0.a[2].d, _obj_0.a[3]
-	end
+	local _obj_0 = tb
+	c, e, f = _obj_0.a[1].b, _obj_0.a[2].d, _obj_0.a[3]
 end
 do
 	self.world = x[1]
@@ -169,10 +159,8 @@ do
 end
 do
 	local a, b, c
-	do
-		local _obj_0 = z
-		a, b, c = _obj_0[1], _obj_0[2], _obj_0[3]
-	end
+	local _obj_0 = z
+	a, b, c = _obj_0[1], _obj_0[2], _obj_0[3]
 end
 local _
 _ = function(z)
@@ -189,21 +177,17 @@ do
 end
 do
 	local a, b, c
-	do
-		local _obj_0 = thing
-		a, b, c = _obj_0["if"][1], _obj_0["if"][2], _obj_0["if"][3]
-	end
+	local _obj_0 = thing
+	a, b, c = _obj_0["if"][1], _obj_0["if"][2], _obj_0["if"][3]
 end
 do
 	local a, b
 	if true then
-		do
-			local _obj_0 = {
-				a = "Hello",
-				b = "World"
-			}
-			a, b = _obj_0.a, _obj_0.b
-		end
+		local _obj_0 = {
+			a = "Hello",
+			b = "World"
+		}
+		a, b = _obj_0.a, _obj_0.b
 	end
 	local days, hours, mins, secs
 	do
@@ -305,41 +289,33 @@ do
 			end
 		end
 	end
-	do
-		local _tmp_0
-		do
-			local _obj_0 = getmetatable(tb)
-			_tmp_0 = _obj_0.func
+	local _tmp_0
+	local _obj_0 = getmetatable(tb)
+	_tmp_0 = _obj_0.func
+	if _tmp_0 == nil then
+		local _obj_1 = item
+		if _obj_1 ~= nil then
+			_tmp_0 = _obj_1.defVal
 		end
-		if _tmp_0 == nil then
-			local _obj_0 = item
-			if _obj_0 ~= nil then
-				_tmp_0 = _obj_0.defVal
-			end
-		end
-		a.b(function()
-			return 123
-		end).c = _tmp_0
+	end
+	a.b(function()
+		return 123
+	end).c = _tmp_0
+end
+do
+	local mt, subFunc
+	local _obj_0 = getmetatable(tb.x)
+	mt, subFunc = _obj_0, _obj_0.__sub
+	if mt == nil then
+		mt = { }
 	end
 end
 do
 	local mt, subFunc
-	do
-		local _obj_0 = getmetatable(tb.x)
-		mt, subFunc = _obj_0, _obj_0.__sub
-		if mt == nil then
-			mt = { }
-		end
-	end
-end
-do
-	local mt, subFunc
-	do
-		local _obj_0 = tb
-		mt, subFunc = getmetatable(_obj_0.x), getmetatable(_obj_0.x).__sub
-		if mt == nil then
-			mt = { }
-		end
+	local _obj_0 = tb
+	mt, subFunc = getmetatable(_obj_0.x), getmetatable(_obj_0.x).__sub
+	if mt == nil then
+		mt = { }
 	end
 end
 do
@@ -386,31 +362,25 @@ do
 end
 do
 	local a, b
-	do
-		local _obj_0 = tb
-		a, b = _obj_0[2], _obj_0[4]
-	end
+	local _obj_0 = tb
+	a, b = _obj_0[2], _obj_0[4]
 end
 do
 	local a, b
-	do
-		local _obj_0 = tb
-		a, b = _obj_0[1], _obj_0[3]
-	end
+	local _obj_0 = tb
+	a, b = _obj_0[1], _obj_0[3]
 end
 do
-	do
-		local _obj_0 = x.x.x
-		local _tmp_0, _tmp_1 = _obj_0.x, _obj_0.y
-		if _tmp_0 == nil then
-			_tmp_0 = 1
-		end
-		if _tmp_1 == nil then
-			_tmp_1 = 2
-		end
-		a.b = _tmp_0
-		a.c = _tmp_1
+	local _obj_0 = x.x.x
+	local _tmp_0, _tmp_1 = _obj_0.x, _obj_0.y
+	if _tmp_0 == nil then
+		_tmp_0 = 1
 	end
+	if _tmp_1 == nil then
+		_tmp_1 = 2
+	end
+	a.b = _tmp_0
+	a.c = _tmp_1
 end
 do
 	local width, height
@@ -419,15 +389,13 @@ do
 		width, height = _obj_0.width, _obj_0.height
 	end
 	local x, y
-	do
-		local _obj_0 = point
-		x, y = _obj_0.x, _obj_0.y
-		if x == nil then
-			x = 0.0
-		end
-		if y == nil then
-			y = 0.0
-		end
+	local _obj_0 = point
+	x, y = _obj_0.x, _obj_0.y
+	if x == nil then
+		x = 0.0
+	end
+	if y == nil then
+		y = 0.0
 	end
 end
 do
@@ -451,29 +419,25 @@ do
 end
 do
 	local v1, v2, v3, v4
-	do
-		local _obj_0 = tb
-		local _tmp_0, _tmp_1 = 1 + 1, self.x
-		v1, v2, v3, v4 = _obj_0[ [["abc"]]], _obj_0[_tmp_0][1], _obj_0[_tmp_0][2], _obj_0[_tmp_1]
-		if v1 == nil then
-			v1 = 111
-		end
-		if v2 == nil then
-			v2 = 222
-		end
-		if v3 == nil then
-			v3 = 333
-		end
-		if v4 == nil then
-			v4 = 444
-		end
+	local _obj_0 = tb
+	local _tmp_0, _tmp_1 = 1 + 1, self.x
+	v1, v2, v3, v4 = _obj_0[ [["abc"]]], _obj_0[_tmp_0][1], _obj_0[_tmp_0][2], _obj_0[_tmp_1]
+	if v1 == nil then
+		v1 = 111
+	end
+	if v2 == nil then
+		v2 = 222
+	end
+	if v3 == nil then
+		v3 = 333
+	end
+	if v4 == nil then
+		v4 = 444
 	end
 	local v5, v6, v7
-	do
-		local _obj_0 = tb2
-		local _tmp_2, _tmp_3 = func(), func2()
-		v5, v6, v7 = _obj_0['x-y-z'], _obj_0[_tmp_2][_tmp_3], _obj_0[_tmp_2][1]
-	end
+	local _obj_1 = tb2
+	local _tmp_2, _tmp_3 = func(), func2()
+	v5, v6, v7 = _obj_1['x-y-z'], _obj_1[_tmp_2][_tmp_3], _obj_1[_tmp_2][1]
 end
 do
 	local value, value_meta
@@ -512,16 +476,12 @@ do
 end
 do
 	local tb = { }
-	do
-		local _tmp_0 = c()
-		local v2 = tb[_tmp_0]
-	end
+	local _tmp_0 = c()
+	local v2 = tb[_tmp_0]
 	local v1
-	do
-		local _obj_0 = getmetatable(tb)
-		local _tmp_1 = a + b
-		v1 = _obj_0[_tmp_1]
-	end
+	local _obj_0 = getmetatable(tb)
+	local _tmp_1 = a + b
+	v1 = _obj_0[_tmp_1]
 end
 do
 	local add, field

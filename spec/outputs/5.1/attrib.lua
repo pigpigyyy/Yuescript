@@ -38,13 +38,11 @@ do
 end
 do
 	local a, b
-	do
-		local _obj_0 = {
-			2,
-			3
-		}
-		a, b = _obj_0[1], _obj_0[2]
-	end
+	local _obj_0 = {
+		2,
+		3
+	}
+	a, b = _obj_0[1], _obj_0[2]
 end
 local _anon_func_0 = function(_close_1, error, f, _arg_0, ...)
 	do
