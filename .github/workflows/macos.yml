@@ -18,7 +18,7 @@ jobs:
       - name: build-test
         run: |
           brew install luarocks
-          luarocks install busted
+          sudo luarocks install busted
           luarocks make
           make test
       - name: luarocks upload
