@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.2"sv;
+const std::string_view version = "0.23.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -7312,6 +7312,9 @@ private:
 		}
 		switch (loopTarget->get_id()) {
 			case id<StarExp_t>(): {
+				if (!varConstAfter.empty()) {
+					varConstAfter.clear();
+				}
 				auto star_exp = static_cast<StarExp_t*>(loopTarget);
 				auto listVar = singleVariableFrom(star_exp->value, AccessType::Read);
 				if (!isLocal(listVar)) listVar.clear();
