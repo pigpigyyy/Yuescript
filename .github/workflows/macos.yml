@@ -19,7 +19,7 @@ jobs:
         run: |
           brew install luarocks
           sudo luarocks install busted
-          luarocks make
+          sudo luarocks make
           make test
       - name: luarocks upload
         if: startsWith(github.ref, 'refs/tags/')
