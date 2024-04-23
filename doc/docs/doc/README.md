@@ -1113,7 +1113,7 @@ obj2 = {
   }
 }
 
-{numbers: [first, second]} = obj2
+{numbers: [first, second], properties: {color: color}} = obj2
 print first, second, color
 ```
 <YueDisplay>
