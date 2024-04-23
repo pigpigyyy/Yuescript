@@ -522,7 +522,7 @@ local obj2 = {
 		height = 13.5
 	}
 }
-local first, second = obj2.numbers[1], obj2.numbers[2]
+local first, second, color = obj2.numbers[1], obj2.numbers[2], obj2.properties.color
 print(first, second, color)
 local first, second, color
 local _obj_0 = obj2
