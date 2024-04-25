@@ -1,6 +1,6 @@
 R"lua_codes(
 --[[
-Copyright (c) 2010 Ignacio Burgueño, modified by Li Jin
+Copyright (c) 2010 Ignacio Burgueño, modified by Li Jin, 2024
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -335,7 +335,7 @@ local function getYueLineNumber(fname, line)
 		end
 		if file_exist then
 			local codes = yue.read_file(file_path)
-			local yueFile = codes:match("^%s*--%s*%[.*%]:%s*([^\n]*)")
+			local yueFile = codes:match("^%s*%-%-%s*%[[^%]]*%]:%s*([^\n]*)")
 			if yueFile then
 				fname = yueFile:gsub("^%s*(.-)%s*$", "%1")
 				source = codes
@@ -346,7 +346,7 @@ local function getYueLineNumber(fname, line)
 		local current, target = 1, tonumber(line)
 		local findLine = line
 		for lineCode in source:gmatch("([^\r\n]*)\r?\n?") do
-			local num = lineCode:match("--%s*(%d+)%s*$")
+			local num = lineCode:match("%-%-%s*(%d+)%s*$")
 			if num then
 				findLine = num
 			end
