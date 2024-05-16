@@ -1,60 +1,60 @@
-try
-	func 1, 2, 3
-catch err
-	print err
-
-try func 1, 2, 3
-catch err
-	print err
-
-try
-	print "trying"
-	func 1, 2, 3
-
-do
-	success, result = try
-		func 1, 2, 3
-	catch err
-		print err
-
-	success, result = try func 1, 2, 3
-
-try tb.func
-try tb.func!
-try tb.func()
-try (tb.func!)
-try (tb\func(1, 2, 3))
-
-try tb.func 1
-try tb.func(1)
-
-if (try func 1
-catch err
-	print err)
-	print "OK"
-
-if try (func 1)
-catch err
-		print err
-	print "OK"
-
-do
-	if success, result := try func "abc", 123
-		print result
-
-	success, result = try func "abc", 123
-	catch err
-		print err
-
-	print result if success, result := try func "abc", 123
-	catch err
-		print err
-
-do
+f = ->
 	try
 		func 1, 2, 3
+	catch err
+		print err
 
 	try func 1, 2, 3
+	catch err
+		print err
 
-nil
+	try
+		print "trying"
+		func 1, 2, 3
 
+	do
+		success, result = try
+			func 1, 2, 3
+		catch err
+			print err
+
+		success, result = try func 1, 2, 3
+
+	try tb.func
+	try tb.func!
+	try tb.func()
+	try (tb.func!)
+	try (tb\func(1, 2, 3))
+
+	try tb.func 1
+	try tb.func(1)
+
+	if (try func 1
+	catch err
+		print err)
+		print "OK"
+
+	if try (func 1)
+	catch err
+			print err
+		print "OK"
+
+	do
+		if success, result := try func "abc", 123
+			print result
+
+		success, result = try func "abc", 123
+		catch err
+			print err
+
+		print result if success, result := try func "abc", 123
+		catch err
+			print err
+
+	do
+		try
+			func 1, 2, 3
+
+		try func 1, 2, 3
+
+	nil

@@ -14,19 +14,28 @@ do
 	end, 1, 2, 3)
 	_u6210_u529f, _u7ed3_u679c = pcall(_u51fd_u6570, 1, 2, 3)
 end
-pcall(_u8868["函数"])
-pcall(_u8868["函数"])
-pcall(_u8868["函数"])
-pcall((_u8868["函数"]))
-pcall(((function()
-	local _base_0 = _u8868
-	local _fn_0 = _base_0["函数"]
-	return _fn_0 and function(...)
-		return _fn_0(_base_0, ...)
-	end
-end)()), 1, 2, 3)
-pcall(_u8868["函数"], 1)
-pcall(_u8868["函数"], 1)
+pcall(function()
+	return _u8868["函数"]
+end)
+pcall(function()
+	return _u8868["函数"]()
+end)
+pcall(function()
+	return _u8868["函数"]()
+end)
+pcall(function()
+	return _u8868["函数"]()
+end)
+pcall(function()
+	local _call_0 = _u8868
+	return _call_0["函数"](_call_0, 1, 2, 3)
+end)
+pcall(function()
+	return _u8868["函数"](1)
+end)
+pcall(function()
+	return _u8868["函数"](1)
+end)
 if (xpcall(_u51fd_u6570, function(_u9519_u8bef)
 	return _u6253_u5370(_u9519_u8bef)
 end, 1)) then
@@ -55,7 +64,7 @@ do
 	end
 end
 do
-pcall(_u51fd_u6570, 1, 2, 3)
-pcall(_u51fd_u6570, 1, 2, 3)
+	pcall(_u51fd_u6570, 1, 2, 3)
+	pcall(_u51fd_u6570, 1, 2, 3)
 end
 return nil

@@ -1,61 +1,80 @@
-xpcall(func, function(err)
-	return print(err)
-end, 1, 2, 3)
-xpcall(func, function(err)
-	return print(err)
-end, 1, 2, 3)
-pcall(function()
+local _anon_func_0 = function(func, print)
 	print("trying")
 	return func(1, 2, 3)
-end)
-do
-	local success, result = xpcall(func, function(err)
+end
+local _anon_func_1 = function(tb)
+	return tb.func
+end
+local _anon_func_2 = function(tb)
+	return tb.func()
+end
+local _anon_func_3 = function(tb)
+	return tb.func()
+end
+local _anon_func_4 = function(tb)
+	return tb.func()
+end
+local _anon_func_5 = function(tb)
+	return tb:func(1, 2, 3)
+end
+local _anon_func_6 = function(tb)
+	return tb.func(1)
+end
+local _anon_func_7 = function(tb)
+	return tb.func(1)
+end
+local f
+f = function()
+	xpcall(func, function(err)
 		return print(err)
 	end, 1, 2, 3)
-	success, result = pcall(func, 1, 2, 3)
-end
-pcall(tb.func)
-pcall(tb.func)
-pcall(tb.func)
-pcall((tb.func))
-pcall(((function()
-	local _base_0 = tb
-	local _fn_0 = _base_0.func
-	return _fn_0 and function(...)
-		return _fn_0(_base_0, ...)
-	end
-end)()), 1, 2, 3)
-pcall(tb.func, 1)
-pcall(tb.func, 1)
-if (xpcall(func, function(err)
-	return print(err)
-end, 1)) then
-	print("OK")
-end
-if xpcall((func), function(err)
-	return print(err)
-end, 1) then
-	print("OK")
-end
-do
+	xpcall(func, function(err)
+		return print(err)
+	end, 1, 2, 3)
+	pcall(_anon_func_0, func, print)
 	do
-		local success, result = pcall(func, "abc", 123)
+		local success, result = xpcall(func, function(err)
+			return print(err)
+		end, 1, 2, 3)
+		success, result = pcall(func, 1, 2, 3)
+	end
+	pcall(_anon_func_1, tb)
+	pcall(_anon_func_2, tb)
+	pcall(_anon_func_3, tb)
+	pcall(_anon_func_4, tb)
+	pcall(_anon_func_5, tb)
+	pcall(_anon_func_6, tb)
+	pcall(_anon_func_7, tb)
+	if (xpcall(func, function(err)
+		return print(err)
+	end, 1)) then
+		print("OK")
+	end
+	if xpcall((func), function(err)
+		return print(err)
+	end, 1) then
+		print("OK")
+	end
+	do
+		do
+			local success, result = pcall(func, "abc", 123)
+			if success then
+				print(result)
+			end
+		end
+		local success, result = xpcall(func, function(err)
+			return print(err)
+		end, "abc", 123)
+		success, result = xpcall(func, function(err)
+			return print(err)
+		end, "abc", 123)
 		if success then
 			print(result)
 		end
 	end
-	local success, result = xpcall(func, function(err)
-		return print(err)
-	end, "abc", 123)
-	success, result = xpcall(func, function(err)
-		return print(err)
-	end, "abc", 123)
-	if success then
-		print(result)
+	do
+		pcall(func, 1, 2, 3)
+		pcall(func, 1, 2, 3)
 	end
+	return nil
 end
-do
-pcall(func, 1, 2, 3)
-pcall(func, 1, 2, 3)
-end
-return nil

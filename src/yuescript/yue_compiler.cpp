@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.3"sv;
+const std::string_view version = "0.23.4"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -4663,8 +4663,10 @@ private:
 				return 503;
 			} else if (target.value() == "5.4"sv) {
 				return 504;
+			} else if (target.value() == "5.5"sv) {
+				return 505;
 			} else {
-				throw CompileError("get invalid Lua target \""s + target.value() + "\", should be 5.1, 5.2, 5.3 or 5.4"s, x);
+				throw CompileError("get invalid Lua target \""s + target.value() + "\", should be from 5.1 to 5.5"s, x);
 			}
 		}
 #ifndef YUE_NO_MACRO
@@ -9112,7 +9114,9 @@ private:
 			body->content.set(tryNode->catchBlock->block);
 			funLit->body.set(body);
 		}
-		if (auto tryBlock = tryNode->func.as<Block_t>()) {
+		ast_sel<false, Block_t, Exp_t> tryFunc;
+		tryFunc.set(tryNode->func);
+		if (auto tryBlock = tryFunc.as<Block_t>()) {
 			BLOCK_START
 			BREAK_IF(tryBlock->statements.size() != 1);
 			auto stmt = static_cast<Statement_t*>(tryBlock->statements.front());
@@ -9124,11 +9128,43 @@ private:
 			auto chainValue = value->item.as<ChainValue_t>();
 			BREAK_IF(!chainValue);
 			BREAK_IF(!isChainValueCall(chainValue));
-			tryNode->func.set(expListAssign->expList->exprs.front());
+			auto tmpChain = chainValue->new_ptr<ChainValue_t>();
+			tmpChain->items.dup(chainValue->items);
+			tmpChain->items.pop_back();
+			auto var = singleVariableFrom(tmpChain, AccessType::None);
+			BREAK_IF(var.empty());
+			tryFunc.set(expListAssign->expList->exprs.front());
 			BLOCK_END
+		} else {
+			auto tryExp = tryFunc.as<Exp_t>();
+			bool needWrap = singleVariableFrom(tryExp, AccessType::None).empty();
+			BLOCK_START
+			auto value = singleValueFrom(tryExp);
+			BREAK_IF(!value);
+			auto chainValue = value->item.as<ChainValue_t>();
+			BREAK_IF(!chainValue);
+			BREAK_IF(!isChainValueCall(chainValue));
+			auto tmpChain = chainValue->new_ptr<ChainValue_t>();
+			tmpChain->items.dup(chainValue->items);
+			tmpChain->items.pop_back();
+			auto var = singleVariableFrom(tmpChain, AccessType::None);
+			BREAK_IF(var.empty());
+			needWrap = false;
+			BLOCK_END
+			if (needWrap) {
+				auto expList = x->new_ptr<ExpList_t>();
+				expList->exprs.push_back(tryFunc);
+				auto expListAssign = x->new_ptr<ExpListAssign_t>();
+				expListAssign->expList.set(expList);
+				auto stmt = x->new_ptr<Statement_t>();
+				stmt->content.set(expListAssign);
+				auto block = x->new_ptr<Block_t>();
+				block->statements.push_back(stmt);
+				tryFunc.set(block);
+			}
 		}
-		if (auto tryBlock = tryNode->func.as<Block_t>()) {
-			{
+		if (auto tryBlock = tryFunc.as<Block_t>()) {
+			if (getLuaTarget(tryBlock) >= 502 || !errHandler) {
 				if (auto result = upValueFuncFrom(tryBlock)) {
 					auto [funcName, args] = std::move(*result);
 					if (errHandler) {
@@ -9150,6 +9186,7 @@ private:
 						transformChainValue(pcall, out, ExpUsage::Closure);
 					}
 					if (usage == ExpUsage::Common) {
+						out.back().insert(0, indent());
 						out.back().append(nlr(x));
 					}
 					return;
@@ -9173,19 +9210,25 @@ private:
 				transformChainValue(pcall, out, ExpUsage::Closure);
 			}
 			if (usage == ExpUsage::Common) {
+				out.back().insert(0, indent());
 				out.back().append(nlr(x));
 			}
 			return;
-		} else if (auto value = singleValueFrom(tryNode->func)) {
+		} else if (auto value = singleValueFrom(tryFunc)) {
 			BLOCK_START
 			auto chainValue = value->item.as<ChainValue_t>();
 			BREAK_IF(!chainValue);
 			BREAK_IF(!isChainValueCall(chainValue));
+			auto tmpChain = chainValue->new_ptr<ChainValue_t>();
+			tmpChain->items.dup(chainValue->items);
+			tmpChain->items.pop_back();
+			auto var = singleVariableFrom(tmpChain, AccessType::None);
+			BREAK_IF(var.empty());
 			if (errHandler && getLuaTarget(x) < 502) {
 				auto tryExp = toAst<Exp_t>("->"sv, x);
 				auto funLit = simpleSingleValueFrom(tryExp)->value.to<FunLit_t>();
 				auto expList = x->new_ptr<ExpList_t>();
-				expList->exprs.push_back(tryNode->func);
+				expList->exprs.push_back(tryFunc);
 				auto expListAssign = x->new_ptr<ExpListAssign_t>();
 				expListAssign->expList.set(expList);
 				auto stmt = x->new_ptr<Statement_t>();
@@ -9210,7 +9253,7 @@ private:
 				if (errHandler) {
 					auto xpcall = toAst<ChainValue_t>("xpcall()", x);
 					auto invoke = ast_to<Invoke_t>(xpcall->items.back());
-					invoke->args.push_back(tryNode->func);
+					invoke->args.push_back(tryFunc);
 					invoke->args.push_back(errHandler);
 					for (auto arg : args->objects()) {
 						invoke->args.push_back(arg);
@@ -9219,7 +9262,7 @@ private:
 				} else {
 					auto pcall = toAst<ChainValue_t>("pcall()", x);
 					auto invoke = ast_to<Invoke_t>(pcall->items.back());
-					invoke->args.push_back(tryNode->func);
+					invoke->args.push_back(tryFunc);
 					for (auto arg : args->objects()) {
 						invoke->args.push_back(arg);
 					}
@@ -9227,6 +9270,7 @@ private:
 				}
 			}
 			if (usage == ExpUsage::Common) {
+				out.back().insert(0, indent());
 				out.back().append(nlr(x));
 			}
 			return;
@@ -9235,16 +9279,17 @@ private:
 		if (errHandler) {
 			auto xpcall = toAst<ChainValue_t>("xpcall()", x);
 			auto invoke = ast_to<Invoke_t>(xpcall->items.back());
-			invoke->args.push_back(tryNode->func);
+			invoke->args.push_back(tryFunc);
 			invoke->args.push_back(errHandler);
 			transformChainValue(xpcall, out, ExpUsage::Closure);
 		} else {
 			auto pcall = toAst<ChainValue_t>("pcall()", x);
 			auto invoke = ast_to<Invoke_t>(pcall->items.back());
-			invoke->args.push_back(tryNode->func);
+			invoke->args.push_back(tryFunc);
 			transformChainValue(pcall, out, ExpUsage::Closure);
 		}
 		if (usage == ExpUsage::Common) {
+			out.back().insert(0, indent());
 			out.back().append(nlr(x));
 		}
 	}
