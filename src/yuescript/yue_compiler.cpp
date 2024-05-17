@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.4"sv;
+const std::string_view version = "0.23.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -575,6 +575,273 @@ private:
 		if (isConst(name)) {
 			throw CompileError("attempt to assign to const variable '"s + name + '\'', x);
 		}
+	}
+
+	bool isConstTableItem(ast_node* item) {
+		switch (item->get_id()) {
+			case id<VariablePairDef_t>(): {
+				auto pair = static_cast<VariablePairDef_t*>(item);
+				if (pair->defVal) return false;
+				return isConstTableItem(pair->pair);
+			}
+			case id<NormalPairDef_t>(): {
+				auto pair = static_cast<NormalPairDef_t*>(item);
+				if (pair->defVal) return false;
+				return isConstTableItem(pair->pair);
+			}
+			case id<MetaVariablePairDef_t>(): {
+				auto pair = static_cast<MetaVariablePairDef_t*>(item);
+				if (pair->defVal) return false;
+				return isConstTableItem(pair->pair);
+			}
+			case id<MetaNormalPairDef_t>(): {
+				auto pair = static_cast<MetaNormalPairDef_t*>(item);
+				if (pair->defVal) return false;
+				return isConstTableItem(pair->pair);
+			}
+			case id<NormalDef_t>(): {
+				auto pair = static_cast<NormalDef_t*>(item);
+				if (pair->defVal) return false;
+				return isConstTableItem(pair->item);
+			}
+			case id<Exp_t>(): {
+				auto pair = static_cast<Exp_t*>(item);
+				return isConstExp(pair);
+			}
+			case id<VariablePair_t>(): {
+				auto pair = static_cast<VariablePair_t*>(item);
+				return isLocal(variableToString(pair->name));
+			}
+			case id<NormalPair_t>(): {
+				auto pair = static_cast<NormalPair_t*>(item);
+				if (auto exp = pair->key.as<Exp_t>()) {
+					if (!isConstExp(exp)) {
+						return false;
+					}
+				}
+				if (auto exp = pair->value.as<Exp_t>()) {
+					if (!isConstExp(exp)) {
+						return false;
+					}
+				} else if (auto tbBlock = pair->value.as<TableBlock_t>()) {
+					if (!isConstTable(tbBlock)) {
+						return false;
+					}
+				} else {
+					return false;
+				}
+				return true;
+			}
+			case id<TableBlockIndent_t>(): {
+				auto pair = static_cast<TableBlockIndent_t*>(item);
+				return isConstTable(pair);
+			}
+			case id<TableBlock_t>(): {
+				auto pair = static_cast<TableBlock_t*>(item);
+				return isConstTable(pair);
+				break;
+			}
+			case id<MetaVariablePair_t>(): {
+				auto pair = static_cast<MetaVariablePair_t*>(item);
+				return isLocal(variableToString(pair->name));
+			}
+			case id<MetaNormalPair_t>(): {
+				auto pair = static_cast<MetaNormalPair_t*>(item);
+				if (auto str = pair->key.as<String_t>()) {
+					if (!ast_is<SingleString_t, LuaString_t>(str)) {
+						return false;
+					}
+				} else if (auto exp = pair->key.as<Exp_t>()) {
+					if (!isConstExp(exp)) {
+						return false;
+					}
+				} else if (pair->key.is<Name_t>()) {
+					return true;
+				} else {
+					return false;
+				}
+				if (auto exp = pair->value.as<Exp_t>()) {
+					if (!isConstExp(exp)) {
+						return false;
+					}
+				} else if (auto tbBlock = pair->value.as<TableBlock_t>()) {
+					if (!isConstTable(tbBlock)) {
+						return false;
+					}
+				} else {
+					return false;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool isConstTable(TableLit_t* tableLit) {
+		for (auto value : tableLit->values.objects()) {
+			if (!isConstTableItem(value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool isConstTable(TableBlock_t* tableBlock) {
+		for (auto value : tableBlock->values.objects()) {
+			if (!isConstTableItem(value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool isConstTable(SimpleTable_t* stable) {
+		for (auto value : stable->pairs.objects()) {
+			if (!isConstTableItem(value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool isConstTable(TableBlockIndent_t* table) {
+		for (auto value : table->values.objects()) {
+			if (!isConstTableItem(value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool isConstChainValue(ChainValue_t* value) {
+		auto var = singleVariableFrom(value, AccessType::None);
+		return isLocal(var);
+	}
+
+	bool isConstUnaryValue(UnaryValue_t* value) {
+		if (value->ops.size() > 1) {
+			return false;
+		}
+		auto unaryStr = _parser.toString(value->ops.front());
+		if (unaryStr == "-"sv) {
+			return value->value->item->get_by_path<SimpleValue_t, Num_t>();
+		} else if (unaryStr == "#"sv) {
+			return false;
+		} else if (unaryStr == "not"sv) {
+			return isConstValue(value->value);
+		}
+		return false;
+	}
+
+	bool isConstNum(Value_t* value) {
+		return value->get_by_path<SimpleValue_t, Num_t>();
+	}
+
+	bool isConstUnaryExp(UnaryExp_t* value) {
+		if (value->inExp) return false;
+		if (value->ops.size() == 0) {
+			if (value->expos.size() == 1) {
+				return isConstValue(static_cast<Value_t*>(value->expos.front()));
+			}
+			for (auto expo : value->expos.objects()) {
+				if (!isConstNum(static_cast<Value_t*>(expo))) {
+					return false;
+				}
+			}
+			return true;
+		}
+		if (value->ops.size() > 1) {
+			return false;
+		}
+		auto unaryStr = _parser.toString(value->ops.front());
+		if (unaryStr == "-"sv) {
+			for (auto expo : value->expos.objects()) {
+				if (!isConstNum(static_cast<Value_t*>(expo))) {
+					return false;
+				}
+			}
+			return true;
+		} else if (unaryStr == "#"sv) {
+			return false;
+		} else if (unaryStr == "not"sv) {
+			if (value->expos.size() == 1) {
+				return isConstValue(static_cast<Value_t*>(value->expos.front()));
+			}
+			for (auto expo : value->expos.objects()) {
+				if (!isConstNum(static_cast<Value_t*>(expo))) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
+	bool isConstValue(Value_t* value) {
+		if (auto strNode = value->item.as<String_t>()) {
+			switch (strNode->str->get_id()) {
+				case id<SingleString_t>():
+				case id<LuaString_t>():
+					return true;
+				case id<DoubleString_t>():
+					return false;
+				default:
+					YUEE("AST node mismatch", strNode->str);
+					return false;
+			}
+		} else if (auto chainValue = value->item.as<ChainValue_t>()) {
+			return isConstChainValue(chainValue);
+		} else if (auto simpleValue = value->item.as<SimpleValue_t>()) {
+			if (ast_is<ConstValue_t, Num_t, VarArg_t, FunLit_t>(simpleValue->value.get())) {
+				return true;
+			} else if (auto uValue = simpleValue->value.as<UnaryValue_t>()) {
+				return isConstUnaryValue(uValue);
+			} else if (auto comp = simpleValue->value.as<Comprehension_t>()) {
+				for (auto item : comp->items.objects()) {
+					if (auto ndef = ast_cast<NormalDef_t>(item)) {
+						if (ndef->defVal) {
+							return false;
+						}
+						if (!isConstExp(ndef->item)) {
+							return false;
+						}
+					} else {
+						return false;
+					}
+				}
+				return true;
+			} else if (auto tableLit = simpleValue->value.as<TableLit_t>()) {
+				return isConstTable(tableLit);
+			} else {
+				return false;
+			}
+		} else if (auto simpleTable = value->item.as<SimpleTable_t>()) {
+			return isConstTable(simpleTable);
+		}
+		return false;
+	}
+
+	bool isConstUnaryExps(const ast_list<true, UnaryExp_t>& list) {
+		if (list.size() > 1) {
+			return false;
+		}
+		if (!isConstUnaryExp(static_cast<UnaryExp_t*>(list.front()))) {
+			return false;
+		}
+		return true;
+	}
+
+	bool isConstExp(Exp_t* exp) {
+		if (exp->nilCoalesed) {
+			return false;
+		}
+		if (!isConstUnaryExps(exp->pipeExprs)) {
+			return false;
+		}
+		if (exp->opValues.empty()) {
+			return true;
+		}
+		return false;
 	}
 
 	void markVarConst(const std::string& name) {
@@ -3691,7 +3958,7 @@ private:
 		}) != traversal::Stop;
 	}
 
-	std::optional<std::pair<std::string, str_list>> getUpValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd) {
+	std::optional<std::pair<std::string, str_list>> getUpValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd, bool noGlobalVarPassing) {
 		if (_funcLevel <= 1) return std::nullopt;
 		auto result = block->traverse([&](ast_node* node) {
 			switch (node->get_id()) {
@@ -3754,6 +4021,9 @@ private:
 						} else if (std::find(args.begin(), args.end(), global.name) == args.end()) {
 							args.push_back(global.name);
 						}
+						if (noGlobalVarPassing && !isLocal(global.name)) {
+							return std::nullopt;
+						}
 					}
 				}
 			}
@@ -3809,9 +4079,9 @@ private:
 	}
 
 
-	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Block_t* block, str_list* ensureArgListInTheEnd = nullptr) {
+	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Block_t* block, str_list* ensureArgListInTheEnd = nullptr, bool noGlobalVarPassing = false) {
 		if (checkUpValueFuncAvailable(block)) {
-			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd);
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, noGlobalVarPassing);
 		}
 		return std::nullopt;
 	}
@@ -3826,7 +4096,7 @@ private:
 			auto stmt = exp->new_ptr<Statement_t>();
 			stmt->content.set(returnNode);
 			block->statements.push_back(stmt);
-			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd);
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, false);
 		}
 		return std::nullopt;
 	}
@@ -9135,23 +9405,47 @@ private:
 			BREAK_IF(var.empty());
 			tryFunc.set(expListAssign->expList->exprs.front());
 			BLOCK_END
-		} else {
-			auto tryExp = tryFunc.as<Exp_t>();
-			bool needWrap = singleVariableFrom(tryExp, AccessType::None).empty();
+		}
+		if (auto tryExp = tryFunc.as<Exp_t>()) {
+			bool wrapped = true;
 			BLOCK_START
 			auto value = singleValueFrom(tryExp);
 			BREAK_IF(!value);
 			auto chainValue = value->item.as<ChainValue_t>();
 			BREAK_IF(!chainValue);
 			BREAK_IF(!isChainValueCall(chainValue));
-			auto tmpChain = chainValue->new_ptr<ChainValue_t>();
-			tmpChain->items.dup(chainValue->items);
-			tmpChain->items.pop_back();
-			auto var = singleVariableFrom(tmpChain, AccessType::None);
-			BREAK_IF(var.empty());
-			needWrap = false;
+			auto chainCaller = chainValue->new_ptr<ChainValue_t>();
+			chainCaller->items.dup(chainValue->items);
+			chainCaller->items.pop_back();
+			BREAK_IF(!isConstChainValue(chainCaller));
+			_ast_list* args = nullptr;
+			if (auto invoke = ast_cast<InvokeArgs_t>(chainValue->items.back())) {
+				args = &invoke->args;
+			} else {
+				args = &(ast_to<Invoke_t>(chainValue->items.back())->args);
+			}
+			wrapped = false;
+			for (auto arg : args->objects()) {
+				switch (arg->get_id()) {
+					case id<Exp_t>():
+						if (isConstExp(static_cast<Exp_t*>(arg))) continue;
+						break;
+					case id<SingleString_t>():
+					case id<LuaString_t>():
+						continue;
+					case id<DoubleString_t>():
+						break;
+					case id<TableLit_t>():
+						if (isConstTable(static_cast<TableLit_t*>(arg))) continue;
+						break;
+					case id<TableBlock_t>():
+						if (isConstTable(static_cast<TableBlock_t*>(arg))) continue;
+						break;
+				}
+				wrapped = true;
+			}
 			BLOCK_END
-			if (needWrap) {
+			if (wrapped) {
 				auto expList = x->new_ptr<ExpList_t>();
 				expList->exprs.push_back(tryFunc);
 				auto expListAssign = x->new_ptr<ExpListAssign_t>();
@@ -9165,7 +9459,7 @@ private:
 		}
 		if (auto tryBlock = tryFunc.as<Block_t>()) {
 			if (getLuaTarget(tryBlock) >= 502 || !errHandler) {
-				if (auto result = upValueFuncFrom(tryBlock)) {
+				if (auto result = upValueFuncFrom(tryBlock, nullptr, true)) {
 					auto [funcName, args] = std::move(*result);
 					if (errHandler) {
 						auto xpcall = toAst<ChainValue_t>("xpcall()", x);

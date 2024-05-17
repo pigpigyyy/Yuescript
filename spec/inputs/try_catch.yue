@@ -20,6 +20,8 @@ f = ->
 
 		success, result = try func 1, 2, 3
 
+	tb = {}
+
 	try tb.func
 	try tb.func!
 	try tb.func()
@@ -56,5 +58,10 @@ f = ->
 			func 1, 2, 3
 
 		try func 1, 2, 3
+
+	do
+		<- x
+		local tb, a, b, c
+		f = -> try tb.f a, b, c
 
 	nil

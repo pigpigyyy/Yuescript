@@ -210,6 +210,8 @@ do
 	buff_strength = (char, item) ->
 		item.buffer.strength? char.stats.strength?::ref()
 
+	local debug_env_before, debug_env_after
+
 	exe_func = (func, env) ->
 		ok, ... = try
 			debug_env_before(env)

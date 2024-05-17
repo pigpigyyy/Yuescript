@@ -199,7 +199,9 @@ do
 				end
 			})
 			local _close_2 = assert(getmetatable(_).__close)
-			return _anon_func_9(_, _close_2, error, pcall(print, "third"))
+			return _anon_func_9(_, _close_2, error, pcall(function()
+				return print("third")
+			end))
 		end))
 	end))
 end

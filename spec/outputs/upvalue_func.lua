@@ -367,12 +367,7 @@ local _anon_func_18 = function(print, select, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_19 = function(print)
-	local a = 1
-	print(a + nil)
-	return 1, 2, 3
-end
-local _anon_func_20 = function(cond, i)
+local _anon_func_19 = function(cond, i)
 	local _accum_0 = { }
 	local _len_0 = 1
 	while cond do
@@ -382,7 +377,7 @@ local _anon_func_20 = function(cond, i)
 	end
 	return _accum_0
 end
-local _anon_func_21 = function(value)
+local _anon_func_20 = function(value)
 	if 1 == value then
 		return 'a'
 	elseif 2 == value then
@@ -417,27 +412,31 @@ GameEngine:onUpdate(function(deltaTime)
 	func(_anon_func_16(pairs, tb, tostring))
 	func(_anon_func_17(print))
 	do
-		_anon_func_18(print, select, pcall(_anon_func_19, print))
+		_anon_func_18(print, select, pcall(function()
+			local a = 1
+			print(a + nil)
+			return 1, 2, 3
+		end))
 	end
 	i = 1
-	func(_anon_func_20(cond, i))
-	return func(_anon_func_21(value))
+	func(_anon_func_19(cond, i))
+	return func(_anon_func_20(value))
 end)
-local _anon_func_22 = function(cond)
+local _anon_func_21 = function(cond)
 	if cond then
 		return 998
 	else
 		return "abc"
 	end
 end
-local _anon_func_23 = function(valueB)
+local _anon_func_22 = function(valueB)
 	if valueB ~= nil then
 		return valueB
 	else
 		return 123
 	end
 end
-local _anon_func_24 = function(tb)
+local _anon_func_23 = function(tb)
 	if tb ~= nil then
 		local _obj_0 = tb.abc
 		if _obj_0 ~= nil then
@@ -451,7 +450,7 @@ local _anon_func_24 = function(tb)
 	end
 	return nil
 end
-local _anon_func_26 = function(itemA, listA)
+local _anon_func_25 = function(itemA, listA)
 	for _index_0 = 1, #listA do
 		if listA[_index_0] == itemA then
 			return true
@@ -459,17 +458,17 @@ local _anon_func_26 = function(itemA, listA)
 	end
 	return false
 end
-local _anon_func_25 = function(itemA, listA, tb)
+local _anon_func_24 = function(itemA, listA, tb)
 	do
 		local _call_0 = tb
 		local _call_1 = _call_0["end"](_call_0)
-		return _call_1["🤣"](_call_1, 123 and (#listA > 0 and _anon_func_26(itemA, listA)))
+		return _call_1["🤣"](_call_1, 123 and (#listA > 0 and _anon_func_25(itemA, listA)))
 	end
 end
 GameEngine:onEvent("SomeEvent", function()
-	return func(value + (_anon_func_22(cond)) + (_anon_func_23(valueB)) > _anon_func_24(tb) + _anon_func_25(itemA, listA, tb))
+	return func(value + (_anon_func_21(cond)) + (_anon_func_22(valueB)) > _anon_func_23(tb) + _anon_func_24(itemA, listA, tb))
 end)
-local _anon_func_27 = function(UpdateScoreText, tostring, value)
+local _anon_func_26 = function(UpdateScoreText, tostring, value)
 	if value > 200 then
 		UpdateScoreText("Win: " .. tostring(value))
 		return "done"
@@ -480,7 +479,7 @@ local _anon_func_27 = function(UpdateScoreText, tostring, value)
 end
 GameEngine:schedule(function(deltaTime)
 	local value = 123
-	return func(_anon_func_27(UpdateScoreText, tostring, value))
+	return func(_anon_func_26(UpdateScoreText, tostring, value))
 end)
 GameEngine:schedule(function(deltaTime)
 	local value = 123
@@ -496,14 +495,14 @@ GameEngine:schedule(function(deltaTime)
 		end
 	end)())
 end)
-local _anon_func_28 = function(char)
+local _anon_func_27 = function(char)
 	local _obj_0 = char.stats.strength
 	if _obj_0 ~= nil then
 		return _obj_0:ref()
 	end
 	return nil
 end
-local _anon_func_29 = function(os, _arg_0, ...)
+local _anon_func_28 = function(os, _arg_0, ...)
 	do
 		local ok = _arg_0
 		if ok then
@@ -513,7 +512,7 @@ local _anon_func_29 = function(os, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_30 = function(debug_env_after, debug_env_before, env, func)
+local _anon_func_29 = function(debug_env_after, debug_env_before, env, func)
 	debug_env_before(env)
 	func(env)
 	return debug_env_after(env)
@@ -523,13 +522,14 @@ do
 	buff_strength = function(char, item)
 		local _obj_0 = item.buffer.strength
 		if _obj_0 ~= nil then
-			return _obj_0(_anon_func_28(char))
+			return _obj_0(_anon_func_27(char))
 		end
 		return nil
 	end
+	local debug_env_before, debug_env_after
 	local exe_func
 	exe_func = function(func, env)
-		return _anon_func_29(os, xpcall(_anon_func_30, function(ex)
+		return _anon_func_28(os, xpcall(_anon_func_29, function(ex)
 			error(ex)
 			return ex
 		end, debug_env_after, debug_env_before, env, func))
