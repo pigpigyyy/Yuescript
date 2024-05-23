@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.6"sv;
+const std::string_view version = "0.23.7"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -10294,10 +10294,25 @@ private:
 			if (j != je) ++j;
 		}
 		bool checkValuesLater = false;
-		if (listA->names.size() > assignA->values.size()) {
+		for (ast_node* value : assignA->values.objects()) {
+			if (ast_is<Exp_t>(value)) {
+				if (auto sVal = singleValueFrom(value)) {
+					if (auto spValue = sVal->item.as<SimpleValue_t>()) {
+						if (auto funLit = spValue->value.as<FunLit_t>()) {
+							if (!funLit->noRecursion) {
+								checkValuesLater = true;
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (!checkValuesLater && assignA->values.size() > 0 && listA->names.size() >= assignA->values.size()) {
 			BLOCK_START
 			switch (assignA->values.back()->get_id()) {
 				case id<If_t>():
+				case id<With_t>():
 				case id<Switch_t>():
 					checkValuesLater = true;
 					break;
@@ -10305,24 +10320,33 @@ private:
 			BREAK_IF(checkValuesLater);
 			auto value = singleValueFrom(assignA->values.back());
 			if (!value) {
-				_buf << listA->names.size() << " right values expected, got "sv << assignA->values.size();
-				throw CompileError(clearBuf(), assignA->values.front());
+				if (listA->names.size() > assignA->values.size()) {
+					_buf << listA->names.size() << " right values expected, got "sv << assignA->values.size();
+					throw CompileError(clearBuf(), assignA->values.front());
+				} else {
+					break;
+				}
 			}
 			if (auto val = value->item.as<SimpleValue_t>()) {
 				switch (val->value->get_id()) {
-					case id<If_t>():
-					case id<Switch_t>():
-					case id<Do_t>():
-					case id<Try_t>():
+					case id<TableLit_t>():
+					case id<ConstValue_t>():
+					case id<UnaryValue_t>():
+					case id<Num_t>():
+					case id<VarArg_t>():
+						break;
+					default:
 						checkValuesLater = true;
 						break;
 				}
 				BREAK_IF(checkValuesLater);
 			}
-			auto chainValue = value->item.as<ChainValue_t>();
-			if (!chainValue || !ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
-				_buf << listA->names.size() << " right values expected, got "sv << assignA->values.size();
-				throw CompileError(clearBuf(), assignA->values.front());
+			if (listA->names.size() > assignA->values.size()) {
+				auto chainValue = value->item.as<ChainValue_t>();
+				if (!chainValue || !ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
+					_buf << listA->names.size() << " right values expected, got "sv << assignA->values.size();
+					throw CompileError(clearBuf(), assignA->values.front());
+				}
 			}
 			BLOCK_END
 		}

@@ -26,63 +26,63 @@ do
 	_u5143_u7d20d = _obj_2[1]
 end
 do
-	local _u5173_u95ed_u53d8_u91cfv <close> = (function()
-		if _u6807_u8bb0_u4e3a_u771f then
-			return _u51fd_u6570_u8c03_u7528()
+	local _u5173_u95ed_u53d8_u91cfv
+	if _u6807_u8bb0_u4e3a_u771f then
+		_u5173_u95ed_u53d8_u91cfv = _u51fd_u6570_u8c03_u7528()
+	else
+		_u5173_u95ed_u53d8_u91cfv = setmetatable({ }, {
+			__close = function(self) end
+		})
+	end
+	local _close_0 <close> = _u5173_u95ed_u53d8_u91cfv
+	local _u5173_u95ed_u53d8_u91cff
+	local _with_0 = io.open("文件.txt")
+	_with_0:write("你好")
+	_u5173_u95ed_u53d8_u91cff = _with_0
+	local _close_1 <close> = _u5173_u95ed_u53d8_u91cff
+end
+do
+	local _u5e38_u91cfa
+	if true then
+		_u5e38_u91cfa = 1
+	end
+	local _u5173_u95ed_u53d8_u91cfb
+	if not false then
+		if _u6761_u4ef6x then
+			_u5173_u95ed_u53d8_u91cfb = 1
+		end
+	end
+	local _close_0 <close> = _u5173_u95ed_u53d8_u91cfb
+	local _u5e38_u91cfc
+	if true then
+		local _exp_0 = _u6761_u4ef6x
+		if "abc" == _exp_0 then
+			_u5e38_u91cfc = 998
+		end
+	end
+	local _u5173_u95ed_u53d8_u91cfd
+	if (function()
+		local _exp_0 = _u6761_u4ef6a
+		if _exp_0 ~= nil then
+			return _exp_0
 		else
-			return setmetatable({ }, {
-				__close = function(self) end
-			})
+			return _u6761_u4ef6b
 		end
-	end)()
-	local _u5173_u95ed_u53d8_u91cff <close> = (function()
-		local _with_0 = io.open("文件.txt")
-		_with_0:write("你好")
-		return _with_0
-	end)()
+	end)() then
+		_u5173_u95ed_u53d8_u91cfd = {
+			["数值"] = _u6570_u503c
+		}
+	end
+	local _close_1 <close> = _u5173_u95ed_u53d8_u91cfd
 end
 do
-	local _u5e38_u91cfa <const> = (function()
-		if true then
-			return 1
-		end
-	end)()
-	local _u5173_u95ed_u53d8_u91cfb <close> = (function()
-		if not false then
-			if _u6761_u4ef6x then
-				return 1
-			end
-		end
-	end)()
-	local _u5e38_u91cfc <const> = (function()
-		if true then
-			local _exp_0 = _u6761_u4ef6x
-			if "abc" == _exp_0 then
-				return 998
-			end
-		end
-	end)()
-	local _u5173_u95ed_u53d8_u91cfd <close> = (function()
-		if (function()
-			local _exp_0 = _u6761_u4ef6a
-			if _exp_0 ~= nil then
-				return _exp_0
-			else
-				return _u6761_u4ef6b
-			end
-		end)() then
-			return {
-				["数值"] = _u6570_u503c
-			}
-		end
-	end)()
-end
-do
-	local __u65e0_u6548_u53d8_u91cf <close> = (function()
+	local __u65e0_u6548_u53d8_u91cf
+	do
 		local _with_0 = io.open("文件.txt")
 		_with_0:write("你好")
-		return _with_0
-	end)()
+		__u65e0_u6548_u53d8_u91cf = _with_0
+	end
+	local _close_0 <close> = __u65e0_u6548_u53d8_u91cf
 	local __u65e0_u6548_u53d8_u91cf <close> = setmetatable({ }, {
 		__close = function()
 			return _u6253_u5370("第二")

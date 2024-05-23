@@ -55,22 +55,16 @@ local _anon_func_0 = function(_close_1, error, f, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_1 = function(io)
-	local _with_0 = io.open("file.txt")
-	_with_0:write("Hello")
-	return _with_0
-end
-local _anon_func_2 = function() end
+local _anon_func_1 = function() end
 do
-	local v = (function()
-		if flag then
-			return func()
-		else
-			return setmetatable({ }, {
-				__close = function(self) end
-			})
-		end
-	end)()
+	local v
+	if flag then
+		v = func()
+	else
+		v = setmetatable({ }, {
+			__close = function(self) end
+		})
+	end
 	local _close_0 = assert(getmetatable(v).__close);
 	(function(_arg_0, ...)
 		local _ok_0 = _arg_0
@@ -81,12 +75,17 @@ do
 			return error(...)
 		end
 	end)(pcall(function()
-		local f = _anon_func_1(io)
+		local f
+		do
+			local _with_0 = io.open("file.txt")
+			_with_0:write("Hello")
+			f = _with_0
+		end
 		local _close_1 = assert(getmetatable(f).__close)
-		return _anon_func_0(_close_1, error, f, pcall(_anon_func_2))
+		return _anon_func_0(_close_1, error, f, pcall(_anon_func_1))
 	end))
 end
-local _anon_func_3 = function(_close_1, d, error, _arg_0, ...)
+local _anon_func_2 = function(_close_1, d, error, _arg_0, ...)
 	do
 		local _ok_0 = _arg_0
 		_close_1(d)
@@ -97,41 +96,25 @@ local _anon_func_3 = function(_close_1, d, error, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_4 = function(x)
-	if true then
-		if "abc" == x then
-			return 998
-		end
-	end
-end
-local _anon_func_6 = function(a, b)
+local _anon_func_3 = function(a, b)
 	if a ~= nil then
 		return a
 	else
 		return b
 	end
 end
-local _anon_func_5 = function(a, b)
-	if _anon_func_6(a, b) then
-		return {
-			value = value
-		}
-	end
-end
-local _anon_func_7 = function() end
+local _anon_func_4 = function() end
 do
-	local a = (function()
-		if true then
-			return 1
+	local a
+	if true then
+		a = 1
+	end
+	local b
+	if not false then
+		if x then
+			b = 1
 		end
-	end)()
-	local b = (function()
-		if not false then
-			if x then
-				return 1
-			end
-		end
-	end)()
+	end
 	local _close_0 = assert(getmetatable(b).__close);
 	(function(_arg_0, ...)
 		local _ok_0 = _arg_0
@@ -142,13 +125,24 @@ do
 			return error(...)
 		end
 	end)(pcall(function()
-		local c = _anon_func_4(x)
-		local d = _anon_func_5(a, b)
+		local c
+		if true then
+			local _exp_0 = x
+			if "abc" == _exp_0 then
+				c = 998
+			end
+		end
+		local d
+		if _anon_func_3(a, b) then
+			d = {
+				value = value
+			}
+		end
 		local _close_1 = assert(getmetatable(d).__close)
-		return _anon_func_3(_close_1, d, error, pcall(_anon_func_7))
+		return _anon_func_2(_close_1, d, error, pcall(_anon_func_4))
 	end))
 end
-local _anon_func_8 = function(_, _close_1, error, _arg_0, ...)
+local _anon_func_5 = function(_, _close_1, error, _arg_0, ...)
 	do
 		local _ok_0 = _arg_0
 		_close_1(_)
@@ -159,7 +153,7 @@ local _anon_func_8 = function(_, _close_1, error, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_9 = function(_, _close_2, error, _arg_0, ...)
+local _anon_func_6 = function(_, _close_2, error, _arg_0, ...)
 	do
 		local _ok_0 = _arg_0
 		_close_2(_)
@@ -171,11 +165,12 @@ local _anon_func_9 = function(_, _close_2, error, _arg_0, ...)
 	end
 end
 do
-	local _ = (function()
+	local _
+	do
 		local _with_0 = io.open("file.txt")
 		_with_0:write("Hello")
-		return _with_0
-	end)()
+		_ = _with_0
+	end
 	local _close_0 = assert(getmetatable(_).__close);
 	(function(_arg_0, ...)
 		local _ok_0 = _arg_0
@@ -192,14 +187,14 @@ do
 			end
 		})
 		local _close_1 = assert(getmetatable(_).__close)
-		return _anon_func_8(_, _close_1, error, pcall(function()
+		return _anon_func_5(_, _close_1, error, pcall(function()
 			local _ = setmetatable({ }, {
 				__close = function()
 					return print("first")
 				end
 			})
 			local _close_2 = assert(getmetatable(_).__close)
-			return _anon_func_9(_, _close_2, error, pcall(function()
+			return _anon_func_6(_, _close_2, error, pcall(function()
 				return print("third")
 			end))
 		end))
@@ -216,7 +211,7 @@ def = function(item)
 	_defers[#_defers + 1] = item
 	return _defers
 end
-local _anon_func_10 = function(_, _close_1, error, _arg_0, ...)
+local _anon_func_7 = function(_, _close_1, error, _arg_0, ...)
 	do
 		local _ok_0 = _arg_0
 		_close_1(_)
@@ -227,7 +222,7 @@ local _anon_func_10 = function(_, _close_1, error, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_11 = function(_, _close_2, error, _arg_0, ...)
+local _anon_func_8 = function(_, _close_2, error, _arg_0, ...)
 	do
 		local _ok_0 = _arg_0
 		_close_2(_)
@@ -238,7 +233,7 @@ local _anon_func_11 = function(_, _close_2, error, _arg_0, ...)
 		end
 	end
 end
-local _anon_func_12 = function() end
+local _anon_func_9 = function() end
 do
 	local _ = def(function()
 		return print(3)
@@ -257,12 +252,12 @@ do
 			return print(2)
 		end)
 		local _close_1 = assert(getmetatable(_).__close)
-		return _anon_func_10(_, _close_1, error, pcall(function()
+		return _anon_func_7(_, _close_1, error, pcall(function()
 			local _ = def(function()
 				return print(1)
 			end)
 			local _close_2 = assert(getmetatable(_).__close)
-			return _anon_func_11(_, _close_2, error, pcall(_anon_func_12))
+			return _anon_func_8(_, _close_2, error, pcall(_anon_func_9))
 		end))
 	end))
 end

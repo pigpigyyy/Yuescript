@@ -34,62 +34,62 @@ do
 	a, b = _obj_0[1], _obj_0[2]
 end
 do
-	local v <close> = (function()
-		if flag then
-			return func()
+	local v
+	if flag then
+		v = func()
+	else
+		v = setmetatable({ }, {
+			__close = function(self) end
+		})
+	end
+	local _close_0 <close> = v
+	local f
+	local _with_0 = io.open("file.txt")
+	_with_0:write("Hello")
+	f = _with_0
+	local _close_1 <close> = f
+end
+do
+	local a
+	if true then
+		a = 1
+	end
+	local b
+	if not false then
+		if x then
+			b = 1
+		end
+	end
+	local _close_0 <close> = b
+	local c
+	if true then
+		local _exp_0 = x
+		if "abc" == _exp_0 then
+			c = 998
+		end
+	end
+	local d
+	if (function()
+		if a ~= nil then
+			return a
 		else
-			return setmetatable({ }, {
-				__close = function(self) end
-			})
+			return b
 		end
-	end)()
-	local f <close> = (function()
-		local _with_0 = io.open("file.txt")
-		_with_0:write("Hello")
-		return _with_0
-	end)()
+	end)() then
+		d = {
+			value = value
+		}
+	end
+	local _close_1 <close> = d
 end
 do
-	local a <const> = (function()
-		if true then
-			return 1
-		end
-	end)()
-	local b <close> = (function()
-		if not false then
-			if x then
-				return 1
-			end
-		end
-	end)()
-	local c <const> = (function()
-		if true then
-			local _exp_0 = x
-			if "abc" == _exp_0 then
-				return 998
-			end
-		end
-	end)()
-	local d <close> = (function()
-		if (function()
-			if a ~= nil then
-				return a
-			else
-				return b
-			end
-		end)() then
-			return {
-				value = value
-			}
-		end
-	end)()
-end
-do
-	local _ <close> = (function()
+	local _
+	do
 		local _with_0 = io.open("file.txt")
 		_with_0:write("Hello")
-		return _with_0
-	end)()
+		_ = _with_0
+	end
+	local _close_0 <close> = _
 	local _ <close> = setmetatable({ }, {
 		__close = function()
 			return print("second")
