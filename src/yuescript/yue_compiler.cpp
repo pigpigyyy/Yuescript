@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.7"sv;
+const std::string_view version = "0.23.8"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -2331,7 +2331,7 @@ private:
 				if (hasSpreadExp(tableLit->values.objects())) {
 					auto expList = assignment->expList.get();
 					std::string preDefine = getPreDefineLine(assignment);
-					transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Assignment, expList);
+					transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Assignment, expList, false);
 					out.back().insert(0, preDefine);
 					return;
 				}
@@ -2342,7 +2342,7 @@ private:
 				if (hasSpreadExp(tableBlock->values.objects())) {
 					auto expList = assignment->expList.get();
 					std::string preDefine = getPreDefineLine(assignment);
-					transformSpreadTable(tableBlock->values.objects(), out, ExpUsage::Assignment, expList);
+					transformSpreadTable(tableBlock->values.objects(), out, ExpUsage::Assignment, expList, false);
 					out.back().insert(0, preDefine);
 					return;
 				}
@@ -5197,7 +5197,7 @@ private:
 						case id<TableLit_t>(): {
 							auto tableLit = static_cast<TableLit_t*>(value);
 							if (hasSpreadExp(tableLit->values.objects())) {
-								transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Return);
+								transformSpreadTable(tableLit->values.objects(), out, ExpUsage::Return, nullptr, false);
 								return;
 							}
 						}
@@ -5219,7 +5219,7 @@ private:
 		} else if (auto tableBlock = returnNode->valueList.as<TableBlock_t>()) {
 			const auto& values = tableBlock->values.objects();
 			if (hasSpreadExp(values)) {
-				transformSpreadTable(values, out, ExpUsage::Return);
+				transformSpreadTable(values, out, ExpUsage::Return, nullptr, false);
 			} else {
 				transformTable(values, out);
 				out.back() = indent() + "return "s + out.back() + nlr(returnNode);
@@ -6900,17 +6900,25 @@ private:
 		return false;
 	}
 
-	void transformSpreadTable(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
+	void transformSpreadTable(const node_container& values, str_list& out, ExpUsage usage, ExpList_t* assignList, bool isListTable) {
 		auto x = values.front();
 		bool extraScope = false;
 		switch (usage) {
 			case ExpUsage::Closure: {
-				auto tableLit = x->new_ptr<TableLit_t>();
-				for (ast_node* value : values) {
-					tableLit->values.push_back(value);
-				}
 				auto simpleValue = x->new_ptr<SimpleValue_t>();
-				simpleValue->value.set(tableLit);
+				if (isListTable) {
+					auto comp = x->new_ptr<Comprehension_t>();
+					for (ast_node* value : values) {
+						comp->items.push_back(value);
+					}
+					simpleValue->value.set(comp);
+				} else {
+					auto tableLit = x->new_ptr<TableLit_t>();
+					for (ast_node* value : values) {
+						tableLit->values.push_back(value);
+					}
+					simpleValue->value.set(tableLit);
+				}
 				if (transformAsUpValueFunc(newExp(simpleValue, x), out)) {
 					return;
 				}
@@ -7353,7 +7361,16 @@ private:
 	void transformTableLit(TableLit_t* table, str_list& out) {
 		const auto& values = table->values.objects();
 		if (hasSpreadExp(values)) {
-			transformSpreadTable(values, out, ExpUsage::Closure);
+			transformSpreadTable(values, out, ExpUsage::Closure, nullptr, false);
+		} else {
+			transformTable(values, out);
+		}
+	}
+
+	void transformListTable(Comprehension_t* comp, str_list& out) {
+		const auto& values = comp->items.objects();
+		if (hasSpreadExp(values)) {
+			transformSpreadTable(values, out, ExpUsage::Closure, nullptr, true);
 		} else {
 			transformTable(values, out);
 		}
@@ -7403,10 +7420,10 @@ private:
 	void transformComprehension(Comprehension_t* comp, str_list& out, ExpUsage usage, ExpList_t* assignList = nullptr) {
 		auto x = comp;
 		if (comp->items.size() != 2 || !ast_is<CompInner_t>(comp->items.back())) {
-			auto tableLit = x->new_ptr<TableLit_t>();
-			tableLit->values.dup(comp->items);
 			switch (usage) {
 				case ExpUsage::Assignment: {
+					auto tableLit = x->new_ptr<TableLit_t>();
+					tableLit->values.dup(comp->items);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(tableLit);
 					auto exp = newExp(simpleValue, x);
@@ -7419,6 +7436,8 @@ private:
 					break;
 				}
 				case ExpUsage::Return: {
+					auto tableLit = x->new_ptr<TableLit_t>();
+					tableLit->values.dup(comp->items);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(tableLit);
 					auto exp = newExp(simpleValue, x);
@@ -7430,7 +7449,7 @@ private:
 					break;
 				}
 				case ExpUsage::Closure:
-					transformTableLit(tableLit, out);
+					transformListTable(comp, out);
 					break;
 				default:
 					YUEE("invalid comprehension usage", comp);
@@ -9336,7 +9355,7 @@ private:
 	void transformTableBlock(TableBlock_t* table, str_list& out) {
 		const auto& values = table->values.objects();
 		if (hasSpreadExp(values)) {
-			transformSpreadTable(values, out, ExpUsage::Closure);
+			transformSpreadTable(values, out, ExpUsage::Closure, nullptr, false);
 		} else {
 			transformTable(values, out);
 		}

@@ -264,7 +264,7 @@ local _anon_func_8 = function(itemB, listB)
 	end
 	return false
 end
-local _anon_func_9 = function(listA, listB, pairs)
+local _anon_func_9 = function(listA, listB)
 	local _tab_0 = { }
 	local _idx_0 = #_tab_0 + 1
 	for _index_0 = 1, #listA do
@@ -403,7 +403,7 @@ GameEngine:onUpdate(function(deltaTime)
 	if (itemB ~= nil) and _anon_func_8(itemB, listB) then
 		print("item in list")
 	end
-	func(_anon_func_9(listA, listB, pairs))
+	func(_anon_func_9(listA, listB))
 	func(_anon_func_10(), _anon_func_11(pairs, tb))
 	func(_anon_func_12())
 	func(_anon_func_13(pairs, tb))
