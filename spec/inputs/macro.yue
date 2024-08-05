@@ -5,6 +5,39 @@ import "macro_export" as {
 
 import "macro_todo" as $
 
+macro WindowFlag = $enum(
+	NoNav
+	NoDecoration
+	NoTitleBar
+	NoResize
+	NoMove
+	NoScrollbar
+	NoScrollWithMouse
+	NoCollapse
+	AlwaysAutoResize
+	NoSavedSettings
+	NoInputs
+	MenuBar
+	HorizontalScrollbar
+	NoFocusOnAppearing
+	NoBringToFrontOnFocus
+	AlwaysVerticalScrollbar
+	AlwaysHorizontalScrollbar
+	NoNavInputs
+	NoNavFocus
+	UnsavedDocument
+)
+
+print $WindowFlag AlwaysAutoResize
+print $WindowFlag(
+	NoNav
+	NoDecoration
+	NoTitleBar
+	NoResize
+	NoMove
+	NoScrollbar
+)
+
 $asserts item == nil
 
 $myconfig false

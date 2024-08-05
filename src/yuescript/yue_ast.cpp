@@ -1362,8 +1362,11 @@ std::string MacroLit_t::to_string(void* ud) const {
 	}
 	return line;
 }
+std::string MacroFunc_t::to_string(void* ud) const {
+	return name->to_string(ud) + invoke->to_string(ud);
+}
 std::string Macro_t::to_string(void* ud) const {
-	return "macro "s + name->to_string(ud) + " = "s + macroLit->to_string(ud);
+	return "macro "s + name->to_string(ud) + " = "s + decl->to_string(ud);
 }
 std::string MacroInPlace_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);

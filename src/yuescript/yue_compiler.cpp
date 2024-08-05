@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.8"sv;
+const std::string_view version = "0.23.9"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -5065,7 +5065,36 @@ private:
 			throw CompileError("can not define macro outside the root block"sv, macro);
 		}
 		auto macroName = _parser.toString(macro->name);
-		auto argsDef = macro->macroLit->argsDef.get();
+		if (auto macroFunc = macro->decl.as<MacroFunc_t>()) {
+			auto chainValue = macroFunc->new_ptr<ChainValue_t>();
+			auto callable = macroFunc->new_ptr<Callable_t>();
+			callable->item.set(macroFunc->name);
+			chainValue->items.push_back(callable);
+			chainValue->items.push_back(macroFunc->invoke);
+			pushCurrentModule(); // cur
+			int top = lua_gettop(L) - 1;
+			DEFER(lua_settop(L, top));
+			if (auto builtinCode = expandMacroChain(chainValue)) {
+				throw CompileError("macro generating function must return a function"sv, chainValue);
+			} // cur res
+			if (lua_isfunction(L, -1) == 0) {
+				throw CompileError("macro generating function must return a function"sv, chainValue);
+			} // cur macro
+			if (exporting && _config.exporting && !_config.module.empty()) {
+				pushModuleTable(_config.module); // cur macro module
+				lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro module name
+				lua_pushvalue(L, -3); // cur macro module name macro
+				lua_rawset(L, -3); // cur macro module
+				lua_pop(L, 1);
+			} // cur macro
+			lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro name
+			lua_insert(L, -2); // cur name macro
+			lua_rawset(L, -3); // cur[name] = macro, cur
+			out.push_back(Empty);
+			return;
+		}
+		auto macroLit = macro->decl.to<MacroLit_t>();
+		auto argsDef = macroLit->argsDef.get();
 		str_list newArgs;
 		if (argsDef) {
 			for (auto def_ : argsDef->definitions.objects()) {
@@ -5088,7 +5117,7 @@ private:
 			}
 		}
 		_buf << "("sv << join(newArgs, ","sv) << ")->"sv;
-		_buf << _parser.toString(macro->macroLit->body);
+		_buf << _parser.toString(macroLit->body);
 		auto macroCodes = clearBuf();
 		_buf << "=(macro "sv << macroName << ")";
 		auto chunkName = clearBuf();
@@ -5101,22 +5130,22 @@ private:
 		pushOptions(macro->m_begin.m_line - 1); // cur loadstring codes chunk options
 		if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), cur f err
 			std::string err = lua_tostring(L, -1);
-			throw CompileError("failed to load macro codes\n"s + err, macro->macroLit);
+			throw CompileError("failed to load macro codes\n"s + err, macroLit);
 		} // cur f err
 		if (lua_isnil(L, -2) != 0) { // f == nil, cur f err
 			std::string err = lua_tostring(L, -1);
-			throw CompileError("failed to load macro codes, at (macro "s + macroName + "): "s + err, macro->macroLit);
+			throw CompileError("failed to load macro codes, at (macro "s + macroName + "): "s + err, macroLit);
 		}
 		lua_pop(L, 1); // cur f
 		pushYue("pcall"sv); // cur f pcall
 		lua_insert(L, -2); // cur pcall f
 		if (lua_pcall(L, 1, 2, 0) != 0) { // f(), cur success macro
 			std::string err = lua_tostring(L, -1);
-			throw CompileError("failed to generate macro function\n"s + err, macro->macroLit);
+			throw CompileError("failed to generate macro function\n"s + err, macroLit);
 		} // cur success res
 		if (lua_toboolean(L, -2) == 0) {
 			std::string err = lua_tostring(L, -1);
-			throw CompileError("failed to generate macro function\n"s + err, macro->macroLit);
+			throw CompileError("failed to generate macro function\n"s + err, macroLit);
 		} // cur true macro
 		lua_remove(L, -2); // cur macro
 		if (exporting && _config.exporting && !_config.module.empty()) {
@@ -6180,23 +6209,20 @@ private:
 		return Empty;
 	}
 
-	std::tuple<std::string, std::string, str_list> expandMacroStr(ChainValue_t* chainValue) {
+	std::optional<std::string> expandMacroChain(ChainValue_t* chainValue) {
 		const auto& chainList = chainValue->items.objects();
 		auto x = ast_to<Callable_t>(chainList.front())->item.to<MacroName_t>();
 		auto macroName = _parser.toString(x->name);
 		if (!_useModule) {
 			auto code = expandBuiltinMacro(macroName, x);
-			if (!code.empty()) return {Empty, code, {}};
+			if (!code.empty()) return code;
 			throw CompileError("can not resolve macro"sv, x);
 		}
-		pushCurrentModule(); // cur
-		int top = lua_gettop(L) - 1;
-		DEFER(lua_settop(L, top));
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
 		lua_rawget(L, -2); // cur[macroName], cur macroFunc
 		if (lua_isfunction(L, -1) == 0) {
 			auto code = expandBuiltinMacro(macroName, x);
-			if (!code.empty()) return {Empty, code, {}};
+			if (!code.empty()) return code;
 			throw CompileError("can not resolve macro"sv, x);
 		} // cur macroFunc
 		pushYue("pcall"sv); // cur macroFunc pcall
@@ -6261,32 +6287,44 @@ private:
 			throw CompileError("failed to expand macro: "s + err, x);
 		}
 		lua_remove(L, -2); // cur res
+		return std::nullopt;
+	}
+
+	std::tuple<std::string, std::string, str_list> expandMacroStr(ChainValue_t* chainValue) {
+		auto x = chainValue->items.front();
+		pushCurrentModule(); // cur
+		int top = lua_gettop(L) - 1;
+		DEFER(lua_settop(L, top));
+		auto builtinCode = expandMacroChain(chainValue);
+		if (builtinCode) {
+			return {Empty, builtinCode.value(), {}};
+		} // cur res
 		if (lua_isstring(L, -1) == 0 && lua_istable(L, -1) == 0) {
-			throw CompileError("macro function must return string or table"sv, x);
+			throw CompileError("macro function must return a string or a table"sv, x);
 		} // cur res
 		std::string codes;
 		std::string type;
 		str_list localVars;
-		if (lua_istable(L, -1) != 0) {
-			lua_getfield(L, -1, "code"); // cur res code
+		if (lua_istable(L, -1) != 0) { // cur tab
+			lua_getfield(L, -1, "code"); // cur tab code
 			if (lua_isstring(L, -1) != 0) {
 				codes = lua_tostring(L, -1);
 			} else {
 				throw CompileError("macro table must contain field \"code\" of string"sv, x);
 			}
-			lua_pop(L, 1); // cur res
-			lua_getfield(L, -1, "type"); // cur res type
+			lua_pop(L, 1); // cur tab
+			lua_getfield(L, -1, "type"); // cur tab type
 			if (lua_isstring(L, -1) != 0) {
 				type = lua_tostring(L, -1);
 			}
 			if (type != "lua"sv && type != "text"sv) {
 				throw CompileError("macro table must contain field \"type\" of value \"lua\" or \"text\""sv, x);
 			}
-			lua_pop(L, 1); // cur res
-			lua_getfield(L, -1, "locals"); // cur res locals
+			lua_pop(L, 1); // cur tab
+			lua_getfield(L, -1, "locals"); // cur tab locals
 			if (lua_istable(L, -1) != 0) {
 				for (int i = 0; i < static_cast<int>(lua_objlen(L, -1)); i++) {
-					lua_rawgeti(L, -1, i + 1); // cur res locals item
+					lua_rawgeti(L, -1, i + 1); // cur tab locals item
 					size_t len = 0;
 					if (lua_isstring(L, -1) == 0) {
 						throw CompileError("macro table field \"locals\" must be a table of strings"sv, x);
@@ -6297,11 +6335,11 @@ private:
 					} else {
 						throw CompileError("macro table field \"locals\" must contain names for local variables, got \""s + std::string(name, len) + '"', x);
 					}
-					lua_pop(L, 1);
+					lua_pop(L, 1); // cur tab locals
 				}
 			}
-			lua_pop(L, 1); // cur res
-		} else {
+			lua_pop(L, 1); // cur tab
+		} else { // cur code
 			codes = lua_tostring(L, -1);
 		}
 		Utils::trim(codes);

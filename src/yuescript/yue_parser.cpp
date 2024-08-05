@@ -870,7 +870,8 @@ YueParser::YueParser() {
 	MacroName = '$' >> UnicodeName;
 	macro_args_def = '(' >> white >> -FnArgDefList >> white >> ')';
 	MacroLit = -(macro_args_def >> space) >> "->" >> space >> Body;
-	Macro = key("macro") >> space >> UnicodeName >> space >> '=' >> space >> MacroLit;
+	MacroFunc = MacroName >> (Invoke | InvokeArgs);
+	Macro = key("macro") >> space >> UnicodeName >> space >> '=' >> space >> (MacroLit | MacroFunc);
 	MacroInPlace = '$' >> space >> "->" >> space >> Body;
 
 	NameList = Seperator >> Variable >> *(space >> ',' >> space >> Variable);

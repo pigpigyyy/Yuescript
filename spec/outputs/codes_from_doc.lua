@@ -71,6 +71,7 @@ if cond then
 end
 print("yuescript")
 print(3)
+print("Valid enum type:", "Static")
 if tb ~= nil then
 	tb:func()
 end
@@ -2068,6 +2069,7 @@ if cond then
 end
 print("yuescript")
 print(3)
+print("Valid enum type:", "Static")
 if tb ~= nil then
 	tb:func()
 end

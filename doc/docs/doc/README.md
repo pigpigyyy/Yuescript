@@ -374,6 +374,48 @@ print $LINE -- get number 2
 </pre>
 </YueDisplay>
 
+### Generating Macros with Macros
+
+In Yuescript, macro functions allow you to generate code at compile time. By nesting macro functions, you can create more complex generation patterns. This feature enables you to define a macro function that generates another macro function, allowing for more dynamic code generation.
+
+```moonscript
+macro Enum = (...) ->
+	items = {...}
+	itemSet = {item, true for item in *items}
+	(item) ->
+		error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+		"\"#{item}\""
+
+macro BodyType = $Enum(
+	Static
+	Dynamic
+	Kinematic
+)
+
+print "Valid enum type:", $BodyType Static
+-- print "Compilation error with enum type:", $BodyType Unknown
+```
+
+<YueDisplay>
+<pre>
+macro Enum = (...) ->
+	items = {...}
+	itemSet = {item, true for item in *items}
+	(item) ->
+		error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+		"\"#{item}\""
+
+macro BodyType = $Enum(
+	Static
+	Dynamic
+	Kinematic
+)
+
+print "Valid enum type:", $BodyType Static
+-- print "Compilation error with enum type:", $BodyType Unknown
+</pre>
+</YueDisplay>
+
 ## Operator
 
 All of Lua's binary and unary operators are available. Additionally **!=** is as an alias for **~=**, and either **\\** or **::** can be used to write a chaining function call like `tb\func!` or `tb::func!`. And Yuescipt offers some other special operators to write more expressive codes.

@@ -44,6 +44,24 @@ do
 			_dst_.#{field} = _src_.#{field}
 "}"
 
+export macro enum = (...) ->
+	items = {...}
+	items = [item\gsub('"', '') for item in *items]
+	itemSet = {item, true for item in *items}
+	(...) ->
+		count = select "#", ...
+		if 1 < count
+			result = "["
+			for i = 1, count
+				item = select i, ...
+				error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+				result ..= "\"#{item}\","
+			result .. "]"
+		else
+			item = select 1, ...
+			error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+			"\"#{item}\""
+
 $ ->
 	global debugMode = true
 	global debugMacro = true

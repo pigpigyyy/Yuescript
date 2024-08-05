@@ -774,6 +774,12 @@ AST_NODE(MacroLit)
 	AST_MEMBER(MacroLit, &argsDef, &body)
 AST_END(MacroLit, "macro_lit"sv)
 
+AST_NODE(MacroFunc)
+	ast_ptr<true, MacroName_t> name;
+	ast_sel<true, Invoke_t, InvokeArgs_t> invoke;
+	AST_MEMBER(MacroFunc, &name, &invoke)
+AST_END(MacroFunc, "macro_func"sv)
+
 AST_NODE(MacroInPlace)
 	ast_ptr<true, Body_t> body;
 	AST_MEMBER(MacroInPlace, &body)
@@ -781,8 +787,8 @@ AST_END(MacroInPlace, "macro_in_place"sv)
 
 AST_NODE(Macro)
 	ast_ptr<true, UnicodeName_t> name;
-	ast_ptr<true, MacroLit_t> macroLit;
-	AST_MEMBER(Macro, &name, &macroLit)
+	ast_sel<true, MacroLit_t, MacroFunc_t> decl;
+	AST_MEMBER(Macro, &name, &decl)
 AST_END(Macro, "macro"sv)
 
 AST_NODE(NameOrDestructure)

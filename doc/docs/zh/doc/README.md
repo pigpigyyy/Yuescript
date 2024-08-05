@@ -371,6 +371,47 @@ print $LINE -- 获取当前代码行数：2
 </pre>
 </YueDisplay>
 
+### 用宏生成宏
+
+在月之脚本中，宏函数允许你在编译时生成代码。通过嵌套的宏函数，你可以创建更复杂的生成模式。这个特性允许你定义一个宏函数，用它来生成另一个宏函数，从而实现更加动态的代码生成。
+
+```moonscript
+macro Enum = (...) ->
+	items = {...}
+	itemSet = {item, true for item in *items}
+	(item) ->
+		error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+		"\"#{item}\""
+
+macro BodyType = $Enum(
+	Static
+	Dynamic
+	Kinematic
+)
+
+print "有效的枚举类型:", $BodyType Static
+-- print "编译报错的枚举类型:", $BodyType Unknown
+```
+<YueDisplay>
+<pre>
+macro Enum = (...) ->
+	items = {...}
+	itemSet = {item, true for item in *items}
+	(item) ->
+		error "got \"#{item}\", expecting one of #{table.concat items, ', '}" unless itemSet[item]
+		"\"#{item}\""
+
+macro BodyType = $Enum(
+	Static
+	Dynamic
+	Kinematic
+)
+
+print "有效的枚举类型:", $BodyType Static
+-- print "编译报错的枚举类型:", $BodyType Unknown
+</pre>
+</YueDisplay>
+
 ## 操作符
 
 Lua的所有二元和一元操作符在月之脚本中都是可用的。此外，**!=** 符号是 **~=** 的别名，而 **\\** 或 **::** 均可用于编写链式函数调用，如写作 `tb\func!` 或 `tb::func!`。此外月之脚本还提供了一些其他特殊的操作符，以编写更具表达力的代码。

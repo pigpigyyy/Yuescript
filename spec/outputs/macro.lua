@@ -1,3 +1,12 @@
+print("AlwaysAutoResize")
+print({
+	"NoNav",
+	"NoDecoration",
+	"NoTitleBar",
+	"NoResize",
+	"NoMove",
+	"NoScrollbar"
+})
 do
 	assert(item == nil)
 end
@@ -285,7 +294,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(268))
+print("current line: " .. tostring(301))
 do
 -- TODO
 end

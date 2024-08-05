@@ -396,6 +396,7 @@ private:
 	AST_RULE(FunLit);
 	AST_RULE(MacroName);
 	AST_RULE(MacroLit);
+	AST_RULE(MacroFunc);
 	AST_RULE(Macro);
 	AST_RULE(MacroInPlace);
 	AST_RULE(NameOrDestructure);

@@ -71,6 +71,7 @@ if cond then
 end
 print("yuescript")
 print(3)
+print("有效的枚举类型:", "Static")
 if tb ~= nil then
 	tb:func()
 end
@@ -2062,6 +2063,7 @@ if cond then
 end
 print("yuescript")
 print(3)
+print("有效的枚举类型:", "Static")
 if tb ~= nil then
 	tb:func()
 end
