@@ -309,7 +309,7 @@ YueParser::YueParser() {
 		);
 
 	MacroNamePair = MacroName >> ':' >> space >> MacroName;
-	ImportAllMacro = '$';
+	ImportAllMacro = '$' >> not_(UnicodeName);
 	import_tab_item =
 		VariablePair |
 		NormalPair |
@@ -324,6 +324,7 @@ YueParser::YueParser() {
 		push_indent_match >> (space >> import_tab_list >> pop_indent | pop_indent)
 	) | space;
 	import_tab_lines = space_break >> import_tab_line >> *(-(space >> ',') >> space_break >> import_tab_line) >> -(space >> ',');
+	import_tab_key_value = key_value | ':' >> MacroName | MacroNamePair | ImportAllMacro;
 	ImportTabLit = (
 		'{' >> Seperator >>
 		-(space >> import_tab_list) >>
@@ -332,7 +333,7 @@ YueParser::YueParser() {
 		white >>
 		'}'
 	) | (
-		Seperator >> key_value >> *(space >> ',' >> space >> key_value)
+		Seperator >> import_tab_key_value >> *(space >> ',' >> space >> import_tab_key_value)
 	);
 
 	ImportAs = ImportLiteral >> -(space >> key("as") >> space >> (ImportTabLit | Variable | ImportAllMacro));
@@ -1083,12 +1084,34 @@ ParseInfo YueParser::parse(std::string_view codes, rule& r) {
 	return res;
 }
 
+ParseInfo YueParser::parse(std::string_view astName, std::string_view codes) {
+	auto it = _rules.find(astName);
+	if (it != _rules.end()) {
+		return parse(codes, *it->second);
+	}
+	return {};
+}
+
+bool YueParser::match(std::string_view astName, std::string_view codes) {
+	auto it = _rules.find(astName);
+	if (it != _rules.end()) {
+		auto rEnd = rule(*it->second >> eof());
+		return parse(codes, rEnd).node;
+	}
+	return false;
+}
+
 std::string YueParser::toString(ast_node* node) {
 	return _converter.to_bytes(std::wstring(node->m_begin.m_it, node->m_end.m_it));
 }
 
 std::string YueParser::toString(input::iterator begin, input::iterator end) {
 	return _converter.to_bytes(std::wstring(begin, end));
+}
+
+YueParser& YueParser::shared() {
+	thread_local static YueParser parser;
+	return parser;
 }
 
 namespace Utils {

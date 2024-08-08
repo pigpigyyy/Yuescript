@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <stack>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "yuescript/ast.hpp"
@@ -55,7 +56,7 @@ struct identity {
 
 #define AST_RULE(type) \
 	rule type; \
-	ast<type##_t> type##_impl = type; \
+	ast<type##_t> type##_impl{collect(ast_name<type##_t>(), type)}; \
 	inline rule& getRule(identity<type##_t>) { return type; }
 #else // NDEBUG
 #define NONE_AST_RULE(type) \
@@ -63,7 +64,7 @@ struct identity {
 
 #define AST_RULE(type) \
 	rule type{#type, rule::initTag{}}; \
-	ast<type##_t> type##_impl = type; \
+	ast<type##_t> type##_impl{collect(ast_name<type##_t>(), type)}; \
 	inline rule& getRule(identity<type##_t>) { return type; }
 #endif // NDEBUG
 
@@ -72,18 +73,20 @@ extern std::unordered_set<std::string> Keywords;
 
 class YueParser {
 public:
-	YueParser();
-
 	template <class AST>
 	ParseInfo parse(std::string_view codes) {
 		return parse(codes, getRule<AST>());
 	}
+
+	ParseInfo parse(std::string_view astName, std::string_view codes);
 
 	template <class AST>
 	bool match(std::string_view codes) {
 		auto rEnd = rule(getRule<AST>() >> eof());
 		return parse(codes, rEnd).node;
 	}
+
+	bool match(std::string_view astName, std::string_view codes);
 
 	template <class AST>
 	bool startWith(std::string_view codes) {
@@ -93,7 +96,10 @@ public:
 	std::string toString(ast_node* node);
 	std::string toString(input::iterator begin, input::iterator end);
 
+	static YueParser& shared();
+
 protected:
+	YueParser();
 	ParseInfo parse(std::string_view codes, rule& r);
 	bool startWith(std::string_view codes, rule& r);
 
@@ -125,11 +131,17 @@ protected:
 
 private:
 	Converter _converter;
+	std::unordered_map<std::string_view, rule*> _rules;
 
 	template <class T>
 	inline rule& getRule(identity<T>) {
 		assert(false);
 		return cut;
+	}
+
+	inline rule& collect(std::string_view name, rule& rule) {
+		_rules[name] = rule.this_ptr();
+		return rule;
 	}
 
 	NONE_AST_RULE(empty_block_error);
@@ -188,6 +200,7 @@ private:
 	NONE_AST_RULE(import_tab_list);
 	NONE_AST_RULE(import_tab_line);
 	NONE_AST_RULE(import_tab_lines);
+	NONE_AST_RULE(import_tab_key_value);
 	NONE_AST_RULE(with_exp);
 	NONE_AST_RULE(disable_do);
 	NONE_AST_RULE(enable_do);

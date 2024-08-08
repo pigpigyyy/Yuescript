@@ -29,7 +29,7 @@ extern "C" {
 } // extern "C"
 
 // name of table stored in lua registry
-#define YUE_MODULE "__yue_modules__"
+#define YUE_MODULES "__yue_modules__"
 
 #if LUA_VERSION_NUM > 501
 #ifndef LUA_COMPAT_5_1
@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.23.9"sv;
+const std::string_view version = "0.24.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -136,8 +136,8 @@ public:
 		_sameModule = true;
 		int top = lua_gettop(L);
 		DEFER(lua_settop(L, top));
-		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
-		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
+		lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
+		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
 		BREAK_IF(lua_istable(L, -1) == 0);
 		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 		BREAK_IF(idx == 0);
@@ -351,8 +351,8 @@ public:
 			if (!_sameModule) {
 				int top = lua_gettop(L);
 				DEFER(lua_settop(L, top));
-				lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
-				lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
+				lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
+				lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
 				int idx = static_cast<int>(lua_objlen(L, -1));
 				lua_pushnil(L); // tb nil
 				lua_rawseti(L, -2, idx); // tb[idx] = nil, tb
@@ -370,7 +370,7 @@ private:
 	std::function<void(void*)> _luaOpen;
 #endif // YUE_NO_MACRO
 	YueConfig _config;
-	YueParser _parser;
+	YueParser& _parser = YueParser::shared();
 	ParseInfo _info;
 	int _indentOffset = 0;
 	struct VarArgState {
@@ -4960,8 +4960,8 @@ private:
 
 	void pushCurrentModule() {
 		if (_useModule) {
-			lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
-			lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
+			lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
+			lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
 			int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 			lua_rawgeti(L, -1, idx); // tb[idx], tb cur
 			lua_remove(L, -2); // cur
@@ -4987,14 +4987,14 @@ private:
 			}
 			_stateOwner = true;
 		}
-		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
-		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE], tb
+		lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
+		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
 		if (lua_isnil(L, -1) != 0) { // tb == nil
 			lua_pop(L, 1);
 			lua_newtable(L); // tb
-			lua_pushliteral(L, YUE_MODULE); // tb YUE_MODULE
+			lua_pushliteral(L, YUE_MODULES); // tb YUE_MODULES
 			lua_pushvalue(L, -2); // tb YUE_MODULE tb
-			lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE] = tb, tb
+			lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES] = tb, tb
 		} // tb
 		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
 		lua_newtable(L); // tb cur
@@ -5016,7 +5016,7 @@ private:
 	bool isModuleLoaded(std::string_view name) {
 		int top = lua_gettop(L);
 		DEFER(lua_settop(L, top));
-		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+		lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
 		lua_rawget(L, LUA_REGISTRYINDEX); // modules
 		lua_pushlstring(L, &name.front(), name.size());
 		lua_rawget(L, -2); // modules module
@@ -5027,7 +5027,7 @@ private:
 	}
 
 	void pushModuleTable(std::string_view name) {
-		lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+		lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
 		lua_rawget(L, LUA_REGISTRYINDEX); // modules
 		lua_pushlstring(L, &name.front(), name.size());
 		lua_rawget(L, -2); // modules module
@@ -9869,9 +9869,17 @@ private:
 				if (importAllMacro) {
 					lua_pushnil(L); // cur mod startKey
 					while (lua_next(L, -2) != 0) { // cur mod key value
-						lua_pushvalue(L, -2); // cur mod key value key
-						lua_insert(L, -2); // cur mod key key value
-						lua_rawset(L, -5); // cur[key] = value, cur mod key
+						const char* key = lua_tostring(L, -2);
+						auto it = std::find_if(macroPairs.begin(), macroPairs.end(), [&](const auto& item) {
+							return key == item.first;
+						});
+						if (it == macroPairs.end()) {
+							lua_pushvalue(L, -2); // cur mod key value key
+							lua_insert(L, -2); // cur mod key key value
+							lua_rawset(L, -5); // cur[key] = value, cur mod key
+						} else {
+							lua_pop(L, 1); // cur mod key
+						}
 					}
 				}
 				for (const auto& pair : macroPairs) {
@@ -10696,9 +10704,9 @@ CompileInfo YueCompiler::compile(std::string_view codes, const YueConfig& config
 void YueCompiler::clear(void* luaState) {
 #ifndef YUE_NO_MACRO
 	auto L = static_cast<lua_State*>(luaState);
-	lua_pushliteral(L, YUE_MODULE); // YUE_MODULE
+	lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
 	lua_pushnil(L);
-	lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULE] = nil
+	lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES] = nil
 #else
 	(void)(luaState);
 #endif // YUE_NO_MACRO

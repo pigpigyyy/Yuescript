@@ -180,7 +180,7 @@ static int yueformat(lua_State* L) {
 		tabSize = static_cast<int>(luaL_checkinteger(L, 2));
 	}
 	std::string_view codes(input, len);
-	auto info = yue::YueParser{}.parse<yue::File_t>(codes);
+	auto info = yue::YueParser::shared().parse<yue::File_t>(codes);
 	if (info.error) {
 		const auto& error = info.error.value();
 		if (!info.codes) {
@@ -271,12 +271,19 @@ static int yuetoast(lua_State* L) {
 	size_t size = 0;
 	const char* input = luaL_checklstring(L, 1, &size);
 	int flattenLevel = 0;
-	if (lua_isnoneornil(L, 2) == 0) {
+	if (!lua_isnoneornil(L, 2)) {
 		flattenLevel = static_cast<int>(luaL_checkinteger(L, 2));
 		flattenLevel = std::max(std::min(2, flattenLevel), 0);
 	}
-	yue::YueParser parser;
-	auto info = parser.parse<yue::File_t>({input, size});
+	std::string_view ruleName;
+	if (!lua_isnoneornil(L, 3)) {
+		size_t nameSize = 0;
+		if (auto name = luaL_checklstring(L, 3, &nameSize)) {
+			ruleName = {name, nameSize};
+		}
+	}
+	auto& yueParser = yue::YueParser::shared();
+	auto info = ruleName.empty() ? yueParser.parse<yue::File_t>({input, size}) : yueParser.parse(ruleName, {input, size});
 	if (!info.error) {
 		lua_createtable(L, 0, 0);
 		int tableIndex = lua_gettop(L);
@@ -413,9 +420,20 @@ static int yuetoast(lua_State* L) {
 	}
 }
 
+static int yueisast(lua_State* L) {
+	size_t nameLen = 0;
+	auto name = luaL_tolstring(L, 1, &nameLen);
+	size_t codeLen = 0;
+	auto code = luaL_tolstring(L, 2, &codeLen);
+	bool result = yue::YueParser::shared().match({name, nameLen}, {code, codeLen});
+	lua_pushboolean(L, result ? 1 : 0);
+	return 1;
+}
+
 static const luaL_Reg yuelib[] = {
 	{"to_lua", yuetolua},
 	{"to_ast", yuetoast},
+	{"is_ast", yueisast},
 	{"check", yuecheck},
 	{"format", yueformat},
 	{"version", nullptr},

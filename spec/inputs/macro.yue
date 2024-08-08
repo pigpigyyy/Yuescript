@@ -38,6 +38,14 @@ print $WindowFlag(
 	NoScrollbar
 )
 
+macro NumAndStr = (num, str) ->
+	import "yue"
+	unless yue.is_ast("Num", "123")
+		error "unmatched tokens got"
+	"[#{num}, #{str}]"
+
+print $NumAndStr 123, 'xyz'
+
 $asserts item == nil
 
 $myconfig false

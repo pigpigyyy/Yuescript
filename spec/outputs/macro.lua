@@ -7,6 +7,10 @@ print({
 	"NoMove",
 	"NoScrollbar"
 })
+print({
+	123,
+	'xyz'
+})
 do
 	assert(item == nil)
 end
@@ -294,7 +298,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(301))
+print("current line: " .. tostring(309))
 do
 -- TODO
 end
