@@ -114,7 +114,7 @@ local function yue_call(f, ...)
 	end)
 end
 yue_loadstring = function(...)
-	local options, str, chunk_name, mode, env = get_options(...)
+	local options, str, chunk_name, env = get_options(...)
 	chunk_name = chunk_name or "=(yuescript.loadstring)"
 	options.module = chunk_name
 	local code, err = yue.to_lua(str, options)
@@ -124,10 +124,7 @@ yue_loadstring = function(...)
 	if chunk_name then
 		yue.yue_compiled["@" .. chunk_name] = code
 	end
-	return (loadstring or load)(code, chunk_name, unpack({
-		mode,
-		env
-	}))
+	return (loadstring or load)(code, chunk_name, "t", unpack({env}))
 end
 local function yue_loadfile(fname, ...)
 	local res, err = yue.read_file(fname)

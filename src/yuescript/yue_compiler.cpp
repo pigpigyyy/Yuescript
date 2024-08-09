@@ -5117,22 +5117,7 @@ private:
 				newArgs.emplace_back(_parser.toString(argsDef->varArg));
 			}
 		}
-		std::string macroCodes;
-		{
-			auto funLit = toAst<FunLit_t>("("s + join(newArgs, ","sv) + ")->"s, macroLit);
-			auto block = macroLit->new_ptr<Block_t>();
-			if (auto stmt = macroLit->body->content.as<Statement_t>()) {
-				block->statements.push_back(stmt);
-			} else {
-				auto blk = macroLit->body->content.to<Block_t>();
-				block->statements.dup(blk->statements);
-			}
-			block->statements.push_front(toAst<Statement_t>("_ENV=yue:require('yue'),<index>:_G,<newindex>:(k, v)=>_G[k]=v"sv, macroLit));
-			auto body = macroLit->new_ptr<Body_t>();
-			body->content.set(block);
-			funLit->body.set(body);
-			macroCodes = YueFormat{}.toString(funLit);
-		}
+		std::string macroCodes = "_ENV=yue:require('yue'),<index>:_G,<newindex>:(k,v)=>_G[k]=v\n("s + join(newArgs, ","sv) + ")->"s + _parser.toString(macroLit->body);
 		auto chunkName = "=(macro "s + macroName + ')';
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
@@ -5140,7 +5125,7 @@ private:
 		pushYue("loadstring"sv); // cur loadstring
 		lua_pushlstring(L, macroCodes.c_str(), macroCodes.size()); // cur loadstring codes
 		lua_pushlstring(L, chunkName.c_str(), chunkName.size()); // cur loadstring codes chunk
-		pushOptions(macro->m_begin.m_line - 1); // cur loadstring codes chunk options
+		pushOptions(macro->m_begin.m_line - 2); // cur loadstring codes chunk options
 		if (lua_pcall(L, 3, 2, 0) != 0) { // loadstring(codes,chunk,options), cur f err
 			std::string err = lua_tostring(L, -1);
 			throw CompileError("failed to load macro codes\n"s + err, macroLit);
