@@ -15,8 +15,14 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+#include <memory>
 
 #include "yuescript/parser.hpp"
+
+#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { \
+	code; \
+})
+#define DEFER(code) _DEFER(code, __LINE__)
 
 namespace parserlib {
 
@@ -907,6 +913,8 @@ _state::_state(_context& con)
 bool _context::parse_non_term(rule& r) {
 	// save the state of the rule
 	rule::_state old_state = r.m_state;
+	// restore the rule's state
+	DEFER(r.m_state = old_state);
 
 	// success/failure result
 	bool ok = false;
@@ -952,7 +960,6 @@ bool _context::parse_non_term(rule& r) {
 
 					// since the left recursion was resolved successfully,
 					// return via a non-local exit
-					r.m_state = old_state;
 					throw _lr_ok(r.this_ptr());
 				}
 			} else {
@@ -964,7 +971,6 @@ bool _context::parse_non_term(rule& r) {
 					if (ex.m_rule == r.this_ptr()) {
 						ok = true;
 					} else {
-						r.m_state = old_state;
 						throw;
 					}
 				}
@@ -994,9 +1000,6 @@ bool _context::parse_non_term(rule& r) {
 			break;
 	}
 
-	// restore the rule's state
-	r.m_state = old_state;
-
 	return ok;
 }
 
@@ -1004,6 +1007,8 @@ bool _context::parse_non_term(rule& r) {
 bool _context::parse_term(rule& r) {
 	// save the state of the rule
 	rule::_state old_state = r.m_state;
+	// restore the rule's state
+	DEFER(r.m_state = old_state);
 
 	// success/failure result
 	bool ok = false;
@@ -1049,7 +1054,6 @@ bool _context::parse_term(rule& r) {
 
 					// since the left recursion was resolved successfully,
 					// return via a non-local exit
-					r.m_state = old_state;
 					throw _lr_ok(r.this_ptr());
 				}
 			} else {
@@ -1061,7 +1065,6 @@ bool _context::parse_term(rule& r) {
 					if (ex.m_rule == r.this_ptr()) {
 						ok = true;
 					} else {
-						r.m_state = old_state;
 						throw;
 					}
 				}
@@ -1090,9 +1093,6 @@ bool _context::parse_term(rule& r) {
 			}
 			break;
 	}
-
-	// restore the rule's state
-	r.m_state = old_state;
 
 	return ok;
 }

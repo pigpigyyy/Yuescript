@@ -96,6 +96,8 @@ public:
 	std::string toString(ast_node* node);
 	std::string toString(input::iterator begin, input::iterator end);
 
+	bool hasAST(std::string_view name) const;
+
 	static YueParser& shared();
 
 protected:

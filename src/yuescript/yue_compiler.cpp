@@ -55,6 +55,7 @@ namespace yue {
 	code; \
 })
 #define DEFER(code) _DEFER(code, __LINE__)
+
 #define YUEE(msg, node) throw CompileError( \
 	"[File] "s + __FILE__ \
 		+ ",\n[Func] "s + __FUNCTION__ \
@@ -5116,11 +5117,23 @@ private:
 				newArgs.emplace_back(_parser.toString(argsDef->varArg));
 			}
 		}
-		_buf << "("sv << join(newArgs, ","sv) << ")->"sv;
-		_buf << _parser.toString(macroLit->body);
-		auto macroCodes = clearBuf();
-		_buf << "=(macro "sv << macroName << ")";
-		auto chunkName = clearBuf();
+		std::string macroCodes;
+		{
+			auto funLit = toAst<FunLit_t>("("s + join(newArgs, ","sv) + ")->"s, macroLit);
+			auto block = macroLit->new_ptr<Block_t>();
+			if (auto stmt = macroLit->body->content.as<Statement_t>()) {
+				block->statements.push_back(stmt);
+			} else {
+				auto blk = macroLit->body->content.to<Block_t>();
+				block->statements.dup(blk->statements);
+			}
+			block->statements.push_front(toAst<Statement_t>("_ENV=yue:require('yue'),<index>:_G,<newindex>:(k, v)=>_G[k]=v"sv, macroLit));
+			auto body = macroLit->new_ptr<Body_t>();
+			body->content.set(block);
+			funLit->body.set(body);
+			macroCodes = YueFormat{}.toString(funLit);
+		}
+		auto chunkName = "=(macro "s + macroName + ')';
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
 		DEFER(lua_settop(L, top));
@@ -6200,8 +6213,7 @@ private:
 	std::string expandBuiltinMacro(const std::string& name, ast_node* x) {
 		if (name == "LINE"sv) {
 			return std::to_string(x->m_begin.m_line + _config.lineOffset);
-		}
-		if (name == "FILE"sv) {
+		} else if (name == "FILE"sv) {
 			auto moduleName = _config.module;
 			Utils::replace(moduleName, "\\"sv, "\\\\"sv);
 			return moduleName.empty() ? "\"yuescript\""s : '"' + moduleName + '"';
@@ -6218,66 +6230,86 @@ private:
 			if (!code.empty()) return code;
 			throw CompileError("can not resolve macro"sv, x);
 		}
+		str_list argStrs;
+		const node_container* args = nullptr;
+		{
+			if (chainList.size() > 1) {
+				auto item = *(++chainList.begin());
+				if (auto invoke = ast_cast<Invoke_t>(item)) {
+					args = &invoke->args.objects();
+				} else if (auto invoke = ast_cast<InvokeArgs_t>(item)) {
+					args = &invoke->args.objects();
+				}
+			}
+			if (args) {
+				for (auto arg : *args) {
+					std::string str;
+					bool rawString = false;
+					if (auto lstr = ast_cast<LuaString_t>(arg)) {
+						str = _parser.toString(lstr->content);
+						rawString = true;
+					} else {
+						BLOCK_START
+						auto exp = ast_cast<Exp_t>(arg);
+						BREAK_IF(!exp);
+						auto value = singleValueFrom(exp);
+						BREAK_IF(!value);
+						auto lstr = value->get_by_path<String_t, LuaString_t>();
+						BREAK_IF(!lstr);
+						str = _parser.toString(lstr->content);
+						rawString = true;
+						BLOCK_END
+					}
+					if (!rawString && str.empty()) {
+						// check whether arg is reassembled
+						// do some workaround for pipe expression
+						if (ast_is<Exp_t>(arg)) {
+							auto exp = static_cast<Exp_t*>(arg);
+							BLOCK_START
+							BREAK_IF(!exp->opValues.empty());
+							auto chainValue = exp->get_by_path<UnaryExp_t, Value_t, ChainValue_t>();
+							BREAK_IF(!chainValue);
+							BREAK_IF(!isMacroChain(chainValue));
+							str = std::get<1>(expandMacroStr(chainValue));
+							BLOCK_END
+						}
+					}
+					if (!rawString && str.empty()) {
+						str = YueFormat{}.toString(arg);
+					}
+					Utils::trim(str);
+					Utils::replace(str, "\r\n"sv, "\n"sv);
+					argStrs.push_back(str);
+				}
+			}
+		}
 		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
 		lua_rawget(L, -2); // cur[macroName], cur macroFunc
-		if (lua_isfunction(L, -1) == 0) {
+		if (!lua_isfunction(L, -1)) {
 			auto code = expandBuiltinMacro(macroName, x);
 			if (!code.empty()) return code;
-			throw CompileError("can not resolve macro"sv, x);
+			if (macroName == "is_ast"sv) {
+				if (!argStrs.empty() && args && !args->empty()) {
+					if (!_parser.hasAST(argStrs.front())) {
+						throw CompileError("invalid AST name"sv, args->front());
+					} else {
+						argStrs.front() = '"' + argStrs.front() + '"';
+					}
+				}
+				lua_pop(L, 1); // cur
+				auto res = "yue.is_ast("s + join(argStrs, ","sv) + ')';
+				lua_pushlstring(L, res.c_str(), res.size()); // cur res
+				return std::nullopt;
+			} else {
+				throw CompileError("can not resolve macro"sv, x);
+			}
 		} // cur macroFunc
 		pushYue("pcall"sv); // cur macroFunc pcall
 		lua_insert(L, -2); // cur pcall macroFunc
-		const node_container* args = nullptr;
-		if (chainList.size() > 1) {
-			auto item = *(++chainList.begin());
-			if (auto invoke = ast_cast<Invoke_t>(item)) {
-				args = &invoke->args.objects();
-			} else if (auto invoke = ast_cast<InvokeArgs_t>(item)) {
-				args = &invoke->args.objects();
-			}
-		}
-		if (args) {
-			for (auto arg : *args) {
-				std::string str;
-				bool rawString = false;
-				if (auto lstr = ast_cast<LuaString_t>(arg)) {
-					str = _parser.toString(lstr->content);
-					rawString = true;
-				} else {
-					BLOCK_START
-					auto exp = ast_cast<Exp_t>(arg);
-					BREAK_IF(!exp);
-					auto value = singleValueFrom(exp);
-					BREAK_IF(!value);
-					auto lstr = value->get_by_path<String_t, LuaString_t>();
-					BREAK_IF(!lstr);
-					str = _parser.toString(lstr->content);
-					rawString = true;
-					BLOCK_END
-				}
-				if (!rawString && str.empty()) {
-					// check whether arg is reassembled
-					// do some workaround for pipe expression
-					if (ast_is<Exp_t>(arg)) {
-						auto exp = static_cast<Exp_t*>(arg);
-						BLOCK_START
-						BREAK_IF(!exp->opValues.empty());
-						auto chainValue = exp->get_by_path<UnaryExp_t, Value_t, ChainValue_t>();
-						BREAK_IF(!chainValue);
-						BREAK_IF(!isMacroChain(chainValue));
-						str = std::get<1>(expandMacroStr(chainValue));
-						BLOCK_END
-					}
-				}
-				if (!rawString && str.empty()) {
-					str = YueFormat{}.toString(arg);
-				}
-				Utils::trim(str);
-				Utils::replace(str, "\r\n"sv, "\n"sv);
-				lua_pushlstring(L, str.c_str(), str.size());
-			} // cur pcall macroFunc args...
-		}
-		bool success = lua_pcall(L, (args ? static_cast<int>(args->size()) : 0), 1, 0) == 0;
+		for (const auto& arg : argStrs) {
+			lua_pushlstring(L, arg.c_str(), arg.size());
+		} // cur pcall macroFunc args...
+		bool success = lua_pcall(L, static_cast<int>(argStrs.size()), 1, 0) == 0;
 		if (!success) { // cur err
 			std::string err = lua_tostring(L, -1);
 			throw CompileError("failed to expand macro: "s + err, x);

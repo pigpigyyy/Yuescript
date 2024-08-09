@@ -1109,6 +1109,10 @@ std::string YueParser::toString(input::iterator begin, input::iterator end) {
 	return _converter.to_bytes(std::wstring(begin, end));
 }
 
+bool YueParser::hasAST(std::string_view name) const {
+	return _rules.find(name) != _rules.end();
+}
+
 YueParser& YueParser::shared() {
 	thread_local static YueParser parser;
 	return parser;

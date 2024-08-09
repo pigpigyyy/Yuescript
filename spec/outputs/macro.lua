@@ -298,7 +298,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(309))
+print("current line: " .. tostring(308))
 do
 -- TODO
 end

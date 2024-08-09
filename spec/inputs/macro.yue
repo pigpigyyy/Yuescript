@@ -39,9 +39,8 @@ print $WindowFlag(
 )
 
 macro NumAndStr = (num, str) ->
-	import "yue"
-	unless yue.is_ast("Num", "123")
-		error "unmatched tokens got"
+	unless $is_ast(Num, num) and $is_ast SingleString, str
+		error "got unexpected token"
 	"[#{num}, #{str}]"
 
 print $NumAndStr 123, 'xyz'
