@@ -6300,6 +6300,30 @@ private:
 				auto res = "yue.is_ast("s + join(argStrs, ","sv) + ')';
 				lua_pushlstring(L, res.c_str(), res.size()); // cur res
 				return std::nullopt;
+			} else if (macroName == "to_ast"sv) {
+				if (!argStrs.empty() && args && !args->empty()) {
+					if (!_parser.hasAST(argStrs.front())) {
+						throw CompileError("invalid AST name"sv, args->front());
+					} else {
+						argStrs.front() = '"' + argStrs.front() + '"';
+						if (argStrs.size() >= 2) {
+							// name, code, level -> code, level, name
+							auto name = argStrs.front();
+							argStrs.pop_front();
+							auto code = argStrs.front();
+							argStrs.pop_front();
+							if (argStrs.empty()) {
+								argStrs.push_back("0"s);
+							}
+							argStrs.push_front(code);
+							argStrs.push_back(name);
+						}
+					}
+				}
+				lua_pop(L, 1); // cur
+				auto res = "yue.to_ast("s + join(argStrs, ","sv) + ')';
+				lua_pushlstring(L, res.c_str(), res.size()); // cur res
+				return std::nullopt;
 			} else {
 				throw CompileError("can not resolve macro"sv, x);
 			}
