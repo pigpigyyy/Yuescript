@@ -225,4 +225,10 @@ yue.pcall = yue_call
 yue.require = yue_require
 yue.p = p
 yue.traceback = yue_traceback
+yue.macro_env = setmetatable({yue = yue}, {
+	__index = _G,
+	__newindex = function(_, k, v)
+		_G[k] = v
+	end
+})
 )yuescript_codes";

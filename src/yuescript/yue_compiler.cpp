@@ -5117,7 +5117,7 @@ private:
 				newArgs.emplace_back(_parser.toString(argsDef->varArg));
 			}
 		}
-		std::string macroCodes = "_ENV=yue:require('yue'),<index>:_G,<newindex>:(k,v)=>_G[k]=v\n("s + join(newArgs, ","sv) + ")->"s + _parser.toString(macroLit->body);
+		std::string macroCodes = "_ENV=require('yue').macro_env\n("s + join(newArgs, ","sv) + ")->"s + _parser.toString(macroLit->body);
 		auto chunkName = "=(macro "s + macroName + ')';
 		pushCurrentModule(); // cur
 		int top = lua_gettop(L) - 1;
