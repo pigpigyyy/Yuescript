@@ -365,12 +365,12 @@ static int yuetoast(lua_State* L) {
 							yue::Utils::trim(str);
 							lua_pushlstring(L, str.c_str(), str.length());
 							lua_rawseti(L, -2, 4);
-							lua_rawseti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
+							lua_rawseti(L, tableIndex, static_cast<int>(lua_objlen(L, tableIndex)) + 1);
 							break;
 						}
 						case 1: {
 							if (flattenLevel > 1 || (flattenLevel == 1 && !current.hasSep)) {
-								lua_rawgeti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
+								lua_rawgeti(L, tableIndex, static_cast<int>(lua_objlen(L, tableIndex)) + 1);
 								getName(node);
 								lua_rawseti(L, -2, 1);
 								lua_pushinteger(L, node->m_begin.m_line);
@@ -383,7 +383,7 @@ static int yuetoast(lua_State* L) {
 							[[fallthrough]];
 						}
 						default: {
-							auto len = lua_objlen(L, tableIndex);
+							auto len = static_cast<int>(lua_objlen(L, tableIndex));
 							lua_createtable(L, count + 3, 0);
 							getName(node);
 							lua_rawseti(L, -2, 1);
@@ -400,7 +400,7 @@ static int yuetoast(lua_State* L) {
 								lua_rawseti(L, tableIndex, len);
 								len--;
 							}
-							lua_rawseti(L, tableIndex, lua_objlen(L, tableIndex) + 1);
+							lua_rawseti(L, tableIndex, static_cast<int>(lua_objlen(L, tableIndex)) + 1);
 							break;
 						}
 					}
@@ -422,9 +422,9 @@ static int yuetoast(lua_State* L) {
 
 static int yueisast(lua_State* L) {
 	size_t nameLen = 0;
-	auto name = luaL_tolstring(L, 1, &nameLen);
+	auto name = lua_tolstring(L, 1, &nameLen);
 	size_t codeLen = 0;
-	auto code = luaL_tolstring(L, 2, &codeLen);
+	auto code = lua_tolstring(L, 2, &codeLen);
 	bool result = yue::YueParser::shared().match({name, nameLen}, {code, codeLen});
 	lua_pushboolean(L, result ? 1 : 0);
 	return 1;
