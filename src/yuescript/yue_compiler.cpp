@@ -14,8 +14,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "yuescript/yue_compiler.h"
 #include "yuescript/yue_parser.h"
@@ -46,8 +46,7 @@ namespace yue {
 #define BLOCK_START do {
 #define BLOCK_END \
 	} \
-	while (false) \
-		;
+	while (false);
 #define BREAK_IF(cond) \
 	if (cond) break
 
@@ -76,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.24.0"sv;
+const std::string_view version = "0.24.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1475,8 +1474,7 @@ private:
 	}
 
 	bool isConditionChainingOperator(const std::string& op) {
-		return op == "=="sv || op == "~="sv || op == "!="sv ||
-			op == "<"sv || op == "<="sv || op == ">"sv || op == ">="sv;
+		return op == "=="sv || op == "~="sv || op == "!="sv || op == "<"sv || op == "<="sv || op == ">"sv || op == ">="sv;
 	}
 
 	bool isConditionChaining(Exp_t* exp) {
@@ -1521,7 +1519,6 @@ private:
 		_gotoScopes.push(_gotoScope);
 		_gotoScope++;
 	}
-
 
 	void pushUserFunctionScope() {
 		pushFunctionScope(false);
@@ -3728,7 +3725,7 @@ private:
 		std::list<std::pair<std::string, ast_list<true, UnaryExp_t>*>> chains;
 		chains.emplace_back(std::string(), &exp->pipeExprs);
 		int conditionChainCount = 0;
-		auto checkChains = [&]()-> ast_ptr<false, Exp_t> {
+		auto checkChains = [&]() -> ast_ptr<false, Exp_t> {
 			std::optional<str_list> result;
 			if (conditionChainCount > 1) {
 				ast_ptr<false, Exp_t> newCondExp;
@@ -3774,105 +3771,105 @@ private:
 					{
 						stack.push_back(*item.second);
 					}
-					reduce: {
-						if (stack.size() == 3) {
-							auto condExp = exp->new_ptr<Exp_t>();
-							const auto& one = std::get<ast_list<true, UnaryExp_t>>(stack.front());
-							condExp->pipeExprs.dup(one);
-							stack.pop_front();
-							auto opValue = exp->new_ptr<ExpOpValue_t>();
-							const auto& two = std::get<std::string>(stack.front());
-							auto op = toAst<BinaryOperator_t>(two, exp);
-							opValue->op.set(op);
-							stack.pop_front();
-							const auto& three = std::get<ast_list<true, UnaryExp_t>>(stack.front());
-							opValue->pipeExprs.dup(three);
-							condExp->opValues.push_back(opValue);
-							if (preDefine) {
-								auto ifNode = exp->new_ptr<If_t>();
-								ifNode->type.set(toAst<IfType_t>("unless"sv, exp));
-								auto ifCond = exp->new_ptr<IfCond_t>();
-								ifCond->condition.set(condExp);
-								ifNode->nodes.push_back(ifCond);
-								ifNode->nodes.push_back(toAst<Statement_t>("false"sv, exp));
-								YueFormat format{};
-								auto code = ifNode->to_string(&format);
-								if (newCondExp) {
-									if (!nodes) {
-										auto ifNodePrev = exp->new_ptr<If_t>();
-										ifNodePrev->type.set(toAst<IfType_t>("unless"sv, exp));
-										auto ifCondPrev = exp->new_ptr<IfCond_t>();
-										ifCondPrev->condition.set(newCondExp);
-										ifNodePrev->nodes.push_back(ifCondPrev);
-										ifNodePrev->nodes.push_back(toAst<Statement_t>("false", exp));
-										auto simpleValue = exp->new_ptr<SimpleValue_t>();
-										simpleValue->value.set(ifNodePrev);
-										newCondExp.set(newExp(simpleValue, exp));
-										nodes = &ifNodePrev->nodes;
-									}
-									auto block = exp->new_ptr<Block_t>();
-									auto stmt = exp->new_ptr<Statement_t>();
-									stmt->content.set(preDefine);
-									preDefine.set(nullptr);
-									block->statements.push_back(stmt);
+				reduce: {
+					if (stack.size() == 3) {
+						auto condExp = exp->new_ptr<Exp_t>();
+						const auto& one = std::get<ast_list<true, UnaryExp_t>>(stack.front());
+						condExp->pipeExprs.dup(one);
+						stack.pop_front();
+						auto opValue = exp->new_ptr<ExpOpValue_t>();
+						const auto& two = std::get<std::string>(stack.front());
+						auto op = toAst<BinaryOperator_t>(two, exp);
+						opValue->op.set(op);
+						stack.pop_front();
+						const auto& three = std::get<ast_list<true, UnaryExp_t>>(stack.front());
+						opValue->pipeExprs.dup(three);
+						condExp->opValues.push_back(opValue);
+						if (preDefine) {
+							auto ifNode = exp->new_ptr<If_t>();
+							ifNode->type.set(toAst<IfType_t>("unless"sv, exp));
+							auto ifCond = exp->new_ptr<IfCond_t>();
+							ifCond->condition.set(condExp);
+							ifNode->nodes.push_back(ifCond);
+							ifNode->nodes.push_back(toAst<Statement_t>("false"sv, exp));
+							YueFormat format{};
+							auto code = ifNode->to_string(&format);
+							if (newCondExp) {
+								if (!nodes) {
+									auto ifNodePrev = exp->new_ptr<If_t>();
+									ifNodePrev->type.set(toAst<IfType_t>("unless"sv, exp));
+									auto ifCondPrev = exp->new_ptr<IfCond_t>();
+									ifCondPrev->condition.set(newCondExp);
+									ifNodePrev->nodes.push_back(ifCondPrev);
+									ifNodePrev->nodes.push_back(toAst<Statement_t>("false", exp));
 									auto simpleValue = exp->new_ptr<SimpleValue_t>();
-									simpleValue->value.set(ifNode);
-									auto explist = exp->new_ptr<ExpList_t>();
-									explist->exprs.push_back(newExp(simpleValue, exp));
-									auto expListAssign = exp->new_ptr<ExpListAssign_t>();
-									expListAssign->expList.set(explist);
-									stmt = exp->new_ptr<Statement_t>();
-									stmt->content.set(expListAssign);
-									block->statements.push_back(stmt);
-									nodes->push_back(block);
-									nodes = &ifNode->nodes;
-								} else {
-									auto block = exp->new_ptr<Block_t>();
-									auto stmt = exp->new_ptr<Statement_t>();
-									stmt->content.set(preDefine);
-									preDefine.set(nullptr);
-									block->statements.push_back(stmt);
-									auto simpleValue = exp->new_ptr<SimpleValue_t>();
-									simpleValue->value.set(ifNode);
-									auto explist = exp->new_ptr<ExpList_t>();
-									explist->exprs.push_back(newExp(simpleValue, exp));
-									auto expListAssign = exp->new_ptr<ExpListAssign_t>();
-									expListAssign->expList.set(explist);
-									stmt = exp->new_ptr<Statement_t>();
-									stmt->content.set(expListAssign);
-									block->statements.push_back(stmt);
-									auto body = exp->new_ptr<Body_t>();
-									body->content.set(block);
-									auto doNode = exp->new_ptr<Do_t>();
-									doNode->body.set(body);
-									simpleValue = exp->new_ptr<SimpleValue_t>();
-									simpleValue->value.set(doNode);
+									simpleValue->value.set(ifNodePrev);
 									newCondExp.set(newExp(simpleValue, exp));
-									nodes = &ifNode->nodes;
+									nodes = &ifNodePrev->nodes;
+								}
+								auto block = exp->new_ptr<Block_t>();
+								auto stmt = exp->new_ptr<Statement_t>();
+								stmt->content.set(preDefine);
+								preDefine.set(nullptr);
+								block->statements.push_back(stmt);
+								auto simpleValue = exp->new_ptr<SimpleValue_t>();
+								simpleValue->value.set(ifNode);
+								auto explist = exp->new_ptr<ExpList_t>();
+								explist->exprs.push_back(newExp(simpleValue, exp));
+								auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+								expListAssign->expList.set(explist);
+								stmt = exp->new_ptr<Statement_t>();
+								stmt->content.set(expListAssign);
+								block->statements.push_back(stmt);
+								nodes->push_back(block);
+								nodes = &ifNode->nodes;
+							} else {
+								auto block = exp->new_ptr<Block_t>();
+								auto stmt = exp->new_ptr<Statement_t>();
+								stmt->content.set(preDefine);
+								preDefine.set(nullptr);
+								block->statements.push_back(stmt);
+								auto simpleValue = exp->new_ptr<SimpleValue_t>();
+								simpleValue->value.set(ifNode);
+								auto explist = exp->new_ptr<ExpList_t>();
+								explist->exprs.push_back(newExp(simpleValue, exp));
+								auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+								expListAssign->expList.set(explist);
+								stmt = exp->new_ptr<Statement_t>();
+								stmt->content.set(expListAssign);
+								block->statements.push_back(stmt);
+								auto body = exp->new_ptr<Body_t>();
+								body->content.set(block);
+								auto doNode = exp->new_ptr<Do_t>();
+								doNode->body.set(body);
+								simpleValue = exp->new_ptr<SimpleValue_t>();
+								simpleValue->value.set(doNode);
+								newCondExp.set(newExp(simpleValue, exp));
+								nodes = &ifNode->nodes;
+							}
+						} else {
+							if (newCondExp) {
+								if (nodes) {
+									auto explist = exp->new_ptr<ExpList_t>();
+									explist->exprs.push_back(condExp);
+									auto expListAssign = exp->new_ptr<ExpListAssign_t>();
+									expListAssign->expList.set(explist);
+									auto stmt = exp->new_ptr<Statement_t>();
+									stmt->content.set(expListAssign);
+									nodes->push_back(stmt);
+								} else {
+									auto opValue = exp->new_ptr<ExpOpValue_t>();
+									opValue->op.set(toAst<BinaryOperator_t>("and"sv, exp));
+									opValue->pipeExprs.dup(condExp->pipeExprs);
+									newCondExp->opValues.push_back(opValue);
+									newCondExp->opValues.dup(condExp->opValues);
 								}
 							} else {
-								if (newCondExp) {
-									if (nodes) {
-										auto explist = exp->new_ptr<ExpList_t>();
-										explist->exprs.push_back(condExp);
-										auto expListAssign = exp->new_ptr<ExpListAssign_t>();
-										expListAssign->expList.set(explist);
-										auto stmt = exp->new_ptr<Statement_t>();
-										stmt->content.set(expListAssign);
-										nodes->push_back(stmt);
-									} else {
-										auto opValue = exp->new_ptr<ExpOpValue_t>();
-										opValue->op.set(toAst<BinaryOperator_t>("and"sv, exp));
-										opValue->pipeExprs.dup(condExp->pipeExprs);
-										newCondExp->opValues.push_back(opValue);
-										newCondExp->opValues.dup(condExp->opValues);
-									}
-								} else {
-									newCondExp.set(condExp);
-								}
+								newCondExp.set(condExp);
 							}
 						}
 					}
+				}
 				}
 				popScope();
 				return newCondExp;
@@ -4078,7 +4075,6 @@ private:
 		}
 		return std::nullopt;
 	}
-
 
 	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Block_t* block, str_list* ensureArgListInTheEnd = nullptr, bool noGlobalVarPassing = false) {
 		if (checkUpValueFuncAvailable(block)) {
@@ -6315,6 +6311,9 @@ private:
 		} // cur macroFunc
 		pushYue("pcall"sv); // cur macroFunc pcall
 		lua_insert(L, -2); // cur pcall macroFunc
+		if (!lua_checkstack(L, argStrs.size())) {
+			throw CompileError("too much macro params"s, x);
+		}
 		for (const auto& arg : argStrs) {
 			lua_pushlstring(L, arg.c_str(), arg.size());
 		} // cur pcall macroFunc args...
@@ -8607,8 +8606,7 @@ private:
 					case id<ClassMemberList_t>(): {
 						size_t inc = transform_class_member_list(static_cast<ClassMemberList_t*>(content), members, classVar);
 						auto it = members.end();
-						for (size_t i = 0; i < inc; ++i, --it)
-							;
+						for (size_t i = 0; i < inc; ++i, --it);
 						for (; it != members.end(); ++it) {
 							auto& member = *it;
 							if (member.type == MemType::Property) {
@@ -10179,7 +10177,7 @@ private:
 			if (auto value = singleValueFrom(valueList)) {
 				if (value->item.is<SimpleTable_t>()) {
 					tableMatching = true;
-				} else if (auto sVal = value->item.as<SimpleValue_t>()){
+				} else if (auto sVal = value->item.as<SimpleValue_t>()) {
 					tableMatching = ast_is<TableLit_t, Comprehension_t>(sVal->value);
 				}
 			}

@@ -13,7 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace parserlib {
 
 template <class T>
-std::string_view ast_name() { }
+std::string_view ast_name() { return {}; }
 
 #define AST_LEAF(type) \
 	COUNTER_INC; \
