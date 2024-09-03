@@ -294,6 +294,17 @@ private:
 			, m_mode(mode) { }
 	};
 
+	struct _state_guard {
+		_state m_old_state;
+		_state* m_current_state;
+		_state_guard(const _state& old, _state* new_)
+			: m_old_state(old)
+			, m_current_state(new_) { }
+		~_state_guard() {
+			*m_current_state = m_old_state;
+		}
+	};
+
 	// internal expression
 	_expr* m_expr;
 

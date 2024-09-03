@@ -14,6 +14,31 @@ do
 	hello, world = _obj_0.hello, _obj_0.world
 end
 do
+	local x, a, b
+	do
+		local _obj_0, _obj_1 = f()
+		x = _obj_0
+		a, b = _obj_1[1], _obj_1[2]
+	end
+	print(x, a, b)
+end
+do
+	local list = {
+		{
+			1,
+			2
+		},
+		{
+			3,
+			4
+		}
+	}
+	local x, y
+	local _obj_0 = lume.first(list)
+	x, y = _obj_0[1], _obj_0[2]
+	list = lume.slice(list, 2)
+end
+do
 	local no, thing
 	do
 		local _obj_0 = world
@@ -24,12 +49,12 @@ do
 		local _obj_0 = yeah
 		a, b, c, d = _obj_0.a, _obj_0.b, _obj_0.c, _obj_0.d
 	end
-	b = two
 	a = one[1]
-	c = nil
+	b = two
 	b = one[1]
-	local e = two
+	c = nil
 	d = one[1]
+	local e = two
 	local x = one
 	local y = two[1]
 	local xx, yy = 1, 2
@@ -46,9 +71,9 @@ do
 		a, b, c, d, e, f, g = _obj_0[1], _obj_0.b, _obj_0[2], _obj_0.d, _obj_0[3], _obj_0.f, _obj_0[4]
 	end
 	do
-		c = nil
 		local _obj_0 = tbl
 		a, b = _obj_0.a, _obj_0.b
+		c = nil
 	end
 	do
 		a = tbl
@@ -56,8 +81,8 @@ do
 		b, c = _obj_0.b, _obj_0.c
 	end
 	do
-		b = _
 		a = tbl.a
+		b = _
 		c = _.c
 	end
 end
@@ -211,8 +236,8 @@ do
 		end
 		one, two, three = _tbl_0.one, _tbl_0.two, _tbl_0.three
 	end
-	b = 123
 	a = (a["if"](a, 123) + t).a
+	b = 123
 end
 do
 	local name, job
@@ -399,8 +424,7 @@ do
 	end
 end
 do
-	local x1, x2, x3, d, e
-	local b
+	local x1, x2, x3, d, b, e
 	do
 		local _obj_0, _obj_1, _obj_2, _obj_3, _obj_4 = f()
 		do
@@ -408,14 +432,15 @@ do
 			_obj_5[#_obj_5 + 1] = _obj_0
 		end
 		setmetatable(c, _obj_4)
-		x1, x2, x3, d, e = 1, 2, 3, _obj_1, _obj_3
+		x1, x2, x3, d = 1, 2, 3, _obj_1
 		b = _obj_2[1]
+		e = _obj_3
 	end
-	local y1, y4
-	local y2, y3
+	local y1, y2, y3, y4
 	local _obj_0, _obj_1 = f2()
-	y1, y4 = f1(), _obj_1
+	y1 = f1()
 	y2, y3 = _obj_0.y2, _obj_0.y3
+	y4 = _obj_1
 end
 do
 	local v1, v2, v3, v4

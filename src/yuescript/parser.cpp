@@ -15,14 +15,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
-#include <memory>
 
 #include "yuescript/parser.hpp"
-
-#define _DEFER(code, line) std::shared_ptr<void> _defer_##line(nullptr, [&](auto) { \
-	code; \
-})
-#define DEFER(code) _DEFER(code, __LINE__)
 
 namespace parserlib {
 
@@ -914,7 +908,7 @@ bool _context::parse_non_term(rule& r) {
 	// save the state of the rule
 	rule::_state old_state = r.m_state;
 	// restore the rule's state
-	DEFER(r.m_state = old_state);
+	rule::_state_guard quard(old_state, &r.m_state);
 
 	// success/failure result
 	bool ok = false;
@@ -1008,7 +1002,7 @@ bool _context::parse_term(rule& r) {
 	// save the state of the rule
 	rule::_state old_state = r.m_state;
 	// restore the rule's state
-	DEFER(r.m_state = old_state);
+	rule::_state_guard quard(old_state, &r.m_state);
 
 	// success/failure result
 	bool ok = false;

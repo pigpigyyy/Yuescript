@@ -7,6 +7,14 @@ do
 	{ :hello, :world } = value
 
 do
+	x, [a, b] = f!
+	print x, a, b
+
+do
+	list = [ [1, 2], [3, 4]]
+	{x, y}, list = lume.first(list), lume.slice list, 2
+
+do
 	{ yes: no, thing } = world
 
 	{:a,:b,:c,:d} = yeah

@@ -24,12 +24,12 @@ do
 		local _obj_0 = _u597d
 		_u5b57_u6bb5a, _u5b57_u6bb5b, _u5b57_u6bb5c, d_u5b57_u6bb5 = _obj_0["字段a"], _obj_0["字段b"], _obj_0["字段c"], _obj_0["d字段"]
 	end
-	local _u53d8_u91cfb = _u4e8c
 	local a_u5143_u7d20 = _u4e00[1]
-	local _u53d8_u91cfc = nil
+	local _u53d8_u91cfb = _u4e8c
 	local b_u5143_u7d20 = _u4e00[1]
-	local _u53d8_u91cfe = _u4e8c
+	local _u53d8_u91cfc = nil
 	local d_u5143_u7d20 = _u4e00[1]
+	local _u53d8_u91cfe = _u4e8c
 	local _u53d8_u91cfx = _u4e00
 	local _u5143_u7d20y = _u4e8c[1]
 	local _u53d8_u91cfxx, _u53d8_u91cfyy = 1, 2
@@ -47,9 +47,9 @@ do
 		_u5143_u7d20a, _u5b57_u6bb5b, _u5143_u7d20c, _u5b57_u6bb5d, _u5143_u7d20e, _u5b57_u6bb5f, _u5143_u7d20g = _obj_0[1], _obj_0["字段b"], _obj_0[2], _obj_0["字段d"], _obj_0[3], _obj_0["字段f"], _obj_0[4]
 	end
 	do
-		_u53d8_u91cfc = nil
 		local _obj_0 = _u8868
 		_u5b57_u6bb5a, _u5b57_u6bb5b = _obj_0["字段a"], _obj_0["字段b"]
+		_u53d8_u91cfc = nil
 	end
 	do
 		local _u53d8_u91cfa = _u8868
@@ -57,8 +57,8 @@ do
 		_u5b57_u6bb5b, _u5b57_u6bb5c = _obj_0["字段b"], _obj_0["字段c"]
 	end
 	do
-		_u53d8_u91cfb = __u65e0_u6548_u53d8_u91cf
 		_u5b57_u6bb5a = _u8868["字段a"]
+		_u53d8_u91cfb = __u65e0_u6548_u53d8_u91cf
 		_u5b57_u6bb5c = __u65e0_u6548_u53d8_u91cf["字段c"]
 	end
 end
@@ -212,11 +212,11 @@ do
 		end
 		_u4e00, _u4e8c, _u4e09 = _tbl_0["一"], _tbl_0["二"], _tbl_0["三"]
 	end
-	local _u53d8_u91cfb = 123
 	_u5b57_u6bb5a = ((function()
 		local _call_0 = _u5bf9_u8c61a
 		return _call_0["如果"](_call_0, 123)
 	end)() + _u53d8_u91cft)["字段a"]
+	local _u53d8_u91cfb = 123
 end
 do
 	local _u540d_u79f0, _u5de5_u4f5c
@@ -386,8 +386,7 @@ do
 	end
 end
 do
-	local _u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd, _u53d8_u91cfe
-	local _u5143_u7d20b
+	local _u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd, _u5143_u7d20b, _u53d8_u91cfe
 	do
 		local _obj_0, _obj_1, _obj_2, _obj_3, _obj_4 = _u51fd_u6570()
 		do
@@ -395,14 +394,15 @@ do
 			_obj_5[#_obj_5 + 1] = _obj_0
 		end
 		setmetatable(_u5bf9_u8c61c, _obj_4)
-		_u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd, _u53d8_u91cfe = 1, 2, 3, _obj_1, _obj_3
+		_u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd = 1, 2, 3, _obj_1
 		_u5143_u7d20b = _obj_2[1]
+		_u53d8_u91cfe = _obj_3
 	end
-	local _u53d8_u91cfy1, _u53d8_u91cfy4
-	local _u5b57_u6bb5y2, _u5b57_u6bb5y3
+	local _u53d8_u91cfy1, _u5b57_u6bb5y2, _u5b57_u6bb5y3, _u53d8_u91cfy4
 	local _obj_0, _obj_1 = _u51fd_u65702()
-	_u53d8_u91cfy1, _u53d8_u91cfy4 = _u51fd_u65701(), _obj_1
+	_u53d8_u91cfy1 = _u51fd_u65701()
 	_u5b57_u6bb5y2, _u5b57_u6bb5y3 = _obj_0["字段y2"], _obj_0["字段y3"]
+	_u53d8_u91cfy4 = _obj_1
 end
 do
 	local _u53d8_u91cfv1, _u53d8_u91cfv2, _u53d8_u91cfv3, _u53d8_u91cfv4

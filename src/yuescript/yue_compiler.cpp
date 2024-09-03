@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.24.1"sv;
+const std::string_view version = "0.25.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1943,16 +1943,26 @@ private:
 
 	std::string getDestrucureDefine(ExpListAssign_t* assignment) {
 		auto info = extractDestructureInfo(assignment, true, false);
-		if (info.assignment) {
-			_buf << getPreDefineLine(info.assignment);
-		}
 		if (!info.destructures.empty()) {
 			str_list defs;
-			for (const auto& destruct : info.destructures) {
-				for (const auto& item : destruct.items) {
-					if (!item.targetVar.empty()) {
-						if (addToScope(item.targetVar)) {
-							defs.push_back(item.targetVar);
+			for (const auto& des : info.destructures) {
+				if (std::holds_alternative<Destructure>(des)) {
+					const auto& destruct = std::get<Destructure>(des);
+					for (const auto& item : destruct.items) {
+						if (!item.targetVar.empty()) {
+							if (addToScope(item.targetVar)) {
+								defs.push_back(item.targetVar);
+							}
+						}
+					}
+				} else {
+					const auto& assignment = std::get<AssignmentPtr>(des);
+					if (!assignment.extraAssignment) {
+						auto names = transformAssignDefs(assignment.ptr->expList, DefOp::Get);
+						for (const auto& name : names) {
+							if (addToScope(name.first)) {
+								defs.push_back(name.first);
+							}
 						}
 					}
 				}
@@ -2007,12 +2017,15 @@ private:
 
 	void markDestructureConst(ExpListAssign_t* assignment) {
 		auto info = extractDestructureInfo(assignment, true, false);
-		for (auto& destruct : info.destructures) {
-			for (auto& item : destruct.items) {
-				if (item.targetVar.empty()) {
-					throw CompileError("can only declare variable as const"sv, item.target);
+		for (const auto& des : info.destructures) {
+			if (std::holds_alternative<Destructure>(des)) {
+				const auto& destruct = std::get<Destructure>(des);
+				for (const auto& item : destruct.items) {
+					if (item.targetVar.empty()) {
+						throw CompileError("can only declare variable as const"sv, item.target);
+					}
+					markVarConst(item.targetVar);
 				}
-				markVarConst(item.targetVar);
 			}
 		}
 	}
@@ -2079,7 +2092,7 @@ private:
 				BLOCK_START
 				auto value = singleValueFrom(*it);
 				BREAK_IF(!value);
-				if (value->item.is<SimpleTable_t>() || value->get_by_path<SimpleValue_t, TableLit_t>()) {
+				if (value->item.is<SimpleTable_t>() || value->get_by_path<SimpleValue_t, TableLit_t>() || value->get_by_path<SimpleValue_t, Comprehension_t>()) {
 					holdItem = true;
 					break;
 				}
@@ -2404,11 +2417,24 @@ private:
 			bool extraScope = false;
 			if (info.extraScope) {
 				str_list defs;
-				for (auto& destruct : info.destructures) {
-					for (auto& item : destruct.items) {
-						if (!item.targetVar.empty()) {
-							if (!isDefined(item.targetVar)) {
-								defs.push_back(item.targetVar);
+				for (const auto& des : info.destructures) {
+					if (std::holds_alternative<Destructure>(des)) {
+						const auto& destruct = std::get<Destructure>(des);
+						for (auto& item : destruct.items) {
+							if (!item.targetVar.empty()) {
+								if (!isDefined(item.targetVar)) {
+									defs.push_back(item.targetVar);
+								}
+							}
+						}
+					} else {
+						const auto& assignment = std::get<AssignmentPtr>(des);
+						if (!assignment.extraAssignment) {
+							auto names = transformAssignDefs(assignment.ptr->expList, DefOp::Get);
+							for (const auto& name : names) {
+								if (addToScope(name.first)) {
+									defs.push_back(name.first);
+								}
 							}
 						}
 					}
@@ -2426,10 +2452,13 @@ private:
 					pushScope();
 				}
 			}
-			if (info.assignment) {
-				transformAssignmentCommon(info.assignment, temp);
-			}
-			for (auto& destruct : info.destructures) {
+			for (auto& des : info.destructures) {
+				if (std::holds_alternative<AssignmentPtr>(des)) {
+					auto assignment = std::get<AssignmentPtr>(des).ptr.get();
+					transformAssignment(assignment, temp);
+					continue;
+				}
+				auto& destruct = std::get<Destructure>(des);
 				std::list<std::pair<ast_ptr<true, Exp_t>, ast_ptr<true, Exp_t>>> leftPairs;
 				bool extraScope = false;
 				if (!destruct.inlineAssignment && destruct.items.size() == 1) {
@@ -2931,17 +2960,21 @@ private:
 		return pairs;
 	}
 
+	struct AssignmentPtr {
+		ast_ptr<false, ExpListAssign_t> ptr;
+		bool extraAssignment = false;
+	};
+
 	struct DestructureInfo {
-		std::list<Destructure> destructures;
-		ast_ptr<false, ExpListAssign_t> assignment;
+		std::list<std::variant<Destructure, AssignmentPtr>> destructures;
 		bool extraScope = false;
 	};
 
 	DestructureInfo extractDestructureInfo(ExpListAssign_t* assignment, bool varDefOnly, bool optional) {
+		if (!assignment->action.is<Assign_t>()) return {};
 		auto x = assignment;
 		bool extraScope = false;
-		std::list<Destructure> destructs;
-		if (!assignment->action.is<Assign_t>()) return {destructs, nullptr};
+		std::list<std::variant<Destructure, AssignmentPtr>> destructs;
 		auto exprs = assignment->expList->exprs.objects();
 		auto values = assignment->action.to<Assign_t>()->values.objects();
 		size_t size = std::max(exprs.size(), values.size());
@@ -2951,10 +2984,26 @@ private:
 			while (values.size() < size) values.emplace_back(nil);
 		}
 		using iter = node_container::iterator;
-		std::vector<std::pair<iter, iter>> destructPairs;
+		std::vector<std::pair<iter, iter>> assignPairs;
 		ast_list<false, ast_node> valueItems;
 		str_list temp;
 		pushScope();
+		auto checkCommonAssignment = [&]() {
+			if (!assignPairs.empty()) {
+				auto expList = x->new_ptr<ExpList_t>();
+				auto newAssign = x->new_ptr<ExpListAssign_t>();
+				newAssign->expList.set(expList);
+				auto assign = x->new_ptr<Assign_t>();
+				newAssign->action.set(assign);
+				for (const auto& pair : assignPairs) {
+					expList->exprs.push_back(*pair.first);
+					assign->values.push_back(*pair.second);
+				}
+				assignPairs.clear();
+				destructs.push_back(AssignmentPtr{newAssign, false});
+			}
+		};
+		bool hasDestructuring = false;
 		for (auto i = exprs.begin(), j = values.begin(); i != exprs.end(); ++i, ++j) {
 			auto expr = *i;
 			auto value = singleValueFrom(expr);
@@ -2974,6 +3023,8 @@ private:
 				}
 			}
 			if (destructNode) {
+				hasDestructuring = true;
+				checkCommonAssignment();
 				if (*j != nil) {
 					if (auto ssVal = simpleSingleValueFrom(*j)) {
 						switch (ssVal->value->get_id()) {
@@ -2989,7 +3040,6 @@ private:
 						}
 					}
 				}
-				destructPairs.push_back({i, j});
 				auto subDestruct = destructNode->new_ptr<TableLit_t>();
 				auto subMetaDestruct = destructNode->new_ptr<TableLit_t>();
 				const node_container* dlist = nullptr;
@@ -3113,19 +3163,26 @@ private:
 				if (!varDefOnly && !subDestruct->values.empty() && !subMetaDestruct->values.empty()) {
 					auto var = singleVariableFrom(*j, AccessType::None);
 					if (var.empty() || !isLocal(var)) {
+						checkCommonAssignment();
 						auto objVar = getUnusedName("_obj_"sv);
 						addToScope(objVar);
 						valueItems.pop_back();
 						valueItems.push_back(toAst<Exp_t>(objVar, *j));
-						exprs.push_back(valueItems.back());
-						values.push_back(*j);
+						auto expList = x->new_ptr<ExpList_t>();
+						auto newAssign = x->new_ptr<ExpListAssign_t>();
+						newAssign->expList.set(expList);
+						auto assign = x->new_ptr<Assign_t>();
+						newAssign->action.set(assign);
+						expList->exprs.push_back(valueItems.back());
+						assign->values.push_back(*j);
+						destructs.push_back(AssignmentPtr{newAssign, true});
 						extraScope = true;
 					}
 				}
 				TableLit_t* tabs[] = {subDestruct.get(), subMetaDestruct.get()};
 				for (auto tab : tabs) {
 					if (!tab->values.empty()) {
-						auto& destruct = destructs.emplace_back();
+						Destructure destruct;
 						if (!varDefOnly) {
 							destruct.value = valueItems.back();
 							destruct.valueVar = singleVariableFrom(destruct.value, AccessType::None);
@@ -3172,29 +3229,28 @@ private:
 								destruct.valueVar.clear();
 							}
 						}
+						destructs.push_back(destruct);
 					}
 				}
+			} else {
+				assignPairs.push_back({i, j});
 			}
 		}
-		for (const auto& p : destructPairs) {
-			exprs.erase(p.first);
-			values.erase(p.second);
+		if (!hasDestructuring) {
+			popScope();
+			return {};
 		}
-		ast_ptr<false, ExpListAssign_t> newAssignment;
-		if (!destructPairs.empty() && !exprs.empty()) {
-			auto x = assignment;
-			auto expList = x->new_ptr<ExpList_t>();
-			auto newAssign = x->new_ptr<ExpListAssign_t>();
-			newAssign->expList.set(expList);
-			for (auto expr : exprs) expList->exprs.push_back(expr);
-			auto assign = x->new_ptr<Assign_t>();
-			for (auto value : values) assign->values.push_back(value);
-			newAssign->action.set(assign);
-			newAssignment = newAssign;
-		}
+		checkCommonAssignment();
 		if (!varDefOnly) {
-			for (auto& des : destructs) {
+			for (auto& d : destructs) {
+				if (std::holds_alternative<AssignmentPtr>(d)) {
+					continue;
+				}
+				auto& des = std::get<Destructure>(d);
 				for (const auto& item : des.items) {
+					if (!item.structure) {
+						continue;
+					}
 					for (auto node : item.structure->items.objects()) {
 						if (auto exp = ast_cast<Exp_t>(node)) {
 							if (auto value = simpleSingleValueFrom(node)) {
@@ -3236,7 +3292,7 @@ private:
 			}
 		}
 		popScope();
-		return {std::move(destructs), newAssignment, extraScope};
+		return {std::move(destructs), extraScope};
 	}
 
 	void transformAssignmentCommon(ExpListAssign_t* assignment, str_list& out) {
@@ -4746,23 +4802,30 @@ private:
 					}
 					auto info = extractDestructureInfo(assignment, true, false);
 					if (!info.destructures.empty()) {
-						for (const auto& destruct : info.destructures)
-							for (const auto& item : destruct.items)
-								if (!item.targetVar.empty()) {
-									if (std::isupper(item.targetVar[0]) && capital) {
-										capital->decls.push_back(item.targetVar);
-									} else if (any) {
-										any->decls.push_back(item.targetVar);
+						for (const auto& des : info.destructures) {
+							if (std::holds_alternative<Destructure>(des)) {
+								const auto& destruct = std::get<Destructure>(des);
+								for (const auto& item : destruct.items) {
+									if (!item.targetVar.empty()) {
+										if (std::isupper(item.targetVar[0]) && capital) {
+											capital->decls.push_back(item.targetVar);
+										} else if (any) {
+											any->decls.push_back(item.targetVar);
+										}
 									}
 								}
-					}
-					if (info.assignment) {
-						auto defs = transformAssignDefs(info.assignment->expList, DefOp::Get);
-						for (const auto& def : defs) {
-							if (std::isupper(def.first[0]) && capital) {
-								capital->decls.push_back(def.first);
-							} else if (any) {
-								any->decls.push_back(def.first);
+							} else {
+								const auto& assignment = std::get<AssignmentPtr>(des);
+								if (!assignment.extraAssignment) {
+									auto defs = transformAssignDefs(assignment.ptr->expList, DefOp::Get);
+									for (const auto& def : defs) {
+										if (std::isupper(def.first[0]) && capital) {
+											capital->decls.push_back(def.first);
+										} else if (any) {
+											any->decls.push_back(def.first);
+										}
+									}
+								}
 							}
 						}
 					}
@@ -8551,10 +8614,17 @@ private:
 						}
 						auto info = extractDestructureInfo(assignment, true, false);
 						if (!info.destructures.empty()) {
-							for (const auto& destruct : info.destructures)
-								for (const auto& item : destruct.items)
-									if (!item.targetVar.empty() && addToScope(item.targetVar))
+							for (const auto& des : info.destructures) {
+								if (std::holds_alternative<AssignmentPtr>(des)) {
+									continue;
+								}
+								const auto& destruct = std::get<Destructure>(des);
+								for (const auto& item : destruct.items) {
+									if (!item.targetVar.empty() && addToScope(item.targetVar)) {
 										varDefs.push_back(item.targetVar);
+									}
+								}
+							}
 						}
 						BLOCK_START
 						auto assign = assignment->action.as<Assign_t>();
@@ -9006,10 +9076,17 @@ private:
 						}
 						auto info = extractDestructureInfo(assignment, true, false);
 						if (!info.destructures.empty()) {
-							for (const auto& destruct : info.destructures)
-								for (const auto& item : destruct.items)
-									if (!item.targetVar.empty() && !isDefined(item.targetVar))
+							for (const auto& des : info.destructures) {
+								if (std::holds_alternative<AssignmentPtr>(des)) {
+									continue;
+								}
+								const auto& destruct = std::get<Destructure>(des);
+								for (const auto& item : destruct.items) {
+									if (!item.targetVar.empty() && !isDefined(item.targetVar)) {
 										return traversal::Stop;
+									}
+								}
+							}
 						}
 						BLOCK_START
 						auto assign = assignment->action.as<Assign_t>();
@@ -9248,13 +9325,19 @@ private:
 				auto names = transformAssignDefs(expList, DefOp::Get);
 				auto info = extractDestructureInfo(assignment, true, false);
 				if (!info.destructures.empty()) {
-					for (const auto& destruct : info.destructures)
-						for (const auto& item : destruct.items)
+					for (const auto& des : info.destructures) {
+						if (std::holds_alternative<AssignmentPtr>(des)) {
+							continue;
+						}
+						const auto& destruct = std::get<Destructure>(des);
+						for (const auto& item : destruct.items) {
 							if (!item.targetVar.empty()) {
 								auto dot = ast_cast<DotChainItem_t>(item.structure->items.back());
 								auto uname = dot->name.as<UnicodeName_t>();
 								names.emplace_back(item.targetVar, uname ? _parser.toString(uname) : Empty);
 							}
+						}
+					}
 				}
 				if (_info.exportDefault) {
 					out.back().append(indent() + _info.moduleName + " = "s + names.back().first + nlr(exportNode));
@@ -10213,7 +10296,11 @@ private:
 				auto info = extractDestructureInfo(assignment, true, false);
 				transformAssignment(assignment, temp, true);
 				str_list conds;
-				for (const auto& destruct : info.destructures) {
+				for (const auto& des : info.destructures) {
+					if (std::holds_alternative<AssignmentPtr>(des)) {
+						continue;
+					}
+					const auto& destruct = std::get<Destructure>(des);
 					for (const auto& item : destruct.items) {
 						if (!item.defVal) {
 							transformExp(item.target, conds, ExpUsage::Closure);
@@ -10475,7 +10562,11 @@ private:
 			assignment->expList.set(leftList);
 			assignment->action.set(assign);
 			auto info = extractDestructureInfo(assignment, true, false);
-			for (auto& destruct : info.destructures) {
+			for (const auto& des : info.destructures) {
+				if (std::holds_alternative<AssignmentPtr>(des)) {
+					continue;
+				}
+				const auto& destruct = std::get<Destructure>(des);
 				for (auto& item : destruct.items) {
 					if (item.targetVar.empty()) {
 						throw CompileError("can only declare variable as const"sv, item.target);
@@ -10569,7 +10660,11 @@ private:
 			assignment->action.set(assignB);
 			auto info = extractDestructureInfo(assignment, true, false);
 			str_list vars;
-			for (auto& destruct : info.destructures) {
+			for (auto& des : info.destructures) {
+				if (std::holds_alternative<AssignmentPtr>(des)) {
+					continue;
+				}
+				const auto& destruct = std::get<Destructure>(des);
 				for (auto& item : destruct.items) {
 					if (item.targetVar.empty()) {
 						throw CompileError("can only declare variable as const"sv, item.target);

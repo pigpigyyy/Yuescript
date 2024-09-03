@@ -77,8 +77,7 @@ return _(function()
 		end
 	end
 	do
-		local a
-		local b
+		local a, b
 		if x then
 			local _obj_0, _obj_1 = f()
 			a = _obj_0

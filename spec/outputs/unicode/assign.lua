@@ -81,8 +81,7 @@ return __u65e0_u6548_u53d8_u91cf(function()
 		end
 	end
 	do
-		local _u53d8_u91cfa
-		local _u5143_u7d20b
+		local _u53d8_u91cfa, _u5143_u7d20b
 		if x_u6761_u4ef6 then
 			local _obj_0, _obj_1 = _u51fd_u6570()
 			_u53d8_u91cfa = _obj_0
