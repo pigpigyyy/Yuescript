@@ -67,50 +67,95 @@ return _(function()
 	end
 	do
 		local a
+		local _obj_0, _obj_1
 		if x then
 			local _exp_0 = y
 			if 1 == _exp_0 then
-				local _obj_0, _obj_1 = f()
-				b[#b + 1] = _obj_1
-				a = _obj_0
+				_obj_0, _obj_1 = f()
 			end
 		end
+		a = _obj_0
+		b[#b + 1] = _obj_1
 	end
 	do
 		local a, b
+		local _obj_0, _obj_1
 		if x then
-			local _obj_0, _obj_1 = f()
+			_obj_0, _obj_1 = f()
+		else
+			_obj_0, _obj_1 = 123, tb
+		end
+		a = _obj_0
+		b = _obj_1[1]
+	end
+	do
+		local a
+		do
+			local _obj_0, _obj_1
+			if x then
+				local _exp_0 = y
+				if 1 == _exp_0 then
+					_obj_0, _obj_1 = f()
+				end
+			end
+			a = _obj_0
+			b[#b + 1] = _obj_1
+		end
+		print(a, b)
+	end
+	do
+		local a, b
+		do
+			local _obj_0, _obj_1
+			if x then
+				_obj_0, _obj_1 = f()
+			else
+				_obj_0, _obj_1 = 123, tb
+			end
 			a = _obj_0
 			b = _obj_1[1]
-		else
-			a = 123
-			b = tb[1]
 		end
+		print(a, b)
 	end
 	do
 		local a, c
-		if x then
-			local _exp_0 = y
-			if 1 == _exp_0 then
-				local _obj_0, _obj_1, _obj_2, _obj_3 = f()
-				b[#b + 1] = _obj_1
-				a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
+		do
+			local _obj_0, _obj_1, _obj_2, _obj_3
+			if x then
+				local _exp_0 = y
+				if 1 == _exp_0 then
+					_obj_0, _obj_1, _obj_2, _obj_3 = f()
+				end
+			elseif x2 then
+				if y2 then
+					_obj_0, _obj_1, _obj_2, _obj_3 = f1()
+				end
+			else
+				print("hello")
+				do
+					print(123)
+					_obj_0, _obj_1, _obj_2, _obj_3 = 1, f2()
+				end
 			end
-		elseif x2 then
-			if y2 then
-				local _obj_0, _obj_1, _obj_2, _obj_3 = f1()
-				b[#b + 1] = _obj_1
-				a, c, getmetatable(d).__add = _obj_0, _obj_2, _obj_3
-			end
-		else
-			print("hello")
-			do
-				print(123)
-				local _obj_0, _obj_1, _obj_2 = f2()
-				b[#b + 1] = _obj_0
-				a, c, getmetatable(d).__add = 1, _obj_1, _obj_2
-			end
+			a = _obj_0
+			b[#b + 1] = _obj_1
+			c, getmetatable(d).__add = _obj_2, _obj_3
 		end
+		print(a, b, c, d)
+	end
+	do
+		local x, a, b
+		do
+			local _obj_0, _obj_1, _obj_2
+			if cond then
+				_obj_0, _obj_1, _obj_2 = f()
+			end
+			x = 1
+			a, b = _obj_0[1], _obj_0[2]
+			setmetatable(tb, _obj_1)
+			c[#c + 1] = _obj_2
+		end
+		print(x, a, b)
 	end
 	do
 		local a = 0

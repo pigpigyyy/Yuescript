@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.0"sv;
+const std::string_view version = "0.25.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -2047,34 +2047,34 @@ private:
 			}
 			throw CompileError(clearBuf(), values.front());
 		}
-		bool checkValuesLater = false;
 		if (exprs.size() > values.size()) {
 			BLOCK_START
+			bool needHoldValues = false;
 			switch (values.back()->get_id()) {
 				case id<If_t>():
 				case id<Switch_t>():
-					checkValuesLater = true;
+					needHoldValues = true;
 					break;
 			}
-			BREAK_IF(checkValuesLater);
-			auto value = singleValueFrom(values.back());
-			if (!value) {
-				_buf << exprs.size() << " right values expected, got "sv << values.size();
-				throw CompileError(clearBuf(), values.front());
-			}
-			if (auto val = value->item.as<SimpleValue_t>()) {
-				switch (val->value->get_id()) {
-					case id<If_t>():
-					case id<Switch_t>():
-					case id<Do_t>():
-					case id<Try_t>():
-						checkValuesLater = true;
-						break;
+			if (!needHoldValues) {
+				if (auto value = singleValueFrom(values.back())) {
+					if (auto val = value->item.as<SimpleValue_t>()) {
+						switch (val->value->get_id()) {
+							case id<If_t>():
+							case id<Switch_t>():
+							case id<Do_t>():
+							case id<Try_t>():
+								needHoldValues = true;
+								break;
+						}
+					} else if (auto chainValue = value->item.as<ChainValue_t>()) {
+						if (chainValue && ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
+							needHoldValues = true;
+						}
+					}
 				}
-				BREAK_IF(checkValuesLater);
 			}
-			auto chainValue = value->item.as<ChainValue_t>();
-			if (!chainValue || !ast_is<Invoke_t, InvokeArgs_t>(chainValue->items.back())) {
+			if (!needHoldValues) {
 				_buf << exprs.size() << " right values expected, got "sv << values.size();
 				throw CompileError(clearBuf(), values.front());
 			}
@@ -2138,7 +2138,7 @@ private:
 				temp.push_back(indent() + "do"s + nll(assignment));
 				pushScope();
 			}
-			transformAssignmentCommon(preAssignment, temp);
+			transformAssignment(preAssignment, temp);
 			transformAssignment(assignment, temp);
 			if (needScope) {
 				popScope();
@@ -2148,17 +2148,52 @@ private:
 			return;
 			BLOCK_END
 		}
-		if (!checkValuesLater) {
+		{
 			auto vit = values.begin();
 			for (auto it = exprs.begin(); it != exprs.end(); ++it) {
+				auto splitAssignment = [&]() {
+					auto beforeAssignment = x->new_ptr<ExpListAssign_t>();
+					auto afterAssignment = x->new_ptr<ExpListAssign_t>();
+					{
+						auto beforeExpList = x->new_ptr<ExpList_t>();
+						auto beforeAssign = x->new_ptr<Assign_t>();
+						beforeAssignment->expList.set(beforeExpList);
+						beforeAssignment->action.set(beforeAssign);
+						auto afterExpList = x->new_ptr<ExpList_t>();
+						auto afterAssign = x->new_ptr<Assign_t>();
+						afterAssignment->expList.set(afterExpList);
+						afterAssignment->action.set(afterAssign);
+						ExpList_t* currentExpList = beforeExpList.get();
+						for (auto exp : exprs) {
+							if (exp != *it) {
+								currentExpList->exprs.push_back(exp);
+							} else {
+								currentExpList = afterExpList.get();
+							}
+						}
+						Assign_t* currentAssign = beforeAssign.get();
+						for (auto value : values) {
+							if (value != *vit) {
+								currentAssign->values.push_back(value);
+							} else {
+								currentAssign = afterAssign.get();
+							}
+						}
+					}
+					return std::make_pair(beforeAssignment, afterAssignment);
+				};
 				BLOCK_START
 				auto value = singleValueFrom(*it);
 				BREAK_IF(!value);
 				auto chainValue = value->item.as<ChainValue_t>();
 				BREAK_IF(!chainValue);
-				str_list temp;
 				if (auto dot = ast_cast<DotChainItem_t>(chainValue->items.back())) {
 					BREAK_IF(!dot->name.is<Metatable_t>());
+					str_list temp;
+					auto [beforeAssignment, afterAssignment] = splitAssignment();
+					if (!beforeAssignment->expList->exprs.empty()) {
+						transformAssignment(beforeAssignment, temp);
+					}
 					str_list args;
 					auto tmpChain = chainValue->new_ptr<ChainValue_t>();
 					tmpChain->items.dup(chainValue->items);
@@ -2178,7 +2213,17 @@ private:
 					transformAssignItem(*vit, args);
 					_buf << indent() << globalVar("setmetatable"sv, x, AccessType::Read) << '(' << join(args, ", "sv) << ')' << nll(x);
 					temp.push_back(clearBuf());
+					if (!afterAssignment->expList->exprs.empty()) {
+						transformAssignment(afterAssignment, temp);
+					}
+					out.push_back(join(temp));
+					return;
 				} else if (ast_is<TableAppendingOp_t>(chainValue->items.back())) {
+					str_list temp;
+					auto [beforeAssignment, afterAssignment] = splitAssignment();
+					if (!beforeAssignment->expList->exprs.empty()) {
+						transformAssignment(beforeAssignment, temp);
+					}
 					auto tmpChain = chainValue->new_ptr<ChainValue_t>();
 					tmpChain->items.dup(chainValue->items);
 					tmpChain->items.pop_back();
@@ -2220,32 +2265,14 @@ private:
 						popScope();
 						temp.push_back(indent() + "end"s + nlr(x));
 					}
-				} else
-					break;
-				auto newExpList = x->new_ptr<ExpList_t>();
-				auto newAssign = x->new_ptr<Assign_t>();
-				auto newAssignment = x->new_ptr<ExpListAssign_t>();
-				newAssignment->expList.set(newExpList);
-				newAssignment->action.set(newAssign);
-				for (auto exp : exprs) {
-					if (exp != *it) newExpList->exprs.push_back(exp);
-				}
-				for (auto value : values) {
-					if (value != *vit) newAssign->values.push_back(value);
-				}
-				if (newExpList->exprs.empty() && newAssign->values.empty()) {
+					if (!afterAssignment->expList->exprs.empty()) {
+						transformAssignment(afterAssignment, temp);
+					}
 					out.push_back(join(temp));
 					return;
+				} else {
+					break;
 				}
-				if (newExpList->exprs.size() < newAssign->values.size()) {
-					auto exp = toAst<Exp_t>("_"sv, x);
-					while (newExpList->exprs.size() < newAssign->values.size()) {
-						newExpList->exprs.push_back(exp);
-					}
-				}
-				transformAssignment(newAssignment, temp);
-				out.push_back(join(temp));
-				return;
 				BLOCK_END
 				if (vit != values.end()) ++vit;
 			}
@@ -2432,7 +2459,7 @@ private:
 						if (!assignment.extraAssignment) {
 							auto names = transformAssignDefs(assignment.ptr->expList, DefOp::Get);
 							for (const auto& name : names) {
-								if (addToScope(name.first)) {
+								if (!isDefined(name.first)) {
 									defs.push_back(name.first);
 								}
 							}

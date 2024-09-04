@@ -58,11 +58,12 @@ do
 	local _obj_2 = getmetatable(_obj_1)
 	add, sub = _obj_2.__add, _obj_2.__sub
 end
-setmetatable(_u53d8_u91cfa["变量b"], { })
 _u53d8_u91cfx.abc = 123
+setmetatable(_u53d8_u91cfa["变量b"], { })
 setmetatable(_u51fd_u6570(), mt)
+_u53d8_u91cfa = 1
 setmetatable(_u53d8_u91cfb["变量c"], mt)
-_u53d8_u91cfa, _u53d8_u91cfd, _u53d8_u91cfe = 1, "abc", nil
+_u53d8_u91cfd, _u53d8_u91cfe = "abc", nil
 local _u76f8_u540c = getmetatable(_u53d8_u91cfa).__index == getmetatable(_u53d8_u91cfa).__index
 setmetatable(_u53d8_u91cfa, {
 	__index = _u8868

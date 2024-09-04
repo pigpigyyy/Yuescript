@@ -427,14 +427,15 @@ do
 	local x1, x2, x3, d, b, e
 	do
 		local _obj_0, _obj_1, _obj_2, _obj_3, _obj_4 = f()
+		x1, x2, x3 = 1, 2, 3
 		do
 			local _obj_5 = a
 			_obj_5[#_obj_5 + 1] = _obj_0
 		end
-		setmetatable(c, _obj_4)
-		x1, x2, x3, d = 1, 2, 3, _obj_1
+		d = _obj_1
 		b = _obj_2[1]
 		e = _obj_3
+		setmetatable(c, _obj_4)
 	end
 	local y1, y2, y3, y4
 	local _obj_0, _obj_1 = f2()

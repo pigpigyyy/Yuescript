@@ -63,6 +63,20 @@ do
 		123, tb
 
 do
+	a, b[] = if x
+		switch y
+			when 1
+				f!
+	print a, b
+
+do
+	a, {b} = if x
+		f!
+	else
+		123, tb
+	print a, b
+
+do
 	a, b[], c, d.<add> = if x
 		switch y
 			when 1
@@ -75,6 +89,12 @@ do
 		do
 			print 123
 			1, f2!
+	print a, b, c, d
+
+do
+	x, [a, b], tb.<>, c[] = 1, if cond
+		f!
+	print x, a, b
 
 do
 	a = b = c = d = 0

@@ -58,11 +58,12 @@ do
 	local _obj_2 = getmetatable(_obj_1)
 	add, sub = _obj_2.__add, _obj_2.__sub
 end
-setmetatable(a.b, { })
 x.abc = 123
+setmetatable(a.b, { })
 setmetatable(func(), mt)
+a = 1
 setmetatable(b.c, mt)
-a, d, e = 1, "abc", nil
+d, e = "abc", nil
 local is_same = getmetatable(a).__index == getmetatable(a).__index
 setmetatable(a, {
 	__index = tb

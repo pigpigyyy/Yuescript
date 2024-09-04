@@ -71,53 +71,50 @@ return __u65e0_u6548_u53d8_u91cf(function()
 	end
 	do
 		local _u53d8_u91cfa
+		local _obj_0, _obj_1
 		if x_u6761_u4ef6 then
 			local _exp_0 = _u5bf9_u8c61y
 			if 1 == _exp_0 then
-				local _obj_0, _obj_1 = _u51fd_u6570()
-				_u53d8_u91cfb[#_u53d8_u91cfb + 1] = _obj_1
-				_u53d8_u91cfa = _obj_0
+				_obj_0, _obj_1 = _u51fd_u6570()
 			end
 		end
+		_u53d8_u91cfa = _obj_0
+		_u53d8_u91cfb[#_u53d8_u91cfb + 1] = _obj_1
 	end
 	do
 		local _u53d8_u91cfa, _u5143_u7d20b
+		local _obj_0, _obj_1
 		if x_u6761_u4ef6 then
-			local _obj_0, _obj_1 = _u51fd_u6570()
-			_u53d8_u91cfa = _obj_0
-			_u5143_u7d20b = _obj_1[1]
+			_obj_0, _obj_1 = _u51fd_u6570()
 		else
-			_u53d8_u91cfa = 123
-			_u5143_u7d20b = _u8868[1]
+			_obj_0, _obj_1 = 123, _u8868
 		end
+		_u53d8_u91cfa = _obj_0
+		_u5143_u7d20b = _obj_1[1]
 	end
 	do
 		local _u53d8_u91cfa, _u5bf9_u8c61c
+		local _obj_0, _obj_1, _obj_2, _obj_3
 		if _u6761_u4ef6x then
 			local _exp_0 = _u5bf9_u8c61y
 			if 1 == _exp_0 then
-				local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u6570()
-				local _obj_4 = _u6570_u7ec4b
-				_obj_4[#_obj_4 + 1] = _obj_1
-				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
+				_obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u6570()
 			end
 		elseif _u6761_u4ef6x2 then
 			if _u6761_u4ef6y2 then
-				local _obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u65701()
-				local _obj_4 = _u6570_u7ec4b
-				_obj_4[#_obj_4 + 1] = _obj_1
-				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_0, _obj_2, _obj_3
+				_obj_0, _obj_1, _obj_2, _obj_3 = _u51fd_u65701()
 			end
 		else
 			_u6253_u5370("hello")
 			do
 				_u6253_u5370(123)
-				local _obj_0, _obj_1, _obj_2 = _u51fd_u65702()
-				local _obj_3 = _u6570_u7ec4b
-				_obj_3[#_obj_3 + 1] = _obj_0
-				_u53d8_u91cfa, _u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = 1, _obj_1, _obj_2
+				_obj_0, _obj_1, _obj_2, _obj_3 = 1, _u51fd_u65702()
 			end
 		end
+		_u53d8_u91cfa = _obj_0
+		local _obj_4 = _u6570_u7ec4b
+		_obj_4[#_obj_4 + 1] = _obj_1
+		_u5bf9_u8c61c, getmetatable(_u5bf9_u8c61d).__add = _obj_2, _obj_3
 	end
 	do
 		local _u53d8_u91cfa = 0

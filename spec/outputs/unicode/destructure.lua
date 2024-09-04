@@ -389,14 +389,15 @@ do
 	local _u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd, _u5143_u7d20b, _u53d8_u91cfe
 	do
 		local _obj_0, _obj_1, _obj_2, _obj_3, _obj_4 = _u51fd_u6570()
+		_u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3 = 1, 2, 3
 		do
 			local _obj_5 = _u6570_u7ec4a
 			_obj_5[#_obj_5 + 1] = _obj_0
 		end
-		setmetatable(_u5bf9_u8c61c, _obj_4)
-		_u53d8_u91cf1, _u53d8_u91cf2, _u53d8_u91cf3, _u53d8_u91cfd = 1, 2, 3, _obj_1
+		_u53d8_u91cfd = _obj_1
 		_u5143_u7d20b = _obj_2[1]
 		_u53d8_u91cfe = _obj_3
+		setmetatable(_u5bf9_u8c61c, _obj_4)
 	end
 	local _u53d8_u91cfy1, _u5b57_u6bb5y2, _u5b57_u6bb5y3, _u53d8_u91cfy4
 	local _obj_0, _obj_1 = _u51fd_u65702()
