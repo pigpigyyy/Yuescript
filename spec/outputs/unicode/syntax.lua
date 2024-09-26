@@ -40,12 +40,16 @@ end
 _ = function()
 	return 1, 2, 34
 end
-return 5 + function()
-	return 4 + 2
+do
+	return 5 + function()
+		return 4 + 2
+	end
 end
-return 5 + (function()
-	return 4
-end) + 2
+do
+	return 5 + (function()
+		return 4
+	end) + 2
+end
 _u6253_u5370(5 + function()
 	_ = 34
 	return _u597d(_u7403)

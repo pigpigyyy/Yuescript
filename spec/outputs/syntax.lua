@@ -40,12 +40,16 @@ end
 _ = function()
 	return 1, 2, 34
 end
-return 5 + function()
-	return 4 + 2
+do
+	return 5 + function()
+		return 4 + 2
+	end
 end
-return 5 + (function()
-	return 4
-end) + 2
+do
+	return 5 + (function()
+		return 4
+	end) + 2
+end
 print(5 + function()
 	_ = 34
 	return good(nads)

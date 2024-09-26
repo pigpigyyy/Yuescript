@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.1"sv;
+const std::string_view version = "0.25.2"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -4490,7 +4490,9 @@ private:
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {
 			auto node = *it;
 			auto stmt = static_cast<Statement_t*>(node);
-			if (auto pipeBody = stmt->content.as<PipeBody_t>()) {
+			if (!stmt->appendix && stmt->content.is<Return_t>() && stmt != nodes.back()) {
+				throw CompileError("'return' statement must be the last line in the block"sv, stmt->content);
+			} else if (auto pipeBody = stmt->content.as<PipeBody_t>()) {
 				auto x = stmt;
 				bool cond = false;
 				BLOCK_START
@@ -9151,7 +9153,38 @@ private:
 			ifNode->nodes.push_back(with->body);
 			transformIf(ifNode, temp, ExpUsage::Common);
 		} else {
-			transform_plain_body(with->body, temp, ExpUsage::Common);
+			bool transformed = false;
+			if (auto block = with->body.as<Block_t>()) {
+				if (!block->statements.empty()) {
+					Statement_t* stmt = static_cast<Statement_t*>(block->statements.back());
+					if (stmt->content.is<Return_t>()) {
+						auto newBlock = with->body->new_ptr<Block_t>();
+						newBlock->statements.dup(block->statements);
+						newBlock->statements.pop_back();
+						transform_plain_body(newBlock, temp, ExpUsage::Common);
+						auto newBody = stmt->new_ptr<Body_t>();
+						newBody->content.set(stmt);
+						auto doNode = stmt->new_ptr<Do_t>();
+						doNode->body.set(newBody);
+						transformDo(doNode, temp, ExpUsage::Common);
+						transformed = true;
+					}
+				}
+			} else {
+				auto stmt = with->body.to<Statement_t>();
+				if (stmt->content.is<Return_t>()) {
+					auto newBody = stmt->new_ptr<Body_t>();
+					newBody->content.set(stmt);
+					auto doNode = stmt->new_ptr<Do_t>();
+					doNode->body.set(newBody);
+					transformDo(doNode, temp, ExpUsage::Common);
+					temp.back().insert(0, indent());
+					transformed = true;
+				}
+			}
+			if (!transformed) {
+				transform_plain_body(with->body, temp, ExpUsage::Common);
+			}
 		}
 		_withVars.pop();
 		if (assignList) {
