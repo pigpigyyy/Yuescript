@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.2"sv;
+const std::string_view version = "0.25.3"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -9154,32 +9154,34 @@ private:
 			transformIf(ifNode, temp, ExpUsage::Common);
 		} else {
 			bool transformed = false;
-			if (auto block = with->body.as<Block_t>()) {
-				if (!block->statements.empty()) {
-					Statement_t* stmt = static_cast<Statement_t*>(block->statements.back());
+			if (assignList || returnValue) {
+				if (auto block = with->body.as<Block_t>()) {
+					if (!block->statements.empty()) {
+						Statement_t* stmt = static_cast<Statement_t*>(block->statements.back());
+						if (stmt->content.is<Return_t>()) {
+							auto newBlock = with->body->new_ptr<Block_t>();
+							newBlock->statements.dup(block->statements);
+							newBlock->statements.pop_back();
+							transform_plain_body(newBlock, temp, ExpUsage::Common);
+							auto newBody = stmt->new_ptr<Body_t>();
+							newBody->content.set(stmt);
+							auto doNode = stmt->new_ptr<Do_t>();
+							doNode->body.set(newBody);
+							transformDo(doNode, temp, ExpUsage::Common);
+							transformed = true;
+						}
+					}
+				} else {
+					auto stmt = with->body.to<Statement_t>();
 					if (stmt->content.is<Return_t>()) {
-						auto newBlock = with->body->new_ptr<Block_t>();
-						newBlock->statements.dup(block->statements);
-						newBlock->statements.pop_back();
-						transform_plain_body(newBlock, temp, ExpUsage::Common);
 						auto newBody = stmt->new_ptr<Body_t>();
 						newBody->content.set(stmt);
 						auto doNode = stmt->new_ptr<Do_t>();
 						doNode->body.set(newBody);
 						transformDo(doNode, temp, ExpUsage::Common);
+						temp.back().insert(0, indent());
 						transformed = true;
 					}
-				}
-			} else {
-				auto stmt = with->body.to<Statement_t>();
-				if (stmt->content.is<Return_t>()) {
-					auto newBody = stmt->new_ptr<Body_t>();
-					newBody->content.set(stmt);
-					auto doNode = stmt->new_ptr<Do_t>();
-					doNode->body.set(newBody);
-					transformDo(doNode, temp, ExpUsage::Common);
-					temp.back().insert(0, indent());
-					transformed = true;
 				}
 			}
 			if (!transformed) {
