@@ -4390,11 +4390,7 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
-		if (funLit->isAnon) {
-			pushAnonFunctionScope();
-		} else {
-			pushUserFunctionScope();
-		}
+		pushFunctionScope(funLit->isAnon);
 		_varArgs.push({false, false});
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
