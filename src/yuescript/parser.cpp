@@ -160,8 +160,8 @@ public:
 	// execute all the parse procs
 	void do_parse_procs(void* d) const {
 		for (_match_vector::const_iterator it = m_matches.begin();
-			 it != m_matches.end();
-			 ++it) {
+			it != m_matches.end();
+			++it) {
 			const _match& m = *it;
 			parse_proc p = _private::get_parse_proc(*m.m_rule);
 			p(m.m_begin, m.m_end, d);
@@ -262,7 +262,7 @@ private:
 	bool _parse(_context& con) const {
 		for (auto it = m_string.begin(),
 				  end = m_string.end();
-			 ;) {
+			;) {
 			if (it == end) return true;
 			if (con.end()) break;
 			if (con.symbol() != *it) break;

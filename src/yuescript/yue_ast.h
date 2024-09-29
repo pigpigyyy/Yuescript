@@ -277,6 +277,7 @@ AST_END(ExpList)
 
 AST_NODE(Return)
 	bool allowBlockMacroReturn = false;
+	bool explicitReturn = true;
 	ast_sel<false, TableBlock_t, ExpListLow_t> valueList;
 	AST_MEMBER(Return, &valueList)
 AST_END(Return)
@@ -766,6 +767,7 @@ AST_NODE(FunLit)
 	ast_ptr<true, FnArrow_t> arrow;
 	ast_ptr<false, Body_t> body;
 	bool noRecursion = false;
+	bool isAnon = false;
 	AST_MEMBER(FunLit, &argsDef, &defaultReturn, &arrow, &body)
 AST_END(FunLit)
 

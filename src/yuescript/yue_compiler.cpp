@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.3"sv;
+const std::string_view version = "0.25.4"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -3777,6 +3777,7 @@ private:
 				}
 				case ExpUsage::Return: {
 					auto ret = x->new_ptr<Return_t>();
+					ret->explicitReturn = false;
 					auto expListLow = x->new_ptr<ExpListLow_t>();
 					expListLow->exprs.push_back(arg);
 					ret->valueList.set(expListLow);
@@ -4007,6 +4008,7 @@ private:
 						auto expListLow = exp->new_ptr<ExpListLow_t>();
 						expListLow->exprs.push_back(e);
 						auto returnNode = exp->new_ptr<Return_t>();
+						returnNode->explicitReturn = false;
 						returnNode->valueList.set(expListLow);
 						transformReturn(returnNode, out);
 						break;
@@ -4039,7 +4041,7 @@ private:
 		}) != traversal::Stop;
 	}
 
-	std::optional<std::pair<std::string, str_list>> getUpValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd, bool noGlobalVarPassing) {
+	std::optional<std::pair<std::string, str_list>> getUpValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd, bool noGlobalVarPassing, bool blockRewrite) {
 		if (_funcLevel <= 1) return std::nullopt;
 		auto result = block->traverse([&](ast_node* node) {
 			switch (node->get_id()) {
@@ -4138,6 +4140,7 @@ private:
 					}
 				}
 				auto funLit = toAst<FunLit_t>("("s + join(args, ","sv) + ")-> nil"s, x);
+				funLit->isAnon = blockRewrite ? false : true;
 				funLit->body->content.set(newBlock);
 				funLit->noRecursion = true;
 				auto simpleValue = x->new_ptr<SimpleValue_t>();
@@ -4159,16 +4162,17 @@ private:
 		return std::nullopt;
 	}
 
-	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Block_t* block, str_list* ensureArgListInTheEnd = nullptr, bool noGlobalVarPassing = false) {
+	std::optional<std::pair<std::string, str_list>> upValueFuncFromBlock(Block_t* block, str_list* ensureArgListInTheEnd, bool noGlobalVarPassing, bool blockRewrite) {
 		if (checkUpValueFuncAvailable(block)) {
-			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, noGlobalVarPassing);
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, noGlobalVarPassing, blockRewrite);
 		}
 		return std::nullopt;
 	}
 
-	std::optional<std::pair<std::string, str_list>> upValueFuncFrom(Exp_t* exp, str_list* ensureArgListInTheEnd = nullptr) {
+	std::optional<std::pair<std::string, str_list>> upValueFuncFromExp(Exp_t* exp, str_list* ensureArgListInTheEnd, bool blockRewrite) {
 		if (checkUpValueFuncAvailable(exp)) {
 			auto returnNode = exp->new_ptr<Return_t>();
+			returnNode->explicitReturn = false;
 			auto returnList = exp->new_ptr<ExpListLow_t>();
 			returnList->exprs.push_back(exp);
 			returnNode->valueList.set(returnList);
@@ -4176,13 +4180,13 @@ private:
 			auto stmt = exp->new_ptr<Statement_t>();
 			stmt->content.set(returnNode);
 			block->statements.push_back(stmt);
-			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, false);
+			return getUpValueFuncFromBlock(block, ensureArgListInTheEnd, false, blockRewrite);
 		}
 		return std::nullopt;
 	}
 
 	bool transformAsUpValueFunc(Exp_t* exp, str_list& out) {
-		auto result = upValueFuncFrom(exp);
+		auto result = upValueFuncFromExp(exp, nullptr, false);
 		if (result) {
 			auto [funcName, args] = std::move(*result);
 			auto newChainValue = toAst<ChainValue_t>(funcName + '(' + join(args, ","sv) + ')', exp);
@@ -4258,6 +4262,7 @@ private:
 				_buf << indent() << "else"s << nll(x);
 				temp.push_back(clearBuf());
 				auto ret = x->new_ptr<Return_t>();
+				ret->explicitReturn = false;
 				auto retList = x->new_ptr<ExpListLow_t>();
 				retList->exprs.push_back(exp->nilCoalesed);
 				ret->valueList.set(retList);
@@ -4385,7 +4390,11 @@ private:
 	}
 
 	void transformFunLit(FunLit_t* funLit, str_list& out) {
-		pushUserFunctionScope();
+		if (funLit->isAnon) {
+			pushAnonFunctionScope();
+		} else {
+			pushUserFunctionScope();
+		}
 		_varArgs.push({false, false});
 		bool isFatArrow = _parser.toString(funLit->arrow) == "=>"sv;
 		pushScope();
@@ -4419,6 +4428,7 @@ private:
 			}
 			if (funLit->defaultReturn.is<ExpListLow_t>()) {
 				auto returnNode = newBlock->new_ptr<Return_t>();
+				returnNode->explicitReturn = false;
 				returnNode->valueList.set(funLit->defaultReturn);
 				auto stmt = newBlock->new_ptr<Statement_t>();
 				stmt->content.set(returnNode);
@@ -4594,7 +4604,7 @@ private:
 				transformBlock(newBlock, out, usage, assignList, isRoot);
 				return;
 			} else if (auto expListAssign = stmt->content.as<ExpListAssign_t>();
-					   expListAssign && expListAssign->action && expListAssign->action.is<Assign_t>()) {
+				expListAssign && expListAssign->action && expListAssign->action.is<Assign_t>()) {
 				BLOCK_START
 				auto unary = singleUnaryExpFrom(expListAssign->expList->exprs.back());
 				BREAK_IF(!unary);
@@ -4693,7 +4703,7 @@ private:
 					doNode->body.set(newBody);
 					auto simpleValue = x->new_ptr<SimpleValue_t>();
 					simpleValue->value.set(doNode);
-					if (auto result = upValueFuncFrom(newExp(simpleValue, x), &argNames)) {
+					if (auto result = upValueFuncFromExp(newExp(simpleValue, x), &argNames, true)) {
 						auto [funcName, args] = std::move(*result);
 						str_list finalArgs;
 						for (const auto& arg : args) {
@@ -4903,6 +4913,7 @@ private:
 				auto expListLow = x->new_ptr<ExpListLow_t>();
 				expListLow->exprs.dup(expList->exprs);
 				auto returnNode = x->new_ptr<Return_t>();
+				returnNode->explicitReturn = false;
 				returnNode->valueList.set(expListLow);
 				returnNode->allowBlockMacroReturn = true;
 				last->content.set(returnNode);
@@ -5257,6 +5268,11 @@ private:
 			ast_node* target = returnNode->valueList.get();
 			if (!target) target = returnNode;
 			throw CompileError("can not mix use of return and export statements in module scope"sv, target);
+		}
+		if (returnNode->explicitReturn && _funcStates.top().isAnon) {
+			ast_node* target = returnNode->valueList.get();
+			if (!target) target = returnNode;
+			throw CompileError("explicit return statement is not allowed in this context"sv, target);
 		}
 		if (auto valueList = returnNode->valueList.as<ExpListLow_t>()) {
 			if (valueList->exprs.size() == 1) {
@@ -5712,6 +5728,7 @@ private:
 				case ExpUsage::Closure: {
 					auto exp = newExp(partTwo, x);
 					auto ret = x->new_ptr<Return_t>();
+					ret->explicitReturn = false;
 					auto expListLow = x->new_ptr<ExpListLow_t>();
 					expListLow->exprs.push_back(exp);
 					ret->valueList.set(expListLow);
@@ -5810,6 +5827,7 @@ private:
 				case ExpUsage::Closure:
 				case ExpUsage::Return: {
 					auto returnNode = x->new_ptr<Return_t>();
+					returnNode->explicitReturn = false;
 					auto expListLow = x->new_ptr<ExpListLow_t>();
 					expListLow->exprs.push_back(funLit);
 					returnNode->valueList.set(expListLow);
@@ -5944,6 +5962,7 @@ private:
 						switch (usage) {
 							case ExpUsage::Closure: {
 								auto returnNode = x->new_ptr<Return_t>();
+								returnNode->explicitReturn = false;
 								auto values = x->new_ptr<ExpListLow_t>();
 								values->exprs.push_back(newChainExp);
 								returnNode->valueList.set(values);
@@ -5957,6 +5976,7 @@ private:
 							}
 							case ExpUsage::Return: {
 								auto returnNode = x->new_ptr<Return_t>();
+								returnNode->explicitReturn = false;
 								auto values = x->new_ptr<ExpListLow_t>();
 								values->exprs.push_back(newChainExp);
 								returnNode->valueList.set(values);
@@ -6629,6 +6649,7 @@ private:
 						auto expListLow = x->new_ptr<ExpListLow_t>();
 						expListLow->exprs.push_back(node);
 						auto returnNode = x->new_ptr<Return_t>();
+						returnNode->explicitReturn = false;
 						returnNode->valueList.set(expListLow);
 						transformReturn(returnNode, out);
 						break;
@@ -7612,6 +7633,7 @@ private:
 					simpleValue->value.set(tableLit);
 					auto exp = newExp(simpleValue, x);
 					auto returnNode = x->new_ptr<Return_t>();
+					returnNode->explicitReturn = false;
 					auto expList = x->new_ptr<ExpListLow_t>();
 					expList->exprs.push_back(exp);
 					returnNode->valueList.set(expList);
@@ -8296,6 +8318,7 @@ private:
 		} else {
 			auto accum = transformForInner(forNode, temp);
 			auto returnNode = x->new_ptr<Return_t>();
+			returnNode->explicitReturn = false;
 			auto expListLow = toAst<ExpListLow_t>(accum, x);
 			returnNode->valueList.set(expListLow);
 			transformReturn(returnNode, temp);
@@ -8395,6 +8418,7 @@ private:
 		} else {
 			auto accum = transformForEachInner(forEach, temp);
 			auto returnNode = x->new_ptr<Return_t>();
+			returnNode->explicitReturn = false;
 			auto expListLow = toAst<ExpListLow_t>(accum, x);
 			returnNode->valueList.set(expListLow);
 			transformReturn(returnNode, temp);
@@ -9618,11 +9642,13 @@ private:
 		auto x = tryNode;
 		ast_ptr<true, Exp_t> errHandler;
 		if (tryNode->catchBlock) {
-			auto errHandleStr = "("s + variableToString(tryNode->catchBlock->err) + ")->"s;
-			errHandler.set(toAst<Exp_t>(errHandleStr, x->func));
+			auto catchBlock = tryNode->catchBlock.get();
+			auto errHandleStr = "("s + variableToString(catchBlock->err) + ")->"s;
+			errHandler.set(toAst<Exp_t>(errHandleStr, catchBlock));
 			auto funLit = simpleSingleValueFrom(errHandler)->value.to<FunLit_t>();
-			auto body = x->new_ptr<Body_t>();
-			body->content.set(tryNode->catchBlock->block);
+			funLit->isAnon = true;
+			auto body = catchBlock->block->new_ptr<Body_t>();
+			body->content.set(catchBlock->block);
 			funLit->body.set(body);
 		}
 		ast_sel<false, Block_t, Exp_t> tryFunc;
@@ -9700,7 +9726,7 @@ private:
 		}
 		if (auto tryBlock = tryFunc.as<Block_t>()) {
 			if (getLuaTarget(tryBlock) >= 502 || !errHandler) {
-				if (auto result = upValueFuncFrom(tryBlock, nullptr, true)) {
+				if (auto result = upValueFuncFromBlock(tryBlock, nullptr, true, false)) {
 					auto [funcName, args] = std::move(*result);
 					if (errHandler) {
 						auto xpcall = toAst<ChainValue_t>("xpcall()", x);
@@ -9729,6 +9755,7 @@ private:
 			}
 			auto tryExp = toAst<Exp_t>("->"sv, x);
 			auto funLit = simpleSingleValueFrom(tryExp)->value.to<FunLit_t>();
+			funLit->isAnon = true;
 			auto body = x->new_ptr<Body_t>();
 			body->content.set(tryBlock);
 			funLit->body.set(body);
@@ -9762,6 +9789,7 @@ private:
 			if (errHandler && getLuaTarget(x) < 502) {
 				auto tryExp = toAst<Exp_t>("->"sv, x);
 				auto funLit = simpleSingleValueFrom(tryExp)->value.to<FunLit_t>();
+				funLit->isAnon = true;
 				auto expList = x->new_ptr<ExpList_t>();
 				expList->exprs.push_back(tryFunc);
 				auto expListAssign = x->new_ptr<ExpListAssign_t>();

@@ -208,20 +208,21 @@ GameEngine\schedule (deltaTime) -> -- closure 1
 -- test cases from issue
 do
 	buff_strength = (char, item) ->
-		item.buffer.strength? char.stats.strength?::ref()
+		item.buffer.strength? char.stats.strength?::ref!
 
 	local debug_env_before, debug_env_after
 
 	exe_func = (func, env) ->
 		ok, ... = try
-			debug_env_before(env)
-			func(env)
-			debug_env_after(env)
+			debug_env_before env
+			func env
+			debug_env_after env
 		catch ex
 			-- accessing ex and error
 			error ex
-			return ex
+			-- implicit return
+			ex
 		if ok
 			return ...
 		else
-			os.exit(1)
+			os.exit 1

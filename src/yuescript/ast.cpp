@@ -54,8 +54,8 @@ bool ast_node::visit_child(const std::function<bool(ast_node*)>&) {
 */
 void ast_container::construct(ast_stack& st) {
 	for (ast_member_vector::reverse_iterator it = m_members.rbegin();
-		 it != m_members.rend();
-		 ++it) {
+		it != m_members.rend();
+		++it) {
 		ast_member* member = *it;
 		member->construct(st);
 	}

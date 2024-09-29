@@ -1167,7 +1167,7 @@ std::string ParseInfo::errorMessage(std::string_view msg, int errLine, int errCo
 	}
 	auto line = Converter{}.to_bytes(std::wstring(begin, end));
 	while (col < static_cast<int>(line.size())
-		&& (line[col] == ' ' || line[col] == '\t')) {
+		   && (line[col] == ' ' || line[col] == '\t')) {
 		col++;
 	}
 	Utils::replace(line, "\t"sv, " "sv);

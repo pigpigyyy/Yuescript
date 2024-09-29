@@ -433,8 +433,8 @@ bool start_with(input& i, rule& g, error_list& el, void* st, void* ud);
 template <class T>
 T& operator<<(T& stream, const input_range& ir) {
 	for (input::const_iterator it = ir.m_begin.m_it;
-		 it != ir.m_end.m_it;
-		 ++it) {
+		it != ir.m_end.m_it;
+		++it) {
 		stream << (typename T::char_type) * it;
 	}
 	return stream;
