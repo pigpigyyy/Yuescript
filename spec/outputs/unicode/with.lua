@@ -123,9 +123,7 @@ do
 	local _
 	_ = function()
 		local _with_0 = _u55e8
-		do
-			return _with_0.a, _with_0.b
-		end
+		return _with_0.a, _with_0.b
 	end
 end
 do

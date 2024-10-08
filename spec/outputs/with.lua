@@ -121,9 +121,7 @@ do
 	local _
 	_ = function()
 		local _with_0 = hi
-		do
-			return _with_0.a, _with_0.b
-		end
+		return _with_0.a, _with_0.b
 	end
 end
 do
@@ -182,6 +180,13 @@ do
 	if mask ~= nil then
 		mask.touchEnabled = true
 		mask.swallowTouches = true
+	end
+end
+do
+	local f
+	f = function()
+		local _with_0 = { }
+		return _with_0[123]
 	end
 end
 return nil

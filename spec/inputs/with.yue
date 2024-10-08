@@ -147,4 +147,9 @@ do
 		.touchEnabled = true
 		.swallowTouches = true
 
+do
+	f = ->
+		return with {}
+			return [123]
+
 nil
