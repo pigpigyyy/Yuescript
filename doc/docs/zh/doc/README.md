@@ -1310,6 +1310,22 @@ print "好的"
 </pre>
 </YueDisplay>
 
+### While 赋值
+
+您可以在 while 循环中同样使用赋值来获取循环条件的值。
+```moonscript
+while byte := stream\read_one!
+  -- 对 byte 做一些操作
+  print byte
+```
+<YueDisplay>
+<pre>
+while byte := stream\read_one!
+  -- 对 byte 做一些操作
+  print byte
+</pre>
+</YueDisplay>
+
 ## 可变参数赋值
 
 您可以将函数返回的结果赋值给一个可变参数符号 `...`。然后使用Lua的方式访问其内容。
@@ -3550,7 +3566,7 @@ print i, k -- 这些已经被更新
 月之脚本版本。
 
 **签名：**
-```tl
+```lua
 version: string
 ```
 
@@ -3563,7 +3579,7 @@ version: string
 当前平台的文件分隔符。
 
 **签名：**
-```tl
+```lua
 dirsep: string
 ```
 
@@ -3576,7 +3592,7 @@ dirsep: string
 编译模块代码缓存。
 
 **签名：**
-```tl
+```lua
 yue_compiled: {string: string}
 ```
 
@@ -3589,7 +3605,7 @@ yue_compiled: {string: string}
 月之脚本的编译函数。它将 Yuescript 代码编译为 Lua 代码。
 
 **签名：**
-```tl
+```lua
 to_lua: function(code: string, config?: Config):
 		--[[codes]] string | nil,
 		--[[error]] string | nil,
@@ -3620,7 +3636,7 @@ to_lua: function(code: string, config?: Config):
 检查源文件是否存在的函数。可以覆盖该函数以自定义行为。
 
 **签名：**
-```tl
+```lua
 file_exist: function(filename: string): boolean
 ```
 
@@ -3645,7 +3661,7 @@ file_exist: function(filename: string): boolean
 读取源文件的函数。可以覆盖该函数以自定义行为。
 
 **签名：**
-```tl
+```lua
 read_file: function(filename: string): string
 ```
 
@@ -3670,7 +3686,7 @@ read_file: function(filename: string): string
 将 Yuescript 加载器插入到 Lua 包加载器（搜索器）中。
 
 **签名：**
-```tl
+```lua
 insert_loader: function(pos?: integer): boolean
 ```
 
@@ -3695,7 +3711,7 @@ insert_loader: function(pos?: integer): boolean
 从 Lua 包加载器（搜索器）中移除 Yuescript 加载器。
 
 **签名：**
-```tl
+```lua
 remove_loader: function(): boolean
 ```
 
@@ -3714,7 +3730,7 @@ remove_loader: function(): boolean
 将 Yuescript 代码字符串加载为一个函数。
 
 **签名：**
-```tl
+```lua
 loadstring: function(input: string, chunkname: string, env: table, config?: Config):
 		--[[loaded function]] nil | function(...: any): (any...),
 		--[[error]] string | nil
@@ -3745,7 +3761,7 @@ loadstring: function(input: string, chunkname: string, env: table, config?: Conf
 将 Yuescript 代码字符串加载为一个函数。
 
 **签名：**
-```tl
+```lua
 loadstring: function(input: string, chunkname: string, config?: Config):
 		--[[loaded function]] nil | function(...: any): (any...),
 		--[[error]] string | nil
@@ -3775,7 +3791,7 @@ loadstring: function(input: string, chunkname: string, config?: Config):
 将 Yuescript 代码字符串加载为一个函数。
 
 **签名：**
-```tl
+```lua
 loadstring: function(input: string, config?: Config):
 		--[[loaded function]] nil | function(...: any): (any...),
 		--[[error]] string | nil
@@ -3804,7 +3820,7 @@ loadstring: function(input: string, config?: Config):
 将 Yuescript 代码文件加载为一个函数。
 
 **签名：**
-```tl
+```lua
 loadfile: function(filename: string, env: table, config?: Config):
 		nil | function(...: any): (any...),
 		string | nil
@@ -3834,7 +3850,7 @@ loadfile: function(filename: string, env: table, config?: Config):
 将 Yuescript 代码文件加载为一个函数。
 
 **签名：**
-```tl
+```lua
 loadfile: function(filename: string, config?: Config):
 		nil | function(...: any): (any...),
 		string | nil
@@ -3863,7 +3879,7 @@ loadfile: function(filename: string, config?: Config):
 将 Yuescript 代码文件加载为一个函数并执行。
 
 **签名：**
-```tl
+```lua
 dofile: function(filename: string, env: table, config?: Config): any...
 ```
 
@@ -3890,7 +3906,7 @@ dofile: function(filename: string, env: table, config?: Config): any...
 将 Yuescript 代码文件加载为一个函数并执行。
 
 **签名：**
-```tl
+```lua
 dofile: function(filename: string, config?: Config): any...
 ```
 
@@ -3916,7 +3932,7 @@ dofile: function(filename: string, config?: Config): any...
 将 Yuescript 模块名解析为文件路径。
 
 **签名：**
-```tl
+```lua
 find_modulepath: function(name: string): string
 ```
 
@@ -3943,7 +3959,7 @@ find_modulepath: function(name: string): string
 当发生错误时，将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
 
 **签名：**
-```tl
+```lua
 pcall: function(f: function, ...: any): boolean, any...
 ```
 
@@ -3970,7 +3986,7 @@ pcall: function(f: function, ...: any): boolean, any...
 如果模块是 Yuescript 模块且加载失败，则将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
 
 **签名：**
-```tl
+```lua
 require: function(name: string): any...
 ```
 
@@ -3995,7 +4011,7 @@ require: function(name: string): any...
 检查传递的值的内部结构，并打印值出它的字符串表示。
 
 **签名：**
-```tl
+```lua
 p: function(...: any)
 ```
 
@@ -4014,7 +4030,7 @@ p: function(...: any)
 当前编译器选项。
 
 **签名：**
-```tl
+```lua
 options: Config.Options
 ```
 
@@ -4027,7 +4043,7 @@ options: Config.Options
 重写堆栈跟踪中的行号为 Yuescript 代码中的原始行号的 traceback 函数。
 
 **签名：**
-```tl
+```lua
 traceback: function(message: string): string
 ```
 
@@ -4052,7 +4068,7 @@ traceback: function(message: string): string
 检查代码是否匹配指定的 AST。
 
 **签名：**
-```tl
+```lua
 is_ast: function(astName: string, code: string): boolean
 ```
 
@@ -4078,7 +4094,7 @@ is_ast: function(astName: string, code: string): boolean
 AST 类型定义，带有名称、行、列和子节点。
 
 **签名：**
-```tl
+```lua
 type AST = {string, integer, integer, any}
 ```
 
@@ -4091,7 +4107,7 @@ type AST = {string, integer, integer, any}
 将代码转换为 AST。
 
 **签名：**
-```tl
+```lua
 to_ast: function(code: string, flattenLevel?: number, astName?: string):
 		--[[AST]] AST | nil,
 		--[[error]] nil | string
@@ -4114,7 +4130,7 @@ to_ast: function(code: string, flattenLevel?: number, astName?: string):
 如果发生加载失败，则将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
 
 **签名：**
-```tl
+```lua
 metamethod __call: function(self: yue, module: string): any...
 ```
 
@@ -4145,7 +4161,7 @@ metamethod __call: function(self: yue, module: string): any...
 编译器是否应该收集代码中出现的全局变量。
 
 **签名：**
-```tl
+```lua
 lint_global: boolean
 ```
 
@@ -4158,7 +4174,7 @@ lint_global: boolean
 编译器是否应该对根层级的代码块进行隐式的表达式返回。
 
 **签名：**
-```tl
+```lua
 implicit_return_root: boolean
 ```
 
@@ -4171,7 +4187,7 @@ implicit_return_root: boolean
 编译器是否应该在编译后的代码中保留原始行号。
 
 **签名：**
-```tl
+```lua
 reserve_line_number: boolean
 ```
 
@@ -4184,7 +4200,7 @@ reserve_line_number: boolean
 编译器是否应该在编译后的代码中使用空格字符而不是制表符字符。
 
 **签名：**
-```tl
+```lua
 space_over_tab: boolean
 ```
 
@@ -4197,7 +4213,7 @@ space_over_tab: boolean
 编译器是否应该将要编译的代码视为当前正在编译的模块。仅供编译器内部使用。
 
 **签名：**
-```tl
+```lua
 same_module: boolean
 ```
 
@@ -4210,7 +4226,7 @@ same_module: boolean
 编译器错误消息是否应该包含行号偏移量。仅供编译器内部使用。
 
 **签名：**
-```tl
+```lua
 line_offset: integer
 ```
 
@@ -4223,7 +4239,7 @@ line_offset: integer
 目标 Lua 版本枚举。
 
 **签名：**
-```tl
+```lua
 enum LuaTarget
 	"5.1"
 	"5.2"
@@ -4242,7 +4258,7 @@ end
 要传递给编译函数的额外选项。
 
 **签名：**
-```tl
+```lua
 options: Options
 ```
 
@@ -4261,7 +4277,7 @@ options: Options
 编译目标 Lua 版本。
 
 **签名：**
-```tl
+```lua
 target: LuaTarget
 ```
 
@@ -4274,7 +4290,7 @@ target: LuaTarget
 额外模块搜索路径。
 
 **签名：**
-```tl
+```lua
 path: string
 ```
 
@@ -4287,7 +4303,7 @@ path: string
 是否在回溯错误消息中输出代码块的局部变量。默认为 false。
 
 **签名：**
-```tl
+```lua
 dump_locals: boolean
 ```
 
@@ -4300,7 +4316,7 @@ dump_locals: boolean
 是否简化输出的错误消息。默认为 true。
 
 **签名：**
-```tl
+```lua
 simplified: boolean
 ```
 

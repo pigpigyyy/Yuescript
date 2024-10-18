@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.5"sv;
+const std::string_view version = "0.25.6"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -1585,7 +1585,8 @@ private:
 				}
 				goto metamethod53;
 			}
-			case 504: {
+			case 504:
+			case 505: {
 				if (name == "ipairs"sv) {
 					throw CompileError("metamethod is not supported since Lua 5.4"sv, x);
 				}
@@ -5038,7 +5039,7 @@ private:
 #ifndef YUE_NO_MACRO
 		return LUA_VERSION_NUM;
 #else
-		return 504;
+		return 505;
 #endif // YUE_NO_MACRO
 	}
 
@@ -8080,7 +8081,7 @@ private:
 	}
 
 	void addDoToLastLineReturn(ast_node* body) {
-		if (auto block = ast_cast<Block_t>(body); body && !block->statements.empty()) {
+		if (auto block = ast_cast<Block_t>(body); block && !block->statements.empty()) {
 			auto last = static_cast<Statement_t*>(block->statements.back());
 			if (last->content.is<Return_t>()) {
 				auto doNode = last->new_ptr<Do_t>();
@@ -10271,6 +10272,34 @@ private:
 	}
 
 	void transformWhile(While_t* whileNode, str_list& out) {
+		if (whileNode->assignment) {
+			auto x = whileNode;
+			auto repeat = x->new_ptr<Repeat_t>();
+			repeat->condition.set(toAst<Exp_t>("false"sv, x));
+			auto ifNode = x->new_ptr<If_t>();
+			auto ifCond = x->new_ptr<IfCond_t>();
+			bool isUntil = _parser.toString(whileNode->type) == "until"sv;
+			ifNode->type.set(toAst<IfType_t>(isUntil ? "unless"sv : "if"sv, x));
+			ifCond->condition.set(whileNode->condition);
+			ifCond->assignment.set(whileNode->assignment);
+			ifNode->nodes.push_back(ifCond);
+			ifNode->nodes.push_back(whileNode->body);
+			ifNode->nodes.push_back(toAst<Statement_t>("break"sv, x));
+			auto simpleValue = x->new_ptr<SimpleValue_t>();
+			simpleValue->value.set(ifNode);
+			auto exp = newExp(simpleValue, x);
+			auto expList = x->new_ptr<ExpList_t>();
+			expList->exprs.push_back(exp);
+			auto expListAssign = x->new_ptr<ExpListAssign_t>();
+			expListAssign->expList.set(expList);
+			auto stmt = x->new_ptr<Statement_t>();
+			stmt->content.set(expListAssign);
+			auto body = x->new_ptr<Body_t>();
+			body->content.set(stmt);
+			repeat->body.set(body);
+			transformRepeat(repeat, out);
+			return;
+		}
 		str_list temp;
 		pushScope();
 		bool isUntil = _parser.toString(whileNode->type) == "until"sv;

@@ -337,8 +337,9 @@ AST_END(WhileType)
 AST_NODE(While)
 	ast_ptr<true, WhileType_t> type;
 	ast_ptr<true, Exp_t> condition;
+	ast_ptr<false, Assignment_t> assignment;
 	ast_sel<true, Block_t, Statement_t> body;
-	AST_MEMBER(While, &type, &condition, &body)
+	AST_MEMBER(While, &type, &condition, &assignment, &body)
 AST_END(While)
 
 AST_NODE(Repeat)

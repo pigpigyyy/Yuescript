@@ -440,3 +440,52 @@ do
 		end
 	end
 end
+do
+	repeat
+		local _cond_0 = false
+		local _continue_0 = false
+		repeat
+			local byte = stream:read_one()
+			if byte then
+				if byte == 0 then
+					_cond_0 = false
+					_continue_0 = true
+					break
+				end
+				print(byte)
+			else
+				break
+			end
+			_cond_0 = false
+			_continue_0 = true
+		until true
+		if not _continue_0 then
+			break
+		end
+	until _cond_0
+end
+do
+	local func
+	repeat
+		local success, result = xpcall(function()
+			return func(1, 2, 3)
+		end, function(err)
+			return print(err)
+		end)
+		if success then
+			print(result)
+		else
+			break
+		end
+	until false
+end
+do
+	repeat
+		x = func('a', b)
+		if not x then
+			print("false expected")
+		else
+			break
+		end
+	until false
+end

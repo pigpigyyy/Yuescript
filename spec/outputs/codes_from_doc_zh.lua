@@ -585,6 +585,14 @@ do
 	end
 end
 print("好的")
+repeat
+	local byte = stream:read_one()
+	if byte then
+		print(byte)
+	else
+		break
+	end
+until false
 local list = {
 	1,
 	2,
@@ -2577,6 +2585,14 @@ do
 	end
 end
 print("好的")
+repeat
+	local byte = stream:read_one()
+	if byte then
+		print(byte)
+	else
+		break
+	end
+until false
 local list = {
 	1,
 	2,

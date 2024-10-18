@@ -490,7 +490,7 @@ std::string If_t::to_string(void* ud) const {
 std::string While_t::to_string(void* ud) const {
 	auto info = reinterpret_cast<YueFormat*>(ud);
 	str_list temp{
-		type->to_string(ud) + ' ' + condition->to_string(ud)};
+		type->to_string(ud) + ' ' + condition->to_string(ud) + (assignment ? assignment->to_string(ud) : std::string())};
 	if (body.is<Statement_t>()) {
 		temp.back() += " do "s + body->to_string(ud);
 	} else {

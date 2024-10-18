@@ -383,7 +383,7 @@ YueParser::YueParser() {
 	If = IfType >> space >> IfCond >> space >> opt_body_with("then") >> *if_else_if >> -if_else;
 
 	WhileType = (expr("while") | "until") >> not_alpha_num;
-	While = WhileType >> space >> disable_do_chain_arg_table_block_rule(Exp) >> space >> opt_body_with("do");
+	While = WhileType >> space >> disable_do_chain_arg_table_block_rule(Exp >> -(space >> Assignment)) >> space >> opt_body_with("do");
 	Repeat = key("repeat") >> space >> Body >> line_break >> *space_break >> check_indent_match >> space >> key("until") >> space >> Exp;
 
 	for_key = pl::user(key("for"), [](const item_t& item) {

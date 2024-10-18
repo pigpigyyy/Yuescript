@@ -196,3 +196,20 @@ do
 			print i
 			continue
 		print "abc"
+
+do
+	while byte := stream::read_one!
+		-- do something with the byte
+		continue if byte == 0
+		print byte
+
+do
+	local func
+	while success, result := try func 1, 2, 3
+	catch err
+			print err
+		print result
+
+do
+	until x := func 'a', b do
+		print "false expected"

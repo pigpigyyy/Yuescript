@@ -31,7 +31,7 @@
 
 
 
-#define noLuaClosure(f)		((f) == NULL || (f)->c.tt == LUA_VCCL)
+#define LuaClosure(f)		((f) != NULL && (f)->c.tt == LUA_VLCL)
 
 
 static const char *funcnamefromcall (lua_State *L, CallInfo *ci,
@@ -254,7 +254,7 @@ LUA_API const char *lua_setlocal (lua_State *L, const lua_Debug *ar, int n) {
 
 
 static void funcinfo (lua_Debug *ar, Closure *cl) {
-  if (noLuaClosure(cl)) {
+  if (!LuaClosure(cl)) {
     ar->source = "=[C]";
     ar->srclen = LL("=[C]");
     ar->linedefined = -1;
@@ -288,29 +288,31 @@ static int nextline (const Proto *p, int currentline, int pc) {
 
 
 static void collectvalidlines (lua_State *L, Closure *f) {
-  if (noLuaClosure(f)) {
+  if (!LuaClosure(f)) {
     setnilvalue(s2v(L->top.p));
     api_incr_top(L);
   }
   else {
-    int i;
-    TValue v;
     const Proto *p = f->l.p;
     int currentline = p->linedefined;
     Table *t = luaH_new(L);  /* new table to store active lines */
     sethvalue2s(L, L->top.p, t);  /* push it on stack */
     api_incr_top(L);
-    setbtvalue(&v);  /* boolean 'true' to be the value of all indices */
-    if (!p->is_vararg)  /* regular function? */
-      i = 0;  /* consider all instructions */
-    else {  /* vararg function */
-      lua_assert(GET_OPCODE(p->code[0]) == OP_VARARGPREP);
-      currentline = nextline(p, currentline, 0);
-      i = 1;  /* skip first instruction (OP_VARARGPREP) */
-    }
-    for (; i < p->sizelineinfo; i++) {  /* for each instruction */
-      currentline = nextline(p, currentline, i);  /* get its line */
-      luaH_setint(L, t, currentline, &v);  /* table[line] = true */
+    if (p->lineinfo != NULL) {  /* proto with debug information? */
+      int i;
+      TValue v;
+      setbtvalue(&v);  /* boolean 'true' to be the value of all indices */
+      if (!p->is_vararg)  /* regular function? */
+        i = 0;  /* consider all instructions */
+      else {  /* vararg function */
+        lua_assert(GET_OPCODE(p->code[0]) == OP_VARARGPREP);
+        currentline = nextline(p, currentline, 0);
+        i = 1;  /* skip first instruction (OP_VARARGPREP) */
+      }
+      for (; i < p->sizelineinfo; i++) {  /* for each instruction */
+        currentline = nextline(p, currentline, i);  /* get its line */
+        luaH_setint(L, t, currentline, &v);  /* table[line] = true */
+      }
     }
   }
 }
@@ -339,7 +341,7 @@ static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
       }
       case 'u': {
         ar->nups = (f == NULL) ? 0 : f->c.nupvalues;
-        if (noLuaClosure(f)) {
+        if (!LuaClosure(f)) {
           ar->isvararg = 1;
           ar->nparams = 0;
         }
@@ -925,12 +927,12 @@ int luaG_traceexec (lua_State *L, const Instruction *pc) {
   }
   pc++;  /* reference is always next instruction */
   ci->u.l.savedpc = pc;  /* save 'pc' */
-  counthook = (--L->hookcount == 0 && (mask & LUA_MASKCOUNT));
+  counthook = (mask & LUA_MASKCOUNT) && (--L->hookcount == 0);
   if (counthook)
     resethookcount(L);  /* reset count */
   else if (!(mask & LUA_MASKLINE))
     return 1;  /* no line hook and count != 0; nothing to be done now */
-  if (ci->callstatus & CIST_HOOKYIELD) {  /* called hook last time? */
+  if (ci->callstatus & CIST_HOOKYIELD) {  /* hook yielded last time? */
     ci->callstatus &= ~CIST_HOOKYIELD;  /* erase mark */
     return 1;  /* do not call hook again (VM yielded, so it did not move) */
   }
@@ -952,7 +954,6 @@ int luaG_traceexec (lua_State *L, const Instruction *pc) {
   if (L->status == LUA_YIELD) {  /* did hook yield? */
     if (counthook)
       L->hookcount = 1;  /* undo decrement to zero */
-    ci->u.l.savedpc--;  /* undo increment (resume will increment it again) */
     ci->callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
     luaD_throw(L, LUA_YIELD);
   }

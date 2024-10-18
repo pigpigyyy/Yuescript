@@ -333,3 +333,40 @@ do
 		::_continue_11::
 	end
 end
+do
+	repeat
+		local byte = stream:read_one()
+		if byte then
+			if byte == 0 then
+				goto _continue_13
+			end
+			print(byte)
+		else
+			break
+		end
+		::_continue_13::
+	until false
+end
+do
+	local func
+	repeat
+		local success, result = xpcall(func, function(err)
+			return print(err)
+		end, 1, 2, 3)
+		if success then
+			print(result)
+		else
+			break
+		end
+	until false
+end
+do
+	repeat
+		x = func('a', b)
+		if not x then
+			print("false expected")
+		else
+			break
+		end
+	until false
+end

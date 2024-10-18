@@ -92,7 +92,7 @@ static int l_strton (const TValue *obj, TValue *result) {
   if (!cvt2num(obj))  /* is object not a string? */
     return 0;
   else {
-  TString *st = tsvalue(obj);
+    TString *st = tsvalue(obj);
     return (luaO_str2num(getstr(st), result) == tsslen(st) + 1);
   }
 }
@@ -661,7 +661,7 @@ void luaV_concat (lua_State *L, int total) {
       /* collect total length and number of strings */
       for (n = 1; n < total && tostring(L, s2v(top - n - 1)); n++) {
         size_t l = tsslen(tsvalue(s2v(top - n - 1)));
-        if (l_unlikely(l >= (MAX_SIZE/sizeof(char)) - tl)) {
+        if (l_unlikely(l >= MAX_SIZE - sizeof(TString) - tl)) {
           L->top.p = top - total;  /* pop strings to avoid wasting stack */
           luaG_runerror(L, "string length overflow");
         }

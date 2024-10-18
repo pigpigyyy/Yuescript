@@ -1313,6 +1313,22 @@ print "OK"
 </pre>
 </YueDisplay>
 
+### While Assignment
+
+You can also use if assignment in a while loop to get the value as the loop condition.
+```moonscript
+while byte := stream\read_one!
+  -- do something with the byte
+  print byte
+```
+<YueDisplay>
+<pre>
+while byte := stream\read_one!
+  -- do something with the byte
+  print byte
+</pre>
+</YueDisplay>
+
 ## Varargs Assignment
 
 You can assign the results returned from a function  to a varargs symbol `...`. And then access its content using the Lua way.
