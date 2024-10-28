@@ -207,11 +207,131 @@ endif
 	@echo -n "Total build time: "
 	@$(END_TIME)
 
+.PHONY: wasm-node
+wasm-node: clean
+	@$(MAKE) generic CC='emcc' AR='emar rcu' RANLIB='emranlib' -C $(SRC_PATH)/3rdParty/lua
+	@mkdir -p wasm/dist
+	@mkdir -p wasm/dist/esm
+	@mkdir -p wasm/dist/cjs
+	# ESM Module
+	@emcc $(SRC_PATH)/yue_wasm.cpp \
+	      $(SRC_PATH)/yuescript/ast.cpp \
+	      $(SRC_PATH)/yuescript/yue_ast.cpp \
+	      $(SRC_PATH)/yuescript/parser.cpp \
+	      $(SRC_PATH)/yuescript/yue_compiler.cpp \
+	      $(SRC_PATH)/yuescript/yue_parser.cpp \
+	      $(SRC_PATH)/yuescript/yuescript.cpp \
+	      $(SRC_PATH)/3rdParty/lua/liblua.a \
+	      -O2 \
+	      -o wasm/dist/esm/yuescript.mjs \
+	      -I $(SRC_PATH) \
+	      -I $(SRC_PATH)/3rdParty/lua \
+	      -std=c++17 \
+	      --bind \
+	      -fexceptions \
+	      -Wno-deprecated-declarations \
+          -gsource-map \
+          --emit-tsd="yuescript.d.ts" \
+          -s EXPORT_NAME="'_createYuescriptModule'" \
+          -s EXPORT_EXCEPTION_HANDLING_HELPERS \
+          -s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+          -sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+          -s FORCE_FILESYSTEM=1 \
+          -s TOTAL_MEMORY=20971520 \
+          -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+          -s EXPORT_ALL=1 \
+          -s FS_DEBUG=1 \
+          -s STACK_SIZE=5MB \
+          -s AUTO_JS_LIBRARIES=0 \
+          -s AUTO_NATIVE_LIBRARIES=0 \
+          -s NODEJS_CATCH_EXIT=0 \
+          -s NODEJS_CATCH_REJECTION=0 \
+          -sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+          -s USE_ZLIB \
+          -s USE_BZIP2 \
+          -s WASM_BIGINT \
+          -s MODULARIZE=1 \
+          -s LZ4=1
+    # CommonJS Module
+	@emcc $(SRC_PATH)/yue_wasm.cpp \
+                    $(SRC_PATH)/yuescript/ast.cpp \
+                    $(SRC_PATH)/yuescript/yue_ast.cpp \
+                    $(SRC_PATH)/yuescript/parser.cpp \
+                    $(SRC_PATH)/yuescript/yue_compiler.cpp \
+                    $(SRC_PATH)/yuescript/yue_parser.cpp \
+                    $(SRC_PATH)/yuescript/yuescript.cpp \
+                    $(SRC_PATH)/3rdParty/lua/liblua.a \
+                    -O2 \
+                    -o wasm/dist/cjs/yuescript.cjs \
+                    --emit-tsd="yuescript.d.ts" \
+                    -I $(SRC_PATH) \
+                    -I $(SRC_PATH)/3rdParty/lua \
+                    -std=c++17 \
+                    --bind \
+                    -fexceptions \
+                    -Wno-deprecated-declarations \
+                    -gsource-map \
+                    -s EXPORT_NAME="'_createYuescriptModule'" \
+                    -s EXPORT_EXCEPTION_HANDLING_HELPERS \
+                    -s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+                    -sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+                    -s FORCE_FILESYSTEM=1 \
+                    -s TOTAL_MEMORY=20971520 \
+                    -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+                    -s EXPORT_ALL=1 \
+                    -s FS_DEBUG=1 \
+                    -s STACK_SIZE=5MB \
+                    -s AUTO_JS_LIBRARIES=0 \
+                    -s AUTO_NATIVE_LIBRARIES=0 \
+                    -s NODEJS_CATCH_EXIT=0 \
+                    -s NODEJS_CATCH_REJECTION=0 \
+                    -sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+                    -s USE_ZLIB \
+                    -s USE_BZIP2 \
+                    -s WASM_BIGINT\
+                    -s MODULARIZE=1\
+                    -s LZ4=1
+	@${MAKE} clean
+
 .PHONY: wasm
 wasm: clean
 	@$(MAKE) generic CC='emcc' AR='emar rcu' RANLIB='emranlib' -C $(SRC_PATH)/3rdParty/lua
 	@mkdir -p doc/docs/.vuepress/public/js
-	@emcc $(SRC_PATH)/yue_wasm.cpp $(SRC_PATH)/yuescript/ast.cpp $(SRC_PATH)/yuescript/yue_ast.cpp $(SRC_PATH)/yuescript/parser.cpp $(SRC_PATH)/yuescript/yue_compiler.cpp $(SRC_PATH)/yuescript/yue_parser.cpp $(SRC_PATH)/yuescript/yuescript.cpp $(SRC_PATH)/3rdParty/lua/liblua.a -O2 -o doc/docs/.vuepress/public/js/yuescript.js -I $(SRC_PATH) -I $(SRC_PATH)/3rdParty/lua -std=c++17 --bind -fexceptions -Wno-deprecated-declarations
+	@emcc $(SRC_PATH)/yue_wasm.cpp \
+                    $(SRC_PATH)/yuescript/ast.cpp \
+                    $(SRC_PATH)/yuescript/yue_ast.cpp \
+                    $(SRC_PATH)/yuescript/parser.cpp \
+                    $(SRC_PATH)/yuescript/yue_compiler.cpp \
+                    $(SRC_PATH)/yuescript/yue_parser.cpp \
+                    $(SRC_PATH)/yuescript/yuescript.cpp \
+                    $(SRC_PATH)/3rdParty/lua/liblua.a \
+                    -O2 \
+                    -o doc/docs/.vuepress/public/js/yuescript.js \
+                    -I $(SRC_PATH) \
+                    -I $(SRC_PATH)/3rdParty/lua \
+                    -std=c++17 \
+                    --bind \
+                    -fexceptions \
+                    -Wno-deprecated-declarations \
+                    -s EXPORT_EXCEPTION_HANDLING_HELPERS \
+                    -s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+                    -sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+                    -s FORCE_FILESYSTEM=1 \
+                    -s TOTAL_MEMORY=20971520 \
+                    -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+                    -s EXPORT_ALL=1 \
+                    -s FS_DEBUG=1 \
+                    -s STACK_SIZE=5MB \
+                    -s AUTO_JS_LIBRARIES=0 \
+                    -s AUTO_NATIVE_LIBRARIES=0 \
+                    -s NODEJS_CATCH_EXIT=0 \
+                    -s NODEJS_CATCH_REJECTION=0 \
+                    -sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+                    -s USE_ZLIB \
+                    -s USE_BZIP2 \
+                    -s WASM_BIGINT\
+                    -s MODULARIZE=1 \
+                    -s LZ4=1
 	@${MAKE} clean
 
 # Debug build for gdb debugging
