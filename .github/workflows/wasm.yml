@@ -1,0 +1,23 @@
+name: Wasm Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Wasm
+        run: |
+          brew upgrade -f python
+          brew install emscripten
+          make wasm-node
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yuescript-wasm
+          path: ./wasm
+          retention-days: 7

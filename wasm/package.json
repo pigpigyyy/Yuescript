@@ -1,0 +1,64 @@
+{
+	"name": "yuescript",
+	"version": "0.25.5",
+	"description": "A Moonscript dialect compiles to Lua.",
+	"main": "./dist/esm/yuescript.mjs",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/pigpigyyy/Yuescript.git"
+	},
+	"keywords": ["lua", "cpp", "moonscript", "yuescript", "transpiler"],
+	"exports": {
+		".": {
+			"import": "./dist/esm/yuescript.mjs",
+			"require": "./dist/cjs/yuescript.js",
+			"types": "./dist/esm/yuescript.d.ts"
+		},
+		"./yuescript.wasm": {
+			"import": "./dist/esm/yuescript.wasm",
+			"require": "./dist/cjs/yuescript.wasm"
+		},
+		"./yuescript.wasm.map": {
+			"import": "./dist/esm/yuescript.wasm.map",
+			"require": "./dist/cjs/yuescript.wasm.map"
+		}
+	},
+	"files": [
+		"./dist/cjs/yuescript.cjs",
+		"./dist/esm/yuescript.mjs",
+		"./dist/esm/yuescript.d.ts",
+		"./dist/esm/yuescript.wasm",
+		"./dist/esm/yuescript.wasm.map",
+		"./dist/cjs/yuescript.d.ts",
+		"./dist/cjs/yuescript.wasm",
+		"./dist/cjs/yuescript.wasm.map"
+
+	],
+	"browser": {
+		"child_process": false,
+		"crypto": false,
+		"fs": false,
+		"fs/promises": false,
+		"path": false,
+		"url": false,
+		"vm": false,
+		"ws": false
+	},
+	"author": "pigpigyyy",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/pigpigyyy/Yuescript/issues"
+	},
+	"homepage": "https://github.com/pigpigyyy/Yuescript#readme",
+	"tsd": {
+		"compilerOptions": {
+			"lib": ["ES2017", "DOM"]
+		}
+	},
+	"types": "./dist/esm/yuescript.d.ts",
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"devDependencies": {},
+	"scripts": {}
+}
