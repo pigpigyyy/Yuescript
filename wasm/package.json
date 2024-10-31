@@ -1,6 +1,6 @@
 {
 	"name": "yuescript",
-	"version": "0.25.5",
+	"version": "0.26.0",
 	"description": "A Moonscript dialect compiles to Lua.",
 	"main": "./dist/esm/yuescript.mjs",
 	"repository": {

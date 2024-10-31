@@ -213,7 +213,7 @@ wasm-node: clean
 	@mkdir -p wasm/dist
 	@mkdir -p wasm/dist/esm
 	@mkdir -p wasm/dist/cjs
-	# ESM Module
+	@echo "Build ESM Module"
 	@emcc $(SRC_PATH)/yue_wasm.cpp \
 		$(SRC_PATH)/yuescript/ast.cpp \
 		$(SRC_PATH)/yuescript/yue_ast.cpp \
@@ -235,7 +235,7 @@ wasm-node: clean
 		-s EXPORT_NAME="'_createYuescriptModule'" \
 		-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 		-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+		-s EXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 		-s FORCE_FILESYSTEM=1 \
 		-s TOTAL_MEMORY=20971520 \
 		-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
@@ -246,13 +246,13 @@ wasm-node: clean
 		-s AUTO_NATIVE_LIBRARIES=0 \
 		-s NODEJS_CATCH_EXIT=0 \
 		-s NODEJS_CATCH_REJECTION=0 \
-		-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+		-s GL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
 		-s WASM_BIGINT \
 		-s MODULARIZE=1 \
 		-s LZ4=1
-	# CommonJS Module
+	@echo "Build CommonJS Module"
 	@emcc $(SRC_PATH)/yue_wasm.cpp \
 		$(SRC_PATH)/yuescript/ast.cpp \
 		$(SRC_PATH)/yuescript/yue_ast.cpp \
@@ -274,7 +274,7 @@ wasm-node: clean
 		-s EXPORT_NAME="'_createYuescriptModule'" \
 		-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 		-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+		-s EXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 		-s FORCE_FILESYSTEM=1 \
 		-s TOTAL_MEMORY=20971520 \
 		-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
@@ -285,12 +285,13 @@ wasm-node: clean
 		-s AUTO_NATIVE_LIBRARIES=0 \
 		-s NODEJS_CATCH_EXIT=0 \
 		-s NODEJS_CATCH_REJECTION=0 \
-		-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+		-s GL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
 		-s WASM_BIGINT\
 		-s MODULARIZE=1\
 		-s LZ4=1
+
 	@${MAKE} clean
 
 .PHONY: wasm
