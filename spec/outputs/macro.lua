@@ -1,3 +1,16 @@
+do
+	print(123)
+	do
+		print(6.2831853071796)
+	end
+	print(456)
+	do
+-- TODO: "todo in a do block"
+	end
+end
+do
+	(leak)()
+end
 print("AlwaysAutoResize")
 print({
 	"NoNav",
@@ -298,7 +311,7 @@ print((setmetatable({
 		return 998
 	end
 }))
-print("current line: " .. tostring(308))
+print("current line: " .. tostring(323))
 do
 -- TODO
 end

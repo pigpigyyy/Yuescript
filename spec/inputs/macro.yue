@@ -5,6 +5,21 @@ import "macro_export" as {
 
 import "macro_todo" as $
 
+macro not_leak = -> "leak"
+do
+	macro x = -> 123
+	print $x
+	do
+		macro x = -> math.pi * 2
+		print $x
+	macro x = -> 456
+	print $x
+
+	import "macro_todo" as $todo: $not_leak
+	$not_leak "todo in a do block"
+
+$not_leak!!
+
 macro WindowFlag = $enum(
 	NoNav
 	NoDecoration

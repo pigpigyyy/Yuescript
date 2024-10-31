@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.25.6"sv;
+const std::string_view version = "0.26.0"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -432,6 +432,9 @@ private:
 	struct Scope {
 		GlobalMode mode = GlobalMode::None;
 		bool lastStatement = false;
+#ifndef YUE_NO_MACRO
+		bool macroScope = false;
+#endif
 		std::unique_ptr<std::unordered_map<std::string, VarType>> vars;
 		std::unique_ptr<std::unordered_set<std::string>> allows;
 		std::unique_ptr<std::unordered_set<std::string>> globals;
@@ -472,12 +475,39 @@ private:
 		Closure
 	};
 
+#ifndef YUE_NO_MACRO
+	void pushMacro(int moduleIndex) {
+		int len = static_cast<int>(lua_objlen(L, moduleIndex)); // len = #cur
+		if (currentScope().macroScope) {
+			lua_rawgeti(L, moduleIndex, len); // cur[len], tb
+		} else {
+			currentScope().macroScope = true;
+			lua_newtable(L); // tb
+			lua_pushvalue(L, -1); // tb tb
+			lua_rawseti(L, moduleIndex, len + 1); // cur[len + 1] = tb, tb
+		}
+	}
+
+	void popMacro() {
+		pushCurrentModule(); // cur
+		int len = static_cast<int>(lua_objlen(L, -1)); // len = #cur, cur
+		lua_pushnil(L); // cur nil
+		lua_rawseti(L, -2, len); // cur[len] = nil, cur
+		lua_pop(L, 1);
+	}
+#endif // YUE_NO_MACRO
+
 	void pushScope() {
 		_scopes.emplace_back();
 		_scopes.back().vars = std::make_unique<std::unordered_map<std::string, VarType>>();
 	}
 
 	void popScope() {
+#ifndef YUE_NO_MACRO
+		if (_scopes.back().macroScope) {
+			popMacro();
+		}
+#endif // YUE_NO_MACRO
 		_scopes.pop_back();
 	}
 
@@ -4092,7 +4122,11 @@ private:
 				}
 				YueConfig config;
 				config.lintGlobalVariable = true;
-				auto result = YueCompiler{L, _luaOpen, true}.compile(codes, config);
+#ifndef YUE_NO_MACRO
+				auto result = YueCompiler{L, _luaOpen, false}.compile(codes, config);
+#else
+				auto result = YueCompiler{}.compile(codes, config);
+#endif // YUE_NO_MACRO
 				if (result.error) {
 					YUEE("failed to compile dues to Yue formatter", x);
 				}
@@ -5058,9 +5092,9 @@ private:
 	void pushCurrentModule() {
 		if (_useModule) {
 			lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
-			lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
-			int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
-			lua_rawgeti(L, -1, idx); // tb[idx], tb cur
+			lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], mods
+			int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #mods, mods
+			lua_rawgeti(L, -1, idx); // mods[idx], mods cur
 			lua_remove(L, -2); // cur
 			return;
 		}
@@ -5085,18 +5119,20 @@ private:
 			_stateOwner = true;
 		}
 		lua_pushliteral(L, YUE_MODULES); // YUE_MODULES
-		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], tb
-		if (lua_isnil(L, -1) != 0) { // tb == nil
+		lua_rawget(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES], mods
+		if (lua_isnil(L, -1) != 0) { // mods == nil
 			lua_pop(L, 1);
-			lua_newtable(L); // tb
-			lua_pushliteral(L, YUE_MODULES); // tb YUE_MODULES
-			lua_pushvalue(L, -2); // tb YUE_MODULE tb
-			lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES] = tb, tb
+			lua_newtable(L); // mods
+			lua_pushliteral(L, YUE_MODULES); // mods YUE_MODULES
+			lua_pushvalue(L, -2); // mods YUE_MODULE mods
+			lua_rawset(L, LUA_REGISTRYINDEX); // reg[YUE_MODULES] = mods, mods
 		} // tb
-		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #tb, tb
-		lua_newtable(L); // tb cur
-		lua_pushvalue(L, -1); // tb cur cur
-		lua_rawseti(L, -3, idx + 1); // tb[idx + 1] = cur, tb cur
+		int idx = static_cast<int>(lua_objlen(L, -1)); // idx = #mods, mods
+		lua_newtable(L); // mods cur
+		lua_newtable(L); // mods cur scope
+		lua_rawseti(L, -2, 1); // cur[1] = scope, mods cur
+		lua_pushvalue(L, -1); // mods cur cur
+		lua_rawseti(L, -3, idx + 1); // mods[idx + 1] = cur, mods cur
 		lua_remove(L, -2); // cur
 	}
 
@@ -5158,9 +5194,6 @@ private:
 	}
 
 	void transformMacro(Macro_t* macro, str_list& out, bool exporting) {
-		if (_scopes.size() > 1) {
-			throw CompileError("can not define macro outside the root block"sv, macro);
-		}
 		auto macroName = _parser.toString(macro->name);
 		if (auto macroFunc = macro->decl.as<MacroFunc_t>()) {
 			auto chainValue = macroFunc->new_ptr<ChainValue_t>();
@@ -5184,9 +5217,12 @@ private:
 				lua_rawset(L, -3); // cur macro module
 				lua_pop(L, 1);
 			} // cur macro
-			lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro name
-			lua_insert(L, -2); // cur name macro
-			lua_rawset(L, -3); // cur[name] = macro, cur
+			int moduleIndex = lua_gettop(L) - 1;
+			pushMacro(moduleIndex); // cur macro scope
+			lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro scope name
+			lua_insert(L, -3); // cur name macro scope
+			lua_insert(L, -3); // cur scope name macro
+			lua_rawset(L, -3); // scope[name] = macro, cur scope
 			out.push_back(Empty);
 			return;
 		}
@@ -5249,9 +5285,12 @@ private:
 			lua_rawset(L, -3); // cur macro module
 			lua_pop(L, 1);
 		} // cur macro
-		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro name
-		lua_insert(L, -2); // cur name macro
-		lua_rawset(L, -3); // cur[name] = macro, cur
+		int moduleIndex = lua_gettop(L) - 1;
+		pushMacro(moduleIndex); // cur macro scope
+		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macro scope name
+		lua_insert(L, -3); // cur name macro scope
+		lua_insert(L, -3); // cur scope name macro
+		lua_rawset(L, -3); // scope[name] = macro, cur scope
 		out.push_back(Empty);
 	}
 #else
@@ -6373,8 +6412,18 @@ private:
 				}
 			}
 		}
-		lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur macroName
-		lua_rawget(L, -2); // cur[macroName], cur macroFunc
+		int len = lua_objlen(L, -1);
+		lua_pushnil(L); // cur nil
+		for (int i = len; i >= 1; i--) {
+			lua_pop(L, 1); // cur
+			lua_rawgeti(L, -1, i); // cur[i], cur scope
+			lua_pushlstring(L, macroName.c_str(), macroName.size()); // cur scope macroName
+			lua_rawget(L, -2); // scope[macroName], cur scope macroFunc
+			lua_remove(L, -2); // cur macroFunc
+			if (!lua_isnil(L, -1)) {
+				break;
+			}
+		}
 		if (!lua_isfunction(L, -1)) {
 			auto code = expandBuiltinMacro(macroName, x);
 			if (!code.empty()) return code;
@@ -7763,13 +7812,13 @@ private:
 		bool extraScope = false;
 		bool needScope = !currentScope().lastStatement;
 		std::list<std::pair<ast_node*, ast_ptr<false, ast_node>>> destructPairs;
-		for (auto _item : nameList->items.objects()) {
-			auto item = static_cast<NameOrDestructure_t*>(_item)->item.get();
+		for (auto item_ : nameList->items.objects()) {
+			auto item = static_cast<NameOrDestructure_t*>(item_)->item.get();
 			switch (item->get_id()) {
 				case id<Variable_t>():
 					transformVariable(static_cast<Variable_t*>(item), vars);
 					varAfter.push_back(vars.back());
-					if (_item == nameList->items.objects().front()) {
+					if (getLuaTarget(x) >= 505 && item_ == nameList->items.objects().front()) {
 						varConstAfter = vars.back();
 					}
 					break;
@@ -10027,39 +10076,44 @@ private:
 				pushCurrentModule(); // cur
 				int top = lua_gettop(L) - 1; // Lua state may be setup by pushCurrentModule()
 				DEFER(lua_settop(L, top));
-				pushYue("find_modulepath"sv); // cur find_modulepath
-				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur find_modulepath moduleName
-				if (lua_pcall(L, 1, 2, 0) != 0) {
+				pushMacro(lua_gettop(L)); // cur scope
+				pushYue("find_modulepath"sv); // cur scope find_modulepath
+				lua_pushlstring(L, moduleName.c_str(), moduleName.size()); // cur scope find_modulepath moduleName
+				if (lua_pcall(L, 1, 2, 0) != 0) { // find_modulepath(moduleName), cur scope result searchItems
 					std::string err = lua_tostring(L, -1);
 					throw CompileError("failed to resolve module path\n"s + err, x);
 				}
-				if (lua_isnil(L, -2) != 0) {
+				if (lua_isnil(L, -2) != 0) { // result != nil
 					str_list files;
-					if (lua_istable(L, -1) != 0) {
+					if (lua_istable(L, -1) != 0) { // searchItems is table,
 						int size = static_cast<int>(lua_objlen(L, -1));
 						for (int i = 0; i < size; i++) {
-							lua_rawgeti(L, -1, i + 1);
+							lua_rawgeti(L, -1, i + 1); // cur scope result searchItems item
 							files.push_back("no file \""s + lua_tostring(L, -1) + "\""s);
-							lua_pop(L, 1);
+							lua_pop(L, 1); // cur scope result searchItems
 						}
 					}
 					throw CompileError("module '"s + moduleName + "\' not found:\n\t"s + join(files, "\n\t"sv), x);
 				}
-				lua_pop(L, 1);
+				lua_pop(L, 1); // cur scope result
 				std::string moduleFullName = lua_tostring(L, -1);
-				lua_pop(L, 1); // cur
+				lua_pop(L, 1); // cur scope
 				if (!isModuleLoaded(moduleFullName)) {
-					pushYue("read_file"sv); // cur read_file
-					lua_pushlstring(L, moduleFullName.c_str(), moduleFullName.size()); // cur load_text moduleFullName
+					pushYue("read_file"sv); // cur scope read_file
+					lua_pushlstring(L, moduleFullName.c_str(), moduleFullName.size()); // cur scope load_text moduleFullName
 					if (lua_pcall(L, 1, 1, 0) != 0) {
 						std::string err = lua_tostring(L, -1);
 						throw CompileError("failed to read module file\n"s + err, x);
-					} // cur text
+					} // cur scope text
 					if (lua_isnil(L, -1) != 0) {
 						throw CompileError("failed to get module text"sv, x);
-					} // cur text
+					} // cur scope text
 					std::string text = lua_tostring(L, -1);
-					auto compiler = YueCompilerImpl(L, _luaOpen, false);
+#ifndef YUE_NO_MACRO
+					auto compiler = YueCompiler{L, _luaOpen, false};
+#else
+					auto compiler = YueCompiler{};
+#endif // YUE_NO_MACRO
 					YueConfig config;
 					config.lineOffset = 0;
 					config.lintGlobalVariable = false;
@@ -10071,28 +10125,28 @@ private:
 					if (result.error) {
 						throw CompileError("failed to compile module '"s + moduleName + "\': "s + result.error.value().msg, x);
 					}
-					lua_pop(L, 1); // cur
+					lua_pop(L, 1); // cur scope
 				}
-				pushModuleTable(moduleFullName); // cur mod
+				pushModuleTable(moduleFullName); // cur scope mod
 				if (importAllMacro) {
-					lua_pushnil(L); // cur mod startKey
-					while (lua_next(L, -2) != 0) { // cur mod key value
+					lua_pushnil(L); // cur scope mod startKey
+					while (lua_next(L, -2) != 0) { // cur scope mod key value
 						const char* key = lua_tostring(L, -2);
 						auto it = std::find_if(macroPairs.begin(), macroPairs.end(), [&](const auto& item) {
 							return key == item.first;
 						});
 						if (it == macroPairs.end()) {
-							lua_pushvalue(L, -2); // cur mod key value key
-							lua_insert(L, -2); // cur mod key key value
-							lua_rawset(L, -5); // cur[key] = value, cur mod key
+							lua_pushvalue(L, -2); // cur scope mod key value key
+							lua_insert(L, -2); // cur scope mod key key value
+							lua_rawset(L, -5); // scope[key] = value, cur scope mod key
 						} else {
-							lua_pop(L, 1); // cur mod key
+							lua_pop(L, 1); // cur scope mod key
 						}
-					}
+					} // cur scope mod
 				}
 				for (const auto& pair : macroPairs) {
-					lua_getfield(L, -1, pair.first.c_str()); // mod[first], cur mod val
-					lua_setfield(L, -3, pair.second.c_str()); // cur[second] = val, cur mod
+					lua_getfield(L, -1, pair.first.c_str()); // mod[first], cur scope mod val
+					lua_setfield(L, -3, pair.second.c_str()); // scope[second] = val, cur scope mod
 				}
 			}
 #else // YUE_NO_MACRO
