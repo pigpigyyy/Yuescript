@@ -52,7 +52,6 @@ std::string_view ast_name() { return {}; }
 namespace yue {
 class ExpListLow_t;
 class TableBlock_t;
-class Attrib_t;
 class SimpleTable_t;
 class TableLit_t;
 class Assign_t;
@@ -181,6 +180,7 @@ AST_NODE(LocalAttrib)
 	ast_ptr<true, Seperator_t> sep;
 	ast_sel_list<true, Variable_t, SimpleTable_t, TableLit_t, Comprehension_t> leftList;
 	ast_ptr<true, Assign_t> assign;
+	bool forceLocal = true;
 	AST_MEMBER(LocalAttrib, &attrib, &sep, &leftList, &assign)
 AST_END(LocalAttrib)
 

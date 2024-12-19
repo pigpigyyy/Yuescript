@@ -75,7 +75,7 @@ static std::unordered_set<std::string> Metamethods = {
 	"close"s // Lua 5.4
 };
 
-const std::string_view version = "0.26.0"sv;
+const std::string_view version = "0.26.1"sv;
 const std::string_view extension = "yue"sv;
 
 class CompileError : public std::logic_error {
@@ -8701,12 +8701,15 @@ private:
 		auto classVar = getUnusedName("_class_"sv);
 		addToScope(classVar);
 		temp.push_back(indent() + "local "s + classVar + nll(classDecl));
+		auto block = classDecl->new_ptr<Block_t>();
+		str_list classConstVars;
 		if (body) {
 			str_list varDefs;
 			for (auto item : body->contents.objects()) {
 				if (auto statement = ast_cast<Statement_t>(item)) {
 					ClassDecl_t* clsDecl = nullptr;
 					if (auto assignment = assignmentFrom(statement)) {
+						block->statements.push_back(statement);
 						auto names = transformAssignDefs(assignment->expList.get(), DefOp::Mark);
 						for (const auto& name : names) {
 							varDefs.push_back(name.first);
@@ -8736,9 +8739,85 @@ private:
 						clsDecl = value->get_by_path<SimpleValue_t, ClassDecl_t>();
 						BLOCK_END
 					} else if (auto expList = expListFrom(statement)) {
+						block->statements.push_back(statement);
 						if (auto value = singleValueFrom(expList)) {
 							clsDecl = value->get_by_path<SimpleValue_t, ClassDecl_t>();
 						}
+					} else if (auto local = statement->content.as<Local_t>()) {
+						block->statements.push_back(statement);
+						if (auto values = local->item.as<LocalValues_t>()) {
+							for (auto name : values->nameList->names.objects()) {
+								auto varName = variableToString(static_cast<Variable_t*>(name));
+								forceAddToScope(varName);
+								varDefs.push_back(varName);
+							}
+						}
+					} else if (auto localAttrib = statement->content.as<LocalAttrib_t>()) {
+						auto explist = localAttrib->new_ptr<ExpList_t>();
+						for (auto item : localAttrib->leftList.objects()) {
+							auto value = item->new_ptr<Value_t>();
+							switch (item->get_id()) {
+								case id<Variable_t>(): {
+									auto callable = item->new_ptr<Callable_t>();
+									callable->item.set(item);
+									auto chainValue = item->new_ptr<ChainValue_t>();
+									chainValue->items.push_back(callable);
+									value->item.set(chainValue);
+									break;
+								}
+								case id<SimpleTable_t>():
+									value->item.set(item);
+									break;
+								case id<TableLit_t>():
+								case id<Comprehension_t>(): {
+									auto simpleValue = item->new_ptr<SimpleValue_t>();
+									simpleValue->value.set(item);
+									value->item.set(simpleValue);
+									break;
+								}
+								default: YUEE("AST node mismatch", item); break;
+							}
+							explist->exprs.push_back(newExp(value, value));
+						}
+						auto assignment = localAttrib->new_ptr<ExpListAssign_t>();
+						assignment->expList.set(explist);
+						assignment->action.set(localAttrib->assign);
+						auto names = transformAssignDefs(assignment->expList.get(), DefOp::Get);
+						for (const auto& name : names) {
+							forceAddToScope(name.first);
+							markVarConst(name.first);
+							varDefs.push_back(name.first);
+							classConstVars.push_back(name.first);
+						}
+						auto info = extractDestructureInfo(assignment, true, false);
+						if (!info.destructures.empty()) {
+							for (const auto& des : info.destructures) {
+								if (std::holds_alternative<AssignmentPtr>(des)) {
+									continue;
+								}
+								const auto& destruct = std::get<Destructure>(des);
+								for (const auto& item : destruct.items) {
+									if (!item.targetVar.empty()) {
+										forceAddToScope(item.targetVar);
+										markVarConst(item.targetVar);
+										varDefs.push_back(item.targetVar);
+										classConstVars.push_back(item.targetVar);
+									}
+								}
+							}
+						}
+						auto stmt = statement->new_ptr<Statement_t>();
+						stmt->comments.dup(statement->comments);
+						auto newAttrib = localAttrib->new_ptr<LocalAttrib_t>();
+						newAttrib->attrib.set(localAttrib->attrib);
+						newAttrib->leftList.dup(localAttrib->leftList);
+						newAttrib->assign.set(localAttrib->assign);
+						newAttrib->forceLocal = false;
+						stmt->content.set(newAttrib);
+						stmt->appendix.set(statement->appendix);
+						block->statements.push_back(stmt);
+					} else if (statement->content.is<Global_t>()) {
+						throw CompileError("global statement is not allowed here"sv, statement->content);
 					}
 					if (clsDecl) {
 						std::string clsName;
@@ -8786,11 +8865,16 @@ private:
 						}
 						break;
 					}
-					case id<Statement_t>():
-						transformStatement(static_cast<Statement_t*>(content), statements);
-						break;
+					case id<Statement_t>(): break;
 					default: YUEE("AST node mismatch", content); break;
 				}
+			}
+			for (const auto& classVar : classConstVars) {
+				auto& scope = _scopes.back();
+				scope.vars->insert_or_assign(classVar, VarType::Local);
+			}
+			for (auto stmt_ : block->statements.objects()) {
+				transformStatement(static_cast<Statement_t*>(stmt_), statements);
 			}
 			for (auto& member : members) {
 				switch (member.type) {
@@ -10608,6 +10692,7 @@ private:
 
 	void transformLocalAttrib(LocalAttrib_t* localAttrib, str_list& out) {
 		auto x = localAttrib;
+		bool forceLocal = localAttrib->forceLocal;
 		if (x->leftList.size() < x->assign->values.size()) {
 			auto num = x->leftList.size();
 			if (num > 1) {
@@ -10652,7 +10737,7 @@ private:
 			++i;
 			if (j != je) ++j;
 		}
-		bool checkValuesLater = false;
+		bool checkValuesLater = !forceLocal;
 		for (ast_node* value : assignA->values.objects()) {
 			if (ast_is<Exp_t>(value)) {
 				if (auto sVal = singleValueFrom(value)) {
@@ -10744,7 +10829,9 @@ private:
 				}
 			}
 			str_list temp;
-			temp.push_back(indent() + "local "s + join(vars, ", "sv) + nll(x));
+			if (localAttrib->forceLocal) {
+				temp.push_back(indent() + "local "s + join(vars, ", "sv) + nll(x));
+			}
 			transformAssignment(assignment, temp);
 			for (const auto& name : vars) {
 				markVarConst(name);

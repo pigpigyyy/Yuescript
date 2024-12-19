@@ -242,4 +242,19 @@ class Foo
 	:add
 	:<add>
 
+do
+	global xa, xb
+	class CX
+		xa = 1
+		xb = 1
+		new: =>
+
+do
+	class CY
+		xa = 1
+		local xb = 2
+		new: => print xa, xb, xc, xd
+		const xc = 3
+		close xd = <close>: =>
+
 nil
