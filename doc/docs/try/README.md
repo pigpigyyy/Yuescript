@@ -1,6 +1,6 @@
-# Yuescript Online Compiler
+# YueScript Online Compiler
 ---
 
-Try Yuescript in the browser with WASM.
+Try YueScript in the browser with WASM.
 
 <YueCompiler />

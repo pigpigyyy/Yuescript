@@ -4,7 +4,7 @@ module.exports = {
 	/**
 	 * Ref：https://v1.vuepress.vuejs.org/config/#title
 	 */
-	title: 'Yuescript',
+	title: 'YueScript',
 	/**
 	 * Ref：https://v1.vuepress.vuejs.org/config/#description
 	 */
@@ -19,7 +19,7 @@ module.exports = {
 		['meta', { name: 'theme-color', content: '#3eaf7c' }],
 		['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
 		['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
-		['meta', { property: 'og:title', content: 'Yuescript' }],
+		['meta', { property: 'og:title', content: 'YueScript' }],
 		['meta', { property: 'og:description', content: description }],
 		// Should probably have a og:url but I'm not sure how to add that without it being the same on all pages
 		['meta', { property: 'og:type', content: 'website' }],
@@ -49,7 +49,7 @@ module.exports = {
 	locales: {
 		'/': {
 			lang: 'en-US',
-			title: 'Yuescript',
+			title: 'YueScript',
 			description: 'A language that compiles to Lua'
 		},
 

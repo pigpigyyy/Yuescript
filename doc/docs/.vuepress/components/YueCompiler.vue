@@ -2,7 +2,7 @@
 		<div style="width: 100%; height: auto;">
 			<div class="parent" style="background-color: #f5f7ff;">
 				<div class="childL" style="height: 2.5em;">
-					<div class="childTitle">Yuescript {{ info }}</div>
+					<div class="childTitle">YueScript {{ info }}</div>
 				</div>
 				<div class="childR" style="height: 2.5em;">
 					<div class="childTitle">Lua</div>

@@ -3,17 +3,17 @@ sidebar: auto
 title: Reference
 ---
 
-# Yuescript
+# YueScript
 
 <img src="/image/yuescript.svg" width="300px" height="300px" alt="logo"/>
 
 ## Introduction
 
-Yuescript is a dynamic language that compiles to Lua. And it's a [Moonscript](https://github.com/leafo/moonscript) dialect. The codes written in Yuescript are expressive and extremely concise. And it is suitable for writing some changing application logic with more maintainable codes and runs in a Lua embeded environment such as games or website servers.
+YueScript is a dynamic language that compiles to Lua. And it's a [MoonScript](https://github.com/leafo/moonscript) dialect. The codes written in YueScript are expressive and extremely concise. And it is suitable for writing some changing application logic with more maintainable codes and runs in a Lua embeded environment such as games or website servers.
 
 Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
-### An Overview of Yuescript
+### An Overview of YueScript
 ```moonscript
 -- import syntax
 import "yue" as :p, :to_lua
@@ -104,12 +104,12 @@ export 🌛 = "月之脚本"
 > make install
 ```
 
-&emsp;Build Yuescript tool without macro feature:
+&emsp;Build YueScript tool without macro feature:
 ```
 > make install NO_MACRO=true
 ```
 
-&emsp;Build Yuescript tool without built-in Lua binary:
+&emsp;Build YueScript tool without built-in Lua binary:
 ```
 > make install NO_LUA=true
 ```
@@ -118,17 +118,17 @@ export 🌛 = "月之脚本"
 
 ### Lua Module
 
-&emsp;Use Yuescript module in Lua:
+&emsp;Use YueScript module in Lua:
 
 * **Case 1**  
 Require "your_yuescript_entry.yue" in Lua.
 ```Lua
 require("yue")("your_yuescript_entry")
 ```
-&emsp;And this code still works when you compile "your_yuescript_entry.yue"  to "your_yuescript_entry.lua" in the same path. In the rest Yuescript files just use the normal **require** or **import**. The code line numbers in error messages will also be handled correctly.
+&emsp;And this code still works when you compile "your_yuescript_entry.yue"  to "your_yuescript_entry.lua" in the same path. In the rest YueScript files just use the normal **require** or **import**. The code line numbers in error messages will also be handled correctly.
 
 * **Case 2**  
-Require Yuescript module and rewite message by hand.
+Require YueScript module and rewite message by hand.
 ```lua
 local yue = require("yue")
 local success, result = xpcall(function()
@@ -139,7 +139,7 @@ end)
 ```
 
 * **Case 3**  
-Use the Yuescript compiler function in Lua.
+Use the YueScript compiler function in Lua.
 ```lua
 local yue = require("yue")
 local codes, err, globals = yue.to_lua([[
@@ -158,9 +158,9 @@ f!
 })
 ```
 
-### Yuescript Tool
+### YueScript Tool
 
-&emsp;Use Yuescript tool with:
+&emsp;Use YueScript tool with:
 ```
 > yue -h
 Usage: yue [options|files|directories] ...
@@ -190,12 +190,12 @@ Usage: yue [options|files|directories] ...
    in a single line to start/stop multi-line mode
 ```
 &emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every Yuescript file with extension **.yue** under current path:  **yue .**  
+&emsp;&emsp;Recursively compile every YueScript file with extension **.yue** under current path:  **yue .**  
 &emsp;&emsp;Compile and save results to a target path:  **yue -t /target/path/ .**  
 &emsp;&emsp;Compile and reserve debug info:  **yue -l .**  
 &emsp;&emsp;Compile and generate minified codes:  **yue -m .**  
 &emsp;&emsp;Execute raw codes:  **yue -e 'print 123'**  
-&emsp;&emsp;Execute a Yuescript file:  **yue -e main.yue**
+&emsp;&emsp;Execute a YueScript file:  **yue -e main.yue**
 
 ## Macro
 
@@ -264,13 +264,13 @@ if $and f1!, f2!, f3!
 
 ### Insert Raw Codes
 
-A macro function can either return a Yuescript string or a config table containing Lua codes.
+A macro function can either return a YueScript string or a config table containing Lua codes.
 ```moonscript
 macro yueFunc = (var)-> "local #{var} = ->"
 $yueFunc funcA
 funcA = -> "assign the Yue defined variable"
 
--- take care and let Yuescript know the
+-- take care and let YueScript know the
 -- local variables you declared in Lua code
 macro luaFunc = (var)-> {
   code: "local function #{var}() end"
@@ -299,7 +299,7 @@ macro yueFunc = (var)-> "local #{var} = ->"
 $yueFunc funcA
 funcA = -> "assign the Yue defined variable"
 
--- take care and let Yuescript know the
+-- take care and let YueScript know the
 -- local variables you declared in Lua codes
 macro luaFunc = (var)-> {
   code: "local function #{var}() end"
@@ -376,7 +376,7 @@ print $LINE -- get number 2
 
 ### Generating Macros with Macros
 
-In Yuescript, macro functions allow you to generate code at compile time. By nesting macro functions, you can create more complex generation patterns. This feature enables you to define a macro function that generates another macro function, allowing for more dynamic code generation.
+In YueScript, macro functions allow you to generate code at compile time. By nesting macro functions, you can create more complex generation patterns. This feature enables you to define a macro function that generates another macro function, allowing for more dynamic code generation.
 
 ```moonscript
 macro Enum = (...) ->
@@ -1353,7 +1353,7 @@ print ok, count, first
 
 ## Whitespace
 
-Yuescript is a whitespace significant language. You have to write some code block in the same indent with space **' '** or tab **'\t'** like function body, value list and some control blocks. And expressions containing different whitespaces might mean different things. Tab is treated like 4 space, but it's better not mix the use of spaces and tabs.
+YueScript is a whitespace significant language. You have to write some code block in the same indent with space **' '** or tab **'\t'** like function body, value list and some control blocks. And expressions containing different whitespaces might mean different things. Tab is treated like 4 space, but it's better not mix the use of spaces and tabs.
 
 ### Multiline Chaining
 
@@ -2778,7 +2778,7 @@ switch item
 
 ## Object Oriented Programming
 
-In these examples, the generated Lua code may appear overwhelming. It is best to focus on the meaning of the Yuescript code at first, then look into the Lua code if you wish to know the implementation details.
+In these examples, the generated Lua code may appear overwhelming. It is best to focus on the meaning of the YueScript code at first, then look into the Lua code if you wish to know the implementation details.
 
 A simple class:
 
@@ -3409,7 +3409,7 @@ print var -- nil here
 </pre>
 </YueDisplay>
 
-Yuescript’s **do** can also be used an expression . Allowing you to combine multiple lines into one. The result of the do expression is the last statement in its body.
+YueScript’s **do** can also be used an expression . Allowing you to combine multiple lines into one. The result of the do expression is the last statement in its body.
 
 ```moonscript
 counter = do
@@ -3591,7 +3591,7 @@ print i, k -- these have been updated
 </pre>
 </YueDisplay>
 
-## The Yuescript Library
+## The YueScript Library
 
 Access it by `require("yue")`.
 
@@ -3599,7 +3599,7 @@ Access it by `require("yue")`.
 
 **Description:**
 
-The Yuescript language library.
+The YueScript language library.
 
 #### version
 
@@ -3607,7 +3607,7 @@ The Yuescript language library.
 
 **Description:**
 
-The Yuescript version.
+The YueScript version.
 
 **Signature:**
 ```lua
@@ -3646,7 +3646,7 @@ yue_compiled: {string: string}
 
 **Description:**
 
-The Yuescript compiling function. It compiles the Yuescript code to Lua code.
+The YueScript compiling function. It compiles the YueScript code to Lua code.
 
 **Signature:**
 ```lua
@@ -3660,7 +3660,7 @@ to_lua: function(code: string, config?: Config):
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| code | string | The Yuescript code. |
+| code | string | The YueScript code. |
 | config | Config | [Optional] The compiler options. |
 
 **Returns:**
@@ -3727,7 +3727,7 @@ read_file: function(filename: string): string
 
 **Description:**
 
-Insert the Yuescript loader to the package loaders (searchers).
+Insert the YueScript loader to the package loaders (searchers).
 
 **Signature:**
 ```lua
@@ -3752,7 +3752,7 @@ insert_loader: function(pos?: integer): boolean
 
 **Description:**
 
-Remove the Yuescript loader from the package loaders (searchers).
+Remove the YueScript loader from the package loaders (searchers).
 
 **Signature:**
 ```lua
@@ -3771,7 +3771,7 @@ remove_loader: function(): boolean
 
 **Description:**
 
-Loads Yuescript code from a string into a function.
+Loads YueScript code from a string into a function.
 
 **Signature:**
 ```lua
@@ -3784,7 +3784,7 @@ loadstring: function(input: string, chunkname: string, env: table, config?: Conf
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| input | string | The Yuescript code. |
+| input | string | The YueScript code. |
 | chunkname | string | The name of the code chunk. |
 | env | table | The environment table. |
 | config | Config | [Optional] The compiler options. |
@@ -3802,7 +3802,7 @@ loadstring: function(input: string, chunkname: string, env: table, config?: Conf
 
 **Description:**
 
-Loads Yuescript code from a string into a function.
+Loads YueScript code from a string into a function.
 
 **Signature:**
 ```lua
@@ -3815,7 +3815,7 @@ loadstring: function(input: string, chunkname: string, config?: Config):
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| input | string | The Yuescript code. |
+| input | string | The YueScript code. |
 | chunkname | string | The name of the code chunk. |
 | config | Config | [Optional] The compiler options. |
 
@@ -3832,7 +3832,7 @@ loadstring: function(input: string, chunkname: string, config?: Config):
 
 **Description:**
 
-Loads Yuescript code from a string into a function.
+Loads YueScript code from a string into a function.
 
 **Signature:**
 ```lua
@@ -3845,7 +3845,7 @@ loadstring: function(input: string, config?: Config):
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| input | string | The Yuescript code. |
+| input | string | The YueScript code. |
 | config | Config | [Optional] The compiler options. |
 
 **Returns:**
@@ -3861,7 +3861,7 @@ loadstring: function(input: string, config?: Config):
 
 **Description:**
 
-Loads Yuescript code from a file into a function.
+Loads YueScript code from a file into a function.
 
 **Signature:**
 ```lua
@@ -3891,7 +3891,7 @@ loadfile: function(filename: string, env: table, config?: Config):
 
 **Description:**
 
-Loads Yuescript code from a file into a function.
+Loads YueScript code from a file into a function.
 
 **Signature:**
 ```lua
@@ -3920,7 +3920,7 @@ loadfile: function(filename: string, config?: Config):
 
 **Description:**
 
-Loads Yuescript code from a file into a function and executes it.
+Loads YueScript code from a file into a function and executes it.
 
 **Signature:**
 ```lua
@@ -3947,7 +3947,7 @@ dofile: function(filename: string, env: table, config?: Config): any...
 
 **Description:**
 
-Loads Yuescript code from a file into a function and executes it.
+Loads YueScript code from a file into a function and executes it.
 
 **Signature:**
 ```lua
@@ -3973,7 +3973,7 @@ dofile: function(filename: string, config?: Config): any...
 
 **Description:**
 
-Resolves the Yuescript module name to the file path.
+Resolves the YueScript module name to the file path.
 
 **Signature:**
 ```lua
@@ -4000,7 +4000,7 @@ find_modulepath: function(name: string): string
 
 Calls a function in protected mode.
 Catches any errors and returns a status code and results or error object.
-Rewrites the error line number to the original line number in the Yuescript code when errors occur.
+Rewrites the error line number to the original line number in the YueScript code when errors occur.
 
 **Signature:**
 ```lua
@@ -4026,8 +4026,8 @@ pcall: function(f: function, ...: any): boolean, any...
 
 **Description:**
 
-Loads a given module. Can be either a Lua module or a Yuescript module.
-Rewrites the error line number to the original line number in the Yuescript code if the module is a Yuescript module and loading fails.
+Loads a given module. Can be either a Lua module or a YueScript module.
+Rewrites the error line number to the original line number in the YueScript code if the module is a YueScript module and loading fails.
 
 **Signature:**
 ```lua
@@ -4084,7 +4084,7 @@ options: Config.Options
 
 **Description:**
 
-The traceback function that rewrites the stack trace line numbers to the original line numbers in the Yuescript code.
+The traceback function that rewrites the stack trace line numbers to the original line numbers in the YueScript code.
 
 **Signature:**
 ```lua
@@ -4178,8 +4178,8 @@ to_ast: function(code: string, flattenLevel?: number, astName?: string):
 
 **Description:**
 
-Requires the Yuescript module.
-Rewrites the error line number to the original line number in the Yuescript code when loading fails.
+Requires the YueScript module.
+Rewrites the error line number to the original line number in the YueScript code when loading fails.
 
 **Signature:**
 ```lua

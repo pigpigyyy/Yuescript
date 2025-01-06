@@ -9,7 +9,7 @@ title: 参考手册
 
 ## 介绍
 
-月之脚本（Yuescript）是一种动态语言，可以编译为Lua。它是[Moonscript](https://github.com/leafo/moonscript)的方言。用月之脚本编写的代码既有表现力又非常简洁。它适合编写一些更易于维护的代码，并在嵌入 Lua 的环境中运行，如游戏或网站服务器。
+月之脚本（YueScript）是一种动态语言，可以编译为Lua。它是[MoonScript](https://github.com/leafo/moonscript)的方言。用月之脚本编写的代码既有表现力又非常简洁。它适合编写一些更易于维护的代码，并在嵌入 Lua 的环境中运行，如游戏或网站服务器。
 
 Yue（月）是中文中“月亮”的名称。
 
@@ -3602,7 +3602,7 @@ yue_compiled: {string: string}
 
 **描述：**
 
-月之脚本的编译函数。它将 Yuescript 代码编译为 Lua 代码。
+月之脚本的编译函数。它将 YueScript 代码编译为 Lua 代码。
 
 **签名：**
 ```lua
@@ -3616,7 +3616,7 @@ to_lua: function(code: string, config?: Config):
 
 | 参数名 | 类型 | 描述 |
 | --- | --- | --- |
-| code | string | Yuescript 代码。 |
+| code | string | YueScript 代码。 |
 | config | Config | [可选] 编译器选项。 |
 
 **返回值：**
@@ -3683,7 +3683,7 @@ read_file: function(filename: string): string
 
 **描述：**
 
-将 Yuescript 加载器插入到 Lua 包加载器（搜索器）中。
+将 YueScript 加载器插入到 Lua 包加载器（搜索器）中。
 
 **签名：**
 ```lua
@@ -3708,7 +3708,7 @@ insert_loader: function(pos?: integer): boolean
 
 **描述：**
 
-从 Lua 包加载器（搜索器）中移除 Yuescript 加载器。
+从 Lua 包加载器（搜索器）中移除 YueScript 加载器。
 
 **签名：**
 ```lua
@@ -3727,7 +3727,7 @@ remove_loader: function(): boolean
 
 **描述：**
 
-将 Yuescript 代码字符串加载为一个函数。
+将 YueScript 代码字符串加载为一个函数。
 
 **签名：**
 ```lua
@@ -3740,7 +3740,7 @@ loadstring: function(input: string, chunkname: string, env: table, config?: Conf
 
 | 参数名 | 类型 | 描述 |
 | --- | --- | --- |
-| input | string | Yuescript 代码。 |
+| input | string | YueScript 代码。 |
 | chunkname | string | 代码块的名称。 |
 | env | table | 环境表。 |
 | config | Config | [可选] 编译器选项。 |
@@ -3758,7 +3758,7 @@ loadstring: function(input: string, chunkname: string, env: table, config?: Conf
 
 **描述：**
 
-将 Yuescript 代码字符串加载为一个函数。
+将 YueScript 代码字符串加载为一个函数。
 
 **签名：**
 ```lua
@@ -3771,7 +3771,7 @@ loadstring: function(input: string, chunkname: string, config?: Config):
 
 | 参数名 | 类型 | 描述 |
 | --- | --- | --- |
-| input | string | Yuescript 代码。 |
+| input | string | YueScript 代码。 |
 | chunkname | string | 代码块的名称。 |
 | config | Config | [可选] 编译器选项。 |
 
@@ -3788,7 +3788,7 @@ loadstring: function(input: string, chunkname: string, config?: Config):
 
 **描述：**
 
-将 Yuescript 代码字符串加载为一个函数。
+将 YueScript 代码字符串加载为一个函数。
 
 **签名：**
 ```lua
@@ -3801,7 +3801,7 @@ loadstring: function(input: string, config?: Config):
 
 | 参数名 | 类型 | 描述 |
 | --- | --- | --- |
-| input | string | Yuescript 代码。 |
+| input | string | YueScript 代码。 |
 | config | Config | [可选] 编译器选项。 |
 
 **返回值：**
@@ -3817,7 +3817,7 @@ loadstring: function(input: string, config?: Config):
 
 **描述：**
 
-将 Yuescript 代码文件加载为一个函数。
+将 YueScript 代码文件加载为一个函数。
 
 **签名：**
 ```lua
@@ -3847,7 +3847,7 @@ loadfile: function(filename: string, env: table, config?: Config):
 
 **描述：**
 
-将 Yuescript 代码文件加载为一个函数。
+将 YueScript 代码文件加载为一个函数。
 
 **签名：**
 ```lua
@@ -3876,7 +3876,7 @@ loadfile: function(filename: string, config?: Config):
 
 **描述：**
 
-将 Yuescript 代码文件加载为一个函数并执行。
+将 YueScript 代码文件加载为一个函数并执行。
 
 **签名：**
 ```lua
@@ -3903,7 +3903,7 @@ dofile: function(filename: string, env: table, config?: Config): any...
 
 **描述：**
 
-将 Yuescript 代码文件加载为一个函数并执行。
+将 YueScript 代码文件加载为一个函数并执行。
 
 **签名：**
 ```lua
@@ -3929,7 +3929,7 @@ dofile: function(filename: string, config?: Config): any...
 
 **描述：**
 
-将 Yuescript 模块名解析为文件路径。
+将 YueScript 模块名解析为文件路径。
 
 **签名：**
 ```lua
@@ -3956,7 +3956,7 @@ find_modulepath: function(name: string): string
 
 在保护模式下调用一个函数。
 会捕获任何错误，执行成功则返回成功状态和结果，否则为失败状态和错误信息。
-当发生错误时，将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
+当发生错误时，将错误信息中的代码行号重写为 YueScript 代码中的原始行号。
 
 **签名：**
 ```lua
@@ -3982,8 +3982,8 @@ pcall: function(f: function, ...: any): boolean, any...
 
 **描述：**
 
-加载给定的模块。可以是 Lua 模块或 Yuescript 模块。
-如果模块是 Yuescript 模块且加载失败，则将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
+加载给定的模块。可以是 Lua 模块或 YueScript 模块。
+如果模块是 YueScript 模块且加载失败，则将错误信息中的代码行号重写为 YueScript 代码中的原始行号。
 
 **签名：**
 ```lua
@@ -4040,7 +4040,7 @@ options: Config.Options
 
 **描述：**
 
-重写堆栈跟踪中的行号为 Yuescript 代码中的原始行号的 traceback 函数。
+重写堆栈跟踪中的行号为 YueScript 代码中的原始行号的 traceback 函数。
 
 **签名：**
 ```lua
@@ -4126,8 +4126,8 @@ to_ast: function(code: string, flattenLevel?: number, astName?: string):
 
 **描述：**
 
-导入 Yuescript 模块。
-如果发生加载失败，则将错误信息中的代码行号重写为 Yuescript 代码中的原始行号。
+导入 YueScript 模块。
+如果发生加载失败，则将错误信息中的代码行号重写为 YueScript 代码中的原始行号。
 
 **签名：**
 ```lua

@@ -1,6 +1,6 @@
-# Yuescript
+# YueScript
 
-> Yuescript Documentation
+> YueScript Documentation
 
 ## Development
 
