@@ -4,11 +4,11 @@
 
 [![Ubuntu](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/ubuntu.yml) [![Windows](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/windows.yml) [![macOS](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml/badge.svg)](https://github.com/pigpigyyy/Yuescript/actions/workflows/macos.yml) [![Discord Badge](https://img.shields.io/discord/844031511208001577?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/cRJ2VAm2NV)
 
-Yuescript is a Moonscript dialect. It is derived from [Moonscript language](https://github.com/leafo/moonscript) 0.5.0 and continuously adopting new features to be more up to date. 
+YueScript is a MoonScript dialect. It is derived from [MoonScript language](https://github.com/leafo/moonscript) 0.5.0 and continuously adopting new features to be more up to date. 
 
-Moonscript is a language that compiles to Lua. Since original Moonscript has been used to write web framework [lapis](https://github.com/leafo/lapis) and run a few business web sites like [itch.io](https://itch.io) and [streak.club](https://streak.club) with some large code bases. The original language is getting too hard to adopt new features for those may break the stablility for existing applications.
+MoonScript is a language that compiles to Lua. Since original MoonScript has been used to write web framework [lapis](https://github.com/leafo/lapis) and run a few business web sites like [itch.io](https://itch.io) and [streak.club](https://streak.club) with some large code bases. The original language is getting too hard to adopt new features for those may break the stablility for existing applications.
 
-So Yuescript is a new code base for pushing the language to go forward and being a playground to try introducing new language syntax or programing paradigms to make Moonscript language more expressive and productive.
+So YueScript is a new code base for pushing the language to go forward and being a playground to try introducing new language syntax or programing paradigms to make MoonScript language more expressive and productive.
 
 Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
@@ -18,7 +18,7 @@ Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
 * No other dependencies needed except modified [parserlib](https://github.com/axilmar/parserlib) library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
 * Written in C++17.
-* Support most of the features from Moonscript language. Generate Lua codes in the same way like the original compiler.
+* Support most of the features from MoonScript language. Generate Lua codes in the same way like the original compiler.
 * Reserve line numbers from source file in the compiled Lua codes to help debugging.
 * More features like macro, existential operator, pipe operator, Javascript-like export syntax and etc.
 * See other details in the [changelog](./CHANGELOG.md). Find document [here](http://yuescript.org).
@@ -43,7 +43,7 @@ Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 > luarocks install yuescript
 ```
 
-&emsp;&emsp;Then require the Yuescript module in Lua:
+&emsp;&emsp;Then require the YueScript module in Lua:
 
 ```Lua
 require("yue")("main") -- require `main.yue`
@@ -69,17 +69,17 @@ f!
 > make install
 ```
 
-&emsp;&emsp;Build Yuescript tool without macro feature:
+&emsp;&emsp;Build YueScript tool without macro feature:
 ```sh
 > make install NO_MACRO=true
 ```
 
-&emsp;&emsp;Build Yuescript tool without built-in Lua binary:
+&emsp;&emsp;Build YueScript tool without built-in Lua binary:
 ```sh
 > make install NO_LUA=true
 ```
 
-&emsp;&emsp;Use Yuescript tool with:
+&emsp;&emsp;Use YueScript tool with:
 
 ```sh
 > yue -h
@@ -110,18 +110,18 @@ Usage: yue [options|files|directories] ...
    in a single line to start/stop multi-line mode
 ```
 &emsp;&emsp;Use cases:  
-&emsp;&emsp;Recursively compile every Yuescript file with extension `.yue` under current path:  `yue .`  
+&emsp;&emsp;Recursively compile every YueScript file with extension `.yue` under current path:  `yue .`  
 &emsp;&emsp;Compile and save results to a target path:  `yue -t /target/path/ .`  
 &emsp;&emsp;Compile and reserve debug info:  `yue -l .`  
 &emsp;&emsp;Compile and generate minified codes:  `yue -m .`  
 &emsp;&emsp;Execute raw codes:  `yue -e 'print 123'`  
-&emsp;&emsp;Execute a Yuescript file:  `yue -e main.yue`
+&emsp;&emsp;Execute a YueScript file:  `yue -e main.yue`
 
 
 
 ## Editor Support
 
-* [Vim](https://github.com/pigpigyyy/Yuescript-vim)
+* [Vim](https://github.com/pigpigyyy/YueScript-vim)
 * [ZeroBraneStudio](https://github.com/pkulchenko/ZeroBraneStudio/issues/1134) (Syntax highlighting)
 * [Visual Studio Code](https://github.com/pigpigyyy/yuescript-vscode)
 
