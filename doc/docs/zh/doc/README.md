@@ -31,16 +31,19 @@ inventory =
 
 -- 管道操作符
 [1, 2, 3]
-  |> map (x)-> x * 2
-  |> filter (x)-> x > 4
-  |> reduce 0, (a, b)-> a + b
+  |> map (x) -> x * 2
+  |> filter (x) -> x > 4
+  |> reduce 0, (a, b) -> a + b
   |> print
 
 -- 元表操作
 apple =
   size: 15
-  <index>: {color: 0x00ffff}
-p apple.color, apple.<index> if apple.<>?
+  <index>:
+    color: 0x00ffff
+
+with apple
+  p .size, .color, .<index> if .<>?
 
 -- 类似js的导出语法
 export 🌛 = "月之脚本"
@@ -63,16 +66,19 @@ inventory =
 
 -- 管道操作符
 [1, 2, 3]
-  |> map (x)-> x * 2
-  |> filter (x)-> x > 4
-  |> reduce 0, (a, b)-> a + b
+  |> map (x) -> x * 2
+  |> filter (x) -> x > 4
+  |> reduce 0, (a, b) -> a + b
   |> print
 
 -- 元表操作
 apple =
   size: 15
-  &lt;index&gt;: {color: 0x00ffff}
-p apple.color, apple.&lt;index&gt; if apple.&lt;&gt;?
+  &lt;index&gt;:
+    color: 0x00ffff
+
+with apple
+  p .size, .color, .&lt;index&gt; if .&lt;&gt;?
 
 -- 类似js的导出语法
 export 🌛 = "月之脚本"
@@ -209,14 +215,14 @@ area = $PI2 * 5
 macro HELLO = -> "'你好 世界'"
 print $HELLO
 
-macro config = (debugging)->
+macro config = (debugging) ->
   global debugMode = debugging == "true"
   ""
 
-macro asserts = (cond)->
+macro asserts = (cond) ->
   debugMode and "assert #{cond}" or ""
 
-macro assert = (cond)->
+macro assert = (cond) ->
   debugMode and "assert #{cond}" or "#{cond}"
 
 $config true
@@ -226,7 +232,7 @@ $config false
 value = $assert item
 
 -- 宏函数参数传递的表达式会被转换为字符串
-macro and = (...)-> "#{ table.concat {...}, ' and ' }"
+macro and = (...) -> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
 ```
@@ -238,14 +244,14 @@ area = $PI2 * 5
 macro HELLO = -> "'你好 世界'"
 print $HELLO
 
-macro config = (debugging)->
+macro config = (debugging) ->
   global debugMode = debugging == "true"
   ""
 
-macro asserts = (cond)->
+macro asserts = (cond) ->
   debugMode and "assert #{cond}" or ""
 
-macro assert = (cond)->
+macro assert = (cond) ->
   debugMode and "assert #{cond}" or "#{cond}"
 
 $config true
@@ -255,7 +261,7 @@ $config false
 value = $assert item
 
 -- 宏函数参数传递的表达式会被转换为字符串
-macro and = (...)-> "#{ table.concat {...}, ' and ' }"
+macro and = (...) -> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
 </pre>
@@ -265,20 +271,20 @@ if $and f1!, f2!, f3!
 
 宏函数可以返回一个包含月之脚本代码的字符串，或是一个包含Lua代码字符串的配置表。
 ```moonscript
-macro yueFunc = (var)-> "local #{var} = ->"
+macro yueFunc = (var) -> "local #{var} = ->"
 $yueFunc funcA
-funcA = -> "访问月之脚本定义的变量"
+funcA = -> "无法访问宏生成月之脚本里定义的变量"
 
 -- 让月之脚本知道你在Lua代码中声明的局部变量
-macro luaFunc = (var)-> {
+macro luaFunc = (var) -> {
   code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
 $luaFunc funcB
-funcB = -> "访问Lua代码里定义的变量"
+funcB = -> "访问宏生成Lua代码里定义的变量"
 
-macro lua = (code)-> {
+macro lua = (code) -> {
   :code
   type: "lua"
 }
@@ -293,20 +299,20 @@ end
 ```
 <YueDisplay>
 <pre>
-macro yueFunc = (var)-> "local #{var} = ->"
+macro yueFunc = (var) -> "local #{var} = ->"
 $yueFunc funcA
-funcA = -> "访问月之脚本定义的变量"
+funcA = -> "无法访问宏生成月之脚本里定义的变量"
 
 -- 让月之脚本知道你在Lua代码中声明的局部变量
-macro luaFunc = (var)-> {
+macro luaFunc = (var) -> {
   code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
 $luaFunc funcB
-funcB = -> "访问Lua代码里定义的变量"
+funcB = -> "访问宏生成Lua代码里定义的变量"
 
-macro lua = (code)-> {
+macro lua = (code) -> {
   :code
   type: "lua"
 }
@@ -326,9 +332,9 @@ end
 宏函数可以从一个模块中导出，并在另一个模块中导入。您必须将导出的宏函数放在一个单独的文件中使用，而且只有宏定义、宏导入和宏展开可以放入这个宏导出模块中。
 ```moonscript
 -- 文件: utils.yue
-export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
-export macro filter = (items, action)-> "[_ for _ in *#{items} when #{action}]"
-export macro foreach = (items, action)-> "for _ in *#{items}
+export macro map = (items, action) -> "[#{action} for _ in *#{items}]"
+export macro filter = (items, action) -> "[_ for _ in *#{items} when #{action}]"
+export macro foreach = (items, action) -> "for _ in *#{items}
   #{action}"
 
 -- 文件 main.yue
@@ -341,9 +347,9 @@ import "utils" as {
 <YueDisplay>
 <pre>
 -- 文件: utils.yue
-export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
-export macro filter = (items, action)-> "[_ for _ in *#{items} when #{action}]"
-export macro foreach = (items, action)-> "for _ in *#{items}
+export macro map = (items, action) -> "[#{action} for _ in *#{items}]"
+export macro filter = (items, action) -> "[_ for _ in *#{items} when #{action}]"
+export macro foreach = (items, action) -> "for _ in *#{items}
   #{action}"
 -- 文件 main.yue
 -- 在浏览器中不支持import函数，请在真实环境中尝试
@@ -453,7 +459,7 @@ print 1 <= a <= 10
 可以注意一下链式比较表达式的求值行为：
 
 ```moonscript
-v = (x)->
+v = (x) ->
 	print x
 	x
 
@@ -476,7 +482,7 @@ print v(1) > v(2) <= v(3)
 ```
 <YueDisplay>
 <pre>
-v = (x)->
+v = (x) ->
 	print x
 	x
 
@@ -564,7 +570,7 @@ merge = {...a, ...b}
 
 ```moonscript
 mt = {}
-add = (right)=> <>: mt, value: @value + right.value
+add = (right) => <>: mt, value: @value + right.value
 mt.__add = add
 
 a = <>: mt, value: 1
@@ -580,7 +586,7 @@ close _ = <close>: -> print "超出范围"
 <YueDisplay>
 <pre>
 mt = {}
-add = (right)=> &lt;&gt;: mt, value: @value + right.value
+add = (right) => &lt;&gt;: mt, value: @value + right.value
 mt.__add = add
 
 a = &lt;&gt;: mt, value: 1
@@ -642,7 +648,7 @@ func?!
 print abc?["你好 世界"]?.xyz
 
 x = tab?.value
-len = utf8?.len or string?.len or (o)-> #o
+len = utf8?.len or string?.len or (o) -> #o
 
 if print and x?
   print x
@@ -657,7 +663,7 @@ func?!
 print abc?["你好 世界"]?.xyz
 
 x = tab?.value
-len = utf8?.len or string?.len or (o)-> #o
+len = utf8?.len or string?.len or (o) -> #o
 
 if print and x?
   print x
@@ -1358,18 +1364,18 @@ print ok, count, first
 ```moonscript
 Rx.Observable
   .fromRange 1, 8
-  \filter (x)-> x % 2 == 0
+  \filter (x) -> x % 2 == 0
   \concat Rx.Observable.of 'who do we appreciate'
-  \map (value)-> value .. '!'
+  \map (value) -> value .. '!'
   \subscribe print
 ```
 <YueDisplay>
 <pre>
 Rx.Observable
   .fromRange 1, 8
-  \filter (x)-> x % 2 == 0
+  \filter (x) -> x % 2 == 0
   \concat Rx.Observable.of 'who do we appreciate'
-  \map (value)-> value .. '!'
+  \map (value) -> value .. '!'
   \subscribe print
 </pre>
 </YueDisplay>
@@ -1583,11 +1589,11 @@ func_b()
 带有参数的函数可以通过在箭头前加上括号中的参数名列表来进行创建：
 
 ```moonscript
-sum = (x, y)-> print "数字的和", x + y
+sum = (x, y) -> print "数字的和", x + y
 ```
 <YueDisplay>
 <pre>
-sum = (x, y)-> print "数字的和", x + y
+sum = (x, y) -> print "数字的和", x + y
 </pre>
 </YueDisplay>
 
@@ -1624,7 +1630,7 @@ print "x:", sum(10, 20), "y:", sum(30, 40)
 函数会将函数体中的最后一个语句强制转换为返回语句，这被称作隐式返回：
 
 ```moonscript
-sum = (x, y)-> x + y
+sum = (x, y) -> x + y
 print "数字的和是", sum 10, 20
 ```
 <YueDisplay>
@@ -1637,23 +1643,23 @@ print "数字的和是", sum 10, 20
 如果您需要做显式返回，可以使用return关键字：
 
 ```moonscript
-sum = (x, y)-> return x + y
+sum = (x, y) -> return x + y
 ```
 <YueDisplay>
 <pre>
-sum = (x, y)-> return x + y
+sum = (x, y) -> return x + y
 </pre>
 </YueDisplay>
 
 就像在Lua中一样，函数可以返回多个值。最后一个语句必须是由逗号分隔的值列表：
 
 ```moonscript
-mystery = (x, y)-> x + y, x - y
+mystery = (x, y) -> x + y, x - y
 a, b = mystery 10, 20
 ```
 <YueDisplay>
 <pre>
-mystery = (x, y)-> x + y, x - y
+mystery = (x, y) -> x + y, x - y
 a, b = mystery 10, 20
 </pre>
 </YueDisplay>
@@ -1663,11 +1669,11 @@ a, b = mystery 10, 20
 因为在Lua中调用方法时，经常习惯将对象作为第一个参数传入，所以月之脚本提供了一种特殊的语法来创建自动包含self参数的函数。
 
 ```moonscript
-func = (num)=> @value + num
+func = (num) => @value + num
 ```
 <YueDisplay>
 <pre>
-func = (num)=> @value + num
+func = (num) => @value + num
 </pre>
 </YueDisplay>
 
@@ -1676,13 +1682,13 @@ func = (num)=> @value + num
 可以为函数的参数提供默认值。如果参数的值为nil，则确定该参数为空。任何具有默认值的nil参数在函数体运行之前都会被替换。
 
 ```moonscript
-my_function = (name = "某物", height = 100)->
+my_function = (name = "某物", height = 100) ->
   print "你好，我是", name
   print "我的高度是", height
 ```
 <YueDisplay>
 <pre>
-my_function = (name = "某物", height = 100)->
+my_function = (name = "某物", height = 100) ->
   print "你好，我是", name
   print "我的高度是", height
 </pre>
@@ -1691,12 +1697,12 @@ my_function = (name = "某物", height = 100)->
 函数参数的默认值表达式在函数体中会按参数声明的顺序进行计算。因此，在默认值的表达式中可以访问先前声明的参数。
 
 ```moonscript
-some_args = (x = 100, y = x + 1000)->
+some_args = (x = 100, y = x + 1000) ->
   print x + y
 ```
 <YueDisplay>
 <pre>
-some_args = (x = 100, y = x + 1000)->
+some_args = (x = 100, y = x + 1000) ->
   print x + y
 </pre>
 </YueDisplay>
@@ -2747,7 +2753,7 @@ class Inventory
   new: =>
     @items = {}
 
-  add_item: (name)=>
+  add_item: (name) =>
     if @items[name]
       @items[name] += 1
     else
@@ -2759,7 +2765,7 @@ class Inventory
   new: =>
     @items = {}
 
-  add_item: (name)=>
+  add_item: (name) =>
     if @items[name]
       @items[name] += 1
     else
@@ -2798,7 +2804,7 @@ inv\add_item "pants"
 ```moonscript
 class Person
   clothes: []
-  give_item: (name)=>
+  give_item: (name) =>
     table.insert @clothes, name
 
 a = Person!
@@ -2814,7 +2820,7 @@ print item for item in *a.clothes
 <pre>
 class Person
   clothes: []
-  give_item: (name)=>
+  give_item: (name) =>
     table.insert @clothes, name
 
 a = Person!
@@ -2850,7 +2856,7 @@ class Person
 ```moonscript
 class BackPack extends Inventory
   size: 10
-  add_item: (name)=>
+  add_item: (name) =>
     if #@items > size then error "背包已满"
     super name
 ```
@@ -2858,7 +2864,7 @@ class BackPack extends Inventory
 <pre>
 class BackPack extends Inventory
   size: 10
-  add_item: (name)=>
+  add_item: (name) =>
     if #@items > size then error "背包已满"
     super name
 </pre>
@@ -2873,7 +2879,7 @@ class BackPack extends Inventory
 
 ```moonscript
 class Shelf
-  @__inherited: (child)=>
+  @__inherited: (child) =>
     print @__name, "被", child.__name, "继承"
 
 -- 将打印: Shelf 被 Cupboard 继承
@@ -2882,7 +2888,7 @@ class Cupboard extends Shelf
 <YueDisplay>
 <pre>
 class Shelf
-  @__inherited: (child)=>
+  @__inherited: (child) =>
     print @__name, "被", child.__name, "继承"
 
 -- 将打印: Shelf 被 Cupboard 继承
@@ -3065,7 +3071,7 @@ class Things
 ```moonscript
 class MoreThings
   secret = 123
-  log = (msg)-> print "LOG:", msg
+  log = (msg) -> print "LOG:", msg
 
   some_method: =>
     log "hello world: " .. secret
@@ -3074,7 +3080,7 @@ class MoreThings
 <pre>
 class MoreThings
   secret = 123
-  log = (msg)-> print "LOG:", msg
+  log = (msg) -> print "LOG:", msg
 
   some_method: =>
     log "hello world: " .. secret
@@ -3101,11 +3107,11 @@ assert @@ == self.__class
 例如，使用@@从实例方法快速创建同一类的新实例的方法：
 
 ```moonscript
-some_instance_method = (...)=> @@ ...
+some_instance_method = (...) => @@ ...
 ```
 <YueDisplay>
 <pre>
-some_instance_method = (...)=> @@ ...
+some_instance_method = (...) => @@ ...
 </pre>
 </YueDisplay>
 
@@ -3145,13 +3151,13 @@ class Something
 你也可以使用这种语法为一个函数初始化传入对象的字段。
 
 ```moonscript
-new = (@fieldA, @fieldB)=> @
+new = (@fieldA, @fieldB) => @
 obj = new {}, 123, "abc"
 print obj
 ```
 <YueDisplay>
 <pre>
-new = (@fieldA, @fieldB)=> @
+new = (@fieldA, @fieldB) => @
 obj = new {}, 123, "abc"
 print obj
 </pre>
@@ -3288,7 +3294,7 @@ file = with File "favorite_foods.txt"
 或者…
 
 ```moonscript
-create_person = (name,  relatives)->
+create_person = (name,  relatives) ->
   with Person!
     .name = name
     \add_relative relative for relative in *relatives
@@ -3297,7 +3303,7 @@ me = create_person "Leaf", [dad, mother, sister]
 ```
 <YueDisplay>
 <pre>
-create_person = (name,  relatives)->
+create_person = (name,  relatives) ->
   with Person!
     .name = name
     \add_relative relative for relative in *relatives
@@ -3421,7 +3427,7 @@ my_object = {
   write: => print "值为:", @value
 }
 
-run_callback = (func)->
+run_callback = (func) ->
   print "运行回调..."
   func!
 
@@ -3440,7 +3446,7 @@ my_object = {
   write: => print "值为:", @value
 }
 
-run_callback = (func)->
+run_callback = (func) ->
   print "运行回调..."
   func!
 
@@ -3500,7 +3506,7 @@ print i -- 将打印 0
 ```moonscript
 i = 100
 
-my_func = (using nil)->
+my_func = (using nil) ->
   i = "hello" -- 这里创建了一个新的局部变量
 
 my_func!
@@ -3510,7 +3516,7 @@ print i -- 打印 100，i 没有受到影响
 <pre>
 i = 100
 
-my_func = (using nil)->
+my_func = (using nil) ->
   i = "hello" -- 这里创建了一个新的局部变量
 
 my_func!
@@ -3524,7 +3530,7 @@ using子句中可以填写多个用逗号分隔名称。指定可以访问和修
 tmp = 1213
 i, k = 100, 50
 
-my_func = (add using k, i)->
+my_func = (add using k, i) ->
   tmp = tmp + add -- 创建了一个新的局部tmp
   i += tmp
   k += tmp
@@ -3537,7 +3543,7 @@ print i, k -- 这些已经被更新
 tmp = 1213
 i, k = 100, 50
 
-my_func = (add using k, i)->
+my_func = (add using k, i) ->
   tmp = tmp + add -- 创建了一个新的局部tmp
   i += tmp
   k += tmp

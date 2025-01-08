@@ -31,16 +31,19 @@ inventory =
 
 -- pipe operator
 [1, 2, 3]
-  |> map (x)-> x * 2
-  |> filter (x)-> x > 4
-  |> reduce 0, (a, b)-> a + b
+  |> map (x) -> x * 2
+  |> filter (x) -> x > 4
+  |> reduce 0, (a, b) -> a + b
   |> print
 
 -- metatable manipulation
 apple =
   size: 15
-  <index>: {color: 0x00ffff}
-p apple.color, apple.<index> if apple.<>?
+  <index>:
+    color: 0x00ffff
+
+with apple
+  p .size, .color, .<index> if .<>?
 
 -- js-like export syntax
 export 🌛 = "月之脚本"
@@ -63,16 +66,19 @@ inventory =
 
 -- pipe operator
 [1, 2, 3]
-  |> map (x)-> x * 2
-  |> filter (x)-> x > 4
-  |> reduce 0, (a, b)-> a + b
+  |> map (x) -> x * 2
+  |> filter (x) -> x > 4
+  |> reduce 0, (a, b) -> a + b
   |> print
 
 -- metatable manipulation
 apple =
   size: 15
-  &lt;index&gt;: {color: 0x00ffff}
-p apple.color, apple.&lt;index&gt; if apple.&lt;&gt;?
+  &lt;index&gt;:
+    color: 0x00ffff
+
+with apple
+  p .size, .color, .&lt;index&gt; if .&lt;&gt;?
 
 -- js-like export syntax
 export 🌛 = "月之脚本"
@@ -210,14 +216,14 @@ area = $PI2 * 5
 macro HELLO = -> "'hello world'"
 print $HELLO
 
-macro config = (debugging)->
+macro config = (debugging) ->
   global debugMode = debugging == "true"
   ""
 
-macro asserts = (cond)->
+macro asserts = (cond) ->
   debugMode and "assert #{cond}" or ""
 
-macro assert = (cond)->
+macro assert = (cond) ->
   debugMode and "assert #{cond}" or "#{cond}"
 
 $config true
@@ -227,7 +233,7 @@ $config false
 value = $assert item
 
 -- the passed expressions are treated as strings
-macro and = (...)-> "#{ table.concat {...}, ' and ' }"
+macro and = (...) -> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
 ```
@@ -239,14 +245,14 @@ area = $PI2 * 5
 macro HELLO = -> "'hello world'"
 print $HELLO
 
-macro config = (debugging)->
+macro config = (debugging) ->
   global debugMode = debugging == "true"
   ""
 
-macro asserts = (cond)->
+macro asserts = (cond) ->
   debugMode and "assert #{cond}" or ""
 
-macro assert = (cond)->
+macro assert = (cond) ->
   debugMode and "assert #{cond}" or "#{cond}"
 
 $config true
@@ -256,7 +262,7 @@ $config false
 value = $assert item
 
 -- the passed expressions are treated as strings
-macro and = (...)-> "#{ table.concat {...}, ' and ' }"
+macro and = (...) -> "#{ table.concat {...}, ' and ' }"
 if $and f1!, f2!, f3!
   print "OK"
 </pre>
@@ -266,21 +272,21 @@ if $and f1!, f2!, f3!
 
 A macro function can either return a YueScript string or a config table containing Lua codes.
 ```moonscript
-macro yueFunc = (var)-> "local #{var} = ->"
+macro yueFunc = (var) -> "local #{var} = ->"
 $yueFunc funcA
-funcA = -> "assign the Yue defined variable"
+funcA = -> "fail to assign to the Yue defined variable"
 
 -- take care and let YueScript know the
 -- local variables you declared in Lua code
-macro luaFunc = (var)-> {
+macro luaFunc = (var) -> {
   code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
 $luaFunc funcB
-funcB = -> "assign the Lua defined variable"
+funcB = -> "assign to the Lua defined variable"
 
-macro lua = (code)-> {
+macro lua = (code) -> {
   :code
   type: "lua"
 }
@@ -295,21 +301,21 @@ end
 ```
 <YueDisplay>
 <pre>
-macro yueFunc = (var)-> "local #{var} = ->"
+macro yueFunc = (var) -> "local #{var} = ->"
 $yueFunc funcA
-funcA = -> "assign the Yue defined variable"
+funcA = -> "fail to assign to the Yue defined variable"
 
 -- take care and let YueScript know the
 -- local variables you declared in Lua codes
-macro luaFunc = (var)-> {
+macro luaFunc = (var) -> {
   code: "local function #{var}() end"
   type: "lua"
   locals: {var}
 }
 $luaFunc funcB
-funcB = -> "assign the Lua defined variable"
+funcB = -> "assign to the Lua defined variable"
 
-macro lua = (code)-> {
+macro lua = (code) -> {
   :code
   type: "lua"
 }
@@ -329,9 +335,9 @@ end
 Macro functions can be exported from a module and get imported in another module. You have to put export macro functions in a single file to be used, and only macro definition, macro importing and macro expansion in place can be put into the macro exporting module.
 ```moonscript
 -- file: utils.yue
-export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
-export macro filter = (items, action)-> "[_ for _ in *#{items} when #{action}]"
-export macro foreach = (items, action)-> "for _ in *#{items}
+export macro map = (items, action) -> "[#{action} for _ in *#{items}]"
+export macro filter = (items, action) -> "[_ for _ in *#{items} when #{action}]"
+export macro foreach = (items, action) -> "for _ in *#{items}
   #{action}"
 
 -- file main.yue
@@ -344,9 +350,9 @@ import "utils" as {
 <YueDisplay>
 <pre>
 -- file: utils.yue
-export macro map = (items, action)-> "[#{action} for _ in *#{items}]"
-export macro filter = (items, action)-> "[_ for _ in *#{items} when #{action}]"
-export macro foreach = (items, action)-> "for _ in *#{items}
+export macro map = (items, action) -> "[#{action} for _ in *#{items}]"
+export macro filter = (items, action) -> "[_ for _ in *#{items} when #{action}]"
+export macro foreach = (items, action) -> "for _ in *#{items}
   #{action}"
 -- file main.yue
 -- import function is not available in browser, try it in a real environment
@@ -457,7 +463,7 @@ print 1 <= a <= 10
 Note the evaluation behavior of chained comparisons:
 
 ```moonscript
-v = (x)->
+v = (x) ->
 	print x
 	x
 
@@ -480,7 +486,7 @@ print v(1) > v(2) <= v(3)
 ```
 <YueDisplay>
 <pre>
-v = (x)->
+v = (x) ->
 	print x
 	x
 
@@ -567,7 +573,7 @@ Create normal table with empty bracekets **<>** or metamethod key which is surro
 
 ```moonscript
 mt = {}
-add = (right)=> <>: mt, value: @value + right.value
+add = (right) => <>: mt, value: @value + right.value
 mt.__add = add
 
 a = <>: mt, value: 1
@@ -583,7 +589,7 @@ close _ = <close>: -> print "out of scope"
 <YueDisplay>
 <pre>
 mt = {}
-add = (right)=> &lt;&gt;: mt, value: @value + right.value
+add = (right) => &lt;&gt;: mt, value: @value + right.value
 mt.__add = add
 
 a = &lt;&gt;: mt, value: 1
@@ -645,7 +651,7 @@ func?!
 print abc?["hello world"]?.xyz
 
 x = tab?.value
-len = utf8?.len or string?.len or (o)-> #o
+len = utf8?.len or string?.len or (o) -> #o
 
 if print and x?
   print x
@@ -660,7 +666,7 @@ func?!
 print abc?["hello world"]?.xyz
 
 x = tab?.value
-len = utf8?.len or string?.len or (o)-> #o
+len = utf8?.len or string?.len or (o) -> #o
 
 if print and x?
   print x
@@ -1361,18 +1367,18 @@ You can write multi-line chaining function calls with a same indent.
 ```moonscript
 Rx.Observable
   .fromRange 1, 8
-  \filter (x)-> x % 2 == 0
+  \filter (x) -> x % 2 == 0
   \concat Rx.Observable.of 'who do we appreciate'
-  \map (value)-> value .. '!'
+  \map (value) -> value .. '!'
   \subscribe print
 ```
 <YueDisplay>
 <pre>
 Rx.Observable
   .fromRange 1, 8
-  \filter (x)-> x % 2 == 0
+  \filter (x) -> x % 2 == 0
   \concat Rx.Observable.of 'who do we appreciate'
-  \map (value)-> value .. '!'
+  \map (value) -> value .. '!'
   \subscribe print
 </pre>
 </YueDisplay>
@@ -1586,11 +1592,11 @@ func_b()
 Functions with arguments can be created by preceding the arrow with a list of argument names in parentheses:
 
 ```moonscript
-sum = (x, y)-> print "sum", x + y
+sum = (x, y) -> print "sum", x + y
 ```
 <YueDisplay>
 <pre>
-sum = (x, y)-> print "sum", x + y
+sum = (x, y) -> print "sum", x + y
 </pre>
 </YueDisplay>
 
@@ -1627,7 +1633,7 @@ There must not be any space between the opening parenthesis and the function.
 Functions will coerce the last statement in their body into a return statement, this is called implicit return:
 
 ```moonscript
-sum = (x, y)-> x + y
+sum = (x, y) -> x + y
 print "The sum is ", sum 10, 20
 ```
 <YueDisplay>
@@ -1640,23 +1646,23 @@ print "The sum is ", sum 10, 20
 And if you need to explicitly return, you can use the return keyword:
 
 ```moonscript
-sum = (x, y)-> return x + y
+sum = (x, y) -> return x + y
 ```
 <YueDisplay>
 <pre>
-sum = (x, y)-> return x + y
+sum = (x, y) -> return x + y
 </pre>
 </YueDisplay>
 
 Just like in Lua, functions can return multiple values. The last statement must be a list of values separated by commas:
 
 ```moonscript
-mystery = (x, y)-> x + y, x - y
+mystery = (x, y) -> x + y, x - y
 a, b = mystery 10, 20
 ```
 <YueDisplay>
 <pre>
-mystery = (x, y)-> x + y, x - y
+mystery = (x, y) -> x + y, x - y
 a, b = mystery 10, 20
 </pre>
 </YueDisplay>
@@ -1666,11 +1672,11 @@ a, b = mystery 10, 20
 Because it is an idiom in Lua to send an object as the first argument when calling a method, a special syntax is provided for creating functions which automatically includes a self argument.
 
 ```moonscript
-func = (num)=> @value + num
+func = (num) => @value + num
 ```
 <YueDisplay>
 <pre>
-func = (num)=> @value + num
+func = (num) => @value + num
 </pre>
 </YueDisplay>
 
@@ -1679,13 +1685,13 @@ func = (num)=> @value + num
 It is possible to provide default values for the arguments of a function. An argument is determined to be empty if its value is nil. Any nil arguments that have a default value will be replace before the body of the function is run.
 
 ```moonscript
-my_function = (name = "something", height = 100)->
+my_function = (name = "something", height = 100) ->
   print "Hello I am", name
   print "My height is", height
 ```
 <YueDisplay>
 <pre>
-my_function = (name = "something", height = 100)->
+my_function = (name = "something", height = 100) ->
   print "Hello I am", name
   print "My height is", height
 </pre>
@@ -1694,12 +1700,12 @@ my_function = (name = "something", height = 100)->
 An argument default value expression is evaluated in the body of the function in the order of the argument declarations. For this reason default values have access to previously declared arguments.
 
 ```moonscript
-some_args = (x = 100, y = x + 1000)->
+some_args = (x = 100, y = x + 1000) ->
   print x + y
 ```
 <YueDisplay>
 <pre>
-some_args = (x = 100, y = x + 1000)->
+some_args = (x = 100, y = x + 1000) ->
   print x + y
 </pre>
 </YueDisplay>
@@ -2787,7 +2793,7 @@ class Inventory
   new: =>
     @items = {}
 
-  add_item: (name)=>
+  add_item: (name) =>
     if @items[name]
       @items[name] += 1
     else
@@ -2799,7 +2805,7 @@ class Inventory
   new: =>
     @items = {}
 
-  add_item: (name)=>
+  add_item: (name) =>
     if @items[name]
       @items[name] += 1
     else
@@ -2839,7 +2845,7 @@ Consider the example below, the clothes property is shared amongst all instances
 ```moonscript
 class Person
   clothes: []
-  give_item: (name)=>
+  give_item: (name) =>
     table.insert @clothes, name
 
 a = Person!
@@ -2855,7 +2861,7 @@ print item for item in *a.clothes
 <pre>
 class Person
   clothes: []
-  give_item: (name)=>
+  give_item: (name) =>
     table.insert @clothes, name
 
 a = Person!
@@ -2891,7 +2897,7 @@ The extends keyword can be used in a class declaration to inherit the properties
 ```moonscript
 class BackPack extends Inventory
   size: 10
-  add_item: (name)=>
+  add_item: (name) =>
     if #@items > size then error "backpack is full"
     super name
 ```
@@ -2899,7 +2905,7 @@ class BackPack extends Inventory
 <pre>
 class BackPack extends Inventory
   size: 10
-  add_item: (name)=>
+  add_item: (name) =>
     if #@items > size then error "backpack is full"
     super name
 </pre>
@@ -2913,7 +2919,7 @@ Whenever a class inherits from another, it sends a message to the parent class b
 
 ```moonscript
 class Shelf
-  @__inherited: (child)=>
+  @__inherited: (child) =>
     print @__name, "was inherited by", child.__name
 
 -- will print: Shelf was inherited by Cupboard
@@ -2922,7 +2928,7 @@ class Cupboard extends Shelf
 <YueDisplay>
 <pre>
 class Shelf
-  @__inherited: (child)=>
+  @__inherited: (child) =>
     print @__name, "was inherited by", child.__name
 
 -- will print: Shelf was inherited by Cupboard
@@ -3108,7 +3114,7 @@ All variables declared in the body of the class are local to the classes propert
 ```moonscript
 class MoreThings
   secret = 123
-  log = (msg)-> print "LOG:", msg
+  log = (msg) -> print "LOG:", msg
 
   some_method: =>
     log "hello world: " .. secret
@@ -3117,7 +3123,7 @@ class MoreThings
 <pre>
 class MoreThings
   secret = 123
-  log = (msg)-> print "LOG:", msg
+  log = (msg) -> print "LOG:", msg
 
   some_method: =>
     log "hello world: " .. secret
@@ -3144,11 +3150,11 @@ assert @@ == self.__class
 For example, a quick way to create a new instance of the same class from an instance method using @@:
 
 ```moonscript
-some_instance_method = (...)=> @@ ...
+some_instance_method = (...) => @@ ...
 ```
 <YueDisplay>
 <pre>
-some_instance_method = (...)=> @@ ...
+some_instance_method = (...) => @@ ...
 </pre>
 </YueDisplay>
 
@@ -3188,13 +3194,13 @@ class Something
 You can also use this syntax for a common function to initialize a object's fields.
 
 ```moonscript
-new = (@fieldA, @fieldB)=> @
+new = (@fieldA, @fieldB) => @
 obj = new {}, 123, "abc"
 print obj
 ```
 <YueDisplay>
 <pre>
-new = (@fieldA, @fieldB)=> @
+new = (@fieldA, @fieldB) => @
 obj = new {}, 123, "abc"
 print obj
 </pre>
@@ -3331,7 +3337,7 @@ file = with File "favorite_foods.txt"
 Or…
 
 ```moonscript
-create_person = (name,  relatives)->
+create_person = (name,  relatives) ->
   with Person!
     .name = name
     \add_relative relative for relative in *relatives
@@ -3340,7 +3346,7 @@ me = create_person "Leaf", [dad, mother, sister]
 ```
 <YueDisplay>
 <pre>
-create_person = (name,  relatives)->
+create_person = (name,  relatives) ->
   with Person!
     .name = name
     \add_relative relative for relative in *relatives
@@ -3465,7 +3471,7 @@ my_object = {
   write: => print "the value:", @value
 }
 
-run_callback = (func)->
+run_callback = (func) ->
   print "running callback..."
   func!
 
@@ -3484,7 +3490,7 @@ my_object = {
   write: => print "the value:", @value
 }
 
-run_callback = (func)->
+run_callback = (func) ->
   print "running callback..."
   func!
 
@@ -3544,7 +3550,7 @@ The using keyword lets us do that. using nil makes sure that no closed variables
 ```moonscript
 i = 100
 
-my_func = (using nil)->
+my_func = (using nil) ->
   i = "hello" -- a new local variable is created here
 
 my_func!
@@ -3554,7 +3560,7 @@ print i -- prints 100, i is unaffected
 <pre>
 i = 100
 
-my_func = (using nil)->
+my_func = (using nil) ->
   i = "hello" -- a new local variable is created here
 
 my_func!
@@ -3568,7 +3574,7 @@ Multiple names can be separated by commas. Closure values can still be accessed,
 tmp = 1213
 i, k = 100, 50
 
-my_func = (add using k, i)->
+my_func = (add using k, i) ->
   tmp = tmp + add -- a new local tmp is created
   i += tmp
   k += tmp
@@ -3581,7 +3587,7 @@ print i, k -- these have been updated
 tmp = 1213
 i, k = 100, 50
 
-my_func = (add using k, i)->
+my_func = (add using k, i) ->
   tmp = tmp + add -- a new local tmp is created
   i += tmp
   k += tmp
