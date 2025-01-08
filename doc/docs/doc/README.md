@@ -182,6 +182,7 @@ Usage: yue [options|files|directories] ...
    -b       Dump compile time (doesn't write output)
    -g       Dump global variables used in NAME LINE COLUMN
    -l       Write line numbers from source codes
+   -j       Disable implicit return at end of file
    -c       Reserve comments before statement from source codes
    -w path  Watch changes and compile every file under directory
    -v       Print version
