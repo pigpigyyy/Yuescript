@@ -98,9 +98,10 @@ Usage: yue [options|files|directories] ...
    -o file  Write output to file
    -s       Use spaces in generated codes instead of tabs
    -p       Write output to standard out
-   -b       Dump compile time (doesn't write output)
+   -b       Dump compile time (does not write output)
    -g       Dump global variables used in NAME LINE COLUMN
    -l       Write line numbers from source codes
+   -j       Disable implicit return at end of file
    -c       Reserve comments before statement from source codes
    -w path  Watch changes and compile every file under directory
    -v       Print version
