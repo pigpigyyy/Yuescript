@@ -39,7 +39,7 @@ local apple = setmetatable({
 	}
 })
 if (getmetatable(apple) ~= nil) then
-	p(apple.color, getmetatable(apple).__index)
+	p(apple.size, apple.color, getmetatable(apple).__index)
 end
 local _ud83c_udf1b = "月之脚本"
 _module_0["🌛"] = _ud83c_udf1b
@@ -59,11 +59,11 @@ do
 end
 local funcA
 funcA = function()
-	return "访问月之脚本定义的变量"
+	return "无法访问宏生成月之脚本里定义的变量"
 end
 local function funcB() end
 funcB = function()
-	return "访问Lua代码里定义的变量"
+	return "访问宏生成Lua代码里定义的变量"
 end
 -- 插入原始Lua代码
 if cond then
@@ -2039,7 +2039,7 @@ local apple = setmetatable({
 	}
 })
 if (getmetatable(apple) ~= nil) then
-	p(apple.color, getmetatable(apple).__index)
+	p(apple.size, apple.color, getmetatable(apple).__index)
 end
 local _ud83c_udf1b = "月之脚本"
 _module_0["🌛"] = _ud83c_udf1b
@@ -2059,11 +2059,11 @@ do
 end
 local funcA
 funcA = function()
-	return "访问月之脚本定义的变量"
+	return "无法访问宏生成月之脚本里定义的变量"
 end
 local function funcB() end
 funcB = function()
-	return "访问Lua代码里定义的变量"
+	return "访问宏生成Lua代码里定义的变量"
 end
 -- 插入原始Lua代码
 if cond then

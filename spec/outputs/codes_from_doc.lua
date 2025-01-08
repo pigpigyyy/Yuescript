@@ -39,7 +39,7 @@ local apple = setmetatable({
 	}
 })
 if (getmetatable(apple) ~= nil) then
-	p(apple.color, getmetatable(apple).__index)
+	p(apple.size, apple.color, getmetatable(apple).__index)
 end
 local _ud83c_udf1b = "月之脚本"
 _module_0["🌛"] = _ud83c_udf1b
@@ -59,11 +59,11 @@ do
 end
 local funcA
 funcA = function()
-	return "assign the Yue defined variable"
+	return "fail to assign to the Yue defined variable"
 end
 local function funcB() end
 funcB = function()
-	return "assign the Lua defined variable"
+	return "assign to the Lua defined variable"
 end
 -- raw Lua codes insertion
 if cond then
@@ -2045,7 +2045,7 @@ local apple = setmetatable({
 	}
 })
 if (getmetatable(apple) ~= nil) then
-	p(apple.color, getmetatable(apple).__index)
+	p(apple.size, apple.color, getmetatable(apple).__index)
 end
 local _ud83c_udf1b = "月之脚本"
 _module_0["🌛"] = _ud83c_udf1b
@@ -2065,11 +2065,11 @@ do
 end
 local funcA
 funcA = function()
-	return "assign the Yue defined variable"
+	return "fail to assign to the Yue defined variable"
 end
 local function funcB() end
 funcB = function()
-	return "assign the Lua defined variable"
+	return "assign to the Lua defined variable"
 end
 -- raw Lua codes insertion
 if cond then
