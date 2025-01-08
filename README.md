@@ -14,9 +14,15 @@ Yue (月) is the name of moon in Chinese and it's pronounced as [jyɛ].
 
 
 
+## About Dora SSR
+
+YueScript is being developed and maintained alongside the open-source game engine [Dora SSR](https://github.com/ippclub/Dora-SSR). It has been used to create engine tools, game demos and prototypes, validating its capabilities in real-world scenarios while enhancing the Dora SSR development experience.
+
+
+
 ## Features
 
-* No other dependencies needed except modified [parserlib](https://github.com/axilmar/parserlib) library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
+* Based on modified [parserlib](https://github.com/axilmar/parserlib) library from Achilleas Margaritis with some performance enhancement. **lpeg** library is no longer needed.
 * Written in C++17.
 * Support most of the features from MoonScript language. Generate Lua codes in the same way like the original compiler.
 * Reserve line numbers from source file in the compiled Lua codes to help debugging.
@@ -50,8 +56,7 @@ require("yue")("main") -- require `main.yue`
 
 local yue = require("yue")
 local codes, err, globals = yue.to_lua([[
-f = ->
-  print "hello world"
+f = -> print "hello world"
 f!
 ]],{
   implicit_return_root = true,
