@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(yue CXX)
 
 set(LUA_LIBDIR ${LUA_INCDIR}/../lib ${LUA_INCDIR}/../../lib)
@@ -55,7 +55,7 @@ include_directories(src src/3rdParty ${LUA_INCLUDE_DIR})
 add_definitions(-std=c++17 -O3 -fPIC)
 
 if (APPLE)
-	add_definitions(-Wno-deprecated-declarations)
+	add_compile_options(-Wno-deprecated-declarations)
 endif ()
 
 add_library(libyue MODULE
