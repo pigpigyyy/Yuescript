@@ -4381,7 +4381,7 @@ simplified: boolean
 
 ## Licence: MIT
 
-Copyright (c) 2025 Li Jin
+Copyright (c) 2017-2025 Li Jin \<dragon-fly@qq.com\>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
