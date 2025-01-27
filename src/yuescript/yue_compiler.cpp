@@ -9053,7 +9053,7 @@ private:
 			if (selfItem) {
 				type = MemType::Property;
 				auto name = ast_cast<SelfName_t>(selfItem->name);
-				if (!name) throw CompileError("invalid class poperty name"sv, selfItem->name);
+				if (!name) throw CompileError("invalid class property name"sv, selfItem->name);
 				if (name->name.is<UnicodeName_t>()) {
 					newSuperCall = classVar + ".__parent[\""s + _parser.toString(name->name) + "\"]"s;
 				} else {
